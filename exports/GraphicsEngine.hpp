@@ -2,27 +2,27 @@
 #define __GRAPHICS_ENGINE_HPP__
 #include <cstdint>
 
-#ifdef BUILD_GAIAX
-#define GAIAX_DLL __declspec(dllexport)
+#ifdef BUILD_TERRA
+#define TERRA_DLL __declspec(dllexport)
 #else
-#define GAIAX_DLL __declspec(dllimport)
+#define TERRA_DLL __declspec(dllimport)
 #endif
 
-struct GAIAX_DLL SRect {
+struct TERRA_DLL SRect {
 	long left;
 	long top;
 	long right;
 	long bottom;
 };
 
-struct GAIAX_DLL Color {
+struct TERRA_DLL Color {
 	float r;
 	float g;
 	float b;
 	float a;
 };
 
-class GAIAX_DLL GraphicsEngine {
+class TERRA_DLL GraphicsEngine {
 public:
 	virtual ~GraphicsEngine() = default;
 
@@ -33,11 +33,14 @@ public:
 	virtual SRect GetMonitorCoordinates() = 0;
 };
 
-GAIAX_DLL GraphicsEngine* __cdecl GetGraphicsEngineInstance() noexcept;
-GAIAX_DLL void __cdecl InitGraphicsEngineInstance(
-	void* windowHandle, std::uint32_t width, std::uint32_t height,
+TERRA_DLL GraphicsEngine* __cdecl GetGraphicsEngineInstance() noexcept;
+TERRA_DLL void __cdecl InitGraphicsEngineInstance(
+	const char* appName,
+	void* windowHandle,
+	void* moduleHandle,
+	std::uint32_t width, std::uint32_t height,
 	std::uint8_t bufferCount = 2u
 );
-GAIAX_DLL void __cdecl CleanUpGraphicsEngineInstance() noexcept;
+TERRA_DLL void __cdecl CleanUpGraphicsEngineInstance() noexcept;
 
 #endif
