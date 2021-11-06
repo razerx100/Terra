@@ -1,5 +1,5 @@
 # Terra
-Graphics Engine module based on Vulkan. It needs a Win32 window module handle to draw onto.
+Graphics Engine module based on Vulkan. Needs a module and window handle from a Win32 window to work.
 
 # Third party library Used
 ImGui
