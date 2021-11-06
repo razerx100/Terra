@@ -28,6 +28,12 @@ add_library(${PROJECT_NAME} SHARED
     ${SRC}
 )
 
+find_package(Vulkan REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Vulkan::Vulkan
+)
+
 target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/Exceptions/ templates/ exports/)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>" "$<$<CONFIG:RELEASE>:NDEBUG>" BUILD_GAIAX)

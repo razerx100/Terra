@@ -8,5 +8,6 @@ ImGui
 Run the appropriate Setup script to build the project with or without ImGui.
 
 ## Requirements
+Vulkan SDK.\
 cmake 3.21+.\
 C++20 Standard supported Compiler.
