@@ -1,7 +1,11 @@
 #include <GraphicsEngineVK.hpp>
+#include <InstanceManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
+static InstanceManager* s_pInstanceManager = nullptr;
+
+// Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
 	return s_pGraphicsEngine;
 }
@@ -23,4 +27,19 @@ void InitGraphicsEngineInstance(
 void CleanUpGraphicsEngineInstance() noexcept {
 	if (s_pGraphicsEngine)
 		delete s_pGraphicsEngine;
+}
+
+// Instance Manager
+InstanceManager* GetVKInstance() noexcept {
+	return s_pInstanceManager;
+}
+
+void InitVKInstance(const char* appName) {
+	if (!s_pInstanceManager)
+		s_pInstanceManager = new InstanceManager(appName);
+}
+
+void CleanUpVKInstance() noexcept {
+	if (s_pInstanceManager)
+		delete s_pInstanceManager;
 }

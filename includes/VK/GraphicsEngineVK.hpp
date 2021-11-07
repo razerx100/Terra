@@ -1,8 +1,7 @@
 #ifndef __GRAPHICS_ENGINE_VK_HPP__
 #define __GRAPHICS_ENGINE_VK_HPP__
 #include <GraphicsEngine.hpp>
-#include <vulkan/vulkan.hpp>
-#include <vector>
+#include <string>
 
 class GraphicsEngineVK : public GraphicsEngine {
 public:
@@ -21,16 +20,8 @@ public:
 	SRect GetMonitorCoordinates() override;
 
 private:
-	void CreateInstance();
-
-private:
-	VkInstance m_vkInstance;
-
 	Color m_backgroundColor;
 
 	const std::string m_appName;
-
-private:
-	const std::vector<const char*> m_extensionNames = {};
 };
 #endif
