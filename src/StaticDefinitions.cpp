@@ -1,9 +1,12 @@
 #include <GraphicsEngineVK.hpp>
 #include <InstanceManager.hpp>
+#include <DebugLayerManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
 static InstanceManager* s_pInstanceManager = nullptr;
+
+static DebugLayerManager* s_pDebugLayerManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -42,4 +45,15 @@ void InitVKInstance(const char* appName) {
 void CleanUpVKInstance() noexcept {
 	if (s_pInstanceManager)
 		delete s_pInstanceManager;
+}
+
+// Debug Layer
+void InitDebugLayer(VkInstance instanceRef) {
+	if (!s_pDebugLayerManager)
+		s_pDebugLayerManager = new DebugLayerManager(instanceRef);
+}
+
+void CleanUpDebugLayer() noexcept {
+	if (s_pDebugLayerManager)
+		delete s_pDebugLayerManager;
 }

@@ -1,5 +1,6 @@
 #include <InstanceManager.hpp>
 #include <VKThrowMacros.hpp>
+#include <DebugLayerManager.hpp>
 
 InstanceManager::InstanceManager(const char* appName) {
 	VkApplicationInfo appInfo = {};
@@ -16,9 +17,12 @@ InstanceManager::InstanceManager(const char* appName) {
 
 #ifdef _DEBUG
 	const bool enableValidationLayers = true;
+	InitDebugLayer(m_vkInstance);
 #else
 	const bool enableValidationLayers = false;
 #endif
+
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
 
 	if (enableValidationLayers) {
 		CheckLayerSupport();
@@ -28,9 +32,15 @@ InstanceManager::InstanceManager(const char* appName) {
 		createInfo.ppEnabledLayerNames = m_validationLayersNames.data();
 
 		m_extensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+		DebugLayerManager::PopulateDebugMessengerCreateInfo(debugCreateInfo);
+		createInfo.pNext =
+			reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
 	}
-	else
+	else {
 		createInfo.enabledLayerCount = 0u;
+		createInfo.pNext = nullptr;
+	}
 
 	CheckExtensionSupport();
 	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
@@ -43,6 +53,9 @@ InstanceManager::InstanceManager(const char* appName) {
 }
 
 InstanceManager::~InstanceManager() noexcept {
+#ifdef _DEBUG
+	CleanUpDebugLayer();
+#endif
 	vkDestroyInstance(m_vkInstance, nullptr);
 }
 
