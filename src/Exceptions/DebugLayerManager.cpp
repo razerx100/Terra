@@ -1,5 +1,5 @@
 #include <DebugLayerManager.hpp>
-#include <iostream>
+#include <fstream>
 #include <VKThrowMacros.hpp>
 
 DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
@@ -54,7 +54,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData
 ) {
-	std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
+	std::ofstream log("ErrorLog.txt");
+	log << pCallbackData->pMessage << std::endl;
 
 	return VK_FALSE;
 }
