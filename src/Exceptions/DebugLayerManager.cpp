@@ -33,7 +33,7 @@ VkResult DebugLayerManager::CreateDebugUtilsMessengerEXT(
 	if (function)
 		return function(instance, pCreateInfo, pAllocator, pDebugMessenger);
 	else
-		VK_ERROR_EXTENSION_NOT_PRESENT;
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
 void DebugLayerManager::DestroyDebugUtilsMessengerEXT(
@@ -45,7 +45,7 @@ void DebugLayerManager::DestroyDebugUtilsMessengerEXT(
 		(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
 
 	if (function)
-		return function(instance, debugMessenger, pAllocator);
+		function(instance, debugMessenger, pAllocator);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(

@@ -17,7 +17,6 @@ InstanceManager::InstanceManager(const char* appName) {
 
 #ifdef _DEBUG
 	const bool enableValidationLayers = true;
-	InitDebugLayer(m_vkInstance);
 #else
 	const bool enableValidationLayers = false;
 #endif
@@ -50,6 +49,10 @@ InstanceManager::InstanceManager(const char* appName) {
 
 	VkResult result;
 	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
+
+#ifdef _DEBUG
+	InitDebugLayer(m_vkInstance);
+#endif
 }
 
 InstanceManager::~InstanceManager() noexcept {
