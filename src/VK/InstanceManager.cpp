@@ -1,5 +1,5 @@
 #include <InstanceManager.hpp>
-#include <Exception.hpp>
+#include <VKThrowMacros.hpp>
 
 InstanceManager::InstanceManager(const char* appName) {
 	VkApplicationInfo appInfo = {};
@@ -38,7 +38,8 @@ InstanceManager::InstanceManager(const char* appName) {
 		);
 	createInfo.ppEnabledExtensionNames = m_extensionNames.data();
 
-	VkResult result = vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
+	VkResult result;
+	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
 }
 
 InstanceManager::~InstanceManager() noexcept {
@@ -67,10 +68,8 @@ void InstanceManager::CheckExtensionSupport() const {
 			}
 
 		if (!found)
-			throw GenericException(
-				__LINE__, __FILE__,
-				(
-					std::string("The extension ")
+			VK_GENERIC_THROW(
+				(std::string("The extension ")
 					+ requiredExtension + " isn't supported."
 					).c_str()
 			);
@@ -95,8 +94,7 @@ void InstanceManager::CheckLayerSupport() const {
 			}
 
 		if (!found)
-			throw GenericException(
-				__LINE__, __FILE__,
+			VK_GENERIC_THROW(
 				(std::string("The layer ")
 					+ requiredLayer + " isn't supported."
 					).c_str()
