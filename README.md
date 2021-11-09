@@ -5,7 +5,7 @@ Graphics Engine module based on Vulkan. Needs a module and window handle from a 
 ImGui
 
 ## Instructions
-Run the appropriate Setup script to build the project with or without ImGui.
+Run the appropriate Setup script to build the project with or without ImGui. The setup scripts use the ***Visual Studio 17 2022*** generator for project generation. But ***Visual Studio 16 2019*** generator should work as well.
 
 ## Requirements
 Vulkan SDK.\
