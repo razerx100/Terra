@@ -8,7 +8,7 @@ public:
 	InstanceManager(const char* appName);
 	~InstanceManager() noexcept;
 
-	VkInstance GetInstanceRef() const noexcept;
+	VkInstance GetVKInstance() const noexcept;
 
 private:
 	void CheckExtensionSupport() const;
@@ -23,7 +23,7 @@ private:
 	};
 };
 
-InstanceManager* GetVKInstance() noexcept;
-void InitVKInstance(const char* appName);
-void CleanUpVKInstance() noexcept;
+InstanceManager* GetInstanceManagerInstance() noexcept;
+void InitInstanceManagerInstance(const char* appName);
+void CleanUpInstanceManagerInstance() noexcept;
 #endif

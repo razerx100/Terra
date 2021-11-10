@@ -62,7 +62,7 @@ InstanceManager::~InstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);
 }
 
-VkInstance InstanceManager::GetInstanceRef() const noexcept {
+VkInstance InstanceManager::GetVKInstance() const noexcept {
 	return m_vkInstance;
 }
 

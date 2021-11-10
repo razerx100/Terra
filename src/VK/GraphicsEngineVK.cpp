@@ -1,5 +1,6 @@
 #include <GraphicsEngineVK.hpp>
 #include <InstanceManager.hpp>
+#include <DeviceManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -7,11 +8,16 @@ GraphicsEngineVK::GraphicsEngineVK(
 	std::uint32_t width, std::uint32_t height,
 	std::uint8_t bufferCount
 ) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName) {
-	InitVKInstance(appName);
+	InitInstanceManagerInstance(appName);
+
+	InitDeviceManagerInstance();
+	DeviceManager* deviceManagerRef = GetDeviceManagerInstance();
+	deviceManagerRef->AddQueueTypeCheck(VK_QUEUE_GRAPHICS_BIT);
+	deviceManagerRef->CreatePhysicalDevice(GetInstanceManagerInstance()->GetVKInstance());
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
-	CleanUpVKInstance();
+	CleanUpInstanceManagerInstance();
 }
 
 void GraphicsEngineVK::SetBackgroundColor(Color color) noexcept {

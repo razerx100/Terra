@@ -1,12 +1,15 @@
 #include <GraphicsEngineVK.hpp>
 #include <InstanceManager.hpp>
 #include <DebugLayerManager.hpp>
+#include <DeviceManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
 static InstanceManager* s_pInstanceManager = nullptr;
 
 static DebugLayerManager* s_pDebugLayerManager = nullptr;
+
+static DeviceManager* s_pDeviceManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -33,16 +36,16 @@ void CleanUpGraphicsEngineInstance() noexcept {
 }
 
 // Instance Manager
-InstanceManager* GetVKInstance() noexcept {
+InstanceManager* GetInstanceManagerInstance() noexcept {
 	return s_pInstanceManager;
 }
 
-void InitVKInstance(const char* appName) {
+void InitInstanceManagerInstance(const char* appName) {
 	if (!s_pInstanceManager)
 		s_pInstanceManager = new InstanceManager(appName);
 }
 
-void CleanUpVKInstance() noexcept {
+void CleanUpInstanceManagerInstance() noexcept {
 	if (s_pInstanceManager)
 		delete s_pInstanceManager;
 }
@@ -56,4 +59,19 @@ void InitDebugLayer(VkInstance instanceRef) {
 void CleanUpDebugLayer() noexcept {
 	if (s_pDebugLayerManager)
 		delete s_pDebugLayerManager;
+}
+
+// Device Manager
+DeviceManager* GetDeviceManagerInstance() noexcept {
+	return s_pDeviceManager;
+}
+
+void InitDeviceManagerInstance() {
+	if (!s_pDeviceManager)
+		s_pDeviceManager = new DeviceManager();
+}
+
+void CleanUpDeviceManagerInstance() noexcept {
+	if (s_pDeviceManager)
+		delete s_pDeviceManager;
 }
