@@ -1,6 +1,7 @@
 #include <GraphicsEngineVK.hpp>
 #include <InstanceManager.hpp>
 #include <DeviceManager.hpp>
+#include <CommandQueueManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -12,8 +13,9 @@ GraphicsEngineVK::GraphicsEngineVK(
 
 	InitDeviceManagerInstance();
 	DeviceManager* deviceManagerRef = GetDeviceManagerInstance();
-	deviceManagerRef->AddQueueTypeCheck(VK_QUEUE_GRAPHICS_BIT);
 	deviceManagerRef->CreatePhysicalDevice(GetInstanceManagerInstance()->GetVKInstance());
+	deviceManagerRef->CreateLogicalDevice();
+	InitGraphicsQueueManagerInstance(deviceManagerRef->GetQueue(VK_QUEUE_GRAPHICS_BIT));
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {

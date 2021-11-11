@@ -5,24 +5,48 @@
 
 class DeviceManager {
 public:
-	void CreatePhysicalDevice(VkInstance instance);
+	~DeviceManager() noexcept;
 
-	void AddQueueTypeCheck(VkQueueFlagBits queueType) noexcept;
+	void CreatePhysicalDevice(VkInstance instance);
+	void CreateLogicalDevice();
+
+	VkQueue GetQueue(VkQueueFlagBits type) noexcept;
+
 	VkPhysicalDevice GetPhysicalDevice() const noexcept;
 
 private:
-	void SetSuitablePhysicalDevice(VkInstance instance);
+	struct QueueFamilyInfo {
+		std::uint32_t index = 0u;
+		std::uint32_t queueRequired = 0u;
+		std::uint32_t queueCreated = 0u;
+		std::uint32_t typeFlags = 0u;
+	};
+
+private:
 	bool CheckDeviceType(
 		VkPhysicalDevice device,
 		VkPhysicalDeviceType deviceType
 	) const noexcept;
 	bool CheckQueueFamilySupport(
 		VkPhysicalDevice device
-	) const noexcept;
+	) noexcept;
+
+	std::uint32_t GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept;
+
+	void SetSuitablePhysicalDevice(VkInstance instance);
+	void CheckQueueTypeSupport(
+		bool& checkFlag, VkQueueFlagBits queueType,
+		std::uint32_t index,
+		const VkQueueFamilyProperties& familyProperty
+	) noexcept;
 
 private:
 	VkPhysicalDevice m_physicalDevice;
-	std::vector<VkQueueFlagBits> m_queueTypeFlag;
+	VkDevice m_logicalDevice;
+	std::vector<QueueFamilyInfo> m_availableQueueFamily;
+	const std::vector<const char*> m_extensionNames = {
+		"VK_KHR_swapchain"
+	};
 };
 
 DeviceManager* GetDeviceManagerInstance() noexcept;

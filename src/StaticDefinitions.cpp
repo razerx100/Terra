@@ -2,6 +2,7 @@
 #include <InstanceManager.hpp>
 #include <DebugLayerManager.hpp>
 #include <DeviceManager.hpp>
+#include <CommandQueueManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
@@ -10,6 +11,8 @@ static InstanceManager* s_pInstanceManager = nullptr;
 static DebugLayerManager* s_pDebugLayerManager = nullptr;
 
 static DeviceManager* s_pDeviceManager = nullptr;
+
+static GraphicsQueueManager* s_pGraphicsQueueManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -74,4 +77,19 @@ void InitDeviceManagerInstance() {
 void CleanUpDeviceManagerInstance() noexcept {
 	if (s_pDeviceManager)
 		delete s_pDeviceManager;
+}
+
+// Graphics Queue Manager
+GraphicsQueueManager* GetGraphicsQueueManagerInstance() noexcept {
+	return s_pGraphicsQueueManager;
+}
+
+void InitGraphicsQueueManagerInstance(VkQueue queue) {
+	if (!s_pGraphicsQueueManager)
+		s_pGraphicsQueueManager = new GraphicsQueueManager(queue);
+}
+
+void CleanUpGraphicsQueueManagerInstance() noexcept {
+	if (s_pGraphicsQueueManager)
+		delete s_pGraphicsQueueManager;
 }
