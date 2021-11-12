@@ -19,13 +19,17 @@ else()
 endif()
 
 if(IMGUIFLAG STREQUAL "ENABLE")
-    file(GLOB_RECURSE SRC src/*.cpp includes/*.hpp includes/VK/*.hpp templates/*.hpp exports/*.hpp ImGui/*.cpp ImGui/*.h)
+    file(GLOB_RECURSE SRC src/*.cpp includes/Exceptions/*.hpp includes/VK/*.hpp templates/*.hpp exports/*.hpp ImGui/*.cpp ImGui/*.h)
 else()
-    file(GLOB_RECURSE SRC src/*.cpp includes/*.hpp includes/VK/*.hpp templates/*.hpp exports/*.hpp)
+    file(GLOB_RECURSE SRC src/*.cpp includes/Exceptions/*.hpp includes/VK/*.hpp templates/*.hpp exports/*.hpp)
+endif()
+
+if(PLATFORM STREQUAL "WINDOWS")
+    file(GLOB_RECURSE SRCOPT includes/Win32/*.hpp)
 endif()
 
 add_library(${PROJECT_NAME} SHARED
-    ${SRC}
+    ${SRC} ${SRCOPT}
 )
 
 find_package(Vulkan REQUIRED)
@@ -34,9 +38,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/Exceptions/ templates/ exports/)
+target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/VK/Impl/ includes/Exceptions/ templates/ exports/)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>" "$<$<CONFIG:RELEASE>:NDEBUG>" BUILD_TERRA)
+
+if(PLATFORM STREQUAL "WINDOWS")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TERRA_WIN32)
+endif()
 
 if(IMGUIFLAG STREQUAL "ENABLE")
     target_include_directories(${PROJECT_NAME} PRIVATE ImGui/includes/)

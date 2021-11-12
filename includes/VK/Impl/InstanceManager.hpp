@@ -1,14 +1,14 @@
 #ifndef __INATANCE_MANAGER_HPP__
 #define __INATANCE_MANAGER_HPP__
-#include <vulkan/vulkan.hpp>
+#include <IInstanceManager.hpp>
 #include <vector>
 
-class InstanceManager {
+class InstanceManager : public IInstanceManager {
 public:
 	InstanceManager(const char* appName);
 	~InstanceManager() noexcept;
 
-	VkInstance GetVKInstance() const noexcept;
+	VkInstance GetVKInstance() const noexcept override;
 
 private:
 	void CheckExtensionSupport() const;
@@ -17,13 +17,11 @@ private:
 private:
 	VkInstance m_vkInstance;
 
-	std::vector<const char*> m_extensionNames = {};
+	std::vector<const char*> m_extensionNames = {
+		"VK_KHR_surface"
+	};
 	std::vector<const char*> m_validationLayersNames = {
 		"VK_LAYER_KHRONOS_validation"
 	};
 };
-
-InstanceManager* GetInstanceManagerInstance() noexcept;
-void InitInstanceManagerInstance(const char* appName);
-void CleanUpInstanceManagerInstance() noexcept;
 #endif

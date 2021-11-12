@@ -1,7 +1,8 @@
 #include <GraphicsEngineVK.hpp>
-#include <InstanceManager.hpp>
-#include <DeviceManager.hpp>
-#include <CommandQueueManager.hpp>
+#include <IInstanceManager.hpp>
+#include <ISurfaceManager.hpp>
+#include <IDeviceManager.hpp>
+#include <ICommandQueueManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -11,14 +12,20 @@ GraphicsEngineVK::GraphicsEngineVK(
 ) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName) {
 	InitInstanceManagerInstance(appName);
 
+	InitSurfaceManagerInstance(
+		GetInstanceManagerInstance()->GetVKInstance(), windowHandle, moduleHandle
+	);
 	InitDeviceManagerInstance();
-	DeviceManager* deviceManagerRef = GetDeviceManagerInstance();
+	IDeviceManager* deviceManagerRef = GetDeviceManagerInstance();
 	deviceManagerRef->CreatePhysicalDevice(GetInstanceManagerInstance()->GetVKInstance());
 	deviceManagerRef->CreateLogicalDevice();
 	InitGraphicsQueueManagerInstance(deviceManagerRef->GetQueue(VK_QUEUE_GRAPHICS_BIT));
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
+	CleanUpGraphicsQueueManagerInstance();
+	CleanUpDeviceManagerInstance();
+	CleanUpSurfaceManagerInstance();
 	CleanUpInstanceManagerInstance();
 }
 

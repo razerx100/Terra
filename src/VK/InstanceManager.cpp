@@ -41,6 +41,10 @@ InstanceManager::InstanceManager(const char* appName) {
 		createInfo.pNext = nullptr;
 	}
 
+#ifdef TERRA_WIN32
+	m_extensionNames.emplace_back("VK_KHR_win32_surface");
+#endif
+
 	CheckExtensionSupport();
 	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
 		m_extensionNames.size()

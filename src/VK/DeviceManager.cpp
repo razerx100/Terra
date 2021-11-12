@@ -146,6 +146,7 @@ bool DeviceManager::CheckQueueFamilySupport(
 
 		if (types.empty()) {
 			std::copy(tempData.begin(), tempData.end(), m_usableQueueFamilies.begin());
+
 			return true;
 		}
 	}

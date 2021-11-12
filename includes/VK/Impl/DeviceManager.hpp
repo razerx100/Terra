@@ -1,18 +1,18 @@
 #ifndef __DEVICE_MANAGER_HPP__
 #define __DEVICE_MANAGER_HPP__
-#include <vulkan/vulkan.h>
+#include <IDeviceManager.hpp>
 #include <vector>
 
-class DeviceManager {
+class DeviceManager : public IDeviceManager {
 public:
 	~DeviceManager() noexcept;
 
-	void CreatePhysicalDevice(VkInstance instance);
-	void CreateLogicalDevice();
+	void CreatePhysicalDevice(VkInstance instance) override;
+	void CreateLogicalDevice() override;
 
-	VkQueue GetQueue(VkQueueFlagBits type) noexcept;
+	VkQueue GetQueue(VkQueueFlagBits type) noexcept override;
 
-	VkPhysicalDevice GetPhysicalDevice() const noexcept;
+	VkPhysicalDevice GetPhysicalDevice() const noexcept override;
 
 private:
 	struct QueueFamilyInfo {
@@ -43,8 +43,4 @@ private:
 		"VK_KHR_swapchain"
 	};
 };
-
-DeviceManager* GetDeviceManagerInstance() noexcept;
-void InitDeviceManagerInstance();
-void CleanUpDeviceManagerInstance() noexcept;
 #endif

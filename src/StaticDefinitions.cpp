@@ -3,16 +3,19 @@
 #include <DebugLayerManager.hpp>
 #include <DeviceManager.hpp>
 #include <CommandQueueManager.hpp>
+#include <ISurfaceManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
-static InstanceManager* s_pInstanceManager = nullptr;
+static IInstanceManager* s_pInstanceManager = nullptr;
 
 static DebugLayerManager* s_pDebugLayerManager = nullptr;
 
-static DeviceManager* s_pDeviceManager = nullptr;
+static IDeviceManager* s_pDeviceManager = nullptr;
 
-static GraphicsQueueManager* s_pGraphicsQueueManager = nullptr;
+static IGraphicsQueueManager* s_pGraphicsQueueManager = nullptr;
+
+static ISurfaceManager* s_pSurfaceManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -39,7 +42,7 @@ void CleanUpGraphicsEngineInstance() noexcept {
 }
 
 // Instance Manager
-InstanceManager* GetInstanceManagerInstance() noexcept {
+IInstanceManager* GetInstanceManagerInstance() noexcept {
 	return s_pInstanceManager;
 }
 
@@ -65,7 +68,7 @@ void CleanUpDebugLayer() noexcept {
 }
 
 // Device Manager
-DeviceManager* GetDeviceManagerInstance() noexcept {
+IDeviceManager* GetDeviceManagerInstance() noexcept {
 	return s_pDeviceManager;
 }
 
@@ -80,7 +83,7 @@ void CleanUpDeviceManagerInstance() noexcept {
 }
 
 // Graphics Queue Manager
-GraphicsQueueManager* GetGraphicsQueueManagerInstance() noexcept {
+IGraphicsQueueManager* GetGraphicsQueueManagerInstance() noexcept {
 	return s_pGraphicsQueueManager;
 }
 
@@ -92,4 +95,25 @@ void InitGraphicsQueueManagerInstance(VkQueue queue) {
 void CleanUpGraphicsQueueManagerInstance() noexcept {
 	if (s_pGraphicsQueueManager)
 		delete s_pGraphicsQueueManager;
+}
+
+// Surface Manager
+#ifdef TERRA_WIN32
+#include <Win32/SurfaceManagerWin32.hpp>
+#endif
+
+ISurfaceManager* GetSurfaceManagerInstance() noexcept {
+	return s_pSurfaceManager;
+}
+
+void InitSurfaceManagerInstance(VkInstance instance, void* windowHandle, void* moduleHandle) {
+	if (!s_pSurfaceManager)
+#ifdef TERRA_WIN32
+		s_pSurfaceManager = new SurfaceManagerWin32(instance, windowHandle, moduleHandle);
+#endif
+}
+
+void CleanUpSurfaceManagerInstance() noexcept {
+	if (s_pSurfaceManager)
+		delete s_pSurfaceManager;
 }
