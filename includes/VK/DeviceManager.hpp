@@ -34,16 +34,11 @@ private:
 	std::uint32_t GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept;
 
 	void SetSuitablePhysicalDevice(VkInstance instance);
-	void CheckQueueTypeSupport(
-		bool& checkFlag, VkQueueFlagBits queueType,
-		std::uint32_t index,
-		const VkQueueFamilyProperties& familyProperty
-	) noexcept;
 
 private:
 	VkPhysicalDevice m_physicalDevice;
 	VkDevice m_logicalDevice;
-	std::vector<QueueFamilyInfo> m_availableQueueFamily;
+	std::vector<QueueFamilyInfo> m_usableQueueFamilies;
 	const std::vector<const char*> m_extensionNames = {
 		"VK_KHR_swapchain"
 	};
