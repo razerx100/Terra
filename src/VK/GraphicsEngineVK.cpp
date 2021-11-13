@@ -2,7 +2,7 @@
 #include <IInstanceManager.hpp>
 #include <ISurfaceManager.hpp>
 #include <IDeviceManager.hpp>
-#include <ICommandQueueManager.hpp>
+#include <IGraphicsQueueManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,

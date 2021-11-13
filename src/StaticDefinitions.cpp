@@ -2,7 +2,7 @@
 #include <InstanceManager.hpp>
 #include <DebugLayerManager.hpp>
 #include <DeviceManager.hpp>
-#include <CommandQueueManager.hpp>
+#include <GraphicsQueueManager.hpp>
 #include <ISurfaceManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;

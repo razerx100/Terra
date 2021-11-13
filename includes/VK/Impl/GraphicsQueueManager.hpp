@@ -1,6 +1,6 @@
-#ifndef __COMMAND_QUEUE_MANAGER_HPP__
-#define __COMMAND_QUEUE_MANAGER_HPP__
-#include <ICommandQueueManager.hpp>
+#ifndef __GRAPHICS_QUEUE_MANAGER_HPP__
+#define __GRAPHICS_QUEUE_MANAGER_HPP__
+#include <IGraphicsQueueManager.hpp>
 
 class GraphicsQueueManager : public IGraphicsQueueManager {
 public:

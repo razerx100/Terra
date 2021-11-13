@@ -1,4 +1,4 @@
-#include <CommandQueueManager.hpp>
+#include <GraphicsQueueManager.hpp>
 
 GraphicsQueueManager::GraphicsQueueManager(VkQueue queue)
 	: m_graphicsQueue(queue) {}
