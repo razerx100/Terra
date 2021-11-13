@@ -17,7 +17,10 @@ GraphicsEngineVK::GraphicsEngineVK(
 	);
 	InitDeviceManagerInstance();
 	IDeviceManager* deviceManagerRef = GetDeviceManagerInstance();
-	deviceManagerRef->CreatePhysicalDevice(GetInstanceManagerInstance()->GetVKInstance());
+	deviceManagerRef->CreatePhysicalDevice(
+		GetInstanceManagerInstance()->GetVKInstance(),
+		GetSurfaceManagerInstance()->GetSurface()
+	);
 	deviceManagerRef->CreateLogicalDevice();
 	InitGraphicsQueueManagerInstance(deviceManagerRef->GetQueue(VK_QUEUE_GRAPHICS_BIT));
 }

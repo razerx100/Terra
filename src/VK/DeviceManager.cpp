@@ -5,8 +5,39 @@ DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-void DeviceManager::CreatePhysicalDevice(VkInstance instance) {
-	SetSuitablePhysicalDevice(instance);
+void DeviceManager::CreatePhysicalDevice(
+	VkInstance instance,
+	VkSurfaceKHR surface
+) {
+	std::uint32_t deviceCount = 0u;
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+	if (!deviceCount)
+		VK_GENERIC_THROW("No GPU with Vulkan support.");
+
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+	bool found = false;
+
+	for (VkPhysicalDevice device : devices)
+		if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
+			if (CheckQueueFamilySupport(device, surface)) {
+				m_physicalDevice = device;
+				found = true;
+				break;
+			}
+
+	if (!found)
+		for (VkPhysicalDevice device : devices)
+			if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU))
+				if (CheckQueueFamilySupport(device, surface)) {
+					m_physicalDevice = device;
+					found = true;
+					break;
+				}
+
+	if (!found)
+		VK_GENERIC_THROW("No GPU with all Queue Family support found.");
 }
 
 void DeviceManager::CreateLogicalDevice() {
@@ -46,7 +77,8 @@ bool DeviceManager::CheckDeviceType(
 }
 
 bool DeviceManager::CheckQueueFamilySupport(
-	VkPhysicalDevice device
+	VkPhysicalDevice device,
+	VkSurfaceKHR surface
 ) noexcept {
 	std::uint32_t queueFamilyCount = 0u;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -55,8 +87,9 @@ bool DeviceManager::CheckQueueFamilySupport(
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
 	for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index)
-		if ((queueFamilies[index].queueFlags & 7u)
-			== 7u && queueFamilies[index].queueCount >= 3u) {
+		if ((queueFamilies[index].queueFlags & 7u) == 7u
+			&& queueFamilies[index].queueCount >= 3u
+			&& CheckPresentSupport(device, surface, index)) {
 			m_usableQueueFamilies.emplace_back(
 				index,
 				3u,
@@ -72,8 +105,8 @@ bool DeviceManager::CheckQueueFamilySupport(
 		QueueFamilyInfo tempData{};
 
 		for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index)
-			if ((queueFamilies[index].queueFlags & 7u)
-				== 6u && queueFamilies[index].queueCount >= 2u) {
+			if ((queueFamilies[index].queueFlags & 7u) == 6u
+				&& queueFamilies[index].queueCount >= 2u) {
 				tempData = {
 					index,
 					2u,
@@ -84,8 +117,9 @@ bool DeviceManager::CheckQueueFamilySupport(
 				remainder = 1u;
 				break;
 			}
-			else if ((queueFamilies[index].queueFlags & 7u)
-				== 5u && queueFamilies[index].queueCount >= 2u) {
+			else if ((queueFamilies[index].queueFlags & 7u) == 5u
+				&& queueFamilies[index].queueCount >= 2u
+				&& CheckPresentSupport(device, surface, index)) {
 				tempData = {
 					index,
 					2u,
@@ -98,22 +132,41 @@ bool DeviceManager::CheckQueueFamilySupport(
 			}
 			else if (std::uint32_t check = (queueFamilies[index].queueFlags & 7u);
 				(check == 3u || check == 7u)
-				&& queueFamilies[index].queueCount >= 2u) {
-				tempData = {
-					index,
-					2u,
-					0u,
-					queueFamilies[index].queueFlags
-				};
+				&& queueFamilies[index].queueCount >= 2u
+				&& CheckPresentSupport(device, surface, index)) {
+			tempData = {
+				index,
+				2u,
+				0u,
+				queueFamilies[index].queueFlags
+			};
 
-				remainder = 4u;
-				break;
+			remainder = 4u;
+			break;
+		}
+
+		if (remainder && remainder == 1)
+			for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index) {
+				if (queueFamilies[index].queueFlags & remainder
+					&& queueFamilies[index].queueCount >= 1u
+					&& index != tempData.index
+					&& CheckPresentSupport(device, surface, index)) {
+					m_usableQueueFamilies.emplace_back(tempData);
+					m_usableQueueFamilies.emplace_back(
+						index,
+						1u,
+						0u,
+						queueFamilies[index].queueFlags
+					);
+
+					return true;
+				}
 			}
-
-		if (remainder)
+		else if (remainder)
 			for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index)
-				if ((queueFamilies[index].queueFlags & remainder)
-					!= 0 && queueFamilies[index].queueCount >= 1u && index != tempData.index) {
+				if (queueFamilies[index].queueFlags & remainder
+					&& queueFamilies[index].queueCount >= 1u
+					&& index != tempData.index) {
 					m_usableQueueFamilies.emplace_back(tempData);
 					m_usableQueueFamilies.emplace_back(
 						index,
@@ -126,13 +179,26 @@ bool DeviceManager::CheckQueueFamilySupport(
 				}
 	}
 
-	std::vector<std::uint32_t> types = { 1u, 2u, 4u };
+	std::vector<std::uint32_t> types = { 2u, 4u };
 	std::vector<QueueFamilyInfo> tempData;
+
+	for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index)
+		if (queueFamilies[index].queueFlags & 1u
+			&& CheckPresentSupport(device, surface, index)) {
+			tempData.emplace_back(
+				index,
+				1u,
+				0u,
+				queueFamilies[index].queueFlags
+			);
+
+			break;
+		}
+
 
 	for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index) {
 		for (auto typeIt = types.begin(); typeIt != types.end(); ++typeIt)
-			if ((queueFamilies[index].queueFlags & *typeIt)
-				!= 0) {
+			if (queueFamilies[index].queueFlags & *typeIt) {
 				tempData.emplace_back(
 					index,
 					1u,
@@ -152,38 +218,6 @@ bool DeviceManager::CheckQueueFamilySupport(
 	}
 
 	return false;
-}
-
-void DeviceManager::SetSuitablePhysicalDevice(VkInstance instance) {
-	std::uint32_t deviceCount = 0u;
-	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-	if (!deviceCount)
-		VK_GENERIC_THROW("No GPU with Vulkan support.");
-
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-	bool found = false;
-
-	for (VkPhysicalDevice device : devices)
-		if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
-			if (CheckQueueFamilySupport(device)) {
-				m_physicalDevice = device;
-				found = true;
-				break;
-			}
-
-	if (!found)
-		for (VkPhysicalDevice device : devices)
-			if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU))
-				if (CheckQueueFamilySupport(device)) {
-					m_physicalDevice = device;
-					found = true;
-					break;
-				}
-
-	if (!found)
-		VK_GENERIC_THROW("No GPU with all Queue Family support found.");
 }
 
 VkPhysicalDevice DeviceManager::GetPhysicalDevice() const noexcept {
@@ -208,4 +242,15 @@ VkQueue DeviceManager::GetQueue(VkQueueFlagBits type) noexcept {
 	);
 
 	return queue;
+}
+
+bool DeviceManager::CheckPresentSupport(
+	VkPhysicalDevice device,
+	VkSurfaceKHR surface,
+	std::uint32_t index
+) const noexcept {
+	VkBool32 presentSupport = false;
+	vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &presentSupport);
+
+	return presentSupport;
 }

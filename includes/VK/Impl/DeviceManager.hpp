@@ -7,7 +7,10 @@ class DeviceManager : public IDeviceManager {
 public:
 	~DeviceManager() noexcept;
 
-	void CreatePhysicalDevice(VkInstance instance) override;
+	void CreatePhysicalDevice(
+		VkInstance instance,
+		VkSurfaceKHR surface
+	) override;
 	void CreateLogicalDevice() override;
 
 	VkQueue GetQueue(VkQueueFlagBits type) noexcept override;
@@ -28,12 +31,16 @@ private:
 		VkPhysicalDeviceType deviceType
 	) const noexcept;
 	bool CheckQueueFamilySupport(
-		VkPhysicalDevice device
+		VkPhysicalDevice device,
+		VkSurfaceKHR surface
 	) noexcept;
+	bool CheckPresentSupport(
+		VkPhysicalDevice device,
+		VkSurfaceKHR surface,
+		std::uint32_t index
+	) const noexcept;
 
 	std::uint32_t GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept;
-
-	void SetSuitablePhysicalDevice(VkInstance instance);
 
 private:
 	VkPhysicalDevice m_physicalDevice;

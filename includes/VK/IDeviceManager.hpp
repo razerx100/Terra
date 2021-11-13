@@ -6,7 +6,10 @@ class IDeviceManager {
 public:
 	virtual ~IDeviceManager() = default;
 
-	virtual void CreatePhysicalDevice(VkInstance instance) = 0;
+	virtual void CreatePhysicalDevice(
+		VkInstance instance,
+		VkSurfaceKHR surface
+	) = 0;
 	virtual void CreateLogicalDevice() = 0;
 
 	virtual VkQueue GetQueue(VkQueueFlagBits type) noexcept = 0;
