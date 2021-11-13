@@ -20,21 +20,43 @@ void DeviceManager::CreatePhysicalDevice(
 	bool found = false;
 
 	for (VkPhysicalDevice device : devices)
-		if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
-			if (CheckQueueFamilySupport(device, surface)) {
+		if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
+			SwapChainInfo swapDetails = {};
+			GetSwapchainCapabilities(device, surface, swapDetails);
+			std::vector<QueueFamilyInfo> familyInfos;
+			GetQueueFamilyInfo(device, surface, familyInfos);
+
+			if (CheckDeviceExtensionSupport(device)
+				&& swapDetails.IsCapable()
+				&& !familyInfos.empty()) {
+
+				m_swapchainInfo = swapDetails;
+				m_usableQueueFamilies = familyInfos;
 				m_physicalDevice = device;
 				found = true;
 				break;
 			}
+		}
 
 	if (!found)
 		for (VkPhysicalDevice device : devices)
-			if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU))
-				if (CheckQueueFamilySupport(device, surface)) {
+			if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)) {
+				SwapChainInfo swapDetails = {};
+				GetSwapchainCapabilities(device, surface, swapDetails);
+				std::vector<QueueFamilyInfo> familyInfos;
+				GetQueueFamilyInfo(device, surface, familyInfos);
+
+				if (CheckDeviceExtensionSupport(device)
+					&& swapDetails.IsCapable()
+					&& !familyInfos.empty()) {
+
+					m_swapchainInfo = swapDetails;
+					m_usableQueueFamilies = familyInfos;
 					m_physicalDevice = device;
 					found = true;
 					break;
 				}
+			}
 
 	if (!found)
 		VK_GENERIC_THROW("No GPU with all Queue Family support found.");
@@ -76,10 +98,100 @@ bool DeviceManager::CheckDeviceType(
 	return deviceProperty.deviceType == deviceType;
 }
 
-bool DeviceManager::CheckQueueFamilySupport(
+VkPhysicalDevice DeviceManager::GetPhysicalDevice() const noexcept {
+	return m_physicalDevice;
+}
+
+std::uint32_t DeviceManager::GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept {
+	for (const QueueFamilyInfo& queueFamily : m_usableQueueFamilies)
+		if (queueFamily.typeFlags & queueType)
+			return queueFamily.index;
+
+	return 0u;
+}
+
+VkQueue DeviceManager::GetQueue(VkQueueFlagBits type) noexcept {
+	std::uint32_t familyIndex = GetIndexOfQueueFamily(type);
+	VkQueue queue;
+
+	vkGetDeviceQueue(
+		m_logicalDevice, m_usableQueueFamilies[familyIndex].index,
+		m_usableQueueFamilies[familyIndex].queueCreated++, &queue
+	);
+
+	return queue;
+}
+
+bool DeviceManager::CheckPresentSupport(
 	VkPhysicalDevice device,
-	VkSurfaceKHR surface
-) noexcept {
+	VkSurfaceKHR surface,
+	std::uint32_t index
+) const noexcept {
+	VkBool32 presentSupport = false;
+	vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &presentSupport);
+
+	return presentSupport;
+}
+
+bool DeviceManager::CheckDeviceExtensionSupport(
+	VkPhysicalDevice device
+) const noexcept {
+	std::uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateDeviceExtensionProperties(
+		device, nullptr, &extensionCount, availableExtensions.data()
+	);
+
+	for (const char* requiredExtension : m_extensionNames) {
+		bool found = false;
+		for (const VkExtensionProperties& extension : availableExtensions)
+			if (std::strcmp(requiredExtension, extension.extensionName) == 0) {
+				found = true;
+				break;
+			}
+
+		if (!found)
+			return false;
+	}
+
+	return true;
+}
+
+void DeviceManager::GetSwapchainCapabilities(
+	VkPhysicalDevice device,
+	VkSurfaceKHR surface,
+	SwapChainInfo& details
+) const noexcept {
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+	std::uint32_t formatCount = 0u;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+	if (formatCount) {
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(
+			device, surface, &formatCount, details.formats.data()
+		);
+	}
+
+	std::uint32_t presentModeCount = 0u;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+	if (presentModeCount) {
+		details.presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(
+			device, surface, &presentModeCount, details.presentModes.data()
+		);
+	}
+}
+
+void DeviceManager::GetQueueFamilyInfo(
+	VkPhysicalDevice device,
+	VkSurfaceKHR surface,
+	std::vector<QueueFamilyInfo>& familyInfos
+) const noexcept {
 	std::uint32_t queueFamilyCount = 0u;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
@@ -90,14 +202,14 @@ bool DeviceManager::CheckQueueFamilySupport(
 		if ((queueFamilies[index].queueFlags & 7u) == 7u
 			&& queueFamilies[index].queueCount >= 3u
 			&& CheckPresentSupport(device, surface, index)) {
-			m_usableQueueFamilies.emplace_back(
+			familyInfos.emplace_back(
 				index,
 				3u,
 				0u,
 				queueFamilies[index].queueFlags
 			);
 
-			return true;
+			return;
 		}
 
 	{
@@ -151,15 +263,15 @@ bool DeviceManager::CheckQueueFamilySupport(
 					&& queueFamilies[index].queueCount >= 1u
 					&& index != tempData.index
 					&& CheckPresentSupport(device, surface, index)) {
-					m_usableQueueFamilies.emplace_back(tempData);
-					m_usableQueueFamilies.emplace_back(
+					familyInfos.emplace_back(tempData);
+					familyInfos.emplace_back(
 						index,
 						1u,
 						0u,
 						queueFamilies[index].queueFlags
 					);
 
-					return true;
+					return;
 				}
 			}
 		else if (remainder)
@@ -167,15 +279,15 @@ bool DeviceManager::CheckQueueFamilySupport(
 				if (queueFamilies[index].queueFlags & remainder
 					&& queueFamilies[index].queueCount >= 1u
 					&& index != tempData.index) {
-					m_usableQueueFamilies.emplace_back(tempData);
-					m_usableQueueFamilies.emplace_back(
+					familyInfos.emplace_back(tempData);
+					familyInfos.emplace_back(
 						index,
 						1u,
 						0u,
 						queueFamilies[index].queueFlags
 					);
 
-					return true;
+					return;
 				}
 	}
 
@@ -195,7 +307,6 @@ bool DeviceManager::CheckQueueFamilySupport(
 			break;
 		}
 
-
 	for (std::uint32_t index = 0u; index < queueFamilies.size(); ++index) {
 		for (auto typeIt = types.begin(); typeIt != types.end(); ++typeIt)
 			if (queueFamilies[index].queueFlags & *typeIt) {
@@ -211,46 +322,9 @@ bool DeviceManager::CheckQueueFamilySupport(
 			}
 
 		if (types.empty()) {
-			std::copy(tempData.begin(), tempData.end(), m_usableQueueFamilies.begin());
+			std::copy(tempData.begin(), tempData.end(), familyInfos.begin());
 
-			return true;
+			return;
 		}
 	}
-
-	return false;
-}
-
-VkPhysicalDevice DeviceManager::GetPhysicalDevice() const noexcept {
-	return m_physicalDevice;
-}
-
-std::uint32_t DeviceManager::GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept {
-	for (const QueueFamilyInfo& queueFamily : m_usableQueueFamilies)
-		if (queueFamily.typeFlags & queueType)
-			return queueFamily.index;
-
-	return 0u;
-}
-
-VkQueue DeviceManager::GetQueue(VkQueueFlagBits type) noexcept {
-	std::uint32_t familyIndex = GetIndexOfQueueFamily(type);
-	VkQueue queue;
-
-	vkGetDeviceQueue(
-		m_logicalDevice, m_usableQueueFamilies[familyIndex].index,
-		m_usableQueueFamilies[familyIndex].queueCreated++, &queue
-	);
-
-	return queue;
-}
-
-bool DeviceManager::CheckPresentSupport(
-	VkPhysicalDevice device,
-	VkSurfaceKHR surface,
-	std::uint32_t index
-) const noexcept {
-	VkBool32 presentSupport = false;
-	vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &presentSupport);
-
-	return presentSupport;
 }
