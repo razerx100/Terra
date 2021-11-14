@@ -1,5 +1,6 @@
 #include <DeviceManager.hpp>
 #include <VKThrowMacros.hpp>
+#include <algorithm>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -65,12 +66,22 @@ void DeviceManager::CreatePhysicalDevice(
 void DeviceManager::CreateLogicalDevice() {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(m_usableQueueFamilies.size());
 
-	static const float queuePriority = 1.0f;
+	auto highestQueueCount = std::max_element(
+		m_usableQueueFamilies.begin(), m_usableQueueFamilies.end(),
+		[](const QueueFamilyInfo& a, const QueueFamilyInfo& b) {
+			return a.queueRequired > b.queueRequired;
+		}
+	);
+
+	std::vector<float> queuePriorities(1, 1.0f);
+	if (highestQueueCount != m_usableQueueFamilies.end())
+		queuePriorities = std::vector<float>(highestQueueCount->queueRequired, 1.0f);
+
 	for (std::uint32_t index = 0u; index < queueCreateInfos.size(); ++index) {
 		queueCreateInfos[index].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfos[index].queueFamilyIndex = m_usableQueueFamilies[index].index;
 		queueCreateInfos[index].queueCount = m_usableQueueFamilies[index].queueRequired;
-		queueCreateInfos[index].pQueuePriorities = &queuePriority;
+		queueCreateInfos[index].pQueuePriorities = queuePriorities.data();
 	}
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
