@@ -8,6 +8,7 @@ public:
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 		std::uint32_t width, std::uint32_t height
 	);
+	~SwapChainManager() noexcept;
 
 	VkSwapchainKHR GetRef() const noexcept override;
 
@@ -25,5 +26,9 @@ private:
 
 private:
 	VkSwapchainKHR m_swapchain;
+	VkDevice m_deviceRef;
+	VkFormat m_swapchainFormat;
+	VkExtent2D m_swapchainExtent;
+	std::vector<VkImage> m_swapchainImages;
 };
 #endif
