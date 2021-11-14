@@ -102,6 +102,10 @@ VkPhysicalDevice DeviceManager::GetPhysicalDevice() const noexcept {
 	return m_physicalDevice;
 }
 
+VkDevice DeviceManager::GetLogicalDevice() const noexcept {
+	return m_logicalDevice;
+}
+
 std::uint32_t DeviceManager::GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept {
 	for (const QueueFamilyInfo& queueFamily : m_usableQueueFamilies)
 		if (queueFamily.typeFlags & queueType)
@@ -185,6 +189,10 @@ void DeviceManager::GetSwapchainCapabilities(
 			device, surface, &presentModeCount, details.presentModes.data()
 		);
 	}
+}
+
+SwapChainInfo DeviceManager::GetSwapChainInfo() const noexcept {
+	return m_swapchainInfo;
 }
 
 void DeviceManager::GetQueueFamilyInfo(

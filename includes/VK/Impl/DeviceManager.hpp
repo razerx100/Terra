@@ -16,6 +16,8 @@ public:
 	VkQueue GetQueue(VkQueueFlagBits type) noexcept override;
 
 	VkPhysicalDevice GetPhysicalDevice() const noexcept override;
+	VkDevice GetLogicalDevice() const noexcept override;
+	SwapChainInfo GetSwapChainInfo() const noexcept override;
 
 private:
 	struct QueueFamilyInfo {
@@ -23,16 +25,6 @@ private:
 		std::uint32_t queueRequired = 0u;
 		std::uint32_t queueCreated = 0u;
 		std::uint32_t typeFlags = 0u;
-	};
-
-	struct SwapChainInfo {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-
-		bool IsCapable() const noexcept {
-			return !formats.empty() && !presentModes.empty();
-		}
 	};
 
 private:

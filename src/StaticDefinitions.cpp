@@ -4,6 +4,7 @@
 #include <DeviceManager.hpp>
 #include <GraphicsQueueManager.hpp>
 #include <ISurfaceManager.hpp>
+#include <SwapChainManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
@@ -16,6 +17,8 @@ static IDeviceManager* s_pDeviceManager = nullptr;
 static IGraphicsQueueManager* s_pGraphicsQueueManager = nullptr;
 
 static ISurfaceManager* s_pSurfaceManager = nullptr;
+
+static ISwapChainManager* s_pSwapChainManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -116,4 +119,25 @@ void InitSurfaceManagerInstance(VkInstance instance, void* windowHandle, void* m
 void CleanUpSurfaceManagerInstance() noexcept {
 	if (s_pSurfaceManager)
 		delete s_pSurfaceManager;
+}
+
+// Swapchain Manager
+ISwapChainManager* GetSwapchainManagerInstance() noexcept {
+	return s_pSwapChainManager;
+}
+
+void InitSwapchainManagerInstance(
+	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
+	std::uint32_t width, std::uint32_t height
+) {
+	if (!s_pSwapChainManager)
+		s_pSwapChainManager = new SwapChainManager(
+			device, swapCapabilities, surface,
+			width, height
+		);
+}
+
+void CleanUpSwapchainManagerInstance() noexcept {
+	if (s_pSwapChainManager)
+		delete s_pSwapChainManager;
 }

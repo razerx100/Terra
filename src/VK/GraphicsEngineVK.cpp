@@ -3,6 +3,7 @@
 #include <ISurfaceManager.hpp>
 #include <IDeviceManager.hpp>
 #include <IGraphicsQueueManager.hpp>
+#include <ISwapChainManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -10,11 +11,13 @@ GraphicsEngineVK::GraphicsEngineVK(
 	std::uint32_t width, std::uint32_t height,
 	std::uint8_t bufferCount
 ) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName) {
+
 	InitInstanceManagerInstance(appName);
 
 	InitSurfaceManagerInstance(
 		GetInstanceManagerInstance()->GetVKInstance(), windowHandle, moduleHandle
 	);
+
 	InitDeviceManagerInstance();
 	IDeviceManager* deviceManagerRef = GetDeviceManagerInstance();
 	deviceManagerRef->CreatePhysicalDevice(
@@ -22,10 +25,19 @@ GraphicsEngineVK::GraphicsEngineVK(
 		GetSurfaceManagerInstance()->GetSurface()
 	);
 	deviceManagerRef->CreateLogicalDevice();
+
 	InitGraphicsQueueManagerInstance(deviceManagerRef->GetQueue(VK_QUEUE_GRAPHICS_BIT));
+
+	InitSwapchainManagerInstance(
+		deviceManagerRef->GetLogicalDevice(),
+		deviceManagerRef->GetSwapChainInfo(),
+		GetSurfaceManagerInstance()->GetSurface(),
+		width, height
+	);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
+	CleanUpSwapchainManagerInstance();
 	CleanUpGraphicsQueueManagerInstance();
 	CleanUpDeviceManagerInstance();
 	CleanUpSurfaceManagerInstance();
