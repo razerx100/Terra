@@ -39,9 +39,14 @@ SwapChainManager::SwapChainManager(
 	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
 	m_swapchainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_swapchainImages.data());
+
+	CreateImageViews(device);
 }
 
 SwapChainManager::~SwapChainManager() noexcept {
+	for (VkImageView imageView : m_swapchainImageViews)
+		vkDestroyImageView(m_deviceRef, imageView, nullptr);
+
 	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
 }
 
@@ -89,5 +94,31 @@ VkExtent2D SwapChainManager::ChooseSwapExtent(
 		);
 
 		return extent;
+	}
+}
+
+void SwapChainManager::CreateImageViews(VkDevice device) {
+	m_swapchainImageViews.resize(m_swapchainImages.size());
+
+	for (std::uint32_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
+		VkImageViewCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = m_swapchainImages[index];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = m_swapchainFormat;
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0u;
+		createInfo.subresourceRange.levelCount = 1u;
+		createInfo.subresourceRange.baseArrayLayer = 0u;
+		createInfo.subresourceRange.layerCount = 1u;
+
+		VkResult result;
+		VK_THROW_FAILED(result,
+			vkCreateImageView(device, &createInfo, nullptr, &m_swapchainImageViews[index])
+		);
 	}
 }

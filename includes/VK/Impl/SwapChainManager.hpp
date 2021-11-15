@@ -24,11 +24,14 @@ private:
 		std::uint32_t width, std::uint32_t height
 	) const noexcept;
 
+	void CreateImageViews(VkDevice device);
+
 private:
 	VkSwapchainKHR m_swapchain;
 	VkDevice m_deviceRef;
 	VkFormat m_swapchainFormat;
 	VkExtent2D m_swapchainExtent;
 	std::vector<VkImage> m_swapchainImages;
+	std::vector<VkImageView> m_swapchainImageViews;
 };
 #endif
