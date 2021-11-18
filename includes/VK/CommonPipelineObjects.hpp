@@ -1,7 +1,7 @@
 #ifndef __COMMON_PIPELINE_OBJECTS_HPP__
 #define __COMMON_PIPELINE_OBJECTS_HPP__
 #include <vulkan/vulkan.hpp>
-#include <vector>
+#include <span>
 
 void PopulateVertexInputStateCreateInfo(
 	VkPipelineVertexInputStateCreateInfo& createInfo
@@ -18,13 +18,13 @@ void PopulateViewport(
 
 void PopulateScissorRect(
 	VkRect2D& scissor,
-	const VkExtent2D& extent
+	std::uint32_t width, std::uint32_t height
 ) noexcept;
 
 void PopulateViewportStateCreateInfo(
 	VkPipelineViewportStateCreateInfo& createInfo,
-	const std::vector<VkViewport>& viewports,
-	const std::vector<VkRect2D>& scissors
+	const std::span<VkViewport> viewports,
+	const std::span<VkRect2D> scissors
 ) noexcept;
 
 void PopulateRasterizationStateCreateInfo(
@@ -41,11 +41,11 @@ void PopulateColorBlendAttachmentState(
 
 void PopulateColorBlendStateCreateInfo(
 	VkPipelineColorBlendStateCreateInfo& createInfo,
-	const std::vector<VkPipelineColorBlendAttachmentState>& attachmentStates
+	const std::span<VkPipelineColorBlendAttachmentState> attachmentStates
 ) noexcept;
 
 void PopulateDynamicStateCreateInfo(
 	VkPipelineDynamicStateCreateInfo& createInfo,
-	const std::vector<VkDynamicState>& dynamicStates
+	const std::span<VkDynamicState> dynamicStates
 ) noexcept;
 #endif

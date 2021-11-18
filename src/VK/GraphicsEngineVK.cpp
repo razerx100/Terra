@@ -4,6 +4,7 @@
 #include <IDeviceManager.hpp>
 #include <IGraphicsQueueManager.hpp>
 #include <ISwapChainManager.hpp>
+#include <GraphicsPipeline.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -34,9 +35,17 @@ GraphicsEngineVK::GraphicsEngineVK(
 		GetSurfaceManagerInstance()->GetSurface(),
 		width, height
 	);
+
+	m_pipeline = std::make_unique<GraphicsPipeline>(
+		deviceManagerRef->GetLogicalDevice()
+		);
+	m_pipeline->CreatePipelineLayout();
+	m_pipeline->CreateRenderPass();
+	m_pipeline->CreateGraphicsPipeline();
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
+	m_pipeline.release();
 	CleanUpSwapchainManagerInstance();
 	CleanUpGraphicsQueueManagerInstance();
 	CleanUpDeviceManagerInstance();

@@ -54,6 +54,14 @@ VkSwapchainKHR SwapChainManager::GetRef() const noexcept {
 	return m_swapchain;
 }
 
+VkExtent2D SwapChainManager::GetSwapExtent() const noexcept {
+	return m_swapchainExtent;
+}
+
+VkFormat SwapChainManager::GetSwapFormat() const noexcept {
+	return m_swapchainFormat;
+}
+
 VkSurfaceFormatKHR SwapChainManager::ChooseSurfaceFormat(
 	const std::vector<VkSurfaceFormatKHR>& availableFormats
 ) const noexcept {

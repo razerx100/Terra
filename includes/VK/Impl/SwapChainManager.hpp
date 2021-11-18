@@ -11,6 +11,8 @@ public:
 	~SwapChainManager() noexcept;
 
 	VkSwapchainKHR GetRef() const noexcept override;
+	VkExtent2D GetSwapExtent() const noexcept override;
+	VkFormat GetSwapFormat() const noexcept override;
 
 private:
 	VkSurfaceFormatKHR ChooseSurfaceFormat(

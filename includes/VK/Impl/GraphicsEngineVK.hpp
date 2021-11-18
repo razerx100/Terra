@@ -2,6 +2,7 @@
 #define __GRAPHICS_ENGINE_VK_HPP__
 #include <GraphicsEngine.hpp>
 #include <string>
+#include <memory>
 
 class GraphicsEngineVK : public GraphicsEngine {
 public:
@@ -21,7 +22,8 @@ public:
 
 private:
 	Color m_backgroundColor;
-
 	const std::string m_appName;
+
+	std::unique_ptr<class GraphicsPipeline> m_pipeline;
 };
 #endif

@@ -35,17 +35,18 @@ void PopulateViewport(
 
 void PopulateScissorRect(
 	VkRect2D& scissor,
-	const VkExtent2D& extent
+	std::uint32_t width, std::uint32_t height
 ) noexcept {
 	scissor = {};
 	scissor.offset = { 0, 0 };
-	scissor.extent = extent;
+	scissor.extent.width = width;
+	scissor.extent.height = height;
 }
 
 void PopulateViewportStateCreateInfo(
 	VkPipelineViewportStateCreateInfo& createInfo,
-	const std::vector<VkViewport>& viewports,
-	const std::vector<VkRect2D>& scissors
+	const std::span<VkViewport> viewports,
+	const std::span<VkRect2D> scissors
 ) noexcept {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -102,7 +103,7 @@ void PopulateColorBlendAttachmentState(
 
 void PopulateColorBlendStateCreateInfo(
 	VkPipelineColorBlendStateCreateInfo& createInfo,
-	const std::vector<VkPipelineColorBlendAttachmentState>& attachmentStates
+	const std::span<VkPipelineColorBlendAttachmentState> attachmentStates
 ) noexcept {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -118,7 +119,7 @@ void PopulateColorBlendStateCreateInfo(
 
 void PopulateDynamicStateCreateInfo(
 	VkPipelineDynamicStateCreateInfo& createInfo,
-	const std::vector<VkDynamicState>& dynamicStates
+	const std::span<VkDynamicState> dynamicStates
 ) noexcept {
 	createInfo = {};
 	createInfo.dynamicStateCount = static_cast<std::uint32_t>(dynamicStates.size());
