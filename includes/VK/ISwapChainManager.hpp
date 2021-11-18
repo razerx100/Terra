@@ -16,7 +16,7 @@ public:
 ISwapChainManager* GetSwapchainManagerInstance() noexcept;
 void InitSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height
+	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
 );
 void CleanUpSwapchainManagerInstance() noexcept;
 #endif

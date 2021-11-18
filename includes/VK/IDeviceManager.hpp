@@ -1,6 +1,7 @@
 #ifndef __I_DEVICE_MANAGER_HPP__
 #define __I_DEVICE_MANAGER_HPP__
 #include <vulkan/vulkan.hpp>
+#include <vector>
 
 struct SwapChainInfo {
 	VkSurfaceCapabilitiesKHR capabilities;
@@ -10,6 +11,11 @@ struct SwapChainInfo {
 	bool IsCapable() const noexcept {
 		return !formats.empty() && !presentModes.empty();
 	}
+};
+
+struct QueueData {
+	VkQueue queueHandle;
+	std::uint32_t queueFamilyIndex;
 };
 
 class IDeviceManager {
@@ -22,7 +28,7 @@ public:
 	) = 0;
 	virtual void CreateLogicalDevice() = 0;
 
-	virtual VkQueue GetQueue(VkQueueFlagBits type) noexcept = 0;
+	virtual QueueData GetQueue(VkQueueFlagBits type) noexcept = 0;
 
 	virtual VkPhysicalDevice GetPhysicalDevice() const noexcept = 0;
 	virtual VkDevice GetLogicalDevice() const noexcept = 0;

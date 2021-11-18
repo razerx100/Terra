@@ -4,7 +4,7 @@
 #include <IDeviceManager.hpp>
 #include <IGraphicsQueueManager.hpp>
 #include <ISwapChainManager.hpp>
-#include <GraphicsPipeline.hpp>
+#include <ICommandPoolManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -27,25 +27,29 @@ GraphicsEngineVK::GraphicsEngineVK(
 	);
 	deviceManagerRef->CreateLogicalDevice();
 
-	InitGraphicsQueueManagerInstance(deviceManagerRef->GetQueue(VK_QUEUE_GRAPHICS_BIT));
+	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = deviceManagerRef->GetQueue(
+		VK_QUEUE_GRAPHICS_BIT
+	);
+	InitGraphicsQueueManagerInstance(
+		graphicsQueueHandle
+	);
 
 	InitSwapchainManagerInstance(
 		deviceManagerRef->GetLogicalDevice(),
 		deviceManagerRef->GetSwapChainInfo(),
 		GetSurfaceManagerInstance()->GetSurface(),
-		width, height
+		width, height, bufferCount
 	);
 
-	m_pipeline = std::make_unique<GraphicsPipeline>(
-		deviceManagerRef->GetLogicalDevice()
-		);
-	m_pipeline->CreatePipelineLayout();
-	m_pipeline->CreateRenderPass();
-	m_pipeline->CreateGraphicsPipeline();
+	InitGraphicsPoolManagerInstance(
+		deviceManagerRef->GetLogicalDevice(),
+		graphicsQueueFamilyIndex,
+		bufferCount
+	);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
-	m_pipeline.release();
+	CleanUpGraphicsPoolManagerInstance();
 	CleanUpSwapchainManagerInstance();
 	CleanUpGraphicsQueueManagerInstance();
 	CleanUpDeviceManagerInstance();
@@ -54,7 +58,7 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 }
 
 void GraphicsEngineVK::SetBackgroundColor(Color color) noexcept {
-
+	m_backgroundColor = color;
 }
 
 void GraphicsEngineVK::SubmitCommands() {

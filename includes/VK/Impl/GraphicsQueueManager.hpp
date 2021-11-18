@@ -6,7 +6,7 @@ class GraphicsQueueManager : public IGraphicsQueueManager {
 public:
 	GraphicsQueueManager(VkQueue queue);
 
-	VkQueue GetQueue() const noexcept override;
+	void SubmitCommandBuffer(VkCommandBuffer commandBuffer) override;
 
 private:
 	VkQueue m_graphicsQueue;

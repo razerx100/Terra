@@ -23,7 +23,5 @@ public:
 private:
 	Color m_backgroundColor;
 	const std::string m_appName;
-
-	std::unique_ptr<class GraphicsPipeline> m_pipeline;
 };
 #endif

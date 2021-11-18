@@ -5,6 +5,7 @@
 #include <GraphicsQueueManager.hpp>
 #include <ISurfaceManager.hpp>
 #include <SwapChainManager.hpp>
+#include <CommandPoolManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
@@ -19,6 +20,8 @@ static IGraphicsQueueManager* s_pGraphicsQueueManager = nullptr;
 static ISurfaceManager* s_pSurfaceManager = nullptr;
 
 static ISwapChainManager* s_pSwapChainManager = nullptr;
+
+static ICommandPoolManager* s_pGraphicsPoolManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -128,16 +131,35 @@ ISwapChainManager* GetSwapchainManagerInstance() noexcept {
 
 void InitSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height
+	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
 ) {
 	if (!s_pSwapChainManager)
 		s_pSwapChainManager = new SwapChainManager(
 			device, swapCapabilities, surface,
-			width, height
+			width, height, bufferCount
 		);
 }
 
 void CleanUpSwapchainManagerInstance() noexcept {
 	if (s_pSwapChainManager)
 		delete s_pSwapChainManager;
+}
+
+// Graphics Pool Manager
+ICommandPoolManager* GetGraphicsPoolManagerInstance() noexcept {
+	return s_pGraphicsPoolManager;
+}
+
+void InitGraphicsPoolManagerInstance(
+	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
+) {
+	if (!s_pGraphicsPoolManager)
+		s_pGraphicsPoolManager = new CommandPoolManager(
+			device, queueIndex, bufferCount
+		);
+}
+
+void CleanUpGraphicsPoolManagerInstance() noexcept {
+	if (s_pGraphicsPoolManager)
+		delete s_pGraphicsPoolManager;
 }

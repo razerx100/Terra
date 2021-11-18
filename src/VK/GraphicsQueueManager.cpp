@@ -3,7 +3,6 @@
 GraphicsQueueManager::GraphicsQueueManager(VkQueue queue)
 	: m_graphicsQueue(queue) {}
 
+void GraphicsQueueManager::SubmitCommandBuffer(VkCommandBuffer commandBuffer) {
 
-VkQueue GraphicsQueueManager::GetQueue() const noexcept {
-	return m_graphicsQueue;
 }

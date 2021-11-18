@@ -6,7 +6,7 @@ class SwapChainManager : public ISwapChainManager {
 public:
 	SwapChainManager(
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-		std::uint32_t width, std::uint32_t height
+		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
 	);
 	~SwapChainManager() noexcept;
 

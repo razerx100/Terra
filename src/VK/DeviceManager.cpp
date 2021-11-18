@@ -126,7 +126,7 @@ std::uint32_t DeviceManager::GetIndexOfQueueFamily(VkQueueFlagBits queueType) co
 	return 0u;
 }
 
-VkQueue DeviceManager::GetQueue(VkQueueFlagBits type) noexcept {
+QueueData DeviceManager::GetQueue(VkQueueFlagBits type) noexcept {
 	std::uint32_t familyIndex = GetIndexOfQueueFamily(type);
 	VkQueue queue;
 
@@ -135,7 +135,7 @@ VkQueue DeviceManager::GetQueue(VkQueueFlagBits type) noexcept {
 		m_usableQueueFamilies[familyIndex].queueCreated++, &queue
 	);
 
-	return queue;
+	return { queue, familyIndex };
 }
 
 bool DeviceManager::CheckPresentSupport(

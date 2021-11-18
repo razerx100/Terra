@@ -1,7 +1,6 @@
 #ifndef __DEVICE_MANAGER_HPP__
 #define __DEVICE_MANAGER_HPP__
 #include <IDeviceManager.hpp>
-#include <vector>
 
 class DeviceManager : public IDeviceManager {
 public:
@@ -13,7 +12,7 @@ public:
 	) override;
 	void CreateLogicalDevice() override;
 
-	VkQueue GetQueue(VkQueueFlagBits type) noexcept override;
+	QueueData GetQueue(VkQueueFlagBits type) noexcept override;
 
 	VkPhysicalDevice GetPhysicalDevice() const noexcept override;
 	VkDevice GetLogicalDevice() const noexcept override;

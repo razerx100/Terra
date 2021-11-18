@@ -3,7 +3,7 @@
 
 SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height
+	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
 ) : m_deviceRef(device) {
 	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(swapCapabilities.formats);
 	VkPresentModeKHR swapPresentMode = ChoosePresentMode(swapCapabilities.presentModes);
@@ -12,7 +12,7 @@ SwapChainManager::SwapChainManager(
 	m_swapchainExtent = swapExtent;
 	m_swapchainFormat = swapFormat.format;
 
-	std::uint32_t imageCount = swapCapabilities.capabilities.minImageCount + 1;
+	std::uint32_t imageCount = bufferCount;
 	if (swapCapabilities.capabilities.maxImageCount > 0
 		&& swapCapabilities.capabilities.maxImageCount < imageCount)
 		imageCount = swapCapabilities.capabilities.maxImageCount;
