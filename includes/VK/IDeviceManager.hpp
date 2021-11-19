@@ -18,6 +18,13 @@ struct QueueData {
 	std::uint32_t queueFamilyIndex;
 };
 
+enum QueueType {
+	TransferQueue = 1,
+	ComputeQueue = 2,
+	GraphicsQueue = 4,
+	PresentQueue = 8
+};
+
 class IDeviceManager {
 public:
 	virtual ~IDeviceManager() = default;
@@ -28,7 +35,7 @@ public:
 	) = 0;
 	virtual void CreateLogicalDevice() = 0;
 
-	virtual QueueData GetQueue(VkQueueFlagBits type) noexcept = 0;
+	virtual QueueData GetQueue(QueueType type) noexcept = 0;
 
 	virtual VkPhysicalDevice GetPhysicalDevice() const noexcept = 0;
 	virtual VkDevice GetLogicalDevice() const noexcept = 0;

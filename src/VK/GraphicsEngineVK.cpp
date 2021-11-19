@@ -28,7 +28,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 	deviceManagerRef->CreateLogicalDevice();
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = deviceManagerRef->GetQueue(
-		VK_QUEUE_GRAPHICS_BIT
+		QueueType::GraphicsQueue
 	);
 	InitGraphicsQueueManagerInstance(
 		graphicsQueueHandle

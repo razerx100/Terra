@@ -12,7 +12,7 @@ public:
 	) override;
 	void CreateLogicalDevice() override;
 
-	QueueData GetQueue(VkQueueFlagBits type) noexcept override;
+	QueueData GetQueue(QueueType type) noexcept override;
 
 	VkPhysicalDevice GetPhysicalDevice() const noexcept override;
 	VkDevice GetLogicalDevice() const noexcept override;
@@ -21,9 +21,9 @@ public:
 private:
 	struct QueueFamilyInfo {
 		std::uint32_t index = 0u;
+		std::uint32_t typeFlags = 0u;
 		std::uint32_t queueRequired = 0u;
 		std::uint32_t queueCreated = 0u;
-		std::uint32_t typeFlags = 0u;
 	};
 
 private:
@@ -40,10 +40,10 @@ private:
 		VkPhysicalDevice device
 	) const noexcept;
 
-	void GetQueueFamilyInfo(
+	void GetQueueSupportInfo(
 		VkPhysicalDevice device,
 		VkSurfaceKHR surface,
-		std::vector<QueueFamilyInfo>& familyInfos
+		std::vector<std::pair<std::uint32_t, QueueType>>& familyInfos
 	) const noexcept;
 	void GetSwapchainCapabilities(
 		VkPhysicalDevice device,
@@ -51,7 +51,9 @@ private:
 		SwapChainInfo& details
 	) const noexcept;
 
-	std::uint32_t GetIndexOfQueueFamily(VkQueueFlagBits queueType) const noexcept;
+	void SetQueueFamilyInfo(
+		std::vector<std::pair<std::uint32_t, QueueType>>& familyInfos
+	) noexcept;
 
 private:
 	VkPhysicalDevice m_physicalDevice;
