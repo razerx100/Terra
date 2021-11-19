@@ -328,5 +328,5 @@ void DeviceManager::GetQueueSupportInfo(
 	}
 
 	if (graphics && present && compute && transfer)
-		std::copy(tempData.begin(), tempData.end(), familyInfos.begin());
+		std::copy(tempData.begin(), tempData.end(), std::back_inserter(familyInfos));
 }
