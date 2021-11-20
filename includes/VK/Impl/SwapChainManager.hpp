@@ -13,6 +13,7 @@ public:
 	VkSwapchainKHR GetRef() const noexcept override;
 	VkExtent2D GetSwapExtent() const noexcept override;
 	VkFormat GetSwapFormat() const noexcept override;
+	std::uint32_t GetAvailableImageIndex() const noexcept override;
 
 private:
 	VkSurfaceFormatKHR ChooseSurfaceFormat(

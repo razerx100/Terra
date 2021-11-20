@@ -5,6 +5,7 @@
 #include <IGraphicsQueueManager.hpp>
 #include <ISwapChainManager.hpp>
 #include <ICommandPoolManager.hpp>
+#include <SyncObjects.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -34,16 +35,23 @@ GraphicsEngineVK::GraphicsEngineVK(
 		graphicsQueueHandle
 	);
 
+	VkDevice logicalDevice = deviceManagerRef->GetLogicalDevice();
+
 	InitSwapchainManagerInstance(
-		deviceManagerRef->GetLogicalDevice(),
+		logicalDevice,
 		deviceManagerRef->GetSwapChainInfo(),
 		GetSurfaceManagerInstance()->GetSurface(),
 		width, height, bufferCount
 	);
 
 	InitGraphicsPoolManagerInstance(
-		deviceManagerRef->GetLogicalDevice(),
+		logicalDevice,
 		graphicsQueueFamilyIndex,
+		bufferCount
+	);
+
+	InitSyncObjectsInstance(
+		logicalDevice,
 		bufferCount
 	);
 }
@@ -52,6 +60,7 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	CleanUpGraphicsPoolManagerInstance();
 	CleanUpSwapchainManagerInstance();
 	CleanUpGraphicsQueueManagerInstance();
+	CleanUpSyncObjectsInstance();
 	CleanUpDeviceManagerInstance();
 	CleanUpSurfaceManagerInstance();
 	CleanUpInstanceManagerInstance();
@@ -75,4 +84,10 @@ void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 SRect GraphicsEngineVK::GetMonitorCoordinates() {
 	return SRect{};
+}
+
+void GraphicsEngineVK::WaitForAsyncTasks() {
+	vkDeviceWaitIdle(
+		GetDeviceManagerInstance()->GetLogicalDevice()
+	);
 }

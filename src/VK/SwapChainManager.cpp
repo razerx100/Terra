@@ -1,5 +1,6 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
+#include <ISyncObjects.hpp>
 
 SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
@@ -129,4 +130,18 @@ void SwapChainManager::CreateImageViews(VkDevice device) {
 			vkCreateImageView(device, &createInfo, nullptr, &m_swapchainImageViews[index])
 		);
 	}
+}
+
+std::uint32_t SwapChainManager::GetAvailableImageIndex() const noexcept {
+	std::uint32_t imageIndex;
+	vkAcquireNextImageKHR(
+		m_deviceRef,
+		m_swapchain,
+		UINT64_MAX,
+		GetSyncObjectsInstance()->GetImageAvailableSemaphore(),
+		VK_NULL_HANDLE,
+		&imageIndex
+	);
+
+	return imageIndex;
 }

@@ -19,6 +19,7 @@ public:
 	void Render() override;
 	void Resize(std::uint32_t width, std::uint32_t height) override;
 	SRect GetMonitorCoordinates() override;
+	void WaitForAsyncTasks() override;
 
 private:
 	Color m_backgroundColor;

@@ -6,6 +6,7 @@
 #include <ISurfaceManager.hpp>
 #include <SwapChainManager.hpp>
 #include <CommandPoolManager.hpp>
+#include <SyncObjects.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
@@ -22,6 +23,8 @@ static ISurfaceManager* s_pSurfaceManager = nullptr;
 static ISwapChainManager* s_pSwapChainManager = nullptr;
 
 static ICommandPoolManager* s_pGraphicsPoolManager = nullptr;
+
+static ISyncObjects* s_pSyncObjects = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -162,4 +165,19 @@ void InitGraphicsPoolManagerInstance(
 void CleanUpGraphicsPoolManagerInstance() noexcept {
 	if (s_pGraphicsPoolManager)
 		delete s_pGraphicsPoolManager;
+}
+
+// Sync Objects
+ISyncObjects* GetSyncObjectsInstance() noexcept {
+	return s_pSyncObjects;
+}
+
+void InitSyncObjectsInstance(VkDevice device, std::uint32_t bufferCount) {
+	if (!s_pSyncObjects)
+		s_pSyncObjects = new SyncObjects(device, bufferCount);
+}
+
+void CleanUpSyncObjectsInstance() noexcept {
+	if (s_pSyncObjects)
+		delete s_pSyncObjects;
 }
