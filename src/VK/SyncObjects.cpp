@@ -34,8 +34,9 @@ SyncObjects::SyncObjects(VkDevice device, std::uint32_t bufferCount)
 SyncObjects::~SyncObjects() noexcept {
 	for (std::uint32_t index = 0u; index < m_imageAvailable.size(); ++index) {
 		vkDestroySemaphore(m_deviceRef, m_imageAvailable[index], nullptr);
-
 		vkDestroySemaphore(m_deviceRef, m_renderFinished[index], nullptr);
+
+		vkDestroyFence(m_deviceRef, m_fences[index], nullptr);
 	}
 }
 
