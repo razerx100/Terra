@@ -176,6 +176,7 @@ void SwapChainManager::GetUndefinedToTransferBarrier(
 	subResourceRange.baseArrayLayer = 0;
 	subResourceRange.layerCount = 1u;
 
+	transferBarrier = {};
 	transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	transferBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	transferBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -198,6 +199,7 @@ void SwapChainManager::GetTransferToPresentBarrier(
 	subResourceRange.baseArrayLayer = 0;
 	subResourceRange.layerCount = 1u;
 
+	presentBarrier = {};
 	presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	presentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	presentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
