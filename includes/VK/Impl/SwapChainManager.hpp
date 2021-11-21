@@ -20,11 +20,13 @@ public:
 
 	void PresentImage(std::uint32_t imageIndex) override;
 
-	VkImageMemoryBarrier GetPresentToRenderBarrier(
-		std::uint32_t imageIndex
+	void GetUndefinedToTransferBarrier(
+		std::uint32_t imageIndex,
+		VkImageMemoryBarrier& transferBarrier
 	) const noexcept override;
-	VkImageMemoryBarrier GetRenderToPresentBarrier(
-		std::uint32_t imageIndex
+	void GetTransferToPresentBarrier(
+		std::uint32_t imageIndex,
+		VkImageMemoryBarrier& presentBarrier
 	) const noexcept override;
 
 private:

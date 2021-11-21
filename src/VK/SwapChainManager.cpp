@@ -165,8 +165,9 @@ void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
 	);
 }
 
-VkImageMemoryBarrier SwapChainManager::GetPresentToRenderBarrier(
-	std::uint32_t imageIndex
+void SwapChainManager::GetUndefinedToTransferBarrier(
+	std::uint32_t imageIndex,
+	VkImageMemoryBarrier& transferBarrier
 ) const noexcept {
 	VkImageSubresourceRange subResourceRange = {};
 	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -175,22 +176,20 @@ VkImageMemoryBarrier SwapChainManager::GetPresentToRenderBarrier(
 	subResourceRange.baseArrayLayer = 0;
 	subResourceRange.layerCount = 1u;
 
-	VkImageMemoryBarrier barrier = {};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barrier.srcQueueFamilyIndex = m_presentFamilyIndex;
-	barrier.dstQueueFamilyIndex = m_presentFamilyIndex;
-	barrier.image = m_swapchainImages[imageIndex];
-	barrier.subresourceRange = subResourceRange;
-
-	return barrier;
+	transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	transferBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	transferBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	transferBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	transferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	transferBarrier.srcQueueFamilyIndex = m_presentFamilyIndex;
+	transferBarrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+	transferBarrier.image = m_swapchainImages[imageIndex];
+	transferBarrier.subresourceRange = subResourceRange;
 }
 
-VkImageMemoryBarrier SwapChainManager::GetRenderToPresentBarrier(
-	std::uint32_t imageIndex
+void SwapChainManager::GetTransferToPresentBarrier(
+	std::uint32_t imageIndex,
+	VkImageMemoryBarrier& presentBarrier
 ) const noexcept {
 	VkImageSubresourceRange subResourceRange = {};
 	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -199,18 +198,15 @@ VkImageMemoryBarrier SwapChainManager::GetRenderToPresentBarrier(
 	subResourceRange.baseArrayLayer = 0;
 	subResourceRange.layerCount = 1u;
 
-	VkImageMemoryBarrier barrier = {};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	barrier.srcQueueFamilyIndex = m_presentFamilyIndex;
-	barrier.dstQueueFamilyIndex = m_presentFamilyIndex;
-	barrier.image = m_swapchainImages[imageIndex];
-	barrier.subresourceRange = subResourceRange;
-
-	return barrier;
+	presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	presentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	presentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	presentBarrier.srcQueueFamilyIndex = m_presentFamilyIndex;
+	presentBarrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+	presentBarrier.image = m_swapchainImages[imageIndex];
+	presentBarrier.subresourceRange = subResourceRange;
 }
 
 VkImage SwapChainManager::GetImage(std::uint32_t imageIndex) const noexcept {
@@ -222,24 +218,4 @@ void SwapChainManager::ProcessImages(VkDevice device) {
 	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
 	m_swapchainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_swapchainImages.data());
-
-	VkImageSubresourceRange subResourceRange = {};
-	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subResourceRange.baseMipLevel = 0;
-	subResourceRange.levelCount = 1u;
-	subResourceRange.baseArrayLayer = 0;
-	subResourceRange.layerCount = 1u;
-
-	for (VkImage image : m_swapchainImages) {
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		barrier.srcQueueFamilyIndex = m_presentFamilyIndex;
-		barrier.dstQueueFamilyIndex = m_presentFamilyIndex;
-		barrier.image = image;
-		barrier.subresourceRange = subResourceRange;
-	}
 }

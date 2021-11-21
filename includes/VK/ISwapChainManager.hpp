@@ -16,11 +16,13 @@ public:
 
 	virtual void PresentImage(std::uint32_t imageIndex) = 0;
 
-	virtual VkImageMemoryBarrier GetPresentToRenderBarrier(
-		std::uint32_t imageIndex
+	virtual void GetUndefinedToTransferBarrier(
+		std::uint32_t imageIndex,
+		VkImageMemoryBarrier& transferBarrier
 	) const noexcept = 0;
-	virtual VkImageMemoryBarrier GetRenderToPresentBarrier(
-		std::uint32_t imageIndex
+	virtual void GetTransferToPresentBarrier(
+		std::uint32_t imageIndex,
+		VkImageMemoryBarrier& presentBarrier
 	) const noexcept = 0;
 };
 

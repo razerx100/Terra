@@ -31,6 +31,5 @@ private:
 
 	VkViewport m_viewport;
 	VkRect2D m_scissorRect;
-	VkImageSubresourceRange m_subResourceRange;
 };
 #endif

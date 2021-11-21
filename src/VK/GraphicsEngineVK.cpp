@@ -13,7 +13,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	std::uint8_t bufferCount
-) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName), m_subResourceRange{} {
+) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName) {
 
 	SetScissorAndViewport(width, height);
 
@@ -63,13 +63,6 @@ GraphicsEngineVK::GraphicsEngineVK(
 		logicalDevice,
 		bufferCount
 	);
-
-	m_subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	m_subResourceRange.baseMipLevel = 0;
-	m_subResourceRange.levelCount = 1u;
-	m_subResourceRange.baseArrayLayer = 0;
-	m_subResourceRange.layerCount = 1u;
-
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
@@ -105,19 +98,26 @@ void GraphicsEngineVK::Render() {
 	vkCmdSetViewport(commandBuffer, 0u, 1u, &m_viewport);
 	vkCmdSetScissor(commandBuffer, 0u, 1u, &m_scissorRect);
 
-	VkImageMemoryBarrier renderBarrier = swapchainRef->GetPresentToRenderBarrier(imageIndex);
+	VkImageMemoryBarrier transferBarrier;
+	swapchainRef->GetUndefinedToTransferBarrier(imageIndex, transferBarrier);
 	vkCmdPipelineBarrier(
 		commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0, 0, nullptr, 0, nullptr, 1u, &renderBarrier
+		0, 0, nullptr, 0, nullptr, 1u, &transferBarrier
 	);
+
+	static VkImageSubresourceRange subResourceRange = {
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		0, 1u, 0, 1u
+	};
 
 	vkCmdClearColorImage(
 		commandBuffer, swapchainRef->GetImage(imageIndex),
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &m_backgroundColor,
-		1u, &m_subResourceRange
+		1u, &subResourceRange
 	);
 
-	VkImageMemoryBarrier presentBarrier = swapchainRef->GetRenderToPresentBarrier(imageIndex);
+	VkImageMemoryBarrier presentBarrier;
+	swapchainRef->GetTransferToPresentBarrier(imageIndex, presentBarrier);
 	vkCmdPipelineBarrier(
 		commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 		0, 0, nullptr, 0, nullptr, 1u, &presentBarrier
