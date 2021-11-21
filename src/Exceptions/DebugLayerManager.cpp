@@ -54,7 +54,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void* pUserData
 ) {
-	std::ofstream log("ErrorLog.txt");
+	std::ofstream log("ErrorLog.txt", std::ios_base::app | std::ios_base::out);
 	log << pCallbackData->pMessage << std::endl;
 
 	return VK_FALSE;

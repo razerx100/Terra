@@ -40,6 +40,7 @@ private:
 	) const noexcept;
 
 	void CreateImageViews(VkDevice device);
+	void ProcessImages(VkDevice device);
 
 private:
 	VkSwapchainKHR m_swapchain;

@@ -38,9 +38,7 @@ SwapChainManager::SwapChainManager(
 	VkResult result;
 	VK_THROW_FAILED(result, vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
 
-	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
-	m_swapchainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_swapchainImages.data());
+	ProcessImages(device);
 
 	CreateImageViews(device);
 }
@@ -217,4 +215,31 @@ VkImageMemoryBarrier SwapChainManager::GetRenderToPresentBarrier(
 
 VkImage SwapChainManager::GetImage(std::uint32_t imageIndex) const noexcept {
 	return m_swapchainImages[imageIndex];
+}
+
+void SwapChainManager::ProcessImages(VkDevice device) {
+	std::uint32_t imageCount;
+	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
+	m_swapchainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_swapchainImages.data());
+
+	VkImageSubresourceRange subResourceRange = {};
+	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subResourceRange.baseMipLevel = 0;
+	subResourceRange.levelCount = 1u;
+	subResourceRange.baseArrayLayer = 0;
+	subResourceRange.layerCount = 1u;
+
+	for (VkImage image : m_swapchainImages) {
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		barrier.srcQueueFamilyIndex = m_presentFamilyIndex;
+		barrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+		barrier.image = image;
+		barrier.subresourceRange = subResourceRange;
+	}
 }
