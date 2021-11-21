@@ -7,9 +7,9 @@ class ICommandPoolManager {
 public:
 	virtual ~ICommandPoolManager() = default;
 
-	virtual void Reset(std::uint32_t allocIndex) = 0;
-	virtual void Close() = 0;
-	virtual VkCommandBuffer GetCommandBuffer() const noexcept = 0;
+	virtual void Reset(std::uint32_t bufferIndex) = 0;
+	virtual void Close(std::uint32_t bufferIndex) = 0;
+	virtual VkCommandBuffer GetCommandBuffer(std::uint32_t bufferIndex) const noexcept = 0;
 };
 
 ICommandPoolManager* GetGraphicsPoolManagerInstance() noexcept;

@@ -5,7 +5,7 @@
 CommandPoolManager::CommandPoolManager(
 	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
 ) : m_deviceRef(device), m_commandBuffers(bufferCount),
-	m_beginInfo{}, m_currentBufferIndex(0u) {
+	m_beginInfo{} {
 
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -36,22 +36,20 @@ CommandPoolManager::~CommandPoolManager() noexcept {
 	vkDestroyCommandPool(m_deviceRef, m_commandPool, nullptr);
 }
 
-void CommandPoolManager::Reset(std::uint32_t allocIndex) {
-	m_currentBufferIndex = allocIndex;
-
+void CommandPoolManager::Reset(std::uint32_t bufferIndex) {
 	VkResult result;
 	VK_THROW_FAILED(result,
-		vkBeginCommandBuffer(m_commandBuffers[m_currentBufferIndex], &m_beginInfo)
+		vkBeginCommandBuffer(m_commandBuffers[bufferIndex], &m_beginInfo)
 	);
 }
 
-void CommandPoolManager::Close() {
+void CommandPoolManager::Close(std::uint32_t bufferIndex) {
 	VkResult result;
 	VK_THROW_FAILED(result,
-		vkEndCommandBuffer(m_commandBuffers[m_currentBufferIndex])
+		vkEndCommandBuffer(m_commandBuffers[bufferIndex])
 	);
 }
 
-VkCommandBuffer CommandPoolManager::GetCommandBuffer() const noexcept {
-	return m_commandBuffers[m_currentBufferIndex];
+VkCommandBuffer CommandPoolManager::GetCommandBuffer(std::uint32_t bufferIndex) const noexcept {
+	return m_commandBuffers[bufferIndex];
 }

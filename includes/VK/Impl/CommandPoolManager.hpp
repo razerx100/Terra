@@ -10,15 +10,14 @@ public:
 	);
 	~CommandPoolManager() noexcept;
 
-	void Reset(std::uint32_t allocIndex) override;
-	void Close() override;
-	VkCommandBuffer GetCommandBuffer() const noexcept override;
+	void Reset(std::uint32_t bufferIndex) override;
+	void Close(std::uint32_t bufferIndex) override;
+	VkCommandBuffer GetCommandBuffer(std::uint32_t bufferIndex) const noexcept override;
 
 private:
 	VkDevice m_deviceRef;
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	VkCommandBufferBeginInfo m_beginInfo;
-	std::uint32_t m_currentBufferIndex;
 };
 #endif

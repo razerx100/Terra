@@ -100,7 +100,7 @@ void GraphicsEngineVK::Render() {
 	std::uint32_t imageIndex = swapchainRef->GetAvailableImageIndex();
 	commandPoolRef->Reset(imageIndex);
 
-	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer();
+	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer(imageIndex);
 
 	vkCmdSetViewport(commandBuffer, 0u, 1u, &m_viewport);
 	vkCmdSetScissor(commandBuffer, 0u, 1u, &m_scissorRect);
@@ -123,7 +123,7 @@ void GraphicsEngineVK::Render() {
 		0, 0, nullptr, 0, nullptr, 1u, &presentBarrier
 	);
 
-	commandPoolRef->Close();
+	commandPoolRef->Close(imageIndex);
 
 	graphicsQueueRef->SubmitCommandBuffer(commandBuffer);
 	swapchainRef->PresentImage(imageIndex);
