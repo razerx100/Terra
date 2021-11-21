@@ -4,8 +4,9 @@
 
 SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
-) : m_deviceRef(device) {
+	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
+	VkQueue presentQueue, std::uint32_t queueFamily
+) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily) {
 	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(swapCapabilities.formats);
 	VkPresentModeKHR swapPresentMode = ChoosePresentMode(swapCapabilities.presentModes);
 	VkExtent2D swapExtent = ChooseSwapExtent(swapCapabilities.capabilities, width, height);
@@ -144,4 +145,76 @@ std::uint32_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 	);
 
 	return imageIndex;
+}
+
+void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	VkSemaphore signalSemaphores[] = { GetSyncObjectsInstance()->GetRenderFinishedSemaphore() };
+	presentInfo.waitSemaphoreCount = std::size(signalSemaphores);
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapchains[] = { m_swapchain };
+	presentInfo.swapchainCount = std::size(swapchains);
+	presentInfo.pSwapchains = swapchains;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr;
+
+	VkResult result;
+	VK_THROW_FAILED(result,
+		vkQueuePresentKHR(m_presentQueue, &presentInfo)
+	);
+}
+
+VkImageMemoryBarrier SwapChainManager::GetPresentToRenderBarrier(
+	std::uint32_t imageIndex
+) const noexcept {
+	VkImageSubresourceRange subResourceRange = {};
+	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subResourceRange.baseMipLevel = 0;
+	subResourceRange.levelCount = 1u;
+	subResourceRange.baseArrayLayer = 0;
+	subResourceRange.layerCount = 1u;
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.srcQueueFamilyIndex = m_presentFamilyIndex;
+	barrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+	barrier.image = m_swapchainImages[imageIndex];
+	barrier.subresourceRange = subResourceRange;
+
+	return barrier;
+}
+
+VkImageMemoryBarrier SwapChainManager::GetRenderToPresentBarrier(
+	std::uint32_t imageIndex
+) const noexcept {
+	VkImageSubresourceRange subResourceRange = {};
+	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subResourceRange.baseMipLevel = 0;
+	subResourceRange.levelCount = 1u;
+	subResourceRange.baseArrayLayer = 0;
+	subResourceRange.layerCount = 1u;
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	barrier.srcQueueFamilyIndex = m_presentFamilyIndex;
+	barrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+	barrier.image = m_swapchainImages[imageIndex];
+	barrier.subresourceRange = subResourceRange;
+
+	return barrier;
+}
+
+VkImage SwapChainManager::GetImage(std::uint32_t imageIndex) const noexcept {
+	return m_swapchainImages[imageIndex];
 }

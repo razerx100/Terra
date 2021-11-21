@@ -3,6 +3,7 @@
 #include <GraphicsEngine.hpp>
 #include <string>
 #include <memory>
+#include <vulkan/vulkan.hpp>
 
 class GraphicsEngineVK : public GraphicsEngine {
 public:
@@ -22,7 +23,14 @@ public:
 	void WaitForAsyncTasks() override;
 
 private:
-	Color m_backgroundColor;
+	void SetScissorAndViewport(std::uint32_t width, std::uint32_t height) noexcept;
+
+private:
+	VkClearColorValue m_backgroundColor;
 	const std::string m_appName;
+
+	VkViewport m_viewport;
+	VkRect2D m_scissorRect;
+	VkImageSubresourceRange m_subResourceRange;
 };
 #endif

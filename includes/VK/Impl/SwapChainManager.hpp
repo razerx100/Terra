@@ -6,7 +6,8 @@ class SwapChainManager : public ISwapChainManager {
 public:
 	SwapChainManager(
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
+		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
+		VkQueue presentQueue, std::uint32_t queueFamily
 	);
 	~SwapChainManager() noexcept;
 
@@ -14,6 +15,17 @@ public:
 	VkExtent2D GetSwapExtent() const noexcept override;
 	VkFormat GetSwapFormat() const noexcept override;
 	std::uint32_t GetAvailableImageIndex() const noexcept override;
+	VkImage GetImage(std::uint32_t imageIndex) const noexcept override;
+
+
+	void PresentImage(std::uint32_t imageIndex) override;
+
+	VkImageMemoryBarrier GetPresentToRenderBarrier(
+		std::uint32_t imageIndex
+	) const noexcept override;
+	VkImageMemoryBarrier GetRenderToPresentBarrier(
+		std::uint32_t imageIndex
+	) const noexcept override;
 
 private:
 	VkSurfaceFormatKHR ChooseSurfaceFormat(
@@ -36,5 +48,7 @@ private:
 	VkExtent2D m_swapchainExtent;
 	std::vector<VkImage> m_swapchainImages;
 	std::vector<VkImageView> m_swapchainImageViews;
+	VkQueue m_presentQueue;
+	std::uint32_t m_presentFamilyIndex;
 };
 #endif

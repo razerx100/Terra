@@ -134,12 +134,13 @@ ISwapChainManager* GetSwapchainManagerInstance() noexcept {
 
 void InitSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
+	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
+	VkQueue presentQueue, std::uint32_t queueFamily
 ) {
 	if (!s_pSwapChainManager)
 		s_pSwapChainManager = new SwapChainManager(
 			device, swapCapabilities, surface,
-			width, height, bufferCount
+			width, height, bufferCount, presentQueue, queueFamily
 		);
 }
 

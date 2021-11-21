@@ -11,6 +11,7 @@ public:
 	virtual VkSemaphore GetRenderFinishedSemaphore() const noexcept = 0;
 	virtual VkFence GetFence() const noexcept = 0;
 	virtual void ChangeFrameIndex() noexcept = 0;
+	virtual void WaitAndResetFence() const noexcept = 0;
 };
 
 ISyncObjects* GetSyncObjectsInstance() noexcept;

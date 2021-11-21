@@ -2,7 +2,6 @@
 #define __SYNC_OBJECTS_HPP__
 #include <ISyncObjects.hpp>
 #include <vector>
-#include <queue>
 
 class SyncObjects : public ISyncObjects {
 public:
@@ -13,12 +12,15 @@ public:
 	VkSemaphore GetRenderFinishedSemaphore() const noexcept override;
 	VkFence GetFence() const noexcept override;
 	void ChangeFrameIndex() noexcept override;
+	void WaitAndResetFence() const noexcept override;
 
 private:
 	VkDevice m_deviceRef;
 	std::vector<VkSemaphore> m_imageAvailable;
 	std::vector<VkSemaphore> m_renderFinished;
 	std::vector<VkFence> m_fences;
-	std::queue<std::uint32_t> m_frameIndices;
+
+	const std::uint32_t m_inFlightFramesLimit;
+	std::uint32_t m_frameIndex;
 };
 #endif

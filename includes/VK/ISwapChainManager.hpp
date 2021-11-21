@@ -12,12 +12,23 @@ public:
 	virtual VkExtent2D GetSwapExtent() const noexcept = 0;
 	virtual VkFormat GetSwapFormat() const noexcept = 0;
 	virtual std::uint32_t GetAvailableImageIndex() const noexcept = 0;
+	virtual VkImage GetImage(std::uint32_t imageIndex) const noexcept = 0;
+
+	virtual void PresentImage(std::uint32_t imageIndex) = 0;
+
+	virtual VkImageMemoryBarrier GetPresentToRenderBarrier(
+		std::uint32_t imageIndex
+	) const noexcept = 0;
+	virtual VkImageMemoryBarrier GetRenderToPresentBarrier(
+		std::uint32_t imageIndex
+	) const noexcept = 0;
 };
 
 ISwapChainManager* GetSwapchainManagerInstance() noexcept;
 void InitSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount
+	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
+	VkQueue presentQueue, std::uint32_t queueFamily
 );
 void CleanUpSwapchainManagerInstance() noexcept;
 #endif
