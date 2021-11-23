@@ -1,4 +1,5 @@
 #include <Win32/DisplayManagerWin32.hpp>
+#include <VKThrowMacros.hpp>
 
 DisplayManagerWin32::DisplayManagerWin32() {
 	CreateDXGIFactory2(0u, __uuidof(IDXGIFactory1), &m_pFactory);
@@ -53,9 +54,11 @@ bool DisplayManagerWin32::AreLUIDsSame(const LUID& lUid1, const LUID& lUid2) con
 	return false;
 }
 
-void DisplayManagerWin32::GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) const noexcept {
+void DisplayManagerWin32::GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) const {
 	VkPhysicalDeviceProperties2 gpuProperties = {};
+	gpuProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	VkPhysicalDeviceIDProperties gpuIDS = {};
+	gpuIDS.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
 	gpuProperties.pNext = &gpuIDS;
 
 	vkGetPhysicalDeviceProperties2(gpu, &gpuProperties);
@@ -63,4 +66,6 @@ void DisplayManagerWin32::GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) 
 	lUid = {};
 	if (gpuIDS.deviceLUIDValid == VK_TRUE)
 		lUid = *reinterpret_cast<LUID*>(gpuIDS.deviceLUID);
+	else
+		VK_GENERIC_THROW("Couldn't retrieve LUID.");
 }

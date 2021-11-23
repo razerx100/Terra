@@ -19,7 +19,7 @@ private:
 	bool AreLUIDsSame(const LUID& lUid1, const LUID& lUid2) const noexcept;
 
 	void MatchAdapter(const LUID& adapterLUid);
-	void GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) const noexcept;
+	void GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) const;
 
 private:
 	const std::vector<const char*> m_requiredExtensions = {
