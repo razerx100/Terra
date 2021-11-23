@@ -1,6 +1,7 @@
 #include <DeviceManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <algorithm>
+#include <ISurfaceManager.hpp>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -31,7 +32,6 @@ void DeviceManager::CreatePhysicalDevice(
 				&& swapDetails.IsCapable()
 				&& !familyInfos.empty()) {
 
-				m_swapchainInfo = swapDetails;
 				SetQueueFamilyInfo(familyInfos);
 				m_physicalDevice = device;
 				found = true;
@@ -52,7 +52,6 @@ void DeviceManager::CreatePhysicalDevice(
 					&& swapDetails.IsCapable()
 					&& !familyInfos.empty()) {
 
-					m_swapchainInfo = swapDetails;
 					SetQueueFamilyInfo(familyInfos);
 					m_physicalDevice = device;
 					found = true;
@@ -198,7 +197,14 @@ void DeviceManager::GetSwapchainCapabilities(
 }
 
 SwapChainInfo DeviceManager::GetSwapChainInfo() const noexcept {
-	return m_swapchainInfo;
+	SwapChainInfo swapInfo;
+	GetSwapchainCapabilities(
+		m_physicalDevice,
+		GetSurfaceManagerInstance()->GetSurface(),
+		swapInfo
+	);
+
+	return swapInfo;
 }
 
 void DeviceManager::SetQueueFamilyInfo(

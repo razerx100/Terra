@@ -186,10 +186,10 @@ VkImage SwapChainManager::GetImage(std::uint32_t imageIndex) const noexcept {
 void SwapChainManager::ResizeSwapchain(
 	std::uint32_t width, std::uint32_t height, bool& formatChanged
 ) {
-	IDeviceManager* deviceManRef = GetDeviceManagerInstance();
-	vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
-
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
+		IDeviceManager* deviceManRef = GetDeviceManagerInstance();
+		vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
+
 		CleanUpSwapchain();
 		CreateSwapchain(
 			deviceManRef->GetLogicalDevice(),

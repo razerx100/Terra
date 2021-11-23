@@ -59,7 +59,6 @@ private:
 	VkPhysicalDevice m_physicalDevice;
 	VkDevice m_logicalDevice;
 	std::vector<QueueFamilyInfo> m_usableQueueFamilies;
-	SwapChainInfo m_swapchainInfo;
 	const std::vector<const char*> m_extensionNames = {
 		"VK_KHR_swapchain"
 	};

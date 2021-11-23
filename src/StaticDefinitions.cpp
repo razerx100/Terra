@@ -46,8 +46,10 @@ void InitGraphicsEngineInstance(
 }
 
 void CleanUpGraphicsEngineInstance() noexcept {
-	if (s_pGraphicsEngine)
+	if (s_pGraphicsEngine) {
 		delete s_pGraphicsEngine;
+		s_pGraphicsEngine = nullptr;
+	}
 }
 
 // Instance Manager
@@ -61,8 +63,10 @@ void InitInstanceManagerInstance(const char* appName) {
 }
 
 void CleanUpInstanceManagerInstance() noexcept {
-	if (s_pInstanceManager)
+	if (s_pInstanceManager) {
 		delete s_pInstanceManager;
+		s_pInstanceManager = nullptr;
+	}
 }
 
 // Debug Layer
@@ -72,8 +76,10 @@ void InitDebugLayer(VkInstance instanceRef) {
 }
 
 void CleanUpDebugLayer() noexcept {
-	if (s_pDebugLayerManager)
+	if (s_pDebugLayerManager) {
 		delete s_pDebugLayerManager;
+		s_pDebugLayerManager = nullptr;
+	}
 }
 
 // Device Manager
@@ -87,8 +93,10 @@ void InitDeviceManagerInstance() {
 }
 
 void CleanUpDeviceManagerInstance() noexcept {
-	if (s_pDeviceManager)
+	if (s_pDeviceManager) {
 		delete s_pDeviceManager;
+		s_pDeviceManager = nullptr;
+	}
 }
 
 // Graphics Queue Manager
@@ -102,8 +110,10 @@ void InitGraphicsQueueManagerInstance(VkQueue queue) {
 }
 
 void CleanUpGraphicsQueueManagerInstance() noexcept {
-	if (s_pGraphicsQueueManager)
+	if (s_pGraphicsQueueManager) {
 		delete s_pGraphicsQueueManager;
+		s_pGraphicsQueueManager = nullptr;
+	}
 }
 
 // Surface Manager
@@ -123,8 +133,10 @@ void InitSurfaceManagerInstance(VkInstance instance, void* windowHandle, void* m
 }
 
 void CleanUpSurfaceManagerInstance() noexcept {
-	if (s_pSurfaceManager)
+	if (s_pSurfaceManager) {
 		delete s_pSurfaceManager;
+		s_pSurfaceManager = nullptr;
+	}
 }
 
 // Swapchain Manager
@@ -145,8 +157,10 @@ void InitSwapchainManagerInstance(
 }
 
 void CleanUpSwapchainManagerInstance() noexcept {
-	if (s_pSwapChainManager)
+	if (s_pSwapChainManager) {
 		delete s_pSwapChainManager;
+		s_pSwapChainManager = nullptr;
+	}
 }
 
 // Graphics Pool Manager
@@ -164,8 +178,10 @@ void InitGraphicsPoolManagerInstance(
 }
 
 void CleanUpGraphicsPoolManagerInstance() noexcept {
-	if (s_pGraphicsPoolManager)
+	if (s_pGraphicsPoolManager) {
 		delete s_pGraphicsPoolManager;
+		s_pGraphicsPoolManager = nullptr;
+	}
 }
 
 // Sync Objects
@@ -179,6 +195,8 @@ void InitSyncObjectsInstance(VkDevice device, std::uint32_t bufferCount) {
 }
 
 void CleanUpSyncObjectsInstance() noexcept {
-	if (s_pSyncObjects)
+	if (s_pSyncObjects) {
 		delete s_pSyncObjects;
+		s_pSyncObjects = nullptr;
+	}
 }
