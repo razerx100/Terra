@@ -7,6 +7,7 @@
 #include <SwapChainManager.hpp>
 #include <CommandPoolManager.hpp>
 #include <SyncObjects.hpp>
+#include <IDisplayManager.hpp>
 
 static GraphicsEngine* s_pGraphicsEngine = nullptr;
 
@@ -25,6 +26,8 @@ static ISwapChainManager* s_pSwapChainManager = nullptr;
 static ICommandPoolManager* s_pGraphicsPoolManager = nullptr;
 
 static ISyncObjects* s_pSyncObjects = nullptr;
+
+static IDisplayManager* s_pDisplayManager = nullptr;
 
 // Graphics Engine
 GraphicsEngine* GetGraphicsEngineInstance() noexcept {
@@ -199,4 +202,31 @@ void CleanUpSyncObjectsInstance() noexcept {
 		delete s_pSyncObjects;
 		s_pSyncObjects = nullptr;
 	}
+}
+
+// Display Manager
+IDisplayManager* GetDisplayManagerInstance() noexcept {
+	return s_pDisplayManager;
+}
+
+void CleanUpDisplayManagerInstance() noexcept {
+	if (s_pDisplayManager) {
+		delete s_pDisplayManager;
+		s_pDisplayManager = nullptr;
+	}
+}
+
+#ifdef TERRA_WIN32
+#include <Win32/DisplayManagerWin32.hpp>
+#else
+#include <DisplayManagerVK.hpp>
+#endif
+
+void InitDisplayManagerInstance(VkPhysicalDevice gpu) {
+	if (!s_pDisplayManager)
+#ifdef TERRA_WIN32
+		s_pDisplayManager = new DisplayManagerWin32(gpu);
+#else
+		s_pDisplayManager = new DisplayManagerVK();
+#endif
 }

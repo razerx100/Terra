@@ -1,26 +1,13 @@
 #ifndef __GRAPHICS_ENGINE_HPP__
 #define __GRAPHICS_ENGINE_HPP__
 #include <cstdint>
+#include "SUtility.hpp"
 
 #ifdef BUILD_TERRA
 #define TERRA_DLL __declspec(dllexport)
 #else
 #define TERRA_DLL __declspec(dllimport)
 #endif
-
-struct TERRA_DLL SRect {
-	long left;
-	long top;
-	long right;
-	long bottom;
-};
-
-struct TERRA_DLL Color {
-	float r;
-	float g;
-	float b;
-	float a;
-};
 
 class TERRA_DLL GraphicsEngine {
 public:

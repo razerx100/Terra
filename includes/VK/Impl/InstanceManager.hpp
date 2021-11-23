@@ -13,13 +13,13 @@ public:
 private:
 	void CheckExtensionSupport() const;
 	void CheckLayerSupport() const;
+	void AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
 
 private:
 	VkInstance m_vkInstance;
 
 	std::vector<const char*> m_extensionNames = {
-		"VK_KHR_surface",
-		"VK_KHR_display"
+		"VK_KHR_surface"
 	};
 	std::vector<const char*> m_validationLayersNames = {
 		"VK_LAYER_KHRONOS_validation"

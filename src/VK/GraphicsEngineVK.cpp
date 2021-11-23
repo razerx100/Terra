@@ -7,6 +7,7 @@
 #include <ICommandPoolManager.hpp>
 #include <SyncObjects.hpp>
 #include <CommonPipelineObjects.hpp>
+#include <IDisplayManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -63,6 +64,10 @@ GraphicsEngineVK::GraphicsEngineVK(
 		logicalDevice,
 		bufferCount
 	);
+
+	InitDisplayManagerInstance(
+		deviceManagerRef->GetPhysicalDevice()
+	);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
@@ -70,6 +75,7 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	CleanUpSwapchainManagerInstance();
 	CleanUpGraphicsQueueManagerInstance();
 	CleanUpSyncObjectsInstance();
+	CleanUpDisplayManagerInstance();
 	CleanUpDeviceManagerInstance();
 	CleanUpSurfaceManagerInstance();
 	CleanUpInstanceManagerInstance();
@@ -132,32 +138,19 @@ void GraphicsEngineVK::Render() {
 }
 
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
-	if (width == 0 && height == 0)
-		vkDeviceWaitIdle(GetDeviceManagerInstance()->GetLogicalDevice());
-	else {
-		bool hasSwapFormatChanged = false;
-		GetSwapchainManagerInstance()->ResizeSwapchain(width, height, hasSwapFormatChanged);
-		// If swapFormatChanged Recreate RenderPass
-	}
+	bool hasSwapFormatChanged = false;
+	GetSwapchainManagerInstance()->ResizeSwapchain(width, height, hasSwapFormatChanged);
+	// If swapFormatChanged Recreate RenderPass
 }
 
 SRect GraphicsEngineVK::GetMonitorCoordinates() {
-	std::uint32_t displayCount;
-	VkPhysicalDevice gpu = GetDeviceManagerInstance()->GetPhysicalDevice();
-	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, nullptr);
+	SRect resolution;
+	GetDisplayManagerInstance()->GetDisplayResolution(
+		GetDeviceManagerInstance()->GetPhysicalDevice(),
+		resolution
+	);
 
-	std::vector<VkDisplayPropertiesKHR> displayProperties(displayCount);
-	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, displayProperties.data());
-
-	SRect displayRect = {};
-	if (displayCount == 1) {
-		displayRect.left = 0u;
-		displayRect.right = displayProperties[0].physicalResolution.width;
-		displayRect.top = 0u;
-		displayRect.bottom = displayProperties[0].physicalResolution.height;
-	}
-
-	return displayRect;
+	return resolution;
 }
 
 void GraphicsEngineVK::WaitForAsyncTasks() {

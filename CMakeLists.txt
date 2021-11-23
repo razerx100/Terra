@@ -19,9 +19,9 @@ else()
 endif()
 
 if(IMGUIFLAG STREQUAL "ENABLE")
-    file(GLOB_RECURSE SRC src/*.cpp includes/Exceptions/*.hpp includes/VK/*.hpp templates/*.hpp exports/*.hpp ImGui/*.cpp ImGui/*.h)
+    file(GLOB_RECURSE SRC src/*.cpp includes/*.hpp templates/*.hpp exports/*.hpp ImGui/*.cpp ImGui/*.h)
 else()
-    file(GLOB_RECURSE SRC src/*.cpp includes/Exceptions/*.hpp includes/VK/*.hpp templates/*.hpp exports/*.hpp)
+    file(GLOB_RECURSE SRC src/*.cpp includes/*.hpp templates/*.hpp exports/*.hpp)
 endif()
 
 if(PLATFORM STREQUAL "WINDOWS")
@@ -44,6 +44,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>" "
 
 if(PLATFORM STREQUAL "WINDOWS")
     target_compile_definitions(${PROJECT_NAME} PRIVATE TERRA_WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        dxgi.lib
+    )
 endif()
 
 if(IMGUIFLAG STREQUAL "ENABLE")

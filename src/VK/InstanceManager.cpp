@@ -1,6 +1,7 @@
 #include <InstanceManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <DebugLayerManager.hpp>
+#include <IDisplayManager.hpp>
 
 InstanceManager::InstanceManager(const char* appName) {
 	VkApplicationInfo appInfo = {};
@@ -44,6 +45,9 @@ InstanceManager::InstanceManager(const char* appName) {
 #ifdef TERRA_WIN32
 	m_extensionNames.emplace_back("VK_KHR_win32_surface");
 #endif
+	AddExtensionNames(
+		GetDisplayManagerInstance()->GetRequiredExtensions()
+	);
 
 	CheckExtensionSupport();
 	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
@@ -120,4 +124,11 @@ void InstanceManager::CheckLayerSupport() const {
 					).c_str()
 			);
 	}
+}
+
+void InstanceManager::AddExtensionNames(
+	const std::vector<const char*>& extensionNames
+) noexcept {
+	for (auto& name : extensionNames)
+		m_extensionNames.emplace_back(name);
 }
