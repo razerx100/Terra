@@ -222,10 +222,10 @@ void CleanUpDisplayManagerInstance() noexcept {
 #include <DisplayManagerVK.hpp>
 #endif
 
-void InitDisplayManagerInstance(VkPhysicalDevice gpu) {
+void InitDisplayManagerInstance() {
 	if (!s_pDisplayManager)
 #ifdef TERRA_WIN32
-		s_pDisplayManager = new DisplayManagerWin32(gpu);
+		s_pDisplayManager = new DisplayManagerWin32();
 #else
 		s_pDisplayManager = new DisplayManagerVK();
 #endif

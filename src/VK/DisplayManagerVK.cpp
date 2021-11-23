@@ -1,5 +1,7 @@
 #include <DisplayManagerVK.hpp>
 
+void DisplayManagerVK::InitDisplayManager(VkPhysicalDevice gpu) {}
+
 void DisplayManagerVK::GetDisplayResolution(VkPhysicalDevice gpu, SRect& displayRect) {
 	std::uint32_t displayCount;
 	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, nullptr);

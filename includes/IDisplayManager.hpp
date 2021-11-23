@@ -8,12 +8,13 @@ class IDisplayManager {
 public:
 	virtual ~IDisplayManager() = default;
 
+	virtual void InitDisplayManager(VkPhysicalDevice gpu) = 0;
 	virtual const std::vector<const char*>& GetRequiredExtensions() const noexcept = 0;
 	virtual void GetDisplayResolution(VkPhysicalDevice gpu, SRect& displayRect) = 0;
 };
 
 IDisplayManager* GetDisplayManagerInstance() noexcept;
-void InitDisplayManagerInstance(VkPhysicalDevice gpu);
+void InitDisplayManagerInstance();
 void CleanUpDisplayManagerInstance() noexcept;
 
 #endif

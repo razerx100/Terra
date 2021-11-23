@@ -18,6 +18,8 @@ GraphicsEngineVK::GraphicsEngineVK(
 
 	SetScissorAndViewport(width, height);
 
+	InitDisplayManagerInstance();
+
 	InitInstanceManagerInstance(appName);
 
 	InitSurfaceManagerInstance(
@@ -65,7 +67,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 		bufferCount
 	);
 
-	InitDisplayManagerInstance(
+	GetDisplayManagerInstance()->InitDisplayManager(
 		deviceManagerRef->GetPhysicalDevice()
 	);
 }

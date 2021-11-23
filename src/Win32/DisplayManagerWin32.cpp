@@ -1,7 +1,10 @@
 #include <Win32/DisplayManagerWin32.hpp>
 
-DisplayManagerWin32::DisplayManagerWin32(VkPhysicalDevice gpu) {
+DisplayManagerWin32::DisplayManagerWin32() {
 	CreateDXGIFactory2(0u, __uuidof(IDXGIFactory1), &m_pFactory);
+}
+
+void DisplayManagerWin32::InitDisplayManager(VkPhysicalDevice gpu) {
 	LUID gpuLUid;
 	GetLUIDFromVKDevice(gpu, gpuLUid);
 	MatchAdapter(gpuLUid);

@@ -8,7 +8,9 @@ using Microsoft::WRL::ComPtr;
 
 class DisplayManagerWin32 : public IDisplayManager {
 public:
-	DisplayManagerWin32(VkPhysicalDevice gpu);
+	DisplayManagerWin32();
+
+	void InitDisplayManager(VkPhysicalDevice gpu) override;
 
 	const std::vector<const char*>& GetRequiredExtensions() const noexcept override;
 	void GetDisplayResolution(VkPhysicalDevice gpu, SRect& displayRect) override;

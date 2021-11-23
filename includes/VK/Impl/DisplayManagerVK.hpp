@@ -4,6 +4,8 @@
 
 class DisplayManagerVK : public IDisplayManager {
 public:
+	void InitDisplayManager(VkPhysicalDevice gpu) override;
+
 	const std::vector<const char*>& GetRequiredExtensions() const noexcept override;
 	void GetDisplayResolution(VkPhysicalDevice gpu, SRect& displayRect) override;
 
