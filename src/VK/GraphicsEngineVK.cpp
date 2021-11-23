@@ -132,9 +132,13 @@ void GraphicsEngineVK::Render() {
 }
 
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
-	bool hasSwapFormatChanged = false;
-	GetSwapchainManagerInstance()->ResizeSwapchain(width, height, hasSwapFormatChanged);
-	// If swapFormatChanged Recreate RenderPass
+	if (width == 0 && height == 0)
+		vkDeviceWaitIdle(GetDeviceManagerInstance()->GetLogicalDevice());
+	else {
+		bool hasSwapFormatChanged = false;
+		GetSwapchainManagerInstance()->ResizeSwapchain(width, height, hasSwapFormatChanged);
+		// If swapFormatChanged Recreate RenderPass
+	}
 }
 
 SRect GraphicsEngineVK::GetMonitorCoordinates() {
