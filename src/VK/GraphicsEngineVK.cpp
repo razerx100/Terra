@@ -132,11 +132,28 @@ void GraphicsEngineVK::Render() {
 }
 
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
-
+	bool hasSwapFormatChanged = false;
+	GetSwapchainManagerInstance()->ResizeSwapchain(width, height, hasSwapFormatChanged);
+	// If swapFormatChanged Recreate RenderPass
 }
 
 SRect GraphicsEngineVK::GetMonitorCoordinates() {
-	return SRect{};
+	std::uint32_t displayCount;
+	VkPhysicalDevice gpu = GetDeviceManagerInstance()->GetPhysicalDevice();
+	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, nullptr);
+
+	std::vector<VkDisplayPropertiesKHR> displayProperties(displayCount);
+	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, displayProperties.data());
+
+	SRect displayRect = {};
+	if (displayCount == 1) {
+		displayRect.left = 0u;
+		displayRect.right = displayProperties[0].physicalResolution.width;
+		displayRect.top = 0u;
+		displayRect.bottom = displayProperties[0].physicalResolution.height;
+	}
+
+	return displayRect;
 }
 
 void GraphicsEngineVK::WaitForAsyncTasks() {

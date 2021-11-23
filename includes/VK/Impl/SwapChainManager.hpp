@@ -17,8 +17,10 @@ public:
 	std::uint32_t GetAvailableImageIndex() const noexcept override;
 	VkImage GetImage(std::uint32_t imageIndex) const noexcept override;
 
-
 	void PresentImage(std::uint32_t imageIndex) override;
+	void ResizeSwapchain(
+		std::uint32_t width, std::uint32_t height, bool& formatChanged
+	) override;
 
 	void GetUndefinedToTransferBarrier(
 		std::uint32_t imageIndex,
@@ -42,7 +44,11 @@ private:
 	) const noexcept;
 
 	void CreateImageViews(VkDevice device);
-	void ProcessImages(VkDevice device);
+	void CreateSwapchain(
+		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
+		std::uint32_t bufferCount, std::uint32_t width, std::uint32_t height,
+		bool& formatChanged
+	);
 
 private:
 	VkSwapchainKHR m_swapchain;

@@ -15,6 +15,9 @@ public:
 	virtual VkImage GetImage(std::uint32_t imageIndex) const noexcept = 0;
 
 	virtual void PresentImage(std::uint32_t imageIndex) = 0;
+	virtual void ResizeSwapchain(
+		std::uint32_t width, std::uint32_t height, bool& formatChanged
+	) = 0;
 
 	virtual void GetUndefinedToTransferBarrier(
 		std::uint32_t imageIndex,

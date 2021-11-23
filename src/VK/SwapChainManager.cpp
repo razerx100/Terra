@@ -1,46 +1,17 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <ISyncObjects.hpp>
+#include <ISurfaceManager.hpp>
 
 SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
 	VkQueue presentQueue, std::uint32_t queueFamily
-) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily) {
-	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(swapCapabilities.formats);
-	VkPresentModeKHR swapPresentMode = ChoosePresentMode(swapCapabilities.presentModes);
-	VkExtent2D swapExtent = ChooseSwapExtent(swapCapabilities.capabilities, width, height);
-
-	m_swapchainExtent = swapExtent;
-	m_swapchainFormat = swapFormat.format;
-
-	std::uint32_t imageCount = bufferCount;
-	if (swapCapabilities.capabilities.maxImageCount > 0
-		&& swapCapabilities.capabilities.maxImageCount < imageCount)
-		imageCount = swapCapabilities.capabilities.maxImageCount;
-
-	VkSwapchainCreateInfoKHR createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = surface;
-	createInfo.minImageCount = imageCount;
-	createInfo.imageFormat = swapFormat.format;
-	createInfo.imageColorSpace = swapFormat.colorSpace;
-	createInfo.imageExtent = swapExtent;
-	createInfo.imageArrayLayers = 1u;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	createInfo.preTransform = swapCapabilities.capabilities.currentTransform;
-	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	createInfo.presentMode = swapPresentMode;
-	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-	VkResult result;
-	VK_THROW_FAILED(result, vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
-
-	ProcessImages(device);
-
-	CreateImageViews(device);
+) :
+	m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
+	m_oldSwapchain(VK_NULL_HANDLE) {
+	bool useless;
+	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
 }
 
 SwapChainManager::~SwapChainManager() noexcept {
@@ -215,9 +186,66 @@ VkImage SwapChainManager::GetImage(std::uint32_t imageIndex) const noexcept {
 	return m_swapchainImages[imageIndex];
 }
 
-void SwapChainManager::ProcessImages(VkDevice device) {
+void SwapChainManager::ResizeSwapchain(
+	std::uint32_t width, std::uint32_t height, bool& formatChanged
+) {
+	IDeviceManager* deviceManRef = GetDeviceManagerInstance();
+	vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
+
+	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
+		CreateSwapchain(
+			deviceManRef->GetLogicalDevice(),
+			deviceManRef->GetSwapChainInfo(),
+			GetSurfaceManagerInstance()->GetSurface(),
+			m_swapchainImages.size(),
+			width, height, formatChanged
+		);
+	}
+}
+
+void SwapChainManager::CreateSwapchain(
+	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
+	std::uint32_t bufferCount, std::uint32_t width, std::uint32_t height,
+	bool& formatChanged
+) {
+	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(swapCapabilities.formats);
+	VkPresentModeKHR swapPresentMode = ChoosePresentMode(swapCapabilities.presentModes);
+	VkExtent2D swapExtent = ChooseSwapExtent(swapCapabilities.capabilities, width, height);
+
+	if (swapFormat.format != m_swapchainFormat)
+		formatChanged = true;
+
+	m_swapchainExtent = swapExtent;
+	m_swapchainFormat = swapFormat.format;
+
+	std::uint32_t imageCount = bufferCount;
+	if (swapCapabilities.capabilities.maxImageCount > 0
+		&& swapCapabilities.capabilities.maxImageCount < imageCount)
+		imageCount = swapCapabilities.capabilities.maxImageCount;
+
+	VkSwapchainCreateInfoKHR createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.surface = surface;
+	createInfo.minImageCount = imageCount;
+	createInfo.imageFormat = swapFormat.format;
+	createInfo.imageColorSpace = swapFormat.colorSpace;
+	createInfo.imageExtent = swapExtent;
+	createInfo.imageArrayLayers = 1u;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.preTransform = swapCapabilities.capabilities.currentTransform;
+	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.presentMode = swapPresentMode;
+	createInfo.clipped = VK_TRUE;
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+	VkResult result;
+	VK_THROW_FAILED(result, vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
+
 	std::uint32_t imageCount;
 	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
 	m_swapchainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_swapchainImages.data());
+
+	CreateImageViews(device);
 }

@@ -18,7 +18,8 @@ private:
 	VkInstance m_vkInstance;
 
 	std::vector<const char*> m_extensionNames = {
-		"VK_KHR_surface"
+		"VK_KHR_surface",
+		"VK_KHR_display"
 	};
 	std::vector<const char*> m_validationLayersNames = {
 		"VK_LAYER_KHRONOS_validation"
