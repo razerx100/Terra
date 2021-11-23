@@ -43,12 +43,14 @@ private:
 		std::uint32_t width, std::uint32_t height
 	) const noexcept;
 
-	void CreateImageViews(VkDevice device);
+	void QueryImages();
+	void CreateImageViews();
 	void CreateSwapchain(
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 		std::uint32_t bufferCount, std::uint32_t width, std::uint32_t height,
 		bool& formatChanged
 	);
+	void CleanUpSwapchain() noexcept;
 
 private:
 	VkSwapchainKHR m_swapchain;

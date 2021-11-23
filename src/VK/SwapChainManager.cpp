@@ -7,18 +7,15 @@ SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
 	VkQueue presentQueue, std::uint32_t queueFamily
-) :
-	m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
-	m_oldSwapchain(VK_NULL_HANDLE) {
+) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily) {
 	bool useless;
 	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
+	QueryImages();
+	CreateImageViews();
 }
 
 SwapChainManager::~SwapChainManager() noexcept {
-	for (VkImageView imageView : m_swapchainImageViews)
-		vkDestroyImageView(m_deviceRef, imageView, nullptr);
-
-	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
+	CleanUpSwapchain();
 }
 
 VkSwapchainKHR SwapChainManager::GetRef() const noexcept {
@@ -76,7 +73,7 @@ VkExtent2D SwapChainManager::ChooseSwapExtent(
 	}
 }
 
-void SwapChainManager::CreateImageViews(VkDevice device) {
+void SwapChainManager::CreateImageViews() {
 	m_swapchainImageViews.resize(m_swapchainImages.size());
 
 	for (std::uint32_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
@@ -97,7 +94,7 @@ void SwapChainManager::CreateImageViews(VkDevice device) {
 
 		VkResult result;
 		VK_THROW_FAILED(result,
-			vkCreateImageView(device, &createInfo, nullptr, &m_swapchainImageViews[index])
+			vkCreateImageView(m_deviceRef, &createInfo, nullptr, &m_swapchainImageViews[index])
 		);
 	}
 }
@@ -193,6 +190,7 @@ void SwapChainManager::ResizeSwapchain(
 	vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
 
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
+		CleanUpSwapchain();
 		CreateSwapchain(
 			deviceManRef->GetLogicalDevice(),
 			deviceManRef->GetSwapChainInfo(),
@@ -200,6 +198,8 @@ void SwapChainManager::ResizeSwapchain(
 			m_swapchainImages.size(),
 			width, height, formatChanged
 		);
+		QueryImages();
+		CreateImageViews();
 	}
 }
 
@@ -241,11 +241,18 @@ void SwapChainManager::CreateSwapchain(
 
 	VkResult result;
 	VK_THROW_FAILED(result, vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
+}
 
+void SwapChainManager::QueryImages() {
 	std::uint32_t imageCount;
-	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, nullptr);
+	vkGetSwapchainImagesKHR(m_deviceRef, m_swapchain, &imageCount, nullptr);
 	m_swapchainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device, m_swapchain, &imageCount, m_swapchainImages.data());
+	vkGetSwapchainImagesKHR(m_deviceRef, m_swapchain, &imageCount, m_swapchainImages.data());
+}
 
-	CreateImageViews(device);
+void SwapChainManager::CleanUpSwapchain() noexcept {
+	for (VkImageView imageView : m_swapchainImageViews)
+		vkDestroyImageView(m_deviceRef, imageView, nullptr);
+
+	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
 }
