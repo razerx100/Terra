@@ -38,6 +38,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
 )
 
+add_subdirectory(DirectXMath)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC DirectXMath)
+
 target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/VK/Impl/ includes/Exceptions/ templates/ exports/)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>" "$<$<CONFIG:RELEASE>:NDEBUG>" BUILD_TERRA)

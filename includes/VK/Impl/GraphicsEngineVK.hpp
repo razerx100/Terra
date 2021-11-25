@@ -2,7 +2,6 @@
 #define __GRAPHICS_ENGINE_VK_HPP__
 #include <GraphicsEngine.hpp>
 #include <string>
-#include <memory>
 #include <vulkan/vulkan.hpp>
 
 class GraphicsEngineVK : public GraphicsEngine {
@@ -15,8 +14,8 @@ public:
 	);
 	~GraphicsEngineVK() noexcept;
 
-	void SetBackgroundColor(Color color) noexcept override;
-	void SubmitCommands() override;
+	void SetBackgroundColor(DirectX::XMVECTORF32 color) noexcept override;
+	void SubmitModels(const IModel* const models, std::uint32_t modelCount) override;
 	void Render() override;
 	void Resize(std::uint32_t width, std::uint32_t height) override;
 	SRect GetMonitorCoordinates() override;

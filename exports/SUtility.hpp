@@ -13,11 +13,4 @@ struct TERRA_DLL SRect {
 	long right;
 	long bottom;
 };
-
-struct TERRA_DLL Color {
-	float r;
-	float g;
-	float b;
-	float a;
-};
 #endif

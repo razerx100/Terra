@@ -83,11 +83,11 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	CleanUpInstanceManagerInstance();
 }
 
-void GraphicsEngineVK::SetBackgroundColor(Color color) noexcept {
-	m_backgroundColor = { {color.r, color.g, color.b, color.a} };
+void GraphicsEngineVK::SetBackgroundColor(DirectX::XMVECTORF32 color) noexcept {
+	m_backgroundColor = { color.f[0], color.f[1], color.f[2], color.f[3] };
 }
 
-void GraphicsEngineVK::SubmitCommands() {
+void GraphicsEngineVK::SubmitModels(const IModel* const models, std::uint32_t modelCount) {
 
 }
 
