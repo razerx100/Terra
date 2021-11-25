@@ -38,9 +38,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
 )
 
-add_subdirectory(DirectXMath)
+if(PROJECT_IS_TOP_LEVEL)
+    add_subdirectory(DirectXMath)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC DirectXMath)
+    target_link_libraries(${PROJECT_NAME} PUBLIC DirectXMath)
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/VK/Impl/ includes/Exceptions/ templates/ exports/)
 
