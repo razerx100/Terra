@@ -39,9 +39,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if(PROJECT_IS_TOP_LEVEL)
-    add_subdirectory(DirectXMath)
+    add_subdirectory(Ceres)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC DirectXMath)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Ceres)
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/VK/Impl/ includes/Exceptions/ templates/ exports/)

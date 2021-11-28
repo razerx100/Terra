@@ -8,6 +8,7 @@
 #include <SyncObjects.hpp>
 #include <CommonPipelineObjects.hpp>
 #include <IDisplayManager.hpp>
+#include <CRSStructures.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -83,8 +84,8 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	CleanUpInstanceManagerInstance();
 }
 
-void GraphicsEngineVK::SetBackgroundColor(DirectX::XMVECTORF32 color) noexcept {
-	m_backgroundColor = { color.f[0], color.f[1], color.f[2], color.f[3] };
+void GraphicsEngineVK::SetBackgroundColor(const float* colorVector) noexcept {
+	m_backgroundColor = { colorVector[0], colorVector[1], colorVector[2], colorVector[3] };
 }
 
 void GraphicsEngineVK::SubmitModels(const IModel* const models, std::uint32_t modelCount) {
@@ -145,14 +146,14 @@ void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	// If swapFormatChanged Recreate RenderPass
 }
 
-SRect GraphicsEngineVK::GetMonitorCoordinates() {
-	SRect resolution;
+void GraphicsEngineVK::GetMonitorCoordinates(std::uint64_t* rectCoord) {
+	Ceres::Rect resolution;
 	GetDisplayManagerInstance()->GetDisplayResolution(
 		GetDeviceManagerInstance()->GetPhysicalDevice(),
 		resolution
 	);
 
-	return resolution;
+	std::memcpy(rectCoord, &resolution, 4u);
 }
 
 void GraphicsEngineVK::WaitForAsyncTasks() {

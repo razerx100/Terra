@@ -15,7 +15,7 @@ const std::vector<const char*>& DisplayManagerWin32::GetRequiredExtensions() con
 	return m_requiredExtensions;
 }
 
-void DisplayManagerWin32::GetDisplayResolution(VkPhysicalDevice gpu, SRect& displayRect) {
+void DisplayManagerWin32::GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) {
 	DXGI_ADAPTER_DESC gpuDesc = {};
 	LUID gpuLUid;
 	GetLUIDFromVKDevice(gpu, gpuLUid);
@@ -30,7 +30,7 @@ void DisplayManagerWin32::GetDisplayResolution(VkPhysicalDevice gpu, SRect& disp
 	DXGI_OUTPUT_DESC displayData = {};
 	pDisplayOutput->GetDesc(&displayData);
 
-	displayRect = *reinterpret_cast<SRect*>(&displayData.DesktopCoordinates);
+	displayRect = *reinterpret_cast<Ceres::Rect*>(&displayData.DesktopCoordinates);
 }
 
 void DisplayManagerWin32::MatchAdapter(const LUID& adapterLUid) {

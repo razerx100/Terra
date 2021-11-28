@@ -13,7 +13,7 @@ public:
 	void InitDisplayManager(VkPhysicalDevice gpu) override;
 
 	const std::vector<const char*>& GetRequiredExtensions() const noexcept override;
-	void GetDisplayResolution(VkPhysicalDevice gpu, SRect& displayRect) override;
+	void GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) override;
 
 private:
 	bool AreLUIDsSame(const LUID& lUid1, const LUID& lUid2) const noexcept;
