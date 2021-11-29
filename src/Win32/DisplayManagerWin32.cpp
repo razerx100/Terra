@@ -30,7 +30,10 @@ void DisplayManagerWin32::GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect
 	DXGI_OUTPUT_DESC displayData = {};
 	pDisplayOutput->GetDesc(&displayData);
 
-	displayRect = *reinterpret_cast<Ceres::Rect*>(&displayData.DesktopCoordinates);
+	displayRect.top = displayData.DesktopCoordinates.top;
+	displayRect.bottom = displayData.DesktopCoordinates.bottom;
+	displayRect.right = displayData.DesktopCoordinates.right;
+	displayRect.left = displayData.DesktopCoordinates.left;
 }
 
 void DisplayManagerWin32::MatchAdapter(const LUID& adapterLUid) {

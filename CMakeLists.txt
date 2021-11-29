@@ -4,9 +4,6 @@ project(Terra
     LANGUAGES CXX
 )
 
-message(STATUS "Current Source Dir ${CMAKE_CURRENT_SOURCE_DIR}")
-message(STATUS "Project Source Dir ${PROJECT_SOURCE_DIR}")
-
 set(PROJECTDIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -40,8 +37,6 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
 )
-
-message(STATUS "Project Source Dir ${PROJECT_SOURCE_DIR}")
 
 if(NOT CERES_ADDED)
     add_subdirectory(Ceres)
