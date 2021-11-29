@@ -43,8 +43,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 message(STATUS "Project Source Dir ${PROJECT_SOURCE_DIR}")
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/Ceres")
+if(NOT CERES_ADDED)
     add_subdirectory(Ceres)
+    set(CERES_ADDED "TRUE")
 endif()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC Ceres)
