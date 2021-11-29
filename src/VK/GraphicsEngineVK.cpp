@@ -8,7 +8,6 @@
 #include <SyncObjects.hpp>
 #include <CommonPipelineObjects.hpp>
 #include <IDisplayManager.hpp>
-#include <CRSStructures.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -84,8 +83,10 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	CleanUpInstanceManagerInstance();
 }
 
-void GraphicsEngineVK::SetBackgroundColor(const float* colorVector) noexcept {
-	m_backgroundColor = { colorVector[0], colorVector[1], colorVector[2], colorVector[3] };
+void GraphicsEngineVK::SetBackgroundColor(const Ceres::VectorF32& colorVector) noexcept {
+	m_backgroundColor = {
+		colorVector.F32.x, colorVector.F32.y, colorVector.F32.z, colorVector.F32.w
+	};
 }
 
 void GraphicsEngineVK::SubmitModels(const IModel* const models, std::uint32_t modelCount) {
@@ -146,14 +147,17 @@ void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	// If swapFormatChanged Recreate RenderPass
 }
 
-void GraphicsEngineVK::GetMonitorCoordinates(std::uint64_t* rectCoord) {
+void GraphicsEngineVK::GetMonitorCoordinates(
+	std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
+) {
 	Ceres::Rect resolution;
 	GetDisplayManagerInstance()->GetDisplayResolution(
 		GetDeviceManagerInstance()->GetPhysicalDevice(),
 		resolution
 	);
 
-	std::memcpy(rectCoord, &resolution, 4u);
+	monitorWidth = resolution.right;
+	monitorHeight = resolution.bottom;
 }
 
 void GraphicsEngineVK::WaitForAsyncTasks() {

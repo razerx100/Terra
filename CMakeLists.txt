@@ -4,6 +4,9 @@ project(Terra
     LANGUAGES CXX
 )
 
+message(STATUS "Current Source Dir ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "Project Source Dir ${PROJECT_SOURCE_DIR}")
+
 set(PROJECTDIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -38,11 +41,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
 )
 
-if(PROJECT_IS_TOP_LEVEL)
-    add_subdirectory(Ceres)
+message(STATUS "Project Source Dir ${PROJECT_SOURCE_DIR}")
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC Ceres)
+if(EXISTS "${PROJECT_SOURCE_DIR}/Ceres")
+    add_subdirectory(Ceres)
 endif()
+
+target_link_libraries(${PROJECT_NAME} PUBLIC Ceres)
 
 target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/VK/Impl/ includes/Exceptions/ templates/ exports/)
 

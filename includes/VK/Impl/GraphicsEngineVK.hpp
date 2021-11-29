@@ -3,7 +3,6 @@
 #include <GraphicsEngine.hpp>
 #include <string>
 #include <vulkan/vulkan.hpp>
-#include <IModel.hpp>
 
 class GraphicsEngineVK : public GraphicsEngine {
 public:
@@ -15,11 +14,13 @@ public:
 	);
 	~GraphicsEngineVK() noexcept;
 
-	void SetBackgroundColor(const float* colorVector) noexcept override;
+	void SetBackgroundColor(const Ceres::VectorF32& colorVector) noexcept override;
 	void SubmitModels(const IModel* const models, std::uint32_t modelCount) override;
 	void Render() override;
 	void Resize(std::uint32_t width, std::uint32_t height) override;
-	void GetMonitorCoordinates(std::uint64_t* rectCoord) override;
+	void GetMonitorCoordinates(
+		std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
+	) override;
 	void WaitForAsyncTasks() override;
 
 private:
