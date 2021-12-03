@@ -1,6 +1,6 @@
-#ifndef __INATANCE_MANAGER_HPP__
-#define __INATANCE_MANAGER_HPP__
-#include <IInstanceManager.hpp>
+#ifndef __VK_INSTANCE_MANAGER_HPP__
+#define __VK_INSTANCE_MANAGER_HPP__
+#include <IVkInstanceManager.hpp>
 #include <vector>
 
 class InstanceManager : public IInstanceManager {

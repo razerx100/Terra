@@ -12,9 +12,7 @@ public:
 	virtual VkCommandBuffer GetCommandBuffer(std::uint32_t bufferIndex) const noexcept = 0;
 };
 
-ICommandPoolManager* GetGraphicsPoolManagerInstance() noexcept;
-void InitGraphicsPoolManagerInstance(
+ICommandPoolManager* CreateCommandPoolInstance(
 	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
 );
-void CleanUpGraphicsPoolManagerInstance() noexcept;
 #endif

@@ -13,8 +13,6 @@ public:
 	virtual void GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) = 0;
 };
 
-IDisplayManager* GetDisplayManagerInstance() noexcept;
-void InitDisplayManagerInstance();
-void CleanUpDisplayManagerInstance() noexcept;
+IDisplayManager* CreateDisplayManagerInstance();
 
 #endif

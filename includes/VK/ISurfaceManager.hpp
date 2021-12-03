@@ -9,7 +9,9 @@ public:
 	virtual VkSurfaceKHR GetSurface() const noexcept = 0;
 };
 
-ISurfaceManager* GetSurfaceManagerInstance() noexcept;
-void InitSurfaceManagerInstance(VkInstance instance, void* windowHandle, void* moduleHandle);
-void CleanUpSurfaceManagerInstance() noexcept;
+#ifdef TERRA_WIN32
+ISurfaceManager* CreateWin32SurfaceManagerInstance(
+	VkInstance instance, void* windowHandle, void* moduleHandle
+);
+#endif
 #endif

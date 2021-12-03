@@ -1,7 +1,7 @@
 #include <DeviceManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <algorithm>
-#include <ISurfaceManager.hpp>
+#include <InstanceManager.hpp>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -200,7 +200,7 @@ SwapChainInfo DeviceManager::GetSwapChainInfo() const noexcept {
 	SwapChainInfo swapInfo;
 	GetSwapchainCapabilities(
 		m_physicalDevice,
-		GetSurfaceManagerInstance()->GetSurface(),
+		SurfaceInst::GetRef()->GetSurface(),
 		swapInfo
 	);
 

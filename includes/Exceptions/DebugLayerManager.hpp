@@ -34,7 +34,6 @@ private:
 	VkInstance m_pInstanceRef;
 };
 
-void InitDebugLayer(VkInstance instanceRef);
-// Must be called before VkInstance is destroyed
-void CleanUpDebugLayer() noexcept;
+DebugLayerManager* CreateDebugLayerInstance(VkInstance instanceRef);
+
 #endif

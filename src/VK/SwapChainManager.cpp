@@ -1,7 +1,6 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <ISyncObjects.hpp>
-#include <ISurfaceManager.hpp>
+#include <InstanceManager.hpp>
 
 SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
@@ -105,7 +104,7 @@ std::uint32_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 		m_deviceRef,
 		m_swapchain,
 		UINT64_MAX,
-		GetSyncObjectsInstance()->GetImageAvailableSemaphore(),
+		SyncObjInst::GetRef()->GetImageAvailableSemaphore(),
 		VK_NULL_HANDLE,
 		&imageIndex
 	);
@@ -117,7 +116,7 @@ void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	VkSemaphore signalSemaphores[] = { GetSyncObjectsInstance()->GetRenderFinishedSemaphore() };
+	VkSemaphore signalSemaphores[] = { SyncObjInst::GetRef()->GetRenderFinishedSemaphore() };
 	presentInfo.waitSemaphoreCount = std::size(signalSemaphores);
 	presentInfo.pWaitSemaphores = signalSemaphores;
 
@@ -187,14 +186,14 @@ void SwapChainManager::ResizeSwapchain(
 	std::uint32_t width, std::uint32_t height, bool& formatChanged
 ) {
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
-		IDeviceManager* deviceManRef = GetDeviceManagerInstance();
+		IDeviceManager* deviceManRef = DeviceInst::GetRef();
 		vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
 
 		CleanUpSwapchain();
 		CreateSwapchain(
 			deviceManRef->GetLogicalDevice(),
 			deviceManRef->GetSwapChainInfo(),
-			GetSurfaceManagerInstance()->GetSurface(),
+			SurfaceInst::GetRef()->GetSurface(),
 			m_swapchainImages.size(),
 			width, height, formatChanged
 		);

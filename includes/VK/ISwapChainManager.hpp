@@ -29,11 +29,10 @@ public:
 	) const noexcept = 0;
 };
 
-ISwapChainManager* GetSwapchainManagerInstance() noexcept;
-void InitSwapchainManagerInstance(
+ISwapChainManager* CreateSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
 	VkQueue presentQueue, std::uint32_t queueFamily
 );
-void CleanUpSwapchainManagerInstance() noexcept;
+
 #endif

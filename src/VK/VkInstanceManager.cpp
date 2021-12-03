@@ -1,7 +1,6 @@
-#include <InstanceManager.hpp>
+#include <VkInstanceManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <DebugLayerManager.hpp>
-#include <IDisplayManager.hpp>
+#include <InstanceManager.hpp>
 
 InstanceManager::InstanceManager(const char* appName) {
 	VkApplicationInfo appInfo = {};
@@ -46,7 +45,7 @@ InstanceManager::InstanceManager(const char* appName) {
 	m_extensionNames.emplace_back("VK_KHR_win32_surface");
 #endif
 	AddExtensionNames(
-		GetDisplayManagerInstance()->GetRequiredExtensions()
+		DisplayInst::GetRef()->GetRequiredExtensions()
 	);
 
 	CheckExtensionSupport();
@@ -57,16 +56,9 @@ InstanceManager::InstanceManager(const char* appName) {
 
 	VkResult result;
 	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
-
-#ifdef _DEBUG
-	InitDebugLayer(m_vkInstance);
-#endif
 }
 
 InstanceManager::~InstanceManager() noexcept {
-#ifdef _DEBUG
-	CleanUpDebugLayer();
-#endif
 	vkDestroyInstance(m_vkInstance, nullptr);
 }
 

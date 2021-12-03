@@ -1,5 +1,4 @@
-#include <GraphicsEngineVK.hpp>
-#include <InstanceManager.hpp>
+#include <VkInstanceManager.hpp>
 #include <DebugLayerManager.hpp>
 #include <DeviceManager.hpp>
 #include <GraphicsQueueManager.hpp>
@@ -9,224 +8,75 @@
 #include <SyncObjects.hpp>
 #include <IDisplayManager.hpp>
 
-static GraphicsEngine* s_pGraphicsEngine = nullptr;
-
-static IInstanceManager* s_pInstanceManager = nullptr;
-
-static DebugLayerManager* s_pDebugLayerManager = nullptr;
-
-static IDeviceManager* s_pDeviceManager = nullptr;
-
-static IGraphicsQueueManager* s_pGraphicsQueueManager = nullptr;
-
-static ISurfaceManager* s_pSurfaceManager = nullptr;
-
-static ISwapChainManager* s_pSwapChainManager = nullptr;
-
-static ICommandPoolManager* s_pGraphicsPoolManager = nullptr;
-
-static ISyncObjects* s_pSyncObjects = nullptr;
-
-static IDisplayManager* s_pDisplayManager = nullptr;
-
-// Graphics Engine
-GraphicsEngine* GetGraphicsEngineInstance() noexcept {
-	return s_pGraphicsEngine;
-}
-
-void InitGraphicsEngineInstance(
-	const char* appName,
-	void* windowHandle,
-	void* moduleHandle,
-	std::uint32_t width, std::uint32_t height,
-	std::uint8_t bufferCount
-) {
-	if (!s_pGraphicsEngine)
-		s_pGraphicsEngine = new GraphicsEngineVK(
-			appName,
-			windowHandle, moduleHandle, width, height, bufferCount
-		);
-}
-
-void CleanUpGraphicsEngineInstance() noexcept {
-	if (s_pGraphicsEngine) {
-		delete s_pGraphicsEngine;
-		s_pGraphicsEngine = nullptr;
-	}
-}
-
 // Instance Manager
-IInstanceManager* GetInstanceManagerInstance() noexcept {
-	return s_pInstanceManager;
-}
-
-void InitInstanceManagerInstance(const char* appName) {
-	if (!s_pInstanceManager)
-		s_pInstanceManager = new InstanceManager(appName);
-}
-
-void CleanUpInstanceManagerInstance() noexcept {
-	if (s_pInstanceManager) {
-		delete s_pInstanceManager;
-		s_pInstanceManager = nullptr;
-	}
+IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
+	return new InstanceManager(appName);
 }
 
 // Debug Layer
-void InitDebugLayer(VkInstance instanceRef) {
-	if (!s_pDebugLayerManager)
-		s_pDebugLayerManager = new DebugLayerManager(instanceRef);
-}
-
-void CleanUpDebugLayer() noexcept {
-	if (s_pDebugLayerManager) {
-		delete s_pDebugLayerManager;
-		s_pDebugLayerManager = nullptr;
-	}
+DebugLayerManager* CreateDebugLayerInstance(VkInstance instanceRef) {
+	return new DebugLayerManager(instanceRef);
 }
 
 // Device Manager
-IDeviceManager* GetDeviceManagerInstance() noexcept {
-	return s_pDeviceManager;
-}
-
-void InitDeviceManagerInstance() {
-	if (!s_pDeviceManager)
-		s_pDeviceManager = new DeviceManager();
-}
-
-void CleanUpDeviceManagerInstance() noexcept {
-	if (s_pDeviceManager) {
-		delete s_pDeviceManager;
-		s_pDeviceManager = nullptr;
-	}
+IDeviceManager* CreateDeviceManagerInstance() {
+	return new DeviceManager();
 }
 
 // Graphics Queue Manager
-IGraphicsQueueManager* GetGraphicsQueueManagerInstance() noexcept {
-	return s_pGraphicsQueueManager;
-}
-
-void InitGraphicsQueueManagerInstance(VkQueue queue) {
-	if (!s_pGraphicsQueueManager)
-		s_pGraphicsQueueManager = new GraphicsQueueManager(queue);
-}
-
-void CleanUpGraphicsQueueManagerInstance() noexcept {
-	if (s_pGraphicsQueueManager) {
-		delete s_pGraphicsQueueManager;
-		s_pGraphicsQueueManager = nullptr;
-	}
+IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(VkQueue queue) {
+	return new GraphicsQueueManager(queue);
 }
 
 // Surface Manager
 #ifdef TERRA_WIN32
 #include <Win32/SurfaceManagerWin32.hpp>
+
+ISurfaceManager* CreateWin32SurfaceManagerInstance(
+	VkInstance instance, void* windowHandle, void* moduleHandle
+) {
+	return new SurfaceManagerWin32(instance, windowHandle, moduleHandle);
+}
+
 #endif
-
-ISurfaceManager* GetSurfaceManagerInstance() noexcept {
-	return s_pSurfaceManager;
-}
-
-void InitSurfaceManagerInstance(VkInstance instance, void* windowHandle, void* moduleHandle) {
-	if (!s_pSurfaceManager)
-#ifdef TERRA_WIN32
-		s_pSurfaceManager = new SurfaceManagerWin32(instance, windowHandle, moduleHandle);
-#endif
-}
-
-void CleanUpSurfaceManagerInstance() noexcept {
-	if (s_pSurfaceManager) {
-		delete s_pSurfaceManager;
-		s_pSurfaceManager = nullptr;
-	}
-}
 
 // Swapchain Manager
-ISwapChainManager* GetSwapchainManagerInstance() noexcept {
-	return s_pSwapChainManager;
-}
-
-void InitSwapchainManagerInstance(
+ISwapChainManager* CreateSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
 	VkQueue presentQueue, std::uint32_t queueFamily
 ) {
-	if (!s_pSwapChainManager)
-		s_pSwapChainManager = new SwapChainManager(
-			device, swapCapabilities, surface,
-			width, height, bufferCount, presentQueue, queueFamily
-		);
-}
-
-void CleanUpSwapchainManagerInstance() noexcept {
-	if (s_pSwapChainManager) {
-		delete s_pSwapChainManager;
-		s_pSwapChainManager = nullptr;
-	}
+	return new SwapChainManager(
+		device, swapCapabilities, surface,
+		width, height, bufferCount, presentQueue, queueFamily
+	);
 }
 
 // Graphics Pool Manager
-ICommandPoolManager* GetGraphicsPoolManagerInstance() noexcept {
-	return s_pGraphicsPoolManager;
-}
-
-void InitGraphicsPoolManagerInstance(
+ICommandPoolManager* CreateCommandPoolInstance(
 	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
 ) {
-	if (!s_pGraphicsPoolManager)
-		s_pGraphicsPoolManager = new CommandPoolManager(
-			device, queueIndex, bufferCount
-		);
-}
-
-void CleanUpGraphicsPoolManagerInstance() noexcept {
-	if (s_pGraphicsPoolManager) {
-		delete s_pGraphicsPoolManager;
-		s_pGraphicsPoolManager = nullptr;
-	}
+	return new CommandPoolManager(
+		device, queueIndex, bufferCount
+	);
 }
 
 // Sync Objects
-ISyncObjects* GetSyncObjectsInstance() noexcept {
-	return s_pSyncObjects;
-}
-
-void InitSyncObjectsInstance(VkDevice device, std::uint32_t bufferCount) {
-	if (!s_pSyncObjects)
-		s_pSyncObjects = new SyncObjects(device, bufferCount);
-}
-
-void CleanUpSyncObjectsInstance() noexcept {
-	if (s_pSyncObjects) {
-		delete s_pSyncObjects;
-		s_pSyncObjects = nullptr;
-	}
+ISyncObjects* CreateSyncObjectsInstance(VkDevice device, std::uint32_t bufferCount) {
+	return new SyncObjects(device, bufferCount);
 }
 
 // Display Manager
-IDisplayManager* GetDisplayManagerInstance() noexcept {
-	return s_pDisplayManager;
-}
-
-void CleanUpDisplayManagerInstance() noexcept {
-	if (s_pDisplayManager) {
-		delete s_pDisplayManager;
-		s_pDisplayManager = nullptr;
-	}
-}
-
 #ifdef TERRA_WIN32
 #include <Win32/DisplayManagerWin32.hpp>
 #else
 #include <DisplayManagerVK.hpp>
 #endif
 
-void InitDisplayManagerInstance() {
-	if (!s_pDisplayManager)
+IDisplayManager* CreateDisplayManagerInstance() {
 #ifdef TERRA_WIN32
-		s_pDisplayManager = new DisplayManagerWin32();
+	return new DisplayManagerWin32();
 #else
-		s_pDisplayManager = new DisplayManagerVK();
+	return new DisplayManagerVK();
 #endif
 }

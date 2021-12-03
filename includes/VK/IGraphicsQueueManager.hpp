@@ -10,7 +10,5 @@ public:
 	virtual void SubmitCommandBuffer(VkCommandBuffer commandBuffer) = 0;
 };
 
-IGraphicsQueueManager* GetGraphicsQueueManagerInstance() noexcept;
-void InitGraphicsQueueManagerInstance(VkQueue queue);
-void CleanUpGraphicsQueueManagerInstance() noexcept;
+IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(VkQueue queue);
 #endif

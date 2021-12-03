@@ -1,13 +1,6 @@
 #include <GraphicsEngineVK.hpp>
-#include <IInstanceManager.hpp>
-#include <ISurfaceManager.hpp>
-#include <IDeviceManager.hpp>
-#include <IGraphicsQueueManager.hpp>
-#include <ISwapChainManager.hpp>
-#include <ICommandPoolManager.hpp>
-#include <SyncObjects.hpp>
+#include <InstanceManager.hpp>
 #include <CommonPipelineObjects.hpp>
-#include <IDisplayManager.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
@@ -18,26 +11,34 @@ GraphicsEngineVK::GraphicsEngineVK(
 
 	SetScissorAndViewport(width, height);
 
-	InitDisplayManagerInstance();
+	DisplayInst::Init();
 
-	InitInstanceManagerInstance(appName);
+	VkInstInst::Init(appName);
 
-	InitSurfaceManagerInstance(
-		GetInstanceManagerInstance()->GetVKInstance(), windowHandle, moduleHandle
+#ifdef _DEBUG
+	DebugLayerInst::Init(
+		VkInstInst::GetRef()->GetVKInstance()
 	);
+#endif
 
-	InitDeviceManagerInstance();
-	IDeviceManager* deviceManagerRef = GetDeviceManagerInstance();
+#ifdef TERRA_WIN32
+	SurfaceInst::InitWin32(
+		VkInstInst::GetRef()->GetVKInstance(), windowHandle, moduleHandle
+	);
+#endif
+
+	DeviceInst::Init();
+	IDeviceManager* deviceManagerRef = DeviceInst::GetRef();
 	deviceManagerRef->CreatePhysicalDevice(
-		GetInstanceManagerInstance()->GetVKInstance(),
-		GetSurfaceManagerInstance()->GetSurface()
+		VkInstInst::GetRef()->GetVKInstance(),
+		SurfaceInst::GetRef()->GetSurface()
 	);
 	deviceManagerRef->CreateLogicalDevice();
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = deviceManagerRef->GetQueue(
 		QueueType::GraphicsQueue
 	);
-	InitGraphicsQueueManagerInstance(
+	GfxQueInst::Init(
 		graphicsQueueHandle
 	);
 
@@ -47,40 +48,43 @@ GraphicsEngineVK::GraphicsEngineVK(
 		QueueType::PresentQueue
 	);
 
-	InitSwapchainManagerInstance(
+	SwapChainInst::Init(
 		logicalDevice,
 		deviceManagerRef->GetSwapChainInfo(),
-		GetSurfaceManagerInstance()->GetSurface(),
+		SurfaceInst::GetRef()->GetSurface(),
 		width, height, bufferCount,
 		presentQueueHandle,
 		presentQueueFamilyIndex
 	);
 
-	InitGraphicsPoolManagerInstance(
+	GfxPoolInst::Init(
 		logicalDevice,
 		graphicsQueueFamilyIndex,
 		bufferCount
 	);
 
-	InitSyncObjectsInstance(
+	SyncObjInst::Init(
 		logicalDevice,
 		bufferCount
 	);
 
-	GetDisplayManagerInstance()->InitDisplayManager(
+	DisplayInst::GetRef()->InitDisplayManager(
 		deviceManagerRef->GetPhysicalDevice()
 	);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
-	CleanUpGraphicsPoolManagerInstance();
-	CleanUpSwapchainManagerInstance();
-	CleanUpGraphicsQueueManagerInstance();
-	CleanUpSyncObjectsInstance();
-	CleanUpDisplayManagerInstance();
-	CleanUpDeviceManagerInstance();
-	CleanUpSurfaceManagerInstance();
-	CleanUpInstanceManagerInstance();
+	GfxPoolInst::CleanUp();
+	SwapChainInst::CleanUp();
+	GfxQueInst::CleanUp();
+	SyncObjInst::CleanUp();
+	DisplayInst::CleanUp();
+	DeviceInst::CleanUp();
+	SurfaceInst::CleanUp();
+#ifdef _DEBUG
+	DebugLayerInst::CleanUp();
+#endif
+	VkInstInst::CleanUp();
 }
 
 void GraphicsEngineVK::SetBackgroundColor(const Ceres::VectorF32& colorVector) noexcept {
@@ -94,10 +98,10 @@ void GraphicsEngineVK::SubmitModels(const IModel* const models, std::uint32_t mo
 }
 
 void GraphicsEngineVK::Render() {
-	ISyncObjects* syncObjectsRef = GetSyncObjectsInstance();
-	ISwapChainManager* swapchainRef = GetSwapchainManagerInstance();
-	ICommandPoolManager* commandPoolRef = GetGraphicsPoolManagerInstance();
-	IGraphicsQueueManager* graphicsQueueRef = GetGraphicsQueueManagerInstance();
+	ISyncObjects* syncObjectsRef = SyncObjInst::GetRef();
+	ISwapChainManager* swapchainRef = SwapChainInst::GetRef();
+	ICommandPoolManager* commandPoolRef = GfxPoolInst::GetRef();
+	IGraphicsQueueManager* graphicsQueueRef = GfxQueInst::GetRef();
 
 	syncObjectsRef->WaitAndResetFence();
 	std::uint32_t imageIndex = swapchainRef->GetAvailableImageIndex();
@@ -143,7 +147,7 @@ void GraphicsEngineVK::Render() {
 
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
-	GetSwapchainManagerInstance()->ResizeSwapchain(width, height, hasSwapFormatChanged);
+	SwapChainInst::GetRef()->ResizeSwapchain(width, height, hasSwapFormatChanged);
 	// If swapFormatChanged Recreate RenderPass
 }
 
@@ -151,8 +155,8 @@ void GraphicsEngineVK::GetMonitorCoordinates(
 	std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
 ) {
 	Ceres::Rect resolution;
-	GetDisplayManagerInstance()->GetDisplayResolution(
-		GetDeviceManagerInstance()->GetPhysicalDevice(),
+	DisplayInst::GetRef()->GetDisplayResolution(
+		DeviceInst::GetRef()->GetPhysicalDevice(),
 		resolution
 	);
 
@@ -162,7 +166,7 @@ void GraphicsEngineVK::GetMonitorCoordinates(
 
 void GraphicsEngineVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(
-		GetDeviceManagerInstance()->GetLogicalDevice()
+		DeviceInst::GetRef()->GetLogicalDevice()
 	);
 }
 

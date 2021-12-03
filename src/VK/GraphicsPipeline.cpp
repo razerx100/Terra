@@ -1,6 +1,6 @@
 #include <GraphicsPipeline.hpp>
 #include <VKThrowMacros.hpp>
-#include <ISwapChainManager.hpp>
+#include <InstanceManager.hpp>
 #include <CommonPipelineObjects.hpp>
 
 GraphicsPipeline::GraphicsPipeline(VkDevice device) noexcept : m_deviceRef(device) {}
@@ -27,7 +27,7 @@ void GraphicsPipeline::CreatePipelineLayout() {
 
 void GraphicsPipeline::CreateRenderPass() {
 	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = GetSwapchainManagerInstance()->GetSwapFormat();
+	colorAttachment.format = SwapChainInst::GetRef()->GetSwapFormat();
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -66,7 +66,7 @@ void GraphicsPipeline::CreateGraphicsPipeline() {
 	PopulateInputAssemblyStateCreateInfo(inputAssemblyInfo);
 
 	VkViewport viewport[1];
-	VkExtent2D swapExtent = GetSwapchainManagerInstance()->GetSwapExtent();
+	VkExtent2D swapExtent = SwapChainInst::GetRef()->GetSwapExtent();
 	PopulateViewport(viewport[0], swapExtent.width, swapExtent.height);
 
 	VkRect2D scissorRect[1];

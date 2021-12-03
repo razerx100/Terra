@@ -42,7 +42,5 @@ public:
 	virtual SwapChainInfo GetSwapChainInfo() const noexcept = 0;
 };
 
-IDeviceManager* GetDeviceManagerInstance() noexcept;
-void InitDeviceManagerInstance();
-void CleanUpDeviceManagerInstance() noexcept;
+IDeviceManager* CreateDeviceManagerInstance();
 #endif
