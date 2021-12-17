@@ -93,7 +93,10 @@ void GraphicsEngineVK::SetBackgroundColor(const Ceres::VectorF32& colorVector) n
 	};
 }
 
-void GraphicsEngineVK::SubmitModels(const IModel* const models, std::uint32_t modelCount) {
+void GraphicsEngineVK::SubmitModels(
+	IModel* models, std::uint32_t modelCount,
+	bool texture
+) {
 
 }
 
@@ -175,4 +178,12 @@ void GraphicsEngineVK::SetScissorAndViewport(
 ) noexcept {
 	PopulateViewport(m_viewport, width, height);
 	PopulateScissorRect(m_scissorRect, width, height);
+}
+
+void GraphicsEngineVK::SetShaderPath(const char* path) noexcept {
+	m_shaderPath = path;
+}
+
+void GraphicsEngineVK::InitResourceBasedObjects() {
+
 }

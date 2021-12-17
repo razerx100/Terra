@@ -15,13 +15,19 @@ public:
 	~GraphicsEngineVK() noexcept;
 
 	void SetBackgroundColor(const Ceres::VectorF32& colorVector) noexcept override;
-	void SubmitModels(const IModel* const models, std::uint32_t modelCount) override;
+	void SubmitModels(
+		IModel* models, std::uint32_t modelCount,
+		bool texture = true
+	) override;
 	void Render() override;
 	void Resize(std::uint32_t width, std::uint32_t height) override;
 	void GetMonitorCoordinates(
 		std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
 	) override;
 	void WaitForAsyncTasks() override;
+
+	void SetShaderPath(const char* path) noexcept override;
+	void InitResourceBasedObjects() override;
 
 private:
 	void SetScissorAndViewport(std::uint32_t width, std::uint32_t height) noexcept;
@@ -32,5 +38,7 @@ private:
 
 	VkViewport m_viewport;
 	VkRect2D m_scissorRect;
+
+	std::string m_shaderPath;
 };
 #endif
