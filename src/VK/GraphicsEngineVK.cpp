@@ -93,15 +93,8 @@ void GraphicsEngineVK::SetBackgroundColor(const Ceres::VectorF32& colorVector) n
 	};
 }
 
-void GraphicsEngineVK::SubmitModels(
-	IModel** models, std::uint32_t modelCount,
-	bool texture
-) {
-	std::vector<std::unique_ptr<IModel>> modelsContainer;
-	for (std::uint32_t index = 0; index < modelCount; ++index)
-		modelsContainer.emplace_back(
-			std::unique_ptr<IModel>(*(models + index))
-		);
+void GraphicsEngineVK::SubmitModel(const IModel* const modelRef, bool texture) {
+
 }
 
 void GraphicsEngineVK::Render() {
