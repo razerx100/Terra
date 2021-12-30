@@ -25,7 +25,7 @@ else()
 endif()
 
 if(PLATFORM STREQUAL "WINDOWS")
-    file(GLOB_RECURSE SRCOPT includes/Win32/*.hpp)
+    file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
 endif()
 
 add_library(${PROJECT_NAME} SHARED
@@ -50,6 +50,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includ
 target_compile_definitions(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>" "$<$<CONFIG:RELEASE>:NDEBUG>" BUILD_TERRA)
 
 if(PLATFORM STREQUAL "WINDOWS")
+    target_include_directories(${PROJECT_NAME} PRIVATE Win32/includes/)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TERRA_WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         dxgi.lib

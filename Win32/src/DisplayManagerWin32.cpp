@@ -1,4 +1,4 @@
-#include <Win32/DisplayManagerWin32.hpp>
+#include <DisplayManagerWin32.hpp>
 #include <VKThrowMacros.hpp>
 
 DisplayManagerWin32::DisplayManagerWin32() {

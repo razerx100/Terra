@@ -30,7 +30,7 @@ IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(VkQueue queue) {
 
 // Surface Manager
 #ifdef TERRA_WIN32
-#include <Win32/SurfaceManagerWin32.hpp>
+#include <SurfaceManagerWin32.hpp>
 
 ISurfaceManager* CreateWin32SurfaceManagerInstance(
 	VkInstance instance, void* windowHandle, void* moduleHandle
@@ -68,7 +68,7 @@ ISyncObjects* CreateSyncObjectsInstance(VkDevice device, std::uint32_t bufferCou
 
 // Display Manager
 #ifdef TERRA_WIN32
-#include <Win32/DisplayManagerWin32.hpp>
+#include <DisplayManagerWin32.hpp>
 #else
 #include <DisplayManagerVK.hpp>
 #endif

@@ -1,5 +1,5 @@
-#include <Win32/SurfaceManagerWin32.hpp>
-#include <Win32/CleanWin.hpp>
+#include <SurfaceManagerWin32.hpp>
+#include <CleanWin.hpp>
 #include <vulkan/vulkan_win32.h>
 #include <VKThrowMacros.hpp>
 
