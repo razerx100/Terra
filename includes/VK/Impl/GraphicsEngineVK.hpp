@@ -25,6 +25,7 @@ public:
 
 	void SetShaderPath(const char* path) noexcept override;
 	void InitResourceBasedObjects() override;
+	void ProcessData() override;
 
 private:
 	void SetScissorAndViewport(std::uint32_t width, std::uint32_t height) noexcept;

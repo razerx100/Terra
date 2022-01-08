@@ -184,3 +184,7 @@ void GraphicsEngineVK::SetShaderPath(const char* path) noexcept {
 void GraphicsEngineVK::InitResourceBasedObjects() {
 
 }
+
+void GraphicsEngineVK::ProcessData() {
+
+}
