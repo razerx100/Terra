@@ -7,7 +7,7 @@ void DebugLayerInst::Init(VkInstance instanceRef) {
 }
 
 void GfxPoolInst::Init(
-	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
+	VkDevice device, size_t queueIndex, size_t bufferCount
 ) {
 	Set(
 		CreateCommandPoolInstance(device, queueIndex, bufferCount)
@@ -47,7 +47,7 @@ void SwapChainInst::Init(
 }
 
 void SyncObjInst::Init(
-	VkDevice device, std::uint32_t bufferCount
+	VkDevice device, size_t bufferCount
 ) {
 	Set(
 		CreateSyncObjectsInstance(device, bufferCount)

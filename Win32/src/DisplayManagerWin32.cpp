@@ -39,8 +39,9 @@ void DisplayManagerWin32::GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect
 void DisplayManagerWin32::MatchAdapter(const LUID& adapterLUid) {
 	ComPtr<IDXGIAdapter1> pAdapter;
 	DXGI_ADAPTER_DESC gpuDesc = {};
-	for (std::uint32_t index = 0u;
-		m_pFactory->EnumAdapters1(index, &pAdapter) != DXGI_ERROR_NOT_FOUND;) {
+	for (size_t index = 0u;
+		m_pFactory->EnumAdapters1(
+			static_cast<UINT>(index), &pAdapter) != DXGI_ERROR_NOT_FOUND;) {
 
 		pAdapter->GetDesc(&gpuDesc);
 		if (AreLUIDsSame(gpuDesc.AdapterLuid, adapterLUid)) {

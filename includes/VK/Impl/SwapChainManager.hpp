@@ -6,16 +6,16 @@ class SwapChainManager : public ISwapChainManager {
 public:
 	SwapChainManager(
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
-		VkQueue presentQueue, std::uint32_t queueFamily
+		std::uint32_t width, std::uint32_t height, size_t bufferCount,
+		VkQueue presentQueue, size_t queueFamily
 	);
 	~SwapChainManager() noexcept;
 
 	VkSwapchainKHR GetRef() const noexcept override;
 	VkExtent2D GetSwapExtent() const noexcept override;
 	VkFormat GetSwapFormat() const noexcept override;
-	std::uint32_t GetAvailableImageIndex() const noexcept override;
-	VkImage GetImage(std::uint32_t imageIndex) const noexcept override;
+	size_t GetAvailableImageIndex() const noexcept override;
+	VkImage GetImage(size_t imageIndex) const noexcept override;
 
 	void PresentImage(std::uint32_t imageIndex) override;
 	void ResizeSwapchain(
@@ -23,11 +23,11 @@ public:
 	) override;
 
 	void GetUndefinedToTransferBarrier(
-		std::uint32_t imageIndex,
+		size_t imageIndex,
 		VkImageMemoryBarrier& transferBarrier
 	) const noexcept override;
 	void GetTransferToPresentBarrier(
-		std::uint32_t imageIndex,
+		size_t imageIndex,
 		VkImageMemoryBarrier& presentBarrier
 	) const noexcept override;
 
@@ -47,7 +47,7 @@ private:
 	void CreateImageViews();
 	void CreateSwapchain(
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-		std::uint32_t bufferCount, std::uint32_t width, std::uint32_t height,
+		size_t bufferCount, std::uint32_t width, std::uint32_t height,
 		bool& formatChanged
 	);
 	void CleanUpSwapchain() noexcept;
@@ -60,6 +60,6 @@ private:
 	std::vector<VkImage> m_swapchainImages;
 	std::vector<VkImageView> m_swapchainImageViews;
 	VkQueue m_presentQueue;
-	std::uint32_t m_presentFamilyIndex;
+	size_t m_presentFamilyIndex;
 };
 #endif

@@ -7,12 +7,12 @@ class ICommandPoolManager {
 public:
 	virtual ~ICommandPoolManager() = default;
 
-	virtual void Reset(std::uint32_t bufferIndex) = 0;
-	virtual void Close(std::uint32_t bufferIndex) = 0;
-	virtual VkCommandBuffer GetCommandBuffer(std::uint32_t bufferIndex) const noexcept = 0;
+	virtual void Reset(size_t bufferIndex) = 0;
+	virtual void Close(size_t bufferIndex) = 0;
+	virtual VkCommandBuffer GetCommandBuffer(size_t bufferIndex) const noexcept = 0;
 };
 
 ICommandPoolManager* CreateCommandPoolInstance(
-	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
+	VkDevice device, size_t queueIndex, size_t bufferCount
 );
 #endif

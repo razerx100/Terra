@@ -5,9 +5,9 @@ void PopulateVertexInputStateCreateInfo(
 ) noexcept {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	createInfo.vertexBindingDescriptionCount = 0;
+	createInfo.vertexBindingDescriptionCount = 0u;
 	createInfo.pVertexBindingDescriptions = nullptr;
-	createInfo.vertexAttributeDescriptionCount = 0;
+	createInfo.vertexAttributeDescriptionCount = 0u;
 	createInfo.pVertexAttributeDescriptions = nullptr;
 }
 
@@ -111,10 +111,10 @@ void PopulateColorBlendStateCreateInfo(
 	createInfo.logicOp = VK_LOGIC_OP_COPY;
 	createInfo.attachmentCount = static_cast<std::uint32_t>(attachmentStates.size());
 	createInfo.pAttachments = attachmentStates.data();
-	createInfo.blendConstants[0] = 0.0f;
-	createInfo.blendConstants[1] = 0.0f;
-	createInfo.blendConstants[2] = 0.0f;
-	createInfo.blendConstants[3] = 0.0f;
+	createInfo.blendConstants[0u] = 0.0f;
+	createInfo.blendConstants[1u] = 0.0f;
+	createInfo.blendConstants[2u] = 0.0f;
+	createInfo.blendConstants[3u] = 0.0f;
 }
 
 void PopulateDynamicStateCreateInfo(

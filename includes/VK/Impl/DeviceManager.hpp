@@ -20,10 +20,10 @@ public:
 
 private:
 	struct QueueFamilyInfo {
-		std::uint32_t index = 0u;
+		size_t index = 0u;
 		std::uint32_t typeFlags = 0u;
-		std::uint32_t queueRequired = 0u;
-		std::uint32_t queueCreated = 0u;
+		size_t queueRequired = 0u;
+		size_t queueCreated = 0u;
 	};
 
 private:
@@ -43,7 +43,7 @@ private:
 	void GetQueueSupportInfo(
 		VkPhysicalDevice device,
 		VkSurfaceKHR surface,
-		std::vector<std::pair<std::uint32_t, QueueType>>& familyInfos
+		std::vector<std::pair<size_t, QueueType>>& familyInfos
 	) const noexcept;
 	void GetSwapchainCapabilities(
 		VkPhysicalDevice device,
@@ -52,7 +52,7 @@ private:
 	) const noexcept;
 
 	void SetQueueFamilyInfo(
-		std::vector<std::pair<std::uint32_t, QueueType>>& familyInfos
+		std::vector<std::pair<size_t, QueueType>>& familyInfos
 	) noexcept;
 
 private:

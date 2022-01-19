@@ -14,9 +14,9 @@ GraphicsPipeline::~GraphicsPipeline() noexcept {
 void GraphicsPipeline::CreatePipelineLayout() {
 	VkPipelineLayoutCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.setLayoutCount = 0;
+	createInfo.setLayoutCount = 0u;
 	createInfo.pSetLayouts = nullptr;
-	createInfo.pushConstantRangeCount = 0;
+	createInfo.pushConstantRangeCount = 0u;
 	createInfo.pPushConstantRanges = nullptr;
 
 	VkResult result;
@@ -37,7 +37,7 @@ void GraphicsPipeline::CreateRenderPass() {
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.attachment = 0u;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass = {};
@@ -65,12 +65,12 @@ void GraphicsPipeline::CreateGraphicsPipeline() {
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
 	PopulateInputAssemblyStateCreateInfo(inputAssemblyInfo);
 
-	VkViewport viewport[1];
+	VkViewport viewport[1u];
 	VkExtent2D swapExtent = SwapChainInst::GetRef()->GetSwapExtent();
-	PopulateViewport(viewport[0], swapExtent.width, swapExtent.height);
+	PopulateViewport(viewport[0u], swapExtent.width, swapExtent.height);
 
-	VkRect2D scissorRect[1];
-	PopulateScissorRect(scissorRect[0], swapExtent.width, swapExtent.height);
+	VkRect2D scissorRect[1u];
+	PopulateScissorRect(scissorRect[0u], swapExtent.width, swapExtent.height);
 
 	VkPipelineViewportStateCreateInfo viewportInfo;
 	PopulateViewportStateCreateInfo(viewportInfo, viewport, scissorRect);
@@ -81,8 +81,8 @@ void GraphicsPipeline::CreateGraphicsPipeline() {
 	VkPipelineMultisampleStateCreateInfo mulisamplingInfo;
 	PopulateMultisampleStateCreateInfo(mulisamplingInfo);
 
-	VkPipelineColorBlendAttachmentState colorBlendAttachment[1];
-	PopulateColorBlendAttachmentState(colorBlendAttachment[0]);
+	VkPipelineColorBlendAttachmentState colorBlendAttachment[1u];
+	PopulateColorBlendAttachmentState(colorBlendAttachment[0u]);
 
 	VkPipelineColorBlendStateCreateInfo colorBlending;
 	PopulateColorBlendStateCreateInfo(colorBlending, colorBlendAttachment);
@@ -96,7 +96,7 @@ void GraphicsPipeline::CreateGraphicsPipeline() {
 
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 0;
+	pipelineInfo.stageCount = 0u;
 	pipelineInfo.pStages = nullptr;
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
@@ -108,7 +108,7 @@ void GraphicsPipeline::CreateGraphicsPipeline() {
 	pipelineInfo.pDynamicState = &dynamicInfo;
 	pipelineInfo.layout = m_pipelineLayout;
 	pipelineInfo.renderPass = m_renderPass;
-	pipelineInfo.subpass = 0;
+	pipelineInfo.subpass = 0u;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
 

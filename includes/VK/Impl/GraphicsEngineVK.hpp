@@ -10,7 +10,7 @@ public:
 		const char* appName,
 		void* windowHandle, void* moduleHandle,
 		std::uint32_t width, std::uint32_t height,
-		std::uint8_t bufferCount
+		size_t bufferCount
 	);
 	~GraphicsEngineVK() noexcept;
 

@@ -5,7 +5,7 @@
 
 class SyncObjects : public ISyncObjects {
 public:
-	SyncObjects(VkDevice device, std::uint32_t bufferCount);
+	SyncObjects(VkDevice device, size_t bufferCount);
 	~SyncObjects() noexcept;
 
 	VkSemaphore GetImageAvailableSemaphore() const noexcept override;
@@ -20,7 +20,7 @@ private:
 	std::vector<VkSemaphore> m_renderFinished;
 	std::vector<VkFence> m_fences;
 
-	const std::uint32_t m_inFlightFramesLimit;
-	std::uint32_t m_frameIndex;
+	const size_t m_inFlightFramesLimit;
+	size_t m_frameIndex;
 };
 #endif

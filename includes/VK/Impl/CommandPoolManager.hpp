@@ -6,13 +6,13 @@
 class CommandPoolManager : public ICommandPoolManager {
 public:
 	CommandPoolManager(
-		VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
+		VkDevice device, size_t queueIndex, size_t bufferCount
 	);
 	~CommandPoolManager() noexcept;
 
-	void Reset(std::uint32_t bufferIndex) override;
-	void Close(std::uint32_t bufferIndex) override;
-	VkCommandBuffer GetCommandBuffer(std::uint32_t bufferIndex) const noexcept override;
+	void Reset(size_t bufferIndex) override;
+	void Close(size_t bufferIndex) override;
+	VkCommandBuffer GetCommandBuffer(size_t bufferIndex) const noexcept override;
 
 private:
 	VkDevice m_deviceRef;

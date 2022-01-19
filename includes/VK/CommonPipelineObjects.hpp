@@ -1,6 +1,8 @@
 #ifndef __COMMON_PIPELINE_OBJECTS_HPP__
 #define __COMMON_PIPELINE_OBJECTS_HPP__
 #include <vulkan/vulkan.hpp>
+#include <IModel.hpp>
+#include <vector>
 #include <span>
 
 void PopulateVertexInputStateCreateInfo(

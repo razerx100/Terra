@@ -4,8 +4,8 @@
 
 SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
-	VkQueue presentQueue, std::uint32_t queueFamily
+	std::uint32_t width, std::uint32_t height, size_t bufferCount,
+	VkQueue presentQueue, size_t queueFamily
 ) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily) {
 	bool useless;
 	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
@@ -37,7 +37,7 @@ VkSurfaceFormatKHR SwapChainManager::ChooseSurfaceFormat(
 			&& surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
 			return surfaceFormat;
 
-	return availableFormats[0];
+	return availableFormats[0u];
 }
 
 VkPresentModeKHR SwapChainManager::ChoosePresentMode(
@@ -75,7 +75,7 @@ VkExtent2D SwapChainManager::ChooseSwapExtent(
 void SwapChainManager::CreateImageViews() {
 	m_swapchainImageViews.resize(m_swapchainImages.size());
 
-	for (std::uint32_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
+	for (size_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
 		VkImageViewCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		createInfo.image = m_swapchainImages[index];
@@ -98,7 +98,7 @@ void SwapChainManager::CreateImageViews() {
 	}
 }
 
-std::uint32_t SwapChainManager::GetAvailableImageIndex() const noexcept {
+size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 	std::uint32_t imageIndex;
 	vkAcquireNextImageKHR(
 		m_deviceRef,
@@ -109,7 +109,7 @@ std::uint32_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 		&imageIndex
 	);
 
-	return imageIndex;
+	return static_cast<size_t>(imageIndex);
 }
 
 void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
@@ -133,14 +133,14 @@ void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
 }
 
 void SwapChainManager::GetUndefinedToTransferBarrier(
-	std::uint32_t imageIndex,
+	size_t imageIndex,
 	VkImageMemoryBarrier& transferBarrier
 ) const noexcept {
 	VkImageSubresourceRange subResourceRange = {};
 	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subResourceRange.baseMipLevel = 0;
+	subResourceRange.baseMipLevel = 0u;
 	subResourceRange.levelCount = 1u;
-	subResourceRange.baseArrayLayer = 0;
+	subResourceRange.baseArrayLayer = 0u;
 	subResourceRange.layerCount = 1u;
 
 	transferBarrier = {};
@@ -156,14 +156,14 @@ void SwapChainManager::GetUndefinedToTransferBarrier(
 }
 
 void SwapChainManager::GetTransferToPresentBarrier(
-	std::uint32_t imageIndex,
+	size_t imageIndex,
 	VkImageMemoryBarrier& presentBarrier
 ) const noexcept {
 	VkImageSubresourceRange subResourceRange = {};
 	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subResourceRange.baseMipLevel = 0;
+	subResourceRange.baseMipLevel = 0u;
 	subResourceRange.levelCount = 1u;
-	subResourceRange.baseArrayLayer = 0;
+	subResourceRange.baseArrayLayer = 0u;
 	subResourceRange.layerCount = 1u;
 
 	presentBarrier = {};
@@ -178,7 +178,7 @@ void SwapChainManager::GetTransferToPresentBarrier(
 	presentBarrier.subresourceRange = subResourceRange;
 }
 
-VkImage SwapChainManager::GetImage(std::uint32_t imageIndex) const noexcept {
+VkImage SwapChainManager::GetImage(size_t imageIndex) const noexcept {
 	return m_swapchainImages[imageIndex];
 }
 
@@ -204,7 +204,7 @@ void SwapChainManager::ResizeSwapchain(
 
 void SwapChainManager::CreateSwapchain(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t bufferCount, std::uint32_t width, std::uint32_t height,
+	size_t bufferCount, std::uint32_t width, std::uint32_t height,
 	bool& formatChanged
 ) {
 	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(swapCapabilities.formats);
@@ -217,8 +217,8 @@ void SwapChainManager::CreateSwapchain(
 	m_swapchainExtent = swapExtent;
 	m_swapchainFormat = swapFormat.format;
 
-	std::uint32_t imageCount = bufferCount;
-	if (swapCapabilities.capabilities.maxImageCount > 0
+	std::uint32_t imageCount = static_cast<std::uint32_t>(bufferCount);
+	if (swapCapabilities.capabilities.maxImageCount > 0u
 		&& swapCapabilities.capabilities.maxImageCount < imageCount)
 		imageCount = swapCapabilities.capabilities.maxImageCount;
 

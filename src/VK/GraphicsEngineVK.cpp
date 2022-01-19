@@ -6,7 +6,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	std::uint8_t bufferCount
+	size_t bufferCount
 ) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName) {
 
 	SetScissorAndViewport(width, height);
@@ -104,7 +104,7 @@ void GraphicsEngineVK::Render() {
 	IGraphicsQueueManager* graphicsQueueRef = GfxQueInst::GetRef();
 
 	syncObjectsRef->WaitAndResetFence();
-	std::uint32_t imageIndex = swapchainRef->GetAvailableImageIndex();
+	size_t imageIndex = swapchainRef->GetAvailableImageIndex();
 	commandPoolRef->Reset(imageIndex);
 
 	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer(imageIndex);
@@ -116,12 +116,12 @@ void GraphicsEngineVK::Render() {
 	swapchainRef->GetUndefinedToTransferBarrier(imageIndex, transferBarrier);
 	vkCmdPipelineBarrier(
 		commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0, 0, nullptr, 0, nullptr, 1u, &transferBarrier
+		0u, 0u, nullptr, 0u, nullptr, 1u, &transferBarrier
 	);
 
 	static VkImageSubresourceRange subResourceRange = {
 		VK_IMAGE_ASPECT_COLOR_BIT,
-		0, 1u, 0, 1u
+		0u, 1u, 0u, 1u
 	};
 
 	vkCmdClearColorImage(
@@ -134,7 +134,7 @@ void GraphicsEngineVK::Render() {
 	swapchainRef->GetTransferToPresentBarrier(imageIndex, presentBarrier);
 	vkCmdPipelineBarrier(
 		commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		0, 0, nullptr, 0, nullptr, 1u, &presentBarrier
+		0u, 0u, nullptr, 0u, nullptr, 1u, &presentBarrier
 	);
 
 	commandPoolRef->Close(imageIndex);

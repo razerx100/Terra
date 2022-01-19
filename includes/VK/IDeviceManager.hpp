@@ -15,7 +15,7 @@ struct SwapChainInfo {
 
 struct QueueData {
 	VkQueue queueHandle;
-	std::uint32_t queueFamilyIndex;
+	size_t queueFamilyIndex;
 };
 
 enum QueueType {

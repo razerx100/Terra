@@ -1,7 +1,7 @@
 #include <SyncObjects.hpp>
 #include <VKThrowMacros.hpp>
 
-SyncObjects::SyncObjects(VkDevice device, std::uint32_t bufferCount)
+SyncObjects::SyncObjects(VkDevice device, size_t bufferCount)
 	:
 	m_deviceRef(device), m_imageAvailable(bufferCount), m_renderFinished(bufferCount),
 	m_fences(bufferCount),
@@ -15,7 +15,7 @@ SyncObjects::SyncObjects(VkDevice device, std::uint32_t bufferCount)
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	VkResult result;
-	for (std::uint32_t index = 0u; index < bufferCount; ++index) {
+	for (size_t index = 0u; index < bufferCount; ++index) {
 		VK_THROW_FAILED(result,
 			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &m_imageAvailable[index])
 		);
@@ -31,7 +31,7 @@ SyncObjects::SyncObjects(VkDevice device, std::uint32_t bufferCount)
 }
 
 SyncObjects::~SyncObjects() noexcept {
-	for (std::uint32_t index = 0u; index < m_imageAvailable.size(); ++index) {
+	for (size_t index = 0u; index < m_imageAvailable.size(); ++index) {
 		vkDestroySemaphore(m_deviceRef, m_imageAvailable[index], nullptr);
 		vkDestroySemaphore(m_deviceRef, m_renderFinished[index], nullptr);
 

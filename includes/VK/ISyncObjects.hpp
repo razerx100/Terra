@@ -14,6 +14,6 @@ public:
 	virtual void WaitAndResetFence() const noexcept = 0;
 };
 
-ISyncObjects* CreateSyncObjectsInstance(VkDevice device, std::uint32_t bufferCount);
+ISyncObjects* CreateSyncObjectsInstance(VkDevice device, size_t bufferCount);
 
 #endif

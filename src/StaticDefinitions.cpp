@@ -43,8 +43,8 @@ ISurfaceManager* CreateWin32SurfaceManagerInstance(
 // Swapchain Manager
 ISwapChainManager* CreateSwapchainManagerInstance(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
-	VkQueue presentQueue, std::uint32_t queueFamily
+	std::uint32_t width, std::uint32_t height, size_t bufferCount,
+	VkQueue presentQueue, size_t queueFamily
 ) {
 	return new SwapChainManager(
 		device, swapCapabilities, surface,
@@ -54,7 +54,7 @@ ISwapChainManager* CreateSwapchainManagerInstance(
 
 // Graphics Pool Manager
 ICommandPoolManager* CreateCommandPoolInstance(
-	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
+	VkDevice device, size_t queueIndex, size_t bufferCount
 ) {
 	return new CommandPoolManager(
 		device, queueIndex, bufferCount
@@ -62,7 +62,7 @@ ICommandPoolManager* CreateCommandPoolInstance(
 }
 
 // Sync Objects
-ISyncObjects* CreateSyncObjectsInstance(VkDevice device, std::uint32_t bufferCount) {
+ISyncObjects* CreateSyncObjectsInstance(VkDevice device, size_t bufferCount) {
 	return new SyncObjects(device, bufferCount);
 }
 

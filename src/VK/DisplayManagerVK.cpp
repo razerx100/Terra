@@ -11,9 +11,9 @@ void DisplayManagerVK::GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& d
 
 	displayRect = {};
 	// Only handling the first monitor
-	if (displayCount == 1) {
-		displayRect.right = displayProperties[0].physicalResolution.width;
-		displayRect.bottom = displayProperties[0].physicalResolution.height;
+	if (displayCount == 1u) {
+		displayRect.right = displayProperties[0u].physicalResolution.width;
+		displayRect.bottom = displayProperties[0u].physicalResolution.height;
 	}
 }
 
