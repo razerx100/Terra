@@ -26,9 +26,9 @@ void VkInstInst::Init(const char* appName) {
 	);
 }
 
-void GfxQueInst::Init(VkQueue queue) {
+void GfxQueInst::Init(VkDevice device, VkQueue queue, size_t bufferCount) {
 	Set(
-		CreateGraphicsQueueManagerInstance(queue)
+		CreateGraphicsQueueManagerInstance(device, queue, bufferCount)
 	);
 }
 
@@ -43,14 +43,6 @@ void SwapChainInst::Init(
 			width, height, bufferCount,
 			presentQueue, queueFamily
 		)
-	);
-}
-
-void SyncObjInst::Init(
-	VkDevice device, size_t bufferCount
-) {
-	Set(
-		CreateSyncObjectsInstance(device, bufferCount)
 	);
 }
 

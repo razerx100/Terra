@@ -6,7 +6,8 @@ SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 	std::uint32_t width, std::uint32_t height, size_t bufferCount,
 	VkQueue presentQueue, size_t queueFamily
-) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily) {
+) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
+	m_imageSemaphore(device, bufferCount) {
 	bool useless;
 	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
 	QueryImages();
@@ -104,7 +105,7 @@ size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 		m_deviceRef,
 		m_swapchain,
 		UINT64_MAX,
-		SyncObjInst::GetRef()->GetImageAvailableSemaphore(),
+		m_imageSemaphore.GetSemaphore(m_currentFrameIndex),
 		VK_NULL_HANDLE,
 		&imageIndex
 	);
@@ -112,13 +113,15 @@ size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 	return static_cast<size_t>(imageIndex);
 }
 
-void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
+void SwapChainManager::PresentImage(
+	std::uint32_t imageIndex,
+	VkSemaphore renderSemaphore
+) {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	VkSemaphore signalSemaphores[] = { SyncObjInst::GetRef()->GetRenderFinishedSemaphore() };
-	presentInfo.waitSemaphoreCount = std::size(signalSemaphores);
-	presentInfo.pWaitSemaphores = signalSemaphores;
+	presentInfo.waitSemaphoreCount = 1u;
+	presentInfo.pWaitSemaphores = &renderSemaphore;
 
 	VkSwapchainKHR swapchains[] = { m_swapchain };
 	presentInfo.swapchainCount = std::size(swapchains);
@@ -254,4 +257,12 @@ void SwapChainManager::CleanUpSwapchain() noexcept {
 		vkDestroyImageView(m_deviceRef, imageView, nullptr);
 
 	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
+}
+
+VkSemaphore SwapChainManager::GetImageSemaphore() const noexcept {
+	return m_imageSemaphore.GetSemaphore(m_currentFrameIndex);
+}
+
+void SwapChainManager::SetNextFrameIndex(size_t index) noexcept {
+	m_currentFrameIndex = index;
 }

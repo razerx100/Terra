@@ -5,7 +5,6 @@
 #include <ISurfaceManager.hpp>
 #include <SwapChainManager.hpp>
 #include <CommandPoolManager.hpp>
-#include <SyncObjects.hpp>
 #include <IDisplayManager.hpp>
 
 // Instance Manager
@@ -24,8 +23,10 @@ IDeviceManager* CreateDeviceManagerInstance() {
 }
 
 // Graphics Queue Manager
-IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(VkQueue queue) {
-	return new GraphicsQueueManager(queue);
+IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(
+	VkDevice device, VkQueue queue, size_t bufferCount
+) {
+	return new GraphicsQueueManager(device, queue, bufferCount);
 }
 
 // Surface Manager
@@ -59,11 +60,6 @@ ICommandPoolManager* CreateCommandPoolInstance(
 	return new CommandPoolManager(
 		device, queueIndex, bufferCount
 	);
-}
-
-// Sync Objects
-ISyncObjects* CreateSyncObjectsInstance(VkDevice device, size_t bufferCount) {
-	return new SyncObjects(device, bufferCount);
 }
 
 // Display Manager

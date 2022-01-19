@@ -7,7 +7,8 @@ GraphicsEngineVK::GraphicsEngineVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	size_t bufferCount
-) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName) {
+) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName),
+	m_bufferCount(bufferCount) {
 
 	SetScissorAndViewport(width, height);
 
@@ -35,14 +36,17 @@ GraphicsEngineVK::GraphicsEngineVK(
 	);
 	deviceManagerRef->CreateLogicalDevice();
 
+	VkDevice logicalDevice = deviceManagerRef->GetLogicalDevice();
+
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = deviceManagerRef->GetQueue(
 		QueueType::GraphicsQueue
 	);
 	GfxQueInst::Init(
-		graphicsQueueHandle
+		logicalDevice,
+		graphicsQueueHandle,
+		bufferCount
 	);
 
-	VkDevice logicalDevice = deviceManagerRef->GetLogicalDevice();
 
 	auto [presentQueueHandle, presentQueueFamilyIndex] = deviceManagerRef->GetQueue(
 		QueueType::PresentQueue
@@ -63,11 +67,6 @@ GraphicsEngineVK::GraphicsEngineVK(
 		bufferCount
 	);
 
-	SyncObjInst::Init(
-		logicalDevice,
-		bufferCount
-	);
-
 	DisplayInst::GetRef()->InitDisplayManager(
 		deviceManagerRef->GetPhysicalDevice()
 	);
@@ -77,7 +76,6 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	GfxPoolInst::CleanUp();
 	SwapChainInst::CleanUp();
 	GfxQueInst::CleanUp();
-	SyncObjInst::CleanUp();
 	DisplayInst::CleanUp();
 	DeviceInst::CleanUp();
 	SurfaceInst::CleanUp();
@@ -98,12 +96,11 @@ void GraphicsEngineVK::SubmitModel(const IModel* const modelRef, bool texture) {
 }
 
 void GraphicsEngineVK::Render() {
-	ISyncObjects* syncObjectsRef = SyncObjInst::GetRef();
 	ISwapChainManager* swapchainRef = SwapChainInst::GetRef();
 	ICommandPoolManager* commandPoolRef = GfxPoolInst::GetRef();
 	IGraphicsQueueManager* graphicsQueueRef = GfxQueInst::GetRef();
 
-	syncObjectsRef->WaitAndResetFence();
+	graphicsQueueRef->WaitForGPU();
 	size_t imageIndex = swapchainRef->GetAvailableImageIndex();
 	commandPoolRef->Reset(imageIndex);
 
@@ -139,10 +136,12 @@ void GraphicsEngineVK::Render() {
 
 	commandPoolRef->Close(imageIndex);
 
-	graphicsQueueRef->SubmitCommandBuffer(commandBuffer);
-	swapchainRef->PresentImage(imageIndex);
+	graphicsQueueRef->SubmitCommandBuffer(commandBuffer, swapchainRef->GetImageSemaphore());
+	swapchainRef->PresentImage(imageIndex, graphicsQueueRef->GetRenderSemaphore());
 
-	syncObjectsRef->ChangeFrameIndex();
+	size_t nextFrame = (imageIndex + 1u) % m_bufferCount;
+	swapchainRef->SetNextFrameIndex(nextFrame);
+	graphicsQueueRef->SetNextFrameIndex(nextFrame);
 }
 
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {

@@ -38,5 +38,6 @@ private:
 	VkRect2D m_scissorRect;
 
 	std::string m_shaderPath;
+	size_t m_bufferCount;
 };
 #endif

@@ -7,8 +7,20 @@ class IGraphicsQueueManager {
 public:
 	virtual ~IGraphicsQueueManager() = default;
 
-	virtual void SubmitCommandBuffer(VkCommandBuffer commandBuffer) = 0;
+	virtual void SubmitCommandBuffer(
+		VkCommandBuffer commandBuffer,
+		VkSemaphore imageSemaphore
+	) = 0;
+
+	virtual VkSemaphore GetRenderSemaphore() const noexcept = 0;
+
+	virtual void SetNextFrameIndex(size_t index) noexcept = 0;
+	virtual void WaitForGPU() = 0;
 };
 
-IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(VkQueue queue);
+IGraphicsQueueManager* CreateGraphicsQueueManagerInstance(
+	VkDevice device,
+	VkQueue queue,
+	size_t bufferCount
+);
 #endif

@@ -1,6 +1,7 @@
 #ifndef __SWAPCHAIN_MANAGER_HPP__
 #define __SWAPCHAIN_MANAGER_HPP__
 #include <ISwapChainManager.hpp>
+#include <SemaphoreWrapper.hpp>
 
 class SwapChainManager : public ISwapChainManager {
 public:
@@ -16,8 +17,13 @@ public:
 	VkFormat GetSwapFormat() const noexcept override;
 	size_t GetAvailableImageIndex() const noexcept override;
 	VkImage GetImage(size_t imageIndex) const noexcept override;
+	VkSemaphore GetImageSemaphore() const noexcept override;
 
-	void PresentImage(std::uint32_t imageIndex) override;
+	void SetNextFrameIndex(size_t index) noexcept override;
+	void PresentImage(
+		std::uint32_t imageIndex,
+		VkSemaphore renderSemaphore
+	) override;
 	void ResizeSwapchain(
 		std::uint32_t width, std::uint32_t height, bool& formatChanged
 	) override;
@@ -61,5 +67,7 @@ private:
 	std::vector<VkImageView> m_swapchainImageViews;
 	VkQueue m_presentQueue;
 	size_t m_presentFamilyIndex;
+	SemaphoreWrapper m_imageSemaphore;
+	size_t m_currentFrameIndex;
 };
 #endif

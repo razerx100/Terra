@@ -8,7 +8,6 @@
 #include <IGraphicsQueueManager.hpp>
 #include <ISurfaceManager.hpp>
 #include <ISwapChainManager.hpp>
-#include <ISyncObjects.hpp>
 #include <IDisplayManager.hpp>
 
 class DebugLayerInst : public _ObjectManager<DebugLayerManager, DebugLayerInst> {
@@ -35,7 +34,7 @@ public:
 
 class GfxQueInst : public _ObjectManager<IGraphicsQueueManager, GfxQueInst> {
 public:
-	static void Init(VkQueue queue);
+	static void Init(VkDevice device, VkQueue queue, size_t bufferCount);
 };
 
 class SwapChainInst : public _ObjectManager<ISwapChainManager, SwapChainInst> {
@@ -44,13 +43,6 @@ public:
 		VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
 		VkQueue presentQueue, std::uint32_t queueFamily
-	);
-};
-
-class SyncObjInst : public _ObjectManager<ISyncObjects, SyncObjInst> {
-public:
-	static void Init(
-		VkDevice device, size_t bufferCount
 	);
 };
 

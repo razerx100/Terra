@@ -13,8 +13,13 @@ public:
 	virtual VkFormat GetSwapFormat() const noexcept = 0;
 	virtual size_t GetAvailableImageIndex() const noexcept = 0;
 	virtual VkImage GetImage(size_t imageIndex) const noexcept = 0;
+	virtual VkSemaphore GetImageSemaphore() const noexcept = 0;
 
-	virtual void PresentImage(std::uint32_t imageIndex) = 0;
+	virtual void SetNextFrameIndex(size_t index) noexcept = 0;
+	virtual void PresentImage(
+		std::uint32_t imageIndex,
+		VkSemaphore renderSemaphore
+	) = 0;
 	virtual void ResizeSwapchain(
 		std::uint32_t width, std::uint32_t height, bool& formatChanged
 	) = 0;
