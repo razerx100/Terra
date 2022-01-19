@@ -4,7 +4,7 @@
 
 GraphicsQueueManager::GraphicsQueueManager(VkDevice device, VkQueue queue, size_t bufferCount)
 	: m_graphicsQueue(queue), m_renderSemaphore(device, bufferCount),
-	m_fences(device, bufferCount) {}
+	m_fences(device, bufferCount), m_currentFrameIndex(0u) {}
 
 void GraphicsQueueManager::SubmitCommandBuffer(
 	VkCommandBuffer commandBuffer,

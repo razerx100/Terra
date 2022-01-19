@@ -7,7 +7,7 @@ SwapChainManager::SwapChainManager(
 	std::uint32_t width, std::uint32_t height, size_t bufferCount,
 	VkQueue presentQueue, size_t queueFamily
 ) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
-	m_imageSemaphore(device, bufferCount) {
+	m_imageSemaphore(device, bufferCount), m_currentFrameIndex(0u) {
 	bool useless;
 	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
 	QueryImages();
