@@ -2,7 +2,7 @@
 #include <VKThrowMacros.hpp>
 
 CopyQueueManager::CopyQueueManager(VkDevice device, VkQueue queue)
-	: m_copyQueue(queue), m_fence(device, 1u) {}
+	: m_copyQueue(queue), m_fence(device, 1u, false) {}
 
 void CopyQueueManager::SubmitCommandBuffer(VkCommandBuffer commandBuffer) {
 	VkSubmitInfo submitInfo = {};

@@ -5,7 +5,7 @@
 
 class FenceWrapper {
 public:
-	FenceWrapper(VkDevice device, size_t bufferCount);
+	FenceWrapper(VkDevice device, size_t bufferCount, bool signaled);
 	~FenceWrapper() noexcept;
 
 	VkFence GetFence(size_t index) const noexcept;

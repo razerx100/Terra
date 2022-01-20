@@ -1,13 +1,13 @@
 #include <FenceWrapper.hpp>
 #include <VKThrowMacros.hpp>
 
-FenceWrapper::FenceWrapper(VkDevice device, size_t bufferCount)
+FenceWrapper::FenceWrapper(VkDevice device, size_t bufferCount, bool signaled)
 	:
 	m_deviceRef(device), m_fences(bufferCount) {
 
 	VkFenceCreateInfo fenceInfo = {};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0u;
 
 	VkResult result;
 	for (size_t index = 0u; index < bufferCount; ++index) {
