@@ -61,3 +61,17 @@ void SurfaceInst::InitWin32(
 	);
 }
 #endif
+
+void CpyPoolInst::Init(
+	VkDevice device, size_t queueIndex
+) {
+	Set(
+		CreateCommandPoolInstance(device, queueIndex, 1u)
+	);
+}
+
+void CpyQueInst::Init(VkDevice device, VkQueue queue) {
+	Set(
+		CreateCopyQueueManagerInstance(device, queue)
+	);
+}

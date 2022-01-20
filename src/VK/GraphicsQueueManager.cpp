@@ -1,6 +1,5 @@
 #include <GraphicsQueueManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <InstanceManager.hpp>
 
 GraphicsQueueManager::GraphicsQueueManager(VkDevice device, VkQueue queue, size_t bufferCount)
 	: m_graphicsQueue(queue), m_renderSemaphore(device, bufferCount),

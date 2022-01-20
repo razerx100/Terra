@@ -47,7 +47,6 @@ GraphicsEngineVK::GraphicsEngineVK(
 		bufferCount
 	);
 
-
 	auto [presentQueueHandle, presentQueueFamilyIndex] = deviceManagerRef->GetQueue(
 		QueueType::PresentQueue
 	);
@@ -67,15 +66,25 @@ GraphicsEngineVK::GraphicsEngineVK(
 		bufferCount
 	);
 
+	auto [copyQueueHandle, copyQueueFamilyIndex] = deviceManagerRef->GetQueue(
+		QueueType::TransferQueue
+	);
+
+	CpyQueInst::Init(logicalDevice, copyQueueHandle);
+
+	CpyPoolInst::Init(logicalDevice, copyQueueFamilyIndex);
+
 	DisplayInst::GetRef()->InitDisplayManager(
 		deviceManagerRef->GetPhysicalDevice()
 	);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
-	GfxPoolInst::CleanUp();
+	CpyQueInst::CleanUp();
+	CpyPoolInst::CleanUp();
 	SwapChainInst::CleanUp();
 	GfxQueInst::CleanUp();
+	GfxPoolInst::CleanUp();
 	DisplayInst::CleanUp();
 	DeviceInst::CleanUp();
 	SurfaceInst::CleanUp();

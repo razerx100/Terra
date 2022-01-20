@@ -6,6 +6,7 @@
 #include <SwapChainManager.hpp>
 #include <CommandPoolManager.hpp>
 #include <IDisplayManager.hpp>
+#include <CopyQueueManager.hpp>
 
 // Instance Manager
 IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
@@ -75,4 +76,12 @@ IDisplayManager* CreateDisplayManagerInstance() {
 #else
 	return new DisplayManagerVK();
 #endif
+}
+
+// Copy Queue
+ICopyQueueManager* CreateCopyQueueManagerInstance(
+	VkDevice device,
+	VkQueue queue
+) {
+	return new CopyQueueManager(device, queue);
 }

@@ -9,6 +9,7 @@
 #include <ISurfaceManager.hpp>
 #include <ISwapChainManager.hpp>
 #include <IDisplayManager.hpp>
+#include <ICopyQueueManager.hpp>
 
 class DebugLayerInst : public _ObjectManager<DebugLayerManager, DebugLayerInst> {
 public:
@@ -19,6 +20,13 @@ class GfxPoolInst : public _ObjectManager<ICommandPoolManager, GfxPoolInst> {
 public:
 	static void Init(
 		VkDevice device, size_t queueIndex, size_t bufferCount
+	);
+};
+
+class CpyPoolInst : public _ObjectManager<ICommandPoolManager, CpyPoolInst> {
+public:
+	static void Init(
+		VkDevice device, size_t queueIndex
 	);
 };
 
@@ -35,6 +43,11 @@ public:
 class GfxQueInst : public _ObjectManager<IGraphicsQueueManager, GfxQueInst> {
 public:
 	static void Init(VkDevice device, VkQueue queue, size_t bufferCount);
+};
+
+class CpyQueInst : public _ObjectManager<ICopyQueueManager, CpyQueInst> {
+public:
+	static void Init(VkDevice device, VkQueue queue);
 };
 
 class SwapChainInst : public _ObjectManager<ISwapChainManager, SwapChainInst> {
