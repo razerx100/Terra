@@ -1,11 +1,19 @@
 #ifndef __DEVICE_MEMORY_HPP__
 #define __DEVICE_MEMORY_HPP__
 #include <IDeviceMemory.hpp>
+#include <vector>
+#include <cstdint>
+
+void ConfigureBufferQueueAccess(
+	const std::vector<std::uint32_t>& queueFamilyIndices,
+	VkBufferCreateInfo& bufferInfo
+);
 
 class DeviceMemory : public IDeviceMemory {
 public:
 	DeviceMemory(
 		VkDevice logDevice, VkPhysicalDevice phyDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices,
 		bool uploadBuffer, BufferType type = BufferType::Invalid
 	);
 	~DeviceMemory() noexcept;

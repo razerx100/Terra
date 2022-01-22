@@ -5,11 +5,31 @@
 
 ResourceBuffer::ResourceBuffer(
 	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	const std::vector<std::uint32_t>& queueFamilyIndices,
 	BufferType type
-) : m_currentOffset(0u), m_cpuHandle(nullptr), m_type(type) {
+)
+	: m_currentOffset(0u), m_cpuHandle(nullptr),
+	m_queueFamilyIndices(queueFamilyIndices),
+	m_uploadBufferCreateInfo{}, m_gpuBufferCreateInfo{} {
 
-	m_uploadBufferMemory = std::make_unique<DeviceMemory>(logDevice, phyDevice, true);
-	m_gpuBufferMemory = std::make_unique<DeviceMemory>(logDevice, phyDevice, false, type);
+	m_uploadBufferMemory = std::make_unique<DeviceMemory>(
+		logDevice, phyDevice, queueFamilyIndices, true
+		);
+	m_gpuBufferMemory = std::make_unique<DeviceMemory>(
+		logDevice, phyDevice, queueFamilyIndices, false, type
+		);
+
+	m_uploadBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	m_uploadBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	ConfigureBufferQueueAccess(m_queueFamilyIndices, m_uploadBufferCreateInfo);
+
+	m_gpuBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	m_gpuBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	if (type == BufferType::Vertex)
+		m_gpuBufferCreateInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	else if (type == BufferType::Index)
+		m_gpuBufferCreateInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+	ConfigureBufferQueueAccess(m_queueFamilyIndices, m_gpuBufferCreateInfo);
 }
 
 void ResourceBuffer::CreateBuffer(VkDevice device) {
@@ -47,26 +67,17 @@ VkBuffer ResourceBuffer::AddBuffer(VkDevice device, const void* source, size_t b
 
 	m_currentOffset += Ceres::Math::Align(bufferSize, m_uploadBufferMemory->GetAlignment());
 
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = bufferSize;
-	bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-
-	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	m_uploadBufferCreateInfo.size = bufferSize;
 
 	VkResult result;
 	VK_THROW_FAILED(result,
-		vkCreateBuffer(device, &bufferInfo, nullptr, &bufferData.buffer)
+		vkCreateBuffer(device, &m_uploadBufferCreateInfo, nullptr, &bufferData.buffer)
 	);
 
-	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	if (m_type == BufferType::Vertex)
-		bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	else if (m_type == BufferType::Index)
-		bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+	m_gpuBufferCreateInfo.size = bufferSize;
 
 	VK_THROW_FAILED(result,
-		vkCreateBuffer(device, &bufferInfo, nullptr, &gpuBuffer)
+		vkCreateBuffer(device, &m_gpuBufferCreateInfo, nullptr, &gpuBuffer)
 	);
 
 	m_uploadBufferData.emplace_back(bufferData);

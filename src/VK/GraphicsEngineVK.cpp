@@ -8,7 +8,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 	std::uint32_t width, std::uint32_t height,
 	size_t bufferCount
 ) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName),
-	m_bufferCount(bufferCount) {
+m_bufferCount(bufferCount) {
 
 	SetScissorAndViewport(width, height);
 
@@ -70,6 +70,14 @@ GraphicsEngineVK::GraphicsEngineVK(
 		QueueType::TransferQueue
 	);
 
+	std::vector<std::uint32_t> copyAndGfxFamilyIndices;
+	if (copyQueueFamilyIndex == graphicsQueueFamilyIndex)
+		copyAndGfxFamilyIndices.emplace_back(graphicsQueueFamilyIndex);
+	else {
+		copyAndGfxFamilyIndices.emplace_back(copyQueueFamilyIndex);
+		copyAndGfxFamilyIndices.emplace_back(graphicsQueueFamilyIndex);
+	}
+
 	CpyQueInst::Init(logicalDevice, copyQueueHandle);
 
 	CpyPoolInst::Init(logicalDevice, copyQueueFamilyIndex);
@@ -80,8 +88,8 @@ GraphicsEngineVK::GraphicsEngineVK(
 		physicalDevice
 	);
 
-	VertexBufferInst::Init(logicalDevice, physicalDevice);
-	IndexBufferInst::Init(logicalDevice, physicalDevice);
+	VertexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	IndexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {

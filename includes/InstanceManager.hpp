@@ -76,11 +76,17 @@ public:
 
 class VertexBufferInst : public _ObjectManager<IResourceBuffer, VertexBufferInst> {
 public:
-	static void Init(VkDevice logDevice, VkPhysicalDevice phyDevice);
+	static void Init(
+		VkDevice logDevice, VkPhysicalDevice phyDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	);
 };
 
 class IndexBufferInst : public _ObjectManager<IResourceBuffer, IndexBufferInst> {
 public:
-	static void Init(VkDevice logDevice, VkPhysicalDevice phyDevice);
+	static void Init(
+		VkDevice logDevice, VkPhysicalDevice phyDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	);
 };
 #endif

@@ -16,6 +16,7 @@ public:
 
 IResourceBuffer* CreateResourceBufferInstance(
 	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	const std::vector<std::uint32_t>& queueFamilyIndices,
 	BufferType type
 );
 #endif

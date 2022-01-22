@@ -3,6 +3,7 @@
 
 DeviceMemory::DeviceMemory(
 	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	const std::vector<std::uint32_t>& queueFamilyIndices,
 	bool uploadBuffer, BufferType type
 ) : m_deviceRef(logDevice), m_bufferMemory(nullptr),
 	m_memoryTypeIndex(0u), m_alignment(0u) {
@@ -27,8 +28,9 @@ DeviceMemory::DeviceMemory(
 	VkBufferCreateInfo bufferInfo = {};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	bufferInfo.size = 1u;
-	bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
 	bufferInfo.usage = usage;
+
+	ConfigureBufferQueueAccess(queueFamilyIndices, bufferInfo);
 
 	VkBuffer tempBuffer = nullptr;
 
@@ -79,4 +81,17 @@ VkDeviceMemory DeviceMemory::GetMemoryHandle() const noexcept {
 
 size_t DeviceMemory::GetAlignment() const noexcept {
 	return m_alignment;
+}
+
+void ConfigureBufferQueueAccess(
+	const std::vector<std::uint32_t>& queueFamilyIndice,
+	VkBufferCreateInfo& bufferInfo
+) {
+	if (queueFamilyIndice.size() > 1u) {
+		bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+		bufferInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueFamilyIndice.size());
+		bufferInfo.pQueueFamilyIndices = queueFamilyIndice.data();
+	}
+	else
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 }

@@ -8,6 +8,7 @@ class ResourceBuffer : public IResourceBuffer {
 public:
 	ResourceBuffer(
 		VkDevice logDevice, VkPhysicalDevice phyDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices,
 		BufferType type
 	);
 
@@ -32,6 +33,8 @@ private:
 	std::vector<VkBuffer> m_gpuBuffers;
 	size_t m_currentOffset;
 	std::uint8_t* m_cpuHandle;
-	BufferType m_type;
+	std::vector<std::uint32_t> m_queueFamilyIndices;
+	VkBufferCreateInfo m_uploadBufferCreateInfo;
+	VkBufferCreateInfo m_gpuBufferCreateInfo;
 };
 #endif

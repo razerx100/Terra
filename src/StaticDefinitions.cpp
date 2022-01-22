@@ -90,7 +90,8 @@ ICopyQueueManager* CreateCopyQueueManagerInstance(
 // Resource Buffer
 IResourceBuffer* CreateResourceBufferInstance(
 	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	const std::vector<std::uint32_t>& queueFamilyIndices,
 	BufferType type
 ) {
-	return new ResourceBuffer(logDevice, phyDevice, type);
+	return new ResourceBuffer(logDevice, phyDevice, queueFamilyIndices,type);
 }
