@@ -7,6 +7,7 @@
 #include <CommandPoolManager.hpp>
 #include <IDisplayManager.hpp>
 #include <CopyQueueManager.hpp>
+#include <ResourceBuffer.hpp>
 
 // Instance Manager
 IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
@@ -84,4 +85,12 @@ ICopyQueueManager* CreateCopyQueueManagerInstance(
 	VkQueue queue
 ) {
 	return new CopyQueueManager(device, queue);
+}
+
+// Resource Buffer
+IResourceBuffer* CreateResourceBufferInstance(
+	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	BufferType type
+) {
+	return new ResourceBuffer(logDevice, phyDevice, type);
 }

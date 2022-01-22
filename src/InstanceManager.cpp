@@ -75,3 +75,15 @@ void CpyQueInst::Init(VkDevice device, VkQueue queue) {
 		CreateCopyQueueManagerInstance(device, queue)
 	);
 }
+
+void VertexBufferInst::Init(VkDevice logDevice, VkPhysicalDevice phyDevice) {
+	Set(
+		CreateResourceBufferInstance(logDevice, phyDevice, BufferType::Vertex)
+	);
+}
+
+void IndexBufferInst::Init(VkDevice logDevice, VkPhysicalDevice phyDevice) {
+	Set(
+		CreateResourceBufferInstance(logDevice, phyDevice, BufferType::Index)
+	);
+}

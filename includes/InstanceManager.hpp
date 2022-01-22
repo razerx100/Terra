@@ -10,6 +10,7 @@
 #include <ISwapChainManager.hpp>
 #include <IDisplayManager.hpp>
 #include <ICopyQueueManager.hpp>
+#include <IResourceBuffer.hpp>
 
 class DebugLayerInst : public _ObjectManager<DebugLayerManager, DebugLayerInst> {
 public:
@@ -73,4 +74,13 @@ public:
 #endif
 };
 
+class VertexBufferInst : public _ObjectManager<IResourceBuffer, VertexBufferInst> {
+public:
+	static void Init(VkDevice logDevice, VkPhysicalDevice phyDevice);
+};
+
+class IndexBufferInst : public _ObjectManager<IResourceBuffer, IndexBufferInst> {
+public:
+	static void Init(VkDevice logDevice, VkPhysicalDevice phyDevice);
+};
 #endif

@@ -74,12 +74,19 @@ GraphicsEngineVK::GraphicsEngineVK(
 
 	CpyPoolInst::Init(logicalDevice, copyQueueFamilyIndex);
 
+	VkPhysicalDevice physicalDevice = deviceManagerRef->GetPhysicalDevice();
+
 	DisplayInst::GetRef()->InitDisplayManager(
-		deviceManagerRef->GetPhysicalDevice()
+		physicalDevice
 	);
+
+	VertexBufferInst::Init(logicalDevice, physicalDevice);
+	IndexBufferInst::Init(logicalDevice, physicalDevice);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
+	VertexBufferInst::CleanUp();
+	IndexBufferInst::CleanUp();
 	CpyQueInst::CleanUp();
 	CpyPoolInst::CleanUp();
 	SwapChainInst::CleanUp();

@@ -1,22 +1,21 @@
 #ifndef __I_RESOURCE_BUFFER_HPP__
 #define __I_RESOURCE_BUFFER_HPP__
 #include <vulkan/vulkan.hpp>
-#include <cstdint>
+#include <IDeviceMemory.hpp>
 
 class IResourceBuffer {
 public:
 	virtual ~IResourceBuffer() = default;
 
-	virtual void CreateBuffer(
-		size_t bufferSize,
-		size_t memoryTypeIndex
-	) = 0;
-
-	virtual VkDeviceMemory GetGPUHandle() const noexcept = 0;
-	virtual std::uint8_t* GetCPUHandle() const noexcept = 0;
-
-	virtual void MapCPU() noexcept = 0;
-	virtual void UnMapCPU() noexcept = 0;
+	virtual VkBuffer AddBuffer(VkDevice device, const void* source, size_t bufferSize) = 0;
+	virtual void CreateBuffer(VkDevice device) = 0;
+	virtual void CopyData() noexcept = 0;
+	virtual void RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer) = 0;
+	virtual void ReleaseUploadBuffer(VkDevice device) noexcept = 0;
 };
 
+IResourceBuffer* CreateResourceBufferInstance(
+	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	BufferType type
+);
 #endif
