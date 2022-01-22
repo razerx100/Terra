@@ -34,8 +34,8 @@ void GfxQueInst::Init(VkDevice device, VkQueue queue, size_t bufferCount) {
 
 void SwapChainInst::Init(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
-	VkQueue presentQueue, std::uint32_t queueFamily
+	std::uint32_t width, std::uint32_t height, size_t bufferCount,
+	VkQueue presentQueue, size_t queueFamily
 ) {
 	Set(
 		CreateSwapchainManagerInstance(

@@ -72,10 +72,16 @@ m_bufferCount(bufferCount) {
 
 	std::vector<std::uint32_t> copyAndGfxFamilyIndices;
 	if (copyQueueFamilyIndex == graphicsQueueFamilyIndex)
-		copyAndGfxFamilyIndices.emplace_back(graphicsQueueFamilyIndex);
+		copyAndGfxFamilyIndices.emplace_back(
+			static_cast<std::uint32_t>(graphicsQueueFamilyIndex)
+		);
 	else {
-		copyAndGfxFamilyIndices.emplace_back(copyQueueFamilyIndex);
-		copyAndGfxFamilyIndices.emplace_back(graphicsQueueFamilyIndex);
+		copyAndGfxFamilyIndices.emplace_back(
+			static_cast<std::uint32_t>(copyQueueFamilyIndex)
+		);
+		copyAndGfxFamilyIndices.emplace_back(
+			static_cast<std::uint32_t>(graphicsQueueFamilyIndex)
+		);
 	}
 
 	CpyQueInst::Init(logicalDevice, copyQueueHandle);
@@ -161,7 +167,9 @@ void GraphicsEngineVK::Render() {
 	commandPoolRef->Close(imageIndex);
 
 	graphicsQueueRef->SubmitCommandBuffer(commandBuffer, swapchainRef->GetImageSemaphore());
-	swapchainRef->PresentImage(imageIndex, graphicsQueueRef->GetRenderSemaphore());
+	swapchainRef->PresentImage(
+		static_cast<std::uint32_t>(imageIndex), graphicsQueueRef->GetRenderSemaphore()
+	);
 
 	size_t nextFrame = (imageIndex + 1u) % m_bufferCount;
 	swapchainRef->SetNextFrameIndex(nextFrame);

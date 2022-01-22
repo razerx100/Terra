@@ -34,7 +34,7 @@ private:
 	bool CheckPresentSupport(
 		VkPhysicalDevice device,
 		VkSurfaceKHR surface,
-		std::uint32_t index
+		size_t index
 	) const noexcept;
 	bool CheckDeviceExtensionSupport(
 		VkPhysicalDevice device

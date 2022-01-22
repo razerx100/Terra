@@ -124,7 +124,7 @@ void SwapChainManager::PresentImage(
 	presentInfo.pWaitSemaphores = &renderSemaphore;
 
 	VkSwapchainKHR swapchains[] = { m_swapchain };
-	presentInfo.swapchainCount = std::size(swapchains);
+	presentInfo.swapchainCount = static_cast<std::uint32_t>(std::size(swapchains));
 	presentInfo.pSwapchains = swapchains;
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
@@ -152,8 +152,8 @@ void SwapChainManager::GetUndefinedToTransferBarrier(
 	transferBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	transferBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	transferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	transferBarrier.srcQueueFamilyIndex = m_presentFamilyIndex;
-	transferBarrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+	transferBarrier.srcQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
+	transferBarrier.dstQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
 	transferBarrier.image = m_swapchainImages[imageIndex];
 	transferBarrier.subresourceRange = subResourceRange;
 }
@@ -175,8 +175,8 @@ void SwapChainManager::GetTransferToPresentBarrier(
 	presentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	presentBarrier.srcQueueFamilyIndex = m_presentFamilyIndex;
-	presentBarrier.dstQueueFamilyIndex = m_presentFamilyIndex;
+	presentBarrier.srcQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
+	presentBarrier.dstQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
 	presentBarrier.image = m_swapchainImages[imageIndex];
 	presentBarrier.subresourceRange = subResourceRange;
 }

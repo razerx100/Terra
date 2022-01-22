@@ -74,8 +74,10 @@ void DeviceManager::CreateLogicalDevice() {
 
 	for (size_t index = 0u; index < queueCreateInfos.size(); ++index) {
 		queueCreateInfos[index].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfos[index].queueFamilyIndex = m_usableQueueFamilies[index].index;
-		queueCreateInfos[index].queueCount = m_usableQueueFamilies[index].queueRequired;
+		queueCreateInfos[index].queueFamilyIndex =
+			static_cast<std::uint32_t>(m_usableQueueFamilies[index].index);
+		queueCreateInfos[index].queueCount =
+			static_cast<std::uint32_t>(m_usableQueueFamilies[index].queueRequired);
 		queueCreateInfos[index].pQueuePriorities = queuePriorities.data();
 	}
 
@@ -124,9 +126,11 @@ QueueData DeviceManager::GetQueue(QueueType type) noexcept {
 		}
 
 	vkGetDeviceQueue(
-		m_logicalDevice, m_usableQueueFamilies[familyIndex].index,
-		m_usableQueueFamilies[familyIndex].queueCreated++, &queue
+		m_logicalDevice, static_cast<std::uint32_t>(m_usableQueueFamilies[familyIndex].index),
+		static_cast<std::uint32_t>(m_usableQueueFamilies[familyIndex].queueCreated), &queue
 	);
+
+	++m_usableQueueFamilies[familyIndex].queueCreated;
 
 	return { queue, familyIndex };
 }
@@ -134,10 +138,12 @@ QueueData DeviceManager::GetQueue(QueueType type) noexcept {
 bool DeviceManager::CheckPresentSupport(
 	VkPhysicalDevice device,
 	VkSurfaceKHR surface,
-	std::uint32_t index
+	size_t index
 ) const noexcept {
 	VkBool32 presentSupport = false;
-	vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &presentSupport);
+	vkGetPhysicalDeviceSurfaceSupportKHR(
+		device, static_cast<std::uint32_t>(index), surface, &presentSupport
+	);
 
 	return presentSupport;
 }
