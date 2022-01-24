@@ -1,16 +1,16 @@
 #ifndef __FENCE_WRAPPER_HPP__
 #define __FENCE_WRAPPER_HPP__
-#include <vulkan/vulkan.hpp>
+#include <IFenceWrapper.hpp>
 #include <vector>
 
-class FenceWrapper {
+class FenceWrapper : public IFenceWrapper {
 public:
 	FenceWrapper(VkDevice device, size_t bufferCount, bool signaled);
 	~FenceWrapper() noexcept;
 
-	VkFence GetFence(size_t index) const noexcept;
+	VkFence GetFence(size_t index) const noexcept override;
 
-	void WaitAndResetFence(size_t index) const noexcept;
+	void WaitAndResetFence(size_t index) const noexcept override;
 
 private:
 	VkDevice m_deviceRef;

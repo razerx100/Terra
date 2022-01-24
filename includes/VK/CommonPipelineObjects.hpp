@@ -5,29 +5,9 @@
 #include <vector>
 #include <span>
 
-void PopulateVertexInputStateCreateInfo(
-	VkPipelineVertexInputStateCreateInfo& createInfo
-) noexcept;
+VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo() noexcept;
 
-void PopulateInputAssemblyStateCreateInfo(
-	VkPipelineInputAssemblyStateCreateInfo& createInfo
-) noexcept;
-
-void PopulateViewport(
-	VkViewport& viewport,
-	std::uint32_t width, std::uint32_t height
-) noexcept;
-
-void PopulateScissorRect(
-	VkRect2D& scissor,
-	std::uint32_t width, std::uint32_t height
-) noexcept;
-
-void PopulateViewportStateCreateInfo(
-	VkPipelineViewportStateCreateInfo& createInfo,
-	const std::span<VkViewport> viewports,
-	const std::span<VkRect2D> scissors
-) noexcept;
+VkPipelineViewportStateCreateInfo GetViewportStateCreateInfo() noexcept;
 
 void PopulateRasterizationStateCreateInfo(
 	VkPipelineRasterizationStateCreateInfo& createInfo

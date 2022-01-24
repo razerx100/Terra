@@ -1,7 +1,8 @@
 #ifndef __SWAPCHAIN_MANAGER_HPP__
 #define __SWAPCHAIN_MANAGER_HPP__
 #include <ISwapChainManager.hpp>
-#include <SemaphoreWrapper.hpp>
+#include <ISemaphoreWrapper.hpp>
+#include <memory>
 
 class SwapChainManager : public ISwapChainManager {
 public:
@@ -67,7 +68,7 @@ private:
 	std::vector<VkImageView> m_swapchainImageViews;
 	VkQueue m_presentQueue;
 	size_t m_presentFamilyIndex;
-	SemaphoreWrapper m_imageSemaphore;
+	std::unique_ptr<ISemaphoreWrapper> m_imageSemaphore;
 	size_t m_currentFrameIndex;
 };
 #endif

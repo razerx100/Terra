@@ -59,21 +59,10 @@ void GraphicsPipeline::CreateRenderPass() {
 }
 
 void GraphicsPipeline::CreateGraphicsPipeline() {
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
-	PopulateVertexInputStateCreateInfo(vertexInputInfo);
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo
+		= GetInputAssemblyStateCreateInfo();
 
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-	PopulateInputAssemblyStateCreateInfo(inputAssemblyInfo);
-
-	VkViewport viewport[1u];
-	VkExtent2D swapExtent = SwapChainInst::GetRef()->GetSwapExtent();
-	PopulateViewport(viewport[0u], swapExtent.width, swapExtent.height);
-
-	VkRect2D scissorRect[1u];
-	PopulateScissorRect(scissorRect[0u], swapExtent.width, swapExtent.height);
-
-	VkPipelineViewportStateCreateInfo viewportInfo;
-	PopulateViewportStateCreateInfo(viewportInfo, viewport, scissorRect);
+	VkPipelineViewportStateCreateInfo viewportInfo = GetViewportStateCreateInfo();
 
 	VkPipelineRasterizationStateCreateInfo rasterizerInfo;
 	PopulateRasterizationStateCreateInfo(rasterizerInfo);
@@ -98,7 +87,7 @@ void GraphicsPipeline::CreateGraphicsPipeline() {
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 0u;
 	pipelineInfo.pStages = nullptr;
-	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	//pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
 	pipelineInfo.pViewportState = &viewportInfo;
 	pipelineInfo.pRasterizationState = &rasterizerInfo;

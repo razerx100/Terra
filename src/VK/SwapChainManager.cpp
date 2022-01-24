@@ -7,11 +7,16 @@ SwapChainManager::SwapChainManager(
 	std::uint32_t width, std::uint32_t height, size_t bufferCount,
 	VkQueue presentQueue, size_t queueFamily
 ) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
-	m_imageSemaphore(device, bufferCount), m_currentFrameIndex(0u) {
+	m_currentFrameIndex(0u) {
+
 	bool useless;
 	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
 	QueryImages();
 	CreateImageViews();
+
+	m_imageSemaphore = std::unique_ptr<ISemaphoreWrapper>(
+		CreateSemaphoreWrapperInstance(device, bufferCount)
+		);
 }
 
 SwapChainManager::~SwapChainManager() noexcept {
@@ -105,7 +110,7 @@ size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 		m_deviceRef,
 		m_swapchain,
 		UINT64_MAX,
-		m_imageSemaphore.GetSemaphore(m_currentFrameIndex),
+		m_imageSemaphore->GetSemaphore(m_currentFrameIndex),
 		VK_NULL_HANDLE,
 		&imageIndex
 	);
@@ -260,7 +265,7 @@ void SwapChainManager::CleanUpSwapchain() noexcept {
 }
 
 VkSemaphore SwapChainManager::GetImageSemaphore() const noexcept {
-	return m_imageSemaphore.GetSemaphore(m_currentFrameIndex);
+	return m_imageSemaphore->GetSemaphore(m_currentFrameIndex);
 }
 
 void SwapChainManager::SetNextFrameIndex(size_t index) noexcept {

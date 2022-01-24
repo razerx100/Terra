@@ -1,59 +1,23 @@
 #include <CommonPipelineObjects.hpp>
 
-void PopulateVertexInputStateCreateInfo(
-	VkPipelineVertexInputStateCreateInfo& createInfo
-) noexcept {
-	createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	createInfo.vertexBindingDescriptionCount = 0u;
-	createInfo.pVertexBindingDescriptions = nullptr;
-	createInfo.vertexAttributeDescriptionCount = 0u;
-	createInfo.pVertexAttributeDescriptions = nullptr;
-}
-
-void PopulateInputAssemblyStateCreateInfo(
-	VkPipelineInputAssemblyStateCreateInfo& createInfo
-) noexcept {
-	createInfo = {};
+VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo() noexcept {
+	VkPipelineInputAssemblyStateCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	createInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	createInfo.primitiveRestartEnable = VK_FALSE;
+
+	return createInfo;
 }
 
-void PopulateViewport(
-	VkViewport& viewport,
-	std::uint32_t width, std::uint32_t height
-) noexcept {
-	viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(width);
-	viewport.height = static_cast<float>(height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-}
-
-void PopulateScissorRect(
-	VkRect2D& scissor,
-	std::uint32_t width, std::uint32_t height
-) noexcept {
-	scissor = {};
-	scissor.offset = { 0, 0 };
-	scissor.extent.width = width;
-	scissor.extent.height = height;
-}
-
-void PopulateViewportStateCreateInfo(
-	VkPipelineViewportStateCreateInfo& createInfo,
-	const std::span<VkViewport> viewports,
-	const std::span<VkRect2D> scissors
-) noexcept {
-	createInfo = {};
+VkPipelineViewportStateCreateInfo GetViewportStateCreateInfo() noexcept {
+	VkPipelineViewportStateCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	createInfo.pViewports = viewports.data();
-	createInfo.viewportCount = static_cast<std::uint32_t>(viewports.size());
-	createInfo.scissorCount = static_cast<std::uint32_t>(scissors.size());
-	createInfo.pScissors = scissors.data();
+	createInfo.pViewports = nullptr;
+	createInfo.viewportCount = 1u;
+	createInfo.scissorCount = 1u;
+	createInfo.pScissors = nullptr;
+
+	return createInfo;
 }
 
 void PopulateRasterizationStateCreateInfo(

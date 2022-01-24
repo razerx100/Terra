@@ -8,6 +8,9 @@
 #include <IDisplayManager.hpp>
 #include <CopyQueueManager.hpp>
 #include <ResourceBuffer.hpp>
+#include <FenceWrapper.hpp>
+#include <SemaphoreWrapper.hpp>
+#include <ViewportAndScissorManager.hpp>
 
 // Instance Manager
 IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
@@ -94,4 +97,25 @@ IResourceBuffer* CreateResourceBufferInstance(
 	BufferType type
 ) {
 	return new ResourceBuffer(logDevice, phyDevice, queueFamilyIndices,type);
+}
+
+// Fence Wrapper
+IFenceWrapper* CreateFenceWrapperInstance(
+	VkDevice device, size_t bufferCount, bool signaled
+) {
+	return new FenceWrapper(device, bufferCount, signaled);
+}
+
+// Semaphore Wrapper
+ISemaphoreWrapper* CreateSemaphoreWrapperInstance(
+	VkDevice device, size_t bufferCount
+) {
+	return new SemaphoreWrapper(device, bufferCount);
+}
+
+// Viewport and Scissor
+IViewportAndScissorManager* CreateViewportAndScissorInstance(
+	std::uint32_t width, std::uint32_t height
+) {
+	return new ViewportAndScissorManager(width, height);
 }

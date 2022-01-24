@@ -1,7 +1,8 @@
 #ifndef __COPY_QUEUE_MANAGER_HPP__
 #define __COPY_QUEUE_MANAGER_HPP__
 #include <ICopyQueueManager.hpp>
-#include <FenceWrapper.hpp>
+#include <IFenceWrapper.hpp>
+#include <memory>
 
 class CopyQueueManager : public ICopyQueueManager {
 public:
@@ -12,6 +13,6 @@ public:
 
 private:
 	VkQueue m_copyQueue;
-	FenceWrapper m_fence;
+	std::unique_ptr<IFenceWrapper> m_fence;
 };
 #endif

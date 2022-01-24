@@ -1,8 +1,9 @@
 #ifndef __GRAPHICS_QUEUE_MANAGER_HPP__
 #define __GRAPHICS_QUEUE_MANAGER_HPP__
 #include <IGraphicsQueueManager.hpp>
-#include <SemaphoreWrapper.hpp>
-#include <FenceWrapper.hpp>
+#include <ISemaphoreWrapper.hpp>
+#include <IFenceWrapper.hpp>
+#include <memory>
 
 class GraphicsQueueManager : public IGraphicsQueueManager {
 public:
@@ -20,8 +21,8 @@ public:
 
 private:
 	VkQueue m_graphicsQueue;
-	SemaphoreWrapper m_renderSemaphore;
-	FenceWrapper m_fences;
+	std::unique_ptr<ISemaphoreWrapper> m_renderSemaphores;
+	std::unique_ptr<IFenceWrapper> m_fences;
 	size_t m_currentFrameIndex;
 };
 #endif

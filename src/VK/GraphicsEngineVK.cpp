@@ -10,7 +10,9 @@ GraphicsEngineVK::GraphicsEngineVK(
 ) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName),
 m_bufferCount(bufferCount) {
 
-	SetScissorAndViewport(width, height);
+	m_viewPortAndScissor = std::unique_ptr<IViewportAndScissorManager>(
+		CreateViewportAndScissorInstance(width, height)
+		);
 
 	DisplayInst::Init();
 
@@ -136,8 +138,8 @@ void GraphicsEngineVK::Render() {
 
 	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer(imageIndex);
 
-	vkCmdSetViewport(commandBuffer, 0u, 1u, &m_viewport);
-	vkCmdSetScissor(commandBuffer, 0u, 1u, &m_scissorRect);
+	vkCmdSetViewport(commandBuffer, 0u, 1u, m_viewPortAndScissor->GetViewportRef());
+	vkCmdSetScissor(commandBuffer, 0u, 1u, m_viewPortAndScissor->GetScissorRef());
 
 	VkImageMemoryBarrier transferBarrier;
 	swapchainRef->GetUndefinedToTransferBarrier(imageIndex, transferBarrier);
@@ -179,6 +181,7 @@ void GraphicsEngineVK::Render() {
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
 	SwapChainInst::GetRef()->ResizeSwapchain(width, height, hasSwapFormatChanged);
+	m_viewPortAndScissor->Resize(width, height);
 	// If swapFormatChanged Recreate RenderPass
 }
 
@@ -199,13 +202,6 @@ void GraphicsEngineVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(
 		DeviceInst::GetRef()->GetLogicalDevice()
 	);
-}
-
-void GraphicsEngineVK::SetScissorAndViewport(
-	std::uint32_t width, std::uint32_t height
-) noexcept {
-	PopulateViewport(m_viewport, width, height);
-	PopulateScissorRect(m_scissorRect, width, height);
 }
 
 void GraphicsEngineVK::SetShaderPath(const char* path) noexcept {

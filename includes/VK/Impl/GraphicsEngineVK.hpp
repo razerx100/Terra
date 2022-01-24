@@ -1,8 +1,10 @@
 #ifndef __GRAPHICS_ENGINE_VK_HPP__
 #define __GRAPHICS_ENGINE_VK_HPP__
 #include <GraphicsEngine.hpp>
-#include <string>
 #include <vulkan/vulkan.hpp>
+#include <IViewportAndScissorManager.hpp>
+#include <memory>
+#include <string>
 
 class GraphicsEngineVK : public GraphicsEngine {
 public:
@@ -28,14 +30,10 @@ public:
 	void ProcessData() override;
 
 private:
-	void SetScissorAndViewport(std::uint32_t width, std::uint32_t height) noexcept;
-
-private:
 	VkClearColorValue m_backgroundColor;
 	const std::string m_appName;
 
-	VkViewport m_viewport;
-	VkRect2D m_scissorRect;
+	std::unique_ptr<IViewportAndScissorManager> m_viewPortAndScissor;
 
 	std::string m_shaderPath;
 	size_t m_bufferCount;
