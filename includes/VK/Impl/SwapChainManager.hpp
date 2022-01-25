@@ -17,7 +17,7 @@ public:
 	VkExtent2D GetSwapExtent() const noexcept override;
 	VkFormat GetSwapFormat() const noexcept override;
 	size_t GetAvailableImageIndex() const noexcept override;
-	VkImage GetImage(size_t imageIndex) const noexcept override;
+	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept override;
 	VkSemaphore GetImageSemaphore() const noexcept override;
 
 	void SetNextFrameIndex(size_t index) noexcept override;
@@ -26,17 +26,13 @@ public:
 		VkSemaphore renderSemaphore
 	) override;
 	void ResizeSwapchain(
-		std::uint32_t width, std::uint32_t height, bool& formatChanged
+		std::uint32_t width, std::uint32_t height,
+		VkRenderPass renderPass, bool& formatChanged
 	) override;
-
-	void GetUndefinedToTransferBarrier(
-		size_t imageIndex,
-		VkImageMemoryBarrier& transferBarrier
-	) const noexcept override;
-	void GetTransferToPresentBarrier(
-		size_t imageIndex,
-		VkImageMemoryBarrier& presentBarrier
-	) const noexcept override;
+	void CreateFramebuffers(
+		VkDevice device, VkRenderPass renderPass,
+		std::uint32_t width, std::uint32_t height
+	) override;
 
 private:
 	VkSurfaceFormatKHR ChooseSurfaceFormat(
@@ -66,6 +62,7 @@ private:
 	VkExtent2D m_swapchainExtent;
 	std::vector<VkImage> m_swapchainImages;
 	std::vector<VkImageView> m_swapchainImageViews;
+	std::vector<VkFramebuffer> m_frameBuffers;
 	VkQueue m_presentQueue;
 	size_t m_presentFamilyIndex;
 	std::unique_ptr<ISemaphoreWrapper> m_imageSemaphore;

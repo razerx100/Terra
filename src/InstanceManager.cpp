@@ -97,3 +97,15 @@ void IndexBufferInst::Init(
 		)
 	);
 }
+
+void ViewPAndScsrInst::Init(std::uint32_t width, std::uint32_t height) {
+	Set(
+		CreateViewportAndScissorInstance(width, height)
+	);
+}
+
+void RndrPassInst::Init(VkDevice device, VkFormat swapchainFormat) {
+	Set(
+		CreateRenderPassManagerInstance(device, swapchainFormat)
+	);
+}

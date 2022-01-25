@@ -2,8 +2,6 @@
 #define __GRAPHICS_ENGINE_VK_HPP__
 #include <GraphicsEngine.hpp>
 #include <vulkan/vulkan.hpp>
-#include <IViewportAndScissorManager.hpp>
-#include <memory>
 #include <string>
 
 class GraphicsEngineVK : public GraphicsEngine {
@@ -30,12 +28,12 @@ public:
 	void ProcessData() override;
 
 private:
-	VkClearColorValue m_backgroundColor;
+	VkClearValue m_backgroundColor;
 	const std::string m_appName;
-
-	std::unique_ptr<IViewportAndScissorManager> m_viewPortAndScissor;
 
 	std::string m_shaderPath;
 	size_t m_bufferCount;
+
+	VkRenderPassBeginInfo m_renderPassInfo;
 };
 #endif

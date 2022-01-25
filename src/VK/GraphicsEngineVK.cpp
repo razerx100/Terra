@@ -7,12 +7,18 @@ GraphicsEngineVK::GraphicsEngineVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	size_t bufferCount
-) : m_backgroundColor{ 0.1f, 0.1f, 0.1f, 0.1f }, m_appName(appName),
-m_bufferCount(bufferCount) {
+) : m_backgroundColor{}, m_appName(appName),
+	m_bufferCount(bufferCount), m_renderPassInfo{} {
 
-	m_viewPortAndScissor = std::unique_ptr<IViewportAndScissorManager>(
-		CreateViewportAndScissorInstance(width, height)
-		);
+	m_backgroundColor.color = {
+		0.1f, 0.1f, 0.1f, 0.1f
+	};
+
+	m_renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	m_renderPassInfo.renderArea.offset = { 0, 0 };
+	m_renderPassInfo.clearValueCount = 1u;
+
+	ViewPAndScsrInst::Init(width, height);
 
 	DisplayInst::Init();
 
@@ -96,15 +102,26 @@ m_bufferCount(bufferCount) {
 		physicalDevice
 	);
 
+	ISwapChainManager* swapRef = SwapChainInst::GetRef();
+
+	RndrPassInst::Init(logicalDevice, swapRef->GetSwapFormat());
+
+	swapRef->CreateFramebuffers(
+		logicalDevice, RndrPassInst::GetRef()->GetRenderPass(),
+		width, height
+	);
+
 	VertexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	IndexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
+	ViewPAndScsrInst::CleanUp();
 	VertexBufferInst::CleanUp();
 	IndexBufferInst::CleanUp();
 	CpyQueInst::CleanUp();
 	CpyPoolInst::CleanUp();
+	RndrPassInst::CleanUp();
 	SwapChainInst::CleanUp();
 	GfxQueInst::CleanUp();
 	GfxPoolInst::CleanUp();
@@ -118,7 +135,7 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 }
 
 void GraphicsEngineVK::SetBackgroundColor(const Ceres::VectorF32& colorVector) noexcept {
-	m_backgroundColor = {
+	m_backgroundColor.color = {
 		colorVector.F32.x, colorVector.F32.y, colorVector.F32.z, colorVector.F32.w
 	};
 }
@@ -138,33 +155,21 @@ void GraphicsEngineVK::Render() {
 
 	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer(imageIndex);
 
-	vkCmdSetViewport(commandBuffer, 0u, 1u, m_viewPortAndScissor->GetViewportRef());
-	vkCmdSetScissor(commandBuffer, 0u, 1u, m_viewPortAndScissor->GetScissorRef());
+	IViewportAndScissorManager* viewportRef = ViewPAndScsrInst::GetRef();
 
-	VkImageMemoryBarrier transferBarrier;
-	swapchainRef->GetUndefinedToTransferBarrier(imageIndex, transferBarrier);
-	vkCmdPipelineBarrier(
-		commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0u, 0u, nullptr, 0u, nullptr, 1u, &transferBarrier
-	);
+	vkCmdSetViewport(commandBuffer, 0u, 1u, viewportRef->GetViewportRef());
+	vkCmdSetScissor(commandBuffer, 0u, 1u, viewportRef->GetScissorRef());
 
-	static VkImageSubresourceRange subResourceRange = {
-		VK_IMAGE_ASPECT_COLOR_BIT,
-		0u, 1u, 0u, 1u
-	};
+	m_renderPassInfo.renderPass = RndrPassInst::GetRef()->GetRenderPass();
+	m_renderPassInfo.framebuffer = swapchainRef->GetFramebuffer(imageIndex);
+	m_renderPassInfo.renderArea.extent = swapchainRef->GetSwapExtent();
+	m_renderPassInfo.pClearValues = &m_backgroundColor;
 
-	vkCmdClearColorImage(
-		commandBuffer, swapchainRef->GetImage(imageIndex),
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &m_backgroundColor,
-		1u, &subResourceRange
-	);
+	vkCmdBeginRenderPass(commandBuffer, &m_renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	VkImageMemoryBarrier presentBarrier;
-	swapchainRef->GetTransferToPresentBarrier(imageIndex, presentBarrier);
-	vkCmdPipelineBarrier(
-		commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		0u, 0u, nullptr, 0u, nullptr, 1u, &presentBarrier
-	);
+	// Record Models Here
+
+	vkCmdEndRenderPass(commandBuffer);
 
 	commandPoolRef->Close(imageIndex);
 
@@ -180,9 +185,18 @@ void GraphicsEngineVK::Render() {
 
 void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
-	SwapChainInst::GetRef()->ResizeSwapchain(width, height, hasSwapFormatChanged);
-	m_viewPortAndScissor->Resize(width, height);
-	// If swapFormatChanged Recreate RenderPass
+	ISwapChainManager* swapRef = SwapChainInst::GetRef();
+	IRenderPassManager* rndrPassRef = RndrPassInst::GetRef();
+
+	swapRef->ResizeSwapchain(
+		width, height, rndrPassRef->GetRenderPass(), hasSwapFormatChanged
+	);
+	ViewPAndScsrInst::GetRef()->Resize(width, height);
+
+	if (hasSwapFormatChanged)
+		rndrPassRef->CreateRenderPass(
+			DeviceInst::GetRef()->GetLogicalDevice(), swapRef->GetSwapFormat()
+		);
 }
 
 void GraphicsEngineVK::GetMonitorCoordinates(

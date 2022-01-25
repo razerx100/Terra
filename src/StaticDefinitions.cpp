@@ -11,6 +11,7 @@
 #include <FenceWrapper.hpp>
 #include <SemaphoreWrapper.hpp>
 #include <ViewportAndScissorManager.hpp>
+#include <RenderPassManager.hpp>
 
 // Instance Manager
 IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
@@ -118,4 +119,11 @@ IViewportAndScissorManager* CreateViewportAndScissorInstance(
 	std::uint32_t width, std::uint32_t height
 ) {
 	return new ViewportAndScissorManager(width, height);
+}
+
+// Render Pass Manager
+IRenderPassManager* CreateRenderPassManagerInstance(
+	VkDevice device, VkFormat swapchainFormat
+) {
+	return new RenderPassManager(device, swapchainFormat);
 }

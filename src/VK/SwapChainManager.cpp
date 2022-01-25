@@ -129,7 +129,7 @@ void SwapChainManager::PresentImage(
 	presentInfo.pWaitSemaphores = &renderSemaphore;
 
 	VkSwapchainKHR swapchains[] = { m_swapchain };
-	presentInfo.swapchainCount = static_cast<std::uint32_t>(std::size(swapchains));
+	presentInfo.swapchainCount = 1u;
 	presentInfo.pSwapchains = swapchains;
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
@@ -140,58 +140,13 @@ void SwapChainManager::PresentImage(
 	);
 }
 
-void SwapChainManager::GetUndefinedToTransferBarrier(
-	size_t imageIndex,
-	VkImageMemoryBarrier& transferBarrier
-) const noexcept {
-	VkImageSubresourceRange subResourceRange = {};
-	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subResourceRange.baseMipLevel = 0u;
-	subResourceRange.levelCount = 1u;
-	subResourceRange.baseArrayLayer = 0u;
-	subResourceRange.layerCount = 1u;
-
-	transferBarrier = {};
-	transferBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	transferBarrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	transferBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	transferBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	transferBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	transferBarrier.srcQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
-	transferBarrier.dstQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
-	transferBarrier.image = m_swapchainImages[imageIndex];
-	transferBarrier.subresourceRange = subResourceRange;
-}
-
-void SwapChainManager::GetTransferToPresentBarrier(
-	size_t imageIndex,
-	VkImageMemoryBarrier& presentBarrier
-) const noexcept {
-	VkImageSubresourceRange subResourceRange = {};
-	subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subResourceRange.baseMipLevel = 0u;
-	subResourceRange.levelCount = 1u;
-	subResourceRange.baseArrayLayer = 0u;
-	subResourceRange.layerCount = 1u;
-
-	presentBarrier = {};
-	presentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	presentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	presentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	presentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	presentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	presentBarrier.srcQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
-	presentBarrier.dstQueueFamilyIndex = static_cast<std::uint32_t>(m_presentFamilyIndex);
-	presentBarrier.image = m_swapchainImages[imageIndex];
-	presentBarrier.subresourceRange = subResourceRange;
-}
-
-VkImage SwapChainManager::GetImage(size_t imageIndex) const noexcept {
-	return m_swapchainImages[imageIndex];
+VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept {
+	return m_frameBuffers[imageIndex];
 }
 
 void SwapChainManager::ResizeSwapchain(
-	std::uint32_t width, std::uint32_t height, bool& formatChanged
+	std::uint32_t width, std::uint32_t height,
+	VkRenderPass renderPass, bool& formatChanged
 ) {
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
 		IDeviceManager* deviceManRef = DeviceInst::GetRef();
@@ -207,6 +162,7 @@ void SwapChainManager::ResizeSwapchain(
 		);
 		QueryImages();
 		CreateImageViews();
+		CreateFramebuffers(m_deviceRef, renderPass, width, height);
 	}
 }
 
@@ -258,6 +214,9 @@ void SwapChainManager::QueryImages() {
 }
 
 void SwapChainManager::CleanUpSwapchain() noexcept {
+	for (VkFramebuffer framebuffer : m_frameBuffers)
+		vkDestroyFramebuffer(m_deviceRef, framebuffer, nullptr);
+
 	for (VkImageView imageView : m_swapchainImageViews)
 		vkDestroyImageView(m_deviceRef, imageView, nullptr);
 
@@ -270,4 +229,27 @@ VkSemaphore SwapChainManager::GetImageSemaphore() const noexcept {
 
 void SwapChainManager::SetNextFrameIndex(size_t index) noexcept {
 	m_currentFrameIndex = index;
+}
+
+void SwapChainManager::CreateFramebuffers(
+	VkDevice device, VkRenderPass renderPass,
+	std::uint32_t width, std::uint32_t height
+) {
+	m_frameBuffers.resize(m_swapchainImageViews.size());
+
+	VkResult result;
+	for (size_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
+		VkFramebufferCreateInfo frameBufferInfo = {};
+		frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		frameBufferInfo.renderPass = renderPass;
+		frameBufferInfo.attachmentCount = 1u;
+		frameBufferInfo.pAttachments = &m_swapchainImageViews[index];
+		frameBufferInfo.width = width;
+		frameBufferInfo.height = height;
+		frameBufferInfo.layers = 1u;
+
+		VK_THROW_FAILED(result,
+			vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &m_frameBuffers[index])
+		);
+	}
 }

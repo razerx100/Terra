@@ -11,6 +11,8 @@
 #include <IDisplayManager.hpp>
 #include <ICopyQueueManager.hpp>
 #include <IResourceBuffer.hpp>
+#include <IViewportAndScissorManager.hpp>
+#include <IRenderPassManager.hpp>
 
 class DebugLayerInst : public _ObjectManager<DebugLayerManager, DebugLayerInst> {
 public:
@@ -88,5 +90,15 @@ public:
 		VkDevice logDevice, VkPhysicalDevice phyDevice,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+};
+
+class ViewPAndScsrInst : public _ObjectManager<IViewportAndScissorManager, ViewPAndScsrInst> {
+public:
+	static void Init(std::uint32_t width, std::uint32_t height);
+};
+
+class RndrPassInst : public _ObjectManager<IRenderPassManager, RndrPassInst> {
+public:
+	static void Init(VkDevice device, VkFormat swapchainFormat);
 };
 #endif
