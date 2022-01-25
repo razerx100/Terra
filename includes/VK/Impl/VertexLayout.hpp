@@ -8,9 +8,10 @@ class VertexLayout {
 public:
 	VertexLayout(const std::vector<VertexElementType>& inputLayout);
 
-	VkPipelineVertexInputStateCreateInfo GetInputInfo() const noexcept;
+	const VkPipelineVertexInputStateCreateInfo* GetInputInfo() const noexcept;
 
 private:
+	VkPipelineVertexInputStateCreateInfo m_createInfo;
 	VkVertexInputBindingDescription m_bindingDesc;
 	std::vector<VkVertexInputAttributeDescription> m_attrDescs;
 };

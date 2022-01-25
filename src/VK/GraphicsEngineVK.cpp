@@ -1,6 +1,5 @@
 #include <GraphicsEngineVK.hpp>
 #include <InstanceManager.hpp>
-#include <CommonPipelineObjects.hpp>
 
 GraphicsEngineVK::GraphicsEngineVK(
 	const char* appName,

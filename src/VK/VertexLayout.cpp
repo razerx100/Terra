@@ -11,7 +11,7 @@ static const std::vector<size_t> vertexElementTypeSizeMap{
 };
 
 VertexLayout::VertexLayout(const std::vector<VertexElementType>& inputLayout)
-	: m_bindingDesc{} {
+	: m_createInfo{}, m_bindingDesc {} {
 
 	size_t vertexSize = 0u;
 	for (size_t index = 0u; index < inputLayout.size(); ++index) {
@@ -30,16 +30,14 @@ VertexLayout::VertexLayout(const std::vector<VertexElementType>& inputLayout)
 	m_bindingDesc.binding = 0u;
 	m_bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	m_bindingDesc.stride = static_cast<std::uint32_t>(vertexSize);
+
+	m_createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	m_createInfo.vertexBindingDescriptionCount = 1u;
+	m_createInfo.pVertexBindingDescriptions = &m_bindingDesc;
+	m_createInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(m_attrDescs.size());
+	m_createInfo.pVertexAttributeDescriptions = m_attrDescs.data();
 }
 
-VkPipelineVertexInputStateCreateInfo VertexLayout::GetInputInfo() const noexcept {
-
-	VkPipelineVertexInputStateCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	createInfo.vertexBindingDescriptionCount = 1u;
-	createInfo.pVertexBindingDescriptions = &m_bindingDesc;
-	createInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(m_attrDescs.size());
-	createInfo.pVertexAttributeDescriptions = m_attrDescs.data();
-
-	return createInfo;
+const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const noexcept {
+	return &m_createInfo;
 }
