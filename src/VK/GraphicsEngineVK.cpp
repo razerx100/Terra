@@ -235,13 +235,13 @@ void GraphicsEngineVK::ProcessData() {
 	modelContainerRef->CreateBuffers(logicalDevice);
 	modelContainerRef->CopyData();
 
-	ICommandPoolManager* cpyList = CpyPoolInst::GetRef();
-	cpyList->Reset(0u);
-	VkCommandBuffer copyBuffer = cpyList->GetCommandBuffer(0u);
+	ICommandPoolManager* copyBufferManager = CpyPoolInst::GetRef();
+	copyBufferManager->Reset(0u);
+	VkCommandBuffer copyBuffer = copyBufferManager->GetCommandBuffer(0u);
 
 	modelContainerRef->RecordUploadBuffers(logicalDevice, copyBuffer);
 
-	cpyList->Close(0u);
+	copyBufferManager->Close(0u);
 
 	ICopyQueueManager* copyQueue = CpyQueInst::GetRef();
 	copyQueue->SubmitCommandBuffer(copyBuffer);
