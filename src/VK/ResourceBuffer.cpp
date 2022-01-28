@@ -110,8 +110,8 @@ void ResourceBuffer::RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer
 
 	for (size_t index = 0u; index < m_uploadBufferData.size(); ++index) {
 		VkBufferCopy copyRegion = {};
-		copyRegion.srcOffset = m_uploadBufferData[index].offset;
-		copyRegion.dstOffset = m_uploadBufferData[index].offset;
+		copyRegion.srcOffset = 0u;
+		copyRegion.dstOffset = 0u;
 		copyRegion.size = m_uploadBufferData[index].size;
 
 		vkCmdCopyBuffer(

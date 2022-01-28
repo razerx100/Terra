@@ -2,6 +2,13 @@
 #include <fstream>
 #include <VKThrowMacros.hpp>
 
+Shader::Shader(VkDevice device)
+	: m_deviceRef(device) {}
+
+Shader::~Shader() noexcept {
+	vkDestroyShaderModule(m_deviceRef, m_pBinary, nullptr);
+}
+
 void Shader::CreateShader(VkDevice device, const std::string& fileName) {
 	std::vector<char> byteCode = LoadBinary(fileName);
 
