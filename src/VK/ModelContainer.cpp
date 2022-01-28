@@ -72,7 +72,7 @@ void ModelContainer::AddColoredModel(VkDevice device, const IModel* const modelR
 		vs->CreateShader(device, m_shaderPath + "VSColored.spv");
 
 		std::unique_ptr<Shader> fs = std::make_unique<Shader>();
-		vs->CreateShader(device, m_shaderPath + "FSColored.spv");
+		fs->CreateShader(device, m_shaderPath + "FSColored.spv");
 
 		std::unique_ptr<PipelineObjectGFX> pso = std::make_unique<PipelineObjectGFX>(
 			device,
@@ -108,4 +108,9 @@ void ModelContainer::AddTexturedModel(VkDevice device, const IModel* const model
 void ModelContainer::ReleaseUploadBuffers(VkDevice device) {
 	VertexBufferInst::GetRef()->ReleaseUploadBuffer(device);
 	IndexBufferInst::GetRef()->ReleaseUploadBuffer(device);
+}
+
+void ModelContainer::CreateBuffers(VkDevice device) {
+	VertexBufferInst::GetRef()->CreateBuffer(device);
+	IndexBufferInst::GetRef()->CreateBuffer(device);
 }

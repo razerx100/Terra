@@ -15,6 +15,7 @@ public:
 		bool texture
 	) override;
 
+	void CreateBuffers(VkDevice device) override;
 	void CopyData() override;
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) override;
 	void ReleaseUploadBuffers(VkDevice device) override;

@@ -229,14 +229,15 @@ void GraphicsEngineVK::InitResourceBasedObjects() {
 }
 
 void GraphicsEngineVK::ProcessData() {
+	VkDevice logicalDevice = DeviceInst::GetRef()->GetLogicalDevice();
+
 	IModelContainer* modelContainerRef = ModelContainerInst::GetRef();
+	modelContainerRef->CreateBuffers(logicalDevice);
 	modelContainerRef->CopyData();
 
 	ICommandPoolManager* cpyList = CpyPoolInst::GetRef();
 	cpyList->Reset(0u);
 	VkCommandBuffer copyBuffer = cpyList->GetCommandBuffer(0u);
-
-	VkDevice logicalDevice = DeviceInst::GetRef()->GetLogicalDevice();
 
 	modelContainerRef->RecordUploadBuffers(logicalDevice, copyBuffer);
 

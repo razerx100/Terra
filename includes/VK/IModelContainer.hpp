@@ -12,6 +12,7 @@ public:
 		bool texture
 	) = 0;
 
+	virtual void CreateBuffers(VkDevice device) = 0;
 	virtual void CopyData() = 0;
 	virtual void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) = 0;
 	virtual void ReleaseUploadBuffers(VkDevice device) = 0;
