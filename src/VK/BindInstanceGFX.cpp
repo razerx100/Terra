@@ -28,6 +28,7 @@ void BindInstanceGFX::AddModel(
 	m_modelsRaw.emplace_back(
 		std::make_unique<ModelRaw>(
 			device,
+			modelRef,
 			VertexBufferInst::GetRef()->AddBuffer(
 				device, modelRef->GetVertexData(), modelRef->GetVertexBufferSize()
 			),
@@ -49,17 +50,20 @@ void BindInstanceGFX::BindCommands(VkCommandBuffer commandBuffer) noexcept {
 }
 
 // Model Raw
-BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device) noexcept
-	: m_deviceRef(device), m_vertexBuffer(nullptr), m_indexBuffer(nullptr),
+BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, const IModel* const modelRef) noexcept
+	: m_deviceRef(device), m_modelRef(modelRef),
+	m_vertexBuffer(nullptr), m_indexBuffer(nullptr),
 	m_vertexOffset(0u), m_indexCount(0u) {}
 
 BindInstanceGFX::ModelRaw::ModelRaw(
 	VkDevice device,
+	const IModel* const modelRef,
 	VkBuffer vertexBuffer,
 	VkBuffer indexBuffer,
 	size_t indicesCount
 ) noexcept
-	: m_deviceRef(device), m_vertexBuffer(vertexBuffer), m_indexBuffer(indexBuffer),
+	: m_deviceRef(device),m_modelRef(modelRef),
+	m_vertexBuffer(vertexBuffer), m_indexBuffer(indexBuffer),
 	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indicesCount)) {}
 
 BindInstanceGFX::ModelRaw::~ModelRaw() noexcept {

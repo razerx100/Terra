@@ -24,9 +24,10 @@ public:
 private:
 	class ModelRaw {
 	public:
-		ModelRaw(VkDevice device) noexcept;
+		ModelRaw(VkDevice device, const IModel* const modelRef) noexcept;
 		ModelRaw(
 			VkDevice device,
+			const IModel* const modelRef,
 			VkBuffer vertexBuffer,
 			VkBuffer indexBuffer,
 			size_t indexCount
@@ -40,6 +41,7 @@ private:
 
 	private:
 		VkDevice m_deviceRef;
+		const IModel* const m_modelRef;
 		VkBuffer m_vertexBuffer;
 		VkBuffer m_indexBuffer;
 		VkDeviceSize m_vertexOffset;
