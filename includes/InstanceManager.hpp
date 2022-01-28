@@ -13,6 +13,7 @@
 #include <IResourceBuffer.hpp>
 #include <IViewportAndScissorManager.hpp>
 #include <IRenderPassManager.hpp>
+#include <IModelContainer.hpp>
 
 class DebugLayerInst : public _ObjectManager<DebugLayerManager, DebugLayerInst> {
 public:
@@ -100,5 +101,10 @@ public:
 class RndrPassInst : public _ObjectManager<IRenderPassManager, RndrPassInst> {
 public:
 	static void Init(VkDevice device, VkFormat swapchainFormat);
+};
+
+class ModelContainerInst : public _ObjectManager<IModelContainer, ModelContainerInst> {
+public:
+	static void Init(const char* shaderPath);
 };
 #endif

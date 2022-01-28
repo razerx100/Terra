@@ -12,6 +12,7 @@
 #include <SemaphoreWrapper.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <RenderPassManager.hpp>
+#include <ModelContainer.hpp>
 
 // Instance Manager
 IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
@@ -126,4 +127,11 @@ IRenderPassManager* CreateRenderPassManagerInstance(
 	VkDevice device, VkFormat swapchainFormat
 ) {
 	return new RenderPassManager(device, swapchainFormat);
+}
+
+// Model Container
+IModelContainer* CreateModelContainerInstance(
+	const char* shaderPath
+) {
+	return new ModelContainer(shaderPath);
 }

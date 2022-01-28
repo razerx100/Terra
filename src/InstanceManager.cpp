@@ -109,3 +109,9 @@ void RndrPassInst::Init(VkDevice device, VkFormat swapchainFormat) {
 		CreateRenderPassManagerInstance(device, swapchainFormat)
 	);
 }
+
+void ModelContainerInst::Init(const char* shaderPath) {
+	Set(
+		CreateModelContainerInstance(shaderPath)
+	);
+}

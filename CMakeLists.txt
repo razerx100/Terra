@@ -62,6 +62,20 @@ if(IMGUIFLAG STREQUAL "ENABLE")
     target_compile_definitions(${PROJECT_NAME} PRIVATE _IMGUI)
 endif()
 
+include(FetchContent)
+
+FetchContent_Declare(
+    Venus
+    GIT_REPOSITORY https://github.com/razerx100/Venus.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(Venus)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+    Venus
+)
+
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /fp:fast /MP /EHa /Ot /W4)
 endif()

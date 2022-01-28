@@ -116,6 +116,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	ViewPAndScsrInst::CleanUp();
+	ModelContainerInst::CleanUp();
 	VertexBufferInst::CleanUp();
 	IndexBufferInst::CleanUp();
 	CpyQueInst::CleanUp();
@@ -133,14 +134,16 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	VkInstInst::CleanUp();
 }
 
-void GraphicsEngineVK::SetBackgroundColor(const Ceres::VectorF32& colorVector) noexcept {
+void GraphicsEngineVK::SetBackgroundColor(const Ceres::Float32_4& colorVector) noexcept {
 	m_backgroundColor.color = {
-		colorVector.F32.x, colorVector.F32.y, colorVector.F32.z, colorVector.F32.w
+		colorVector.x, colorVector.y, colorVector.z, colorVector.w
 	};
 }
 
 void GraphicsEngineVK::SubmitModel(const IModel* const modelRef, bool texture) {
-
+	ModelContainerInst::GetRef()->AddModel(
+		DeviceInst::GetRef()->GetLogicalDevice(), modelRef, texture
+	);
 }
 
 void GraphicsEngineVK::Render() {
@@ -166,7 +169,7 @@ void GraphicsEngineVK::Render() {
 
 	vkCmdBeginRenderPass(commandBuffer, &m_renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	// Record Models Here
+	ModelContainerInst::GetRef()->BindCommands(commandBuffer);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -222,9 +225,26 @@ void GraphicsEngineVK::SetShaderPath(const char* path) noexcept {
 }
 
 void GraphicsEngineVK::InitResourceBasedObjects() {
-
+	ModelContainerInst::Init(m_shaderPath.c_str());
 }
 
 void GraphicsEngineVK::ProcessData() {
+	IModelContainer* modelContainerRef = ModelContainerInst::GetRef();
+	modelContainerRef->CopyData();
 
+	ICommandPoolManager* cpyList = CpyPoolInst::GetRef();
+	cpyList->Reset(0u);
+	VkCommandBuffer copyBuffer = cpyList->GetCommandBuffer(0u);
+
+	VkDevice logicalDevice = DeviceInst::GetRef()->GetLogicalDevice();
+
+	modelContainerRef->RecordUploadBuffers(logicalDevice, copyBuffer);
+
+	cpyList->Close(0u);
+
+	ICopyQueueManager* copyQueue = CpyQueInst::GetRef();
+	copyQueue->SubmitCommandBuffer(copyBuffer);
+	copyQueue->WaitForGPU();
+
+	modelContainerRef->ReleaseUploadBuffers(logicalDevice);
 }
