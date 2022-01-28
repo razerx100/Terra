@@ -68,10 +68,10 @@ void ModelContainer::AddColoredModel(VkDevice device, const IModel* const modelR
 
 		VertexLayout vertexLayout = modelRef->GetVertexLayout();
 
-		std::unique_ptr<Shader> vs = std::make_unique<Shader>();
+		std::unique_ptr<Shader> vs = std::make_unique<Shader>(device);
 		vs->CreateShader(device, m_shaderPath + "VSColored.spv");
 
-		std::unique_ptr<Shader> fs = std::make_unique<Shader>();
+		std::unique_ptr<Shader> fs = std::make_unique<Shader>(device);
 		fs->CreateShader(device, m_shaderPath + "FSColored.spv");
 
 		std::unique_ptr<PipelineObjectGFX> pso = std::make_unique<PipelineObjectGFX>(
