@@ -249,3 +249,9 @@ void GraphicsEngineVK::ProcessData() {
 
 	modelContainerRef->ReleaseUploadBuffers(logicalDevice);
 }
+
+size_t GraphicsEngineVK::RegisterResource(
+	const void* data, size_t size, bool texture
+) {
+	return 0u;
+}

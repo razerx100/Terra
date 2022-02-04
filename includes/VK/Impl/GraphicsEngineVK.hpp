@@ -14,6 +14,9 @@ public:
 	);
 	~GraphicsEngineVK() noexcept;
 
+	[[nodiscard]]
+	size_t RegisterResource(const void* data, size_t size, bool texture = true) override;
+
 	void SetBackgroundColor(const Ceres::Float32_4& colorVector) noexcept override;
 	void SubmitModel(const IModel* const modelRef, bool texture = true) override;
 	void Render() override;
