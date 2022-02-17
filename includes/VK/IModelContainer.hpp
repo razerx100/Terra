@@ -8,10 +8,10 @@ public:
 	virtual ~IModelContainer() = default;
 
 	virtual void AddModel(
-		VkDevice device, const IModel* const modelRef,
-		bool texture
+		VkDevice device, const IModel* const modelRef
 	) = 0;
 
+	virtual void InitPipelines(VkDevice device) = 0;
 	virtual void CreateBuffers(VkDevice device) = 0;
 	virtual void CopyData() = 0;
 	virtual void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) = 0;

@@ -6,7 +6,10 @@
 
 class VertexLayout {
 public:
-	VertexLayout(const std::vector<VertexElementType>& inputLayout);
+	VertexLayout() noexcept;
+	VertexLayout(const std::vector<VertexElementType>& inputLayout) noexcept;
+
+	void InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept;
 
 	const VkPipelineVertexInputStateCreateInfo* GetInputInfo() const noexcept;
 

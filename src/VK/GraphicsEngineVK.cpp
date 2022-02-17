@@ -140,9 +140,9 @@ void GraphicsEngineVK::SetBackgroundColor(const Ceres::Float32_4& colorVector) n
 	};
 }
 
-void GraphicsEngineVK::SubmitModel(const IModel* const modelRef, bool texture) {
+void GraphicsEngineVK::SubmitModel(const IModel* const modelRef) {
 	ModelContainerInst::GetRef()->AddModel(
-		DeviceInst::GetRef()->GetLogicalDevice(), modelRef, texture
+		DeviceInst::GetRef()->GetLogicalDevice(), modelRef
 	);
 }
 
@@ -247,11 +247,13 @@ void GraphicsEngineVK::ProcessData() {
 	copyQueue->SubmitCommandBuffer(copyBuffer);
 	copyQueue->WaitForGPU();
 
+	modelContainerRef->InitPipelines(logicalDevice);
+
 	modelContainerRef->ReleaseUploadBuffers(logicalDevice);
 }
 
 size_t GraphicsEngineVK::RegisterResource(
-	const void* data, size_t size, bool texture
+	const void* data, size_t size
 ) {
 	return 0u;
 }

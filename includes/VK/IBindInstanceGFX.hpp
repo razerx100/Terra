@@ -4,11 +4,14 @@
 #include <IModel.hpp>
 #include <IPipelineObject.hpp>
 #include <IPipelineLayout.hpp>
+#include <VertexLayout.hpp>
 #include <memory>
 
 class IBindInstanceGFX {
 public:
 	virtual ~IBindInstanceGFX() = default;
+
+	virtual VertexLayout GetVertexLayout() const noexcept = 0;
 
 	virtual void AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept = 0;
 	virtual void AddPipelineLayout(std::unique_ptr<IPipelineLayout> layout) noexcept = 0;

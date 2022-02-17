@@ -10,9 +10,18 @@ static const std::vector<size_t> vertexElementTypeSizeMap{
 	16u
 };
 
-VertexLayout::VertexLayout(const std::vector<VertexElementType>& inputLayout)
-	: m_createInfo{}, m_bindingDesc {} {
+VertexLayout::VertexLayout() noexcept : m_createInfo{}, m_bindingDesc{} {}
 
+VertexLayout::VertexLayout(const std::vector<VertexElementType>& inputLayout) noexcept
+	: m_createInfo{}, m_bindingDesc {} {
+	InitLayout(inputLayout);
+}
+
+const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const noexcept {
+	return &m_createInfo;
+}
+
+void VertexLayout::InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept {
 	size_t vertexSize = 0u;
 	for (size_t index = 0u; index < inputLayout.size(); ++index) {
 		size_t elementTypeID = static_cast<size_t>(inputLayout[index]);
@@ -36,8 +45,4 @@ VertexLayout::VertexLayout(const std::vector<VertexElementType>& inputLayout)
 	m_createInfo.pVertexBindingDescriptions = &m_bindingDesc;
 	m_createInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(m_attrDescs.size());
 	m_createInfo.pVertexAttributeDescriptions = m_attrDescs.data();
-}
-
-const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const noexcept {
-	return &m_createInfo;
 }

@@ -6,12 +6,13 @@
 
 class BindInstanceGFX : public IBindInstanceGFX {
 public:
-	BindInstanceGFX(bool textureAvailable) noexcept;
+	BindInstanceGFX() noexcept;
 	BindInstanceGFX(
-		bool textureAvailable,
 		std::unique_ptr<IPipelineObject> pso,
 		std::unique_ptr<IPipelineLayout> layout
 	) noexcept;
+
+	VertexLayout GetVertexLayout() const noexcept override;
 
 	void AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept override;
 	void AddPipelineLayout(std::unique_ptr<IPipelineLayout> layout) noexcept override;
@@ -49,9 +50,12 @@ private:
 	};
 
 private:
-	bool m_textureAvailable;
 	std::unique_ptr<IPipelineLayout> m_pipelineLayout;
 	std::unique_ptr<IPipelineObject> m_pso;
 	std::vector<std::unique_ptr<ModelRaw>> m_modelsRaw;
+
+
+	bool m_vertexLayoutAvailable;
+	VertexLayout m_vertexLayout;
 };
 #endif

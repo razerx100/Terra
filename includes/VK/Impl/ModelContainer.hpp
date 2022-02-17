@@ -2,7 +2,6 @@
 #define __MODEL_CONTAINER_HPP__
 #include <IModelContainer.hpp>
 #include <IBindInstanceGFX.hpp>
-#include <vector>
 #include <string>
 #include <memory>
 
@@ -11,10 +10,10 @@ public:
 	ModelContainer(const char* shaderPath) noexcept;
 
 	void AddModel(
-		VkDevice device, const IModel* const modelRef,
-		bool texture
+		VkDevice device, const IModel* const modelRef
 	) override;
 
+	void InitPipelines(VkDevice device) override;
 	void CreateBuffers(VkDevice device) override;
 	void CopyData() override;
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) override;
@@ -23,20 +22,15 @@ public:
 	void BindCommands(VkCommandBuffer commandBuffer) noexcept override;
 
 private:
-	struct InstanceData {
-		bool available;
-		size_t index;
-	};
+	using Pipeline =
+		std::pair<std::unique_ptr<IPipelineObject>, std::unique_ptr<IPipelineLayout>>;
+
+	Pipeline CreatePipeline(
+		VkDevice device, const VertexLayout& layout
+	) const;
 
 private:
-	void InitNewInstance(InstanceData& instanceData, bool texure) noexcept;
-	void AddColoredModel(VkDevice device, const IModel* const modelRef);
-	void AddTexturedModel(VkDevice device, const IModel* const modelRef);
-
-private:
-	std::vector<std::unique_ptr<IBindInstanceGFX>> m_bindInstances;
-	InstanceData m_coloredInstanceData;
-	InstanceData m_texturedInstanceData;
+	std::unique_ptr<IBindInstanceGFX> m_bindInstance;
 
 	std::string m_shaderPath;
 };
