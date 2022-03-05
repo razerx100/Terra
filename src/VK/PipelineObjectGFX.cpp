@@ -44,27 +44,27 @@ PipelineObjectGFX::PipelineObjectGFX(
 	multisampling.alphaToCoverageEnable = VK_FALSE;
 	multisampling.alphaToOneEnable = VK_FALSE;
 
-	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+	VkPipelineColorBlendAttachmentState colourBlendAttachment = {};
+	colourBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
 		| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlendAttachment.blendEnable = VK_FALSE;
-	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	colourBlendAttachment.blendEnable = VK_FALSE;
+	colourBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+	colourBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colourBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colourBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colourBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colourBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-	VkPipelineColorBlendStateCreateInfo colorBlending = {};
-	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY;
-	colorBlending.attachmentCount = 1u;
-	colorBlending.pAttachments = &colorBlendAttachment;
-	colorBlending.blendConstants[0u] = 0.0f;
-	colorBlending.blendConstants[1u] = 0.0f;
-	colorBlending.blendConstants[2u] = 0.0f;
-	colorBlending.blendConstants[3u] = 0.0f;
+	VkPipelineColorBlendStateCreateInfo colourBlending = {};
+	colourBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colourBlending.logicOpEnable = VK_FALSE;
+	colourBlending.logicOp = VK_LOGIC_OP_COPY;
+	colourBlending.attachmentCount = 1u;
+	colourBlending.pAttachments = &colourBlendAttachment;
+	colourBlending.blendConstants[0u] = 0.0f;
+	colourBlending.blendConstants[1u] = 0.0f;
+	colourBlending.blendConstants[2u] = 0.0f;
+	colourBlending.blendConstants[3u] = 0.0f;
 
 	VkDynamicState dynamicStates[] = {
 		VK_DYNAMIC_STATE_VIEWPORT,
@@ -98,7 +98,7 @@ PipelineObjectGFX::PipelineObjectGFX(
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
 	pipelineInfo.pDepthStencilState = nullptr;
-	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pColorBlendState = &colourBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.layout = layout;
 	pipelineInfo.renderPass = renderPass;
