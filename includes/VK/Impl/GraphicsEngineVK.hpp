@@ -15,9 +15,11 @@ public:
 	~GraphicsEngineVK() noexcept;
 
 	[[nodiscard]]
-	size_t RegisterResource(const void* data, size_t size) override;
+	size_t RegisterResource(
+		const void* data, size_t rowPitch, size_t rows
+	) override;
 
-	void SetBackgroundColor(const Ceres::Float32_4& colorVector) noexcept override;
+	void SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept override;
 	void SubmitModel(const IModel* const modelRef) override;
 	void Render() override;
 	void Resize(std::uint32_t width, std::uint32_t height) override;
@@ -31,7 +33,7 @@ public:
 	void ProcessData() override;
 
 private:
-	VkClearValue m_backgroundColor;
+	VkClearValue m_backgroundColour;
 	const std::string m_appName;
 
 	std::string m_shaderPath;

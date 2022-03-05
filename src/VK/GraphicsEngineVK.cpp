@@ -6,10 +6,10 @@ GraphicsEngineVK::GraphicsEngineVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	size_t bufferCount
-) : m_backgroundColor{}, m_appName(appName),
+) : m_backgroundColour{}, m_appName(appName),
 	m_bufferCount(bufferCount), m_renderPassInfo{} {
 
-	m_backgroundColor.color = {
+	m_backgroundColour.color = {
 		0.1f, 0.1f, 0.1f, 0.1f
 	};
 
@@ -134,9 +134,9 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	VkInstInst::CleanUp();
 }
 
-void GraphicsEngineVK::SetBackgroundColor(const Ceres::Float32_4& colorVector) noexcept {
-	m_backgroundColor.color = {
-		colorVector.x, colorVector.y, colorVector.z, colorVector.w
+void GraphicsEngineVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept {
+	m_backgroundColour.color = {
+		colourVector.x, colourVector.y, colourVector.z, colourVector.w
 	};
 }
 
@@ -165,7 +165,7 @@ void GraphicsEngineVK::Render() {
 	m_renderPassInfo.renderPass = RndrPassInst::GetRef()->GetRenderPass();
 	m_renderPassInfo.framebuffer = swapchainRef->GetFramebuffer(imageIndex);
 	m_renderPassInfo.renderArea.extent = swapchainRef->GetSwapExtent();
-	m_renderPassInfo.pClearValues = &m_backgroundColor;
+	m_renderPassInfo.pClearValues = &m_backgroundColour;
 
 	vkCmdBeginRenderPass(commandBuffer, &m_renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -253,7 +253,7 @@ void GraphicsEngineVK::ProcessData() {
 }
 
 size_t GraphicsEngineVK::RegisterResource(
-	const void* data, size_t size
+	const void* data, size_t rowPitch, size_t rows
 ) {
 	return 0u;
 }
