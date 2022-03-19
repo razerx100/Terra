@@ -253,7 +253,8 @@ void GraphicsEngineVK::ProcessData() {
 }
 
 size_t GraphicsEngineVK::RegisterResource(
-	const void* data, size_t rowPitch, size_t rows
+	const void* data,
+	size_t width, size_t height, size_t pixelSizeInBytes
 ) {
 	return 0u;
 }
