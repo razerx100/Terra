@@ -73,12 +73,13 @@ void DeviceManager::CreateLogicalDevice() {
 	std::vector<float> queuePriorities(mostQueueCount, 1.0f);
 
 	for (size_t index = 0u; index < queueCreateInfos.size(); ++index) {
-		queueCreateInfos[index].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfos[index].queueFamilyIndex =
-			static_cast<std::uint32_t>(m_usableQueueFamilies[index].index);
-		queueCreateInfos[index].queueCount =
-			static_cast<std::uint32_t>(m_usableQueueFamilies[index].queueRequired);
-		queueCreateInfos[index].pQueuePriorities = queuePriorities.data();
+		VkDeviceQueueCreateInfo& queueCreateInfo = queueCreateInfos[index];
+		QueueFamilyInfo& queueFamilyInfo = m_usableQueueFamilies[index];
+
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = static_cast<std::uint32_t>(queueFamilyInfo.index);
+		queueCreateInfo.queueCount = static_cast<std::uint32_t>(queueFamilyInfo.queueRequired);
+		queueCreateInfo.pQueuePriorities = queuePriorities.data();
 	}
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
@@ -125,12 +126,14 @@ QueueData DeviceManager::GetQueue(QueueType type) noexcept {
 			break;
 		}
 
+	QueueFamilyInfo& queueFamilyInfo = m_usableQueueFamilies[familyIndex];
+
 	vkGetDeviceQueue(
-		m_logicalDevice, static_cast<std::uint32_t>(m_usableQueueFamilies[familyIndex].index),
-		static_cast<std::uint32_t>(m_usableQueueFamilies[familyIndex].queueCreated), &queue
+		m_logicalDevice, static_cast<std::uint32_t>(queueFamilyInfo.index),
+		static_cast<std::uint32_t>(queueFamilyInfo.queueCreated), &queue
 	);
 
-	++m_usableQueueFamilies[familyIndex].queueCreated;
+	++queueFamilyInfo.queueCreated;
 
 	return { queue, familyIndex };
 }
@@ -230,14 +233,16 @@ void DeviceManager::SetQueueFamilyInfo(
 	std::uint32_t queueFlag = familyInfos[0u].second;
 
 	for (size_t index = 1u; index < familyInfos.size(); ++index) {
-		if (lastFamily == familyInfos[index].first) {
+		auto& familyInfo = familyInfos[index];
+
+		if (lastFamily == familyInfo.first) {
 			++queueCount;
-			queueFlag |= familyInfos[index].second;
+			queueFlag |= familyInfo.second;
 		}
 		else {
 			m_usableQueueFamilies.emplace_back(lastFamily, queueFlag, queueCount, 0u);
-			lastFamily = familyInfos[index].first;
-			queueFlag = familyInfos[index].second;
+			lastFamily = familyInfo.first;
+			queueFlag = familyInfo.second;
 			queueCount = 1u;
 		}
 	}
@@ -264,38 +269,45 @@ void DeviceManager::GetQueueSupportInfo(
 	std::vector<std::pair<size_t, QueueType>> tempData;
 
 	// Transfer only
-	for (size_t index = 0u; index < queueFamilies.size(); ++index)
-		if (queueFamilies[index].queueFlags & VK_QUEUE_TRANSFER_BIT
-			&& !(queueFamilies[index].queueFlags & 3u)) {
+	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+		VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
+			&& !(queueFamily.queueFlags & 3u)) {
 			tempData.emplace_back(index, QueueType::TransferQueue);
 			transfer = true;
-			--queueFamilies[index].queueCount;
+			--queueFamily.queueCount;
 
 			break;
 		}
+	}
 
 	if (transfer)
 		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			if (queueFamilies[index].queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& !(queueFamilies[index].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				&& queueFamilies[index].queueCount) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
+				&& !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				&& queueFamily.queueCount) {
 				tempData.emplace_back(index, QueueType::ComputeQueue);
 				compute = true;
-				--queueFamilies[index].queueCount;
+				--queueFamily.queueCount;
 
 				break;
 			}
 		}
 	else
 		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			if (queueFamilies[index].queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& !(queueFamilies[index].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				&& queueFamilies[index].queueCount >= 2) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
+				&& !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				&& queueFamily.queueCount >= 2) {
 				tempData.emplace_back(index, QueueType::TransferQueue);
 				tempData.emplace_back(index, QueueType::ComputeQueue);
 				compute = true;
 				transfer = true;
-				queueFamilies[index].queueCount -= 2;
+				queueFamily.queueCount -= 2;
 
 				break;
 			}
@@ -303,11 +315,13 @@ void DeviceManager::GetQueueSupportInfo(
 
 	if (!transfer)
 		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			if (queueFamilies[index].queueFlags & VK_QUEUE_TRANSFER_BIT
-				&& queueFamilies[index].queueCount) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
+				&& queueFamily.queueCount) {
 				tempData.emplace_back(index, QueueType::TransferQueue);
 				transfer = true;
-				--queueFamilies[index].queueCount;
+				--queueFamily.queueCount;
 
 				break;
 			}
@@ -315,25 +329,29 @@ void DeviceManager::GetQueueSupportInfo(
 
 	if (!compute)
 		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			if (queueFamilies[index].queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& queueFamilies[index].queueCount) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
+				&& queueFamily.queueCount) {
 				tempData.emplace_back(index, QueueType::ComputeQueue);
 				compute = true;
-				--queueFamilies[index].queueCount;
+				--queueFamily.queueCount;
 
 				break;
 			}
 		}
 
 	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-		if (queueFamilies[index].queueFlags & VK_QUEUE_GRAPHICS_BIT
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
 			&& CheckPresentSupport(device, surface, index)
-			&& queueFamilies[index].queueCount >= 2) {
+			&& queueFamily.queueCount >= 2) {
 			tempData.emplace_back(index, QueueType::GraphicsQueue);
 			tempData.emplace_back(index, QueueType::PresentQueue);
 			graphics = true;
 			present = true;
-			queueFamilies[index].queueCount -= 2;
+			queueFamily.queueCount -= 2;
 
 			break;
 		}

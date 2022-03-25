@@ -1,6 +1,6 @@
 #ifndef __GRAPHICS_ENGINE_VK_HPP__
 #define __GRAPHICS_ENGINE_VK_HPP__
-#include <GraphicsEngine.hpp>
+#include <IGraphicsEngine.hpp>
 #include <vulkan/vulkan.hpp>
 #include <string>
 
@@ -14,6 +14,11 @@ public:
 	);
 	~GraphicsEngineVK() noexcept;
 
+	void Resize(std::uint32_t width, std::uint32_t height) override;
+	void GetMonitorCoordinates(
+		std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
+	) override;
+
 	[[nodiscard]]
 	size_t RegisterResource(
 		const void* data,
@@ -23,10 +28,6 @@ public:
 	void SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept override;
 	void SubmitModel(const IModel* const modelRef) override;
 	void Render() override;
-	void Resize(std::uint32_t width, std::uint32_t height) override;
-	void GetMonitorCoordinates(
-		std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
-	) override;
 	void WaitForAsyncTasks() override;
 
 	void SetShaderPath(const char* path) noexcept override;
