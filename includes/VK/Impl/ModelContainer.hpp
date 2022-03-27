@@ -23,7 +23,7 @@ public:
 
 private:
 	using Pipeline =
-		std::pair<std::unique_ptr<IPipelineObject>, std::unique_ptr<IPipelineLayout>>;
+		std::pair<std::unique_ptr<IPipelineObject>, std::shared_ptr<IPipelineLayout>>;
 
 	Pipeline CreatePipeline(
 		VkDevice device, const VertexLayout& layout

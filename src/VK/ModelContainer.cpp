@@ -62,20 +62,25 @@ void ModelContainer::InitPipelines(VkDevice device) {
 		m_bindInstance->GetVertexLayout()
 	);
 
-	m_bindInstance->AddPipelineLayout(
-		std::move(pipelineLayout)
-	);
+	m_bindInstance->AddPipelineLayout(pipelineLayout);
 
-	m_bindInstance->AddPSO(
-		std::move(pso)
-	);
+	m_bindInstance->AddPSO(std::move(pso));
 }
 
 ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	VkDevice device, const VertexLayout& layout
 ) const {
-	std::unique_ptr<PipelineLayout> pipelineLayout =
-		std::make_unique<PipelineLayout>(device);
+	std::shared_ptr<PipelineLayout> pipelineLayout =
+		std::make_shared<PipelineLayout>(device);
+
+	pipelineLayout->AddPushConstantRange(
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		4u
+	);
+	pipelineLayout->AddPushConstantRange(
+		VK_SHADER_STAGE_VERTEX_BIT,
+		24u
+	);
 
 	pipelineLayout->CreateLayout();
 
@@ -96,6 +101,6 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 
 	return {
 		std::move(pso),
-		std::move(pipelineLayout)
+		pipelineLayout
 	};
 }

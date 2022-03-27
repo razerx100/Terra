@@ -6,10 +6,10 @@ BindInstanceGFX::BindInstanceGFX() noexcept
 
 BindInstanceGFX::BindInstanceGFX(
 	std::unique_ptr<IPipelineObject> pso,
-	std::unique_ptr<IPipelineLayout> layout
+	std::shared_ptr<IPipelineLayout> layout
 ) noexcept
 	: m_pso(std::move(pso)),
-	m_pipelineLayout(std::move(layout)),
+	m_pipelineLayout(layout),
 	m_vertexLayoutAvailable(false) {}
 
 void BindInstanceGFX::AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept {
@@ -17,9 +17,12 @@ void BindInstanceGFX::AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept {
 }
 
 void BindInstanceGFX::AddPipelineLayout(
-	std::unique_ptr<IPipelineLayout> layout
+	std::shared_ptr<IPipelineLayout> layout
 ) noexcept {
-	m_pipelineLayout = std::move(layout);
+	m_pipelineLayout = layout;
+
+	for (auto& modelRaw : m_modelsRaw)
+		modelRaw->AddPipelineLayout(layout);
 }
 
 void BindInstanceGFX::AddModel(
@@ -91,9 +94,27 @@ void BindInstanceGFX::ModelRaw::AddIndexBuffer(
 	m_indexCount = static_cast<std::uint32_t>(indexCount);
 }
 
+void BindInstanceGFX::ModelRaw::AddPipelineLayout(
+	std::shared_ptr<IPipelineLayout> pipelineLayout
+) noexcept {
+	m_pPipelineLayout = pipelineLayout;
+}
+
 void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) noexcept {
 	vkCmdBindVertexBuffers(commandBuffer, 0u, 1u, &m_vertexBuffer, &m_vertexOffset);
 	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer, 0u, VK_INDEX_TYPE_UINT16);
+
+	std::uint32_t textureIndex = m_modelRef->GetTextureIndex();
+	vkCmdPushConstants(
+		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
+		0u, 4u, &textureIndex
+	);
+
+	const TextureData& texInfo = m_modelRef->GetTextureInfo();
+	vkCmdPushConstants(
+		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
+		4u, 24u, &texInfo
+	);
 
 	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);
 }

@@ -190,15 +190,16 @@ void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	ISwapChainManager* swapRef = SwapChainInst::GetRef();
 	IRenderPassManager* rndrPassRef = RndrPassInst::GetRef();
 
-	swapRef->ResizeSwapchain(
+	if (swapRef->ResizeSwapchain(
 		width, height, rndrPassRef->GetRenderPass(), hasSwapFormatChanged
-	);
-	ViewPAndScsrInst::GetRef()->Resize(width, height);
+	)) {
+		ViewPAndScsrInst::GetRef()->Resize(width, height);
 
-	if (hasSwapFormatChanged)
-		rndrPassRef->CreateRenderPass(
-			DeviceInst::GetRef()->GetLogicalDevice(), swapRef->GetSwapFormat()
-		);
+		if (hasSwapFormatChanged)
+			rndrPassRef->CreateRenderPass(
+				DeviceInst::GetRef()->GetLogicalDevice(), swapRef->GetSwapFormat()
+			);
+	}
 }
 
 void GraphicsEngineVK::GetMonitorCoordinates(

@@ -25,7 +25,7 @@ public:
 		std::uint32_t imageIndex,
 		VkSemaphore renderSemaphore
 	) override;
-	void ResizeSwapchain(
+	bool ResizeSwapchain(
 		std::uint32_t width, std::uint32_t height,
 		VkRenderPass renderPass, bool& formatChanged
 	) override;

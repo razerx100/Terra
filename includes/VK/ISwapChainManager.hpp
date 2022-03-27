@@ -20,7 +20,7 @@ public:
 		std::uint32_t imageIndex,
 		VkSemaphore renderSemaphore
 	) = 0;
-	virtual void ResizeSwapchain(
+	virtual bool ResizeSwapchain(
 		std::uint32_t width, std::uint32_t height,
 		VkRenderPass renderPass, bool& formatChanged
 	) = 0;

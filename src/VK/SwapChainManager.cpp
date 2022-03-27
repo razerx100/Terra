@@ -144,7 +144,7 @@ VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept
 	return m_frameBuffers[imageIndex];
 }
 
-void SwapChainManager::ResizeSwapchain(
+bool SwapChainManager::ResizeSwapchain(
 	std::uint32_t width, std::uint32_t height,
 	VkRenderPass renderPass, bool& formatChanged
 ) {
@@ -163,7 +163,11 @@ void SwapChainManager::ResizeSwapchain(
 		QueryImages();
 		CreateImageViews();
 		CreateFramebuffers(m_deviceRef, renderPass, width, height);
+
+		return true;
 	}
+	else
+		return false;
 }
 
 void SwapChainManager::CreateSwapchain(
