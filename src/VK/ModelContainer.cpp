@@ -73,13 +73,14 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	std::shared_ptr<PipelineLayout> pipelineLayout =
 		std::make_shared<PipelineLayout>(device);
 
-	pipelineLayout->AddPushConstantRange(
-		VK_SHADER_STAGE_FRAGMENT_BIT,
-		4u
-	);
+	// Push constants needs to be serialized according to the shader stages
 	pipelineLayout->AddPushConstantRange(
 		VK_SHADER_STAGE_VERTEX_BIT,
 		24u
+	);
+	pipelineLayout->AddPushConstantRange(
+		VK_SHADER_STAGE_FRAGMENT_BIT,
+		4u
 	);
 
 	pipelineLayout->CreateLayout();
