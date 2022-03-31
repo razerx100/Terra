@@ -4,13 +4,7 @@
 #include <IModel.hpp>
 #include <CRSStructures.hpp>
 
-#ifdef BUILD_TERRA
-#define TERRA_DLL __declspec(dllexport)
-#else
-#define TERRA_DLL __declspec(dllimport)
-#endif
-
-class TERRA_DLL GraphicsEngine {
+class GraphicsEngine {
 public:
 	virtual ~GraphicsEngine() = default;
 
