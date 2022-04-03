@@ -6,6 +6,7 @@
 enum class BufferType {
 	Vertex,
 	Index,
+	UniformAndStorage,
 	Invalid
 };
 
