@@ -110,13 +110,18 @@ GraphicsEngineVK::GraphicsEngineVK(
 		width, height
 	);
 
+	DescSetMan::Init(logicalDevice);
+
 	VertexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	IndexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	UniformBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 
 GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	ViewPAndScsrInst::CleanUp();
 	ModelContainerInst::CleanUp();
+	DescSetMan::CleanUp();
+	UniformBufferInst::CleanUp();
 	VertexBufferInst::CleanUp();
 	IndexBufferInst::CleanUp();
 	CpyQueInst::CleanUp();
@@ -233,6 +238,8 @@ void GraphicsEngineVK::ProcessData() {
 	VkDevice logicalDevice = DeviceInst::GetRef()->GetLogicalDevice();
 
 	IModelContainer* modelContainerRef = ModelContainerInst::GetRef();
+	DescSetMan::GetRef()->CreateDescriptorSets(logicalDevice);
+	UniformBufferInst::GetRef()->CreateBuffer(logicalDevice);
 	modelContainerRef->CreateBuffers(logicalDevice);
 	modelContainerRef->CopyData();
 
@@ -257,5 +264,9 @@ size_t GraphicsEngineVK::RegisterResource(
 	const void* data,
 	size_t width, size_t height, size_t pixelSizeInBytes
 ) {
+	UniformBufferInst::GetRef()->AddBuffer(
+		DeviceInst::GetRef()->GetLogicalDevice(),
+		data, width * height * pixelSizeInBytes
+	);
 	return 0u;
 }

@@ -14,6 +14,7 @@
 #include <IViewportAndScissorManager.hpp>
 #include <IRenderPassManager.hpp>
 #include <IModelContainer.hpp>
+#include <IDescriptorSetManager.hpp>
 
 class DebugLayerInst : public _ObjectManager<DebugLayerManager, DebugLayerInst> {
 public:
@@ -106,5 +107,18 @@ public:
 class ModelContainerInst : public _ObjectManager<IModelContainer, ModelContainerInst> {
 public:
 	static void Init(const char* shaderPath);
+};
+
+class UniformBufferInst : public _ObjectManager<IResourceBuffer, UniformBufferInst> {
+public:
+	static void Init(
+		VkDevice logDevice, VkPhysicalDevice phyDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	);
+};
+
+class DescSetMan : public _ObjectManager<IDescriptorSetManager, DescSetMan> {
+public:
+	static void Init(VkDevice device);
 };
 #endif

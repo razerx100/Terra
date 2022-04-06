@@ -21,4 +21,6 @@ public:
 
 	virtual void CreateDescriptorSets(VkDevice device) = 0;
 };
+
+IDescriptorSetManager* CreateDescriptorSetManagerInstance(VkDevice device);
 #endif

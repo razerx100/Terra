@@ -13,6 +13,7 @@
 #include <ViewportAndScissorManager.hpp>
 #include <RenderPassManager.hpp>
 #include <ModelContainer.hpp>
+#include <DescriptorSetManager.hpp>
 
 // Instance Manager
 IInstanceManager* CreateInstanceManagerInstance(const char* appName) {
@@ -134,4 +135,9 @@ IModelContainer* CreateModelContainerInstance(
 	const char* shaderPath
 ) {
 	return new ModelContainer(shaderPath);
+}
+
+// Descriptor Set Manager
+IDescriptorSetManager* CreateDescriptorSetManagerInstance(VkDevice device) {
+	return new DescriptorSetManager(device);
 }

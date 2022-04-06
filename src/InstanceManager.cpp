@@ -115,3 +115,20 @@ void ModelContainerInst::Init(const char* shaderPath) {
 		CreateModelContainerInstance(shaderPath)
 	);
 }
+
+void UniformBufferInst::Init(
+	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	const std::vector<std::uint32_t>& queueFamilyIndices
+) {
+	Set(
+		CreateResourceBufferInstance(
+			logDevice, phyDevice, queueFamilyIndices, BufferType::UniformAndStorage
+		)
+	);
+}
+
+void DescSetMan::Init(VkDevice device) {
+	Set(
+		CreateDescriptorSetManagerInstance(device)
+	);
+}
