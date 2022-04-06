@@ -58,12 +58,14 @@ void DescriptorSetManager::AddSetLayout(
 }
 
 void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
-	m_descriptorPool->CreatePool(
-		device,
-		static_cast<std::uint32_t>(m_descriptorSetLayouts.size())
-	);
-	m_descriptorPool->AllocateDescriptors(
-		device, m_descriptorSetLayouts.data(),
-		&m_descriptorSet
-	);
+	if (!m_descriptorSetLayouts.empty()) {
+		m_descriptorPool->CreatePool(
+			device,
+			static_cast<std::uint32_t>(m_descriptorSetLayouts.size())
+		);
+		m_descriptorPool->AllocateDescriptors(
+			device, m_descriptorSetLayouts.data(),
+			&m_descriptorSet
+		);
+	}
 }

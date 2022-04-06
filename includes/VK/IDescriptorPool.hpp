@@ -4,8 +4,8 @@
 
 enum class DescriptorType {
 	UniformBuffer,
-	UniformBufferDynamic,
-	StorageBuffer
+	StorageBuffer,
+	UniformBufferDynamic
 };
 
 class IDescriptorPool {

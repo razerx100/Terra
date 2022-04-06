@@ -21,5 +21,6 @@ private:
 	VkDevice m_deviceRef;
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorPoolSize> m_descriptorTypeCounts;
+	std::vector<std::int32_t> m_typeMap;
 };
 #endif

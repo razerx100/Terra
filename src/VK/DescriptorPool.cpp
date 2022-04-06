@@ -2,11 +2,9 @@
 #include <VKThrowMacros.hpp>
 
 DescriptorPool::DescriptorPool(VkDevice device) noexcept
-	: m_deviceRef(device) {
-	m_descriptorTypeCounts = {
-		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0u},
-		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0u},
-		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0u}
+	: m_deviceRef(device), m_descriptorPool(VK_NULL_HANDLE) {
+	m_typeMap = {
+		-1, -1, -1
 	};
 }
 
@@ -17,7 +15,13 @@ DescriptorPool::~DescriptorPool() noexcept {
 void DescriptorPool::AddDescriptorTypeLimit(
 	DescriptorType type, std::uint32_t descriptorCount
 ) noexcept {
-	m_descriptorTypeCounts[static_cast<size_t>(type)].descriptorCount += descriptorCount;
+	size_t typeIndex = static_cast<size_t>(type);
+	if (m_typeMap[typeIndex] == -1) {
+		m_typeMap[typeIndex] = static_cast<std::int32_t>(m_descriptorTypeCounts.size());
+		m_descriptorTypeCounts.emplace_back(typeIndex + 6u, 1u);
+	}
+	else
+		m_descriptorTypeCounts[m_typeMap[typeIndex]].descriptorCount += descriptorCount;
 }
 
 void DescriptorPool::CreatePool(VkDevice device, std::uint32_t setLayoutCount) {
