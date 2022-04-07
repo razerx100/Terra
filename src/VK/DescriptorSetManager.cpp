@@ -1,7 +1,8 @@
 #include <DescriptorSetManager.hpp>
 #include <VKThrowMacros.hpp>
 
-DescriptorSetManager::DescriptorSetManager(VkDevice device) : m_deviceRef(device) {
+DescriptorSetManager::DescriptorSetManager(VkDevice device)
+	: m_deviceRef(device), m_descriptorSet(VK_NULL_HANDLE) {
 	m_descriptorPool = std::make_unique<DescriptorPool>(device);
 }
 

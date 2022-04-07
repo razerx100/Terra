@@ -64,7 +64,7 @@ VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {
 // Model Raw
 BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, const IModel* const modelRef) noexcept
 	: m_deviceRef(device), m_modelRef(modelRef),
-	m_vertexBuffer(nullptr), m_indexBuffer(nullptr),
+	m_vertexBuffer(VK_NULL_HANDLE), m_indexBuffer(VK_NULL_HANDLE),
 	m_vertexOffset(0u), m_indexCount(0u) {}
 
 BindInstanceGFX::ModelRaw::ModelRaw(

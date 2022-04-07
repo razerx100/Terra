@@ -5,7 +5,7 @@ DeviceMemory::DeviceMemory(
 	VkDevice logDevice, VkPhysicalDevice phyDevice,
 	const std::vector<std::uint32_t>& queueFamilyIndices,
 	bool uploadBuffer, BufferType type
-) : m_deviceRef(logDevice), m_bufferMemory(nullptr),
+) : m_deviceRef(logDevice), m_bufferMemory(VK_NULL_HANDLE),
 	m_memoryTypeIndex(0u), m_alignment(0u) {
 
 	VkBufferUsageFlags usage = 0u;

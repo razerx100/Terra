@@ -3,7 +3,7 @@
 #include <VKThrowMacros.hpp>
 
 Shader::Shader(VkDevice device)
-	: m_deviceRef(device) {}
+	: m_deviceRef(device), m_pBinary(VK_NULL_HANDLE) {}
 
 Shader::~Shader() noexcept {
 	vkDestroyShaderModule(m_deviceRef, m_pBinary, nullptr);

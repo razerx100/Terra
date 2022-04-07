@@ -8,7 +8,7 @@ PipelineObjectGFX::PipelineObjectGFX(
 	const VkPipelineVertexInputStateCreateInfo* vertexInput,
 	VkShaderModule vertexShader,
 	VkShaderModule fragmentShader
-) : m_deviceRef(device), m_graphicsPipeline(nullptr) {
+) : m_deviceRef(device), m_graphicsPipeline(VK_NULL_HANDLE) {
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

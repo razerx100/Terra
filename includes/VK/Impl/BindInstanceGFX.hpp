@@ -56,7 +56,6 @@ private:
 	std::unique_ptr<IPipelineObject> m_pso;
 	std::vector<std::unique_ptr<ModelRaw>> m_modelsRaw;
 
-
 	bool m_vertexLayoutAvailable;
 	VertexLayout m_vertexLayout;
 };
