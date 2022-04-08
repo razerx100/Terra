@@ -20,6 +20,12 @@ public:
 	) = 0;
 
 	virtual void CreateDescriptorSets(VkDevice device) = 0;
+	virtual void BindBuffer(
+		VkDevice device, VkBuffer buffer,
+		std::uint32_t bufferOffset, std::uint32_t bufferSize,
+		std::uint32_t bindingSlot, std::uint32_t descriptorCount,
+		VkDescriptorType descType
+	) = 0;
 };
 
 IDescriptorSetManager* CreateDescriptorSetManagerInstance(VkDevice device);

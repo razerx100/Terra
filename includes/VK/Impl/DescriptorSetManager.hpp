@@ -19,6 +19,12 @@ public:
 	) override;
 
 	void CreateDescriptorSets(VkDevice device) override;
+	void BindBuffer(
+		VkDevice device, VkBuffer buffer,
+		std::uint32_t bufferOffset, std::uint32_t bufferSize,
+		std::uint32_t bindingSlot, std::uint32_t descriptorCount,
+		VkDescriptorType descType
+	) override;
 
 private:
 	VkDevice m_deviceRef;
