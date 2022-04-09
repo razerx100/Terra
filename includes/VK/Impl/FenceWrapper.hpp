@@ -6,8 +6,9 @@
 class FenceWrapper : public IFenceWrapper {
 public:
 	FenceWrapper(VkDevice device, size_t bufferCount, bool signaled);
-	~FenceWrapper() noexcept;
+	~FenceWrapper() noexcept override;
 
+	[[nodiscard]]
 	VkFence GetFence(size_t index) const noexcept override;
 
 	void WaitAndResetFence(size_t index) const noexcept override;

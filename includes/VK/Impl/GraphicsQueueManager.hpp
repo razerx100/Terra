@@ -14,6 +14,7 @@ public:
 		VkSemaphore imageSemaphore
 	) override;
 
+	[[nodiscard]]
 	VkSemaphore GetRenderSemaphore() const noexcept override;
 
 	void SetNextFrameIndex(size_t index) noexcept override;

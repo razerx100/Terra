@@ -66,15 +66,15 @@ void DeviceManager::CreatePhysicalDevice(
 
 void DeviceManager::CreateLogicalDevice() {
 	size_t mostQueueCount = 0u;
-	for (auto& info : m_usableQueueFamilies)
+	for (const auto& info : m_usableQueueFamilies)
 		mostQueueCount = std::max(mostQueueCount, info.queueRequired);
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(m_usableQueueFamilies.size());
-	std::vector<float> queuePriorities(mostQueueCount, 1.0f);
+	const std::vector<float> queuePriorities(mostQueueCount, 1.0f);
 
 	for (size_t index = 0u; index < queueCreateInfos.size(); ++index) {
 		VkDeviceQueueCreateInfo& queueCreateInfo = queueCreateInfos[index];
-		QueueFamilyInfo& queueFamilyInfo = m_usableQueueFamilies[index];
+		const QueueFamilyInfo& queueFamilyInfo = m_usableQueueFamilies[index];
 
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex = static_cast<std::uint32_t>(queueFamilyInfo.index);
@@ -233,7 +233,7 @@ void DeviceManager::SetQueueFamilyInfo(
 	std::uint32_t queueFlag = familyInfos[0u].second;
 
 	for (size_t index = 1u; index < familyInfos.size(); ++index) {
-		auto& familyInfo = familyInfos[index];
+		const auto& familyInfo = familyInfos[index];
 
 		if (lastFamily == familyInfo.first) {
 			++queueCount;

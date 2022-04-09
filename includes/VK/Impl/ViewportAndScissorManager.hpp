@@ -6,7 +6,9 @@ class ViewportAndScissorManager : public IViewportAndScissorManager {
 public:
 	ViewportAndScissorManager(std::uint32_t width, std::uint32_t height);
 
+	[[nodiscard]]
 	const VkViewport* GetViewportRef() const noexcept override;
+	[[nodiscard]]
 	const VkRect2D* GetScissorRef() const noexcept override;
 
 	void Resize(std::uint32_t width, std::uint32_t height) noexcept override;

@@ -7,7 +7,7 @@ DescriptorSetManager::DescriptorSetManager(VkDevice device)
 }
 
 DescriptorSetManager::~DescriptorSetManager() noexcept {
-	for (auto& layout : m_descriptorSetLayouts)
+	for (const auto layout : m_descriptorSetLayouts)
 		vkDestroyDescriptorSetLayout(m_deviceRef, layout, nullptr);
 	m_descriptorPool.reset();
 }

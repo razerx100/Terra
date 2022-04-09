@@ -8,6 +8,7 @@ struct SwapChainInfo {
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 
+	[[nodiscard]]
 	bool IsCapable() const noexcept {
 		return !formats.empty() && !presentModes.empty();
 	}
@@ -37,8 +38,11 @@ public:
 
 	virtual QueueData GetQueue(QueueType type) noexcept = 0;
 
+	[[nodiscard]]
 	virtual VkPhysicalDevice GetPhysicalDevice() const noexcept = 0;
+	[[nodiscard]]
 	virtual VkDevice GetLogicalDevice() const noexcept = 0;
+	[[nodiscard]]
 	virtual SwapChainInfo GetSwapChainInfo() const noexcept = 0;
 };
 

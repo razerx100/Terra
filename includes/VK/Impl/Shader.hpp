@@ -7,10 +7,11 @@
 class Shader : public IShader {
 public:
 	Shader(VkDevice device);
-	~Shader() noexcept;
+	~Shader() noexcept override;
 
 	void CreateShader(VkDevice device, const std::string& fileName);
 
+	[[nodiscard]]
 	VkShaderModule GetByteCode() const noexcept override;
 
 private:

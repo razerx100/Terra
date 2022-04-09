@@ -18,7 +18,9 @@ public:
 		size_t memorySize
 	) = 0;
 
+	[[nodiscard]]
 	virtual VkDeviceMemory GetMemoryHandle() const noexcept = 0;
+	[[nodiscard]]
 	virtual size_t GetAlignment() const noexcept = 0;
 };
 

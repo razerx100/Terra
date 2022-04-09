@@ -3,7 +3,7 @@
 #include <VKThrowMacros.hpp>
 
 DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
-	: m_pInstanceRef(instanceRef) {
+	: m_debugMessenger(VK_NULL_HANDLE), m_pInstanceRef(instanceRef) {
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
 	PopulateDebugMessengerCreateInfo(createInfo);
@@ -25,8 +25,8 @@ VkResult DebugLayerManager::CreateDebugUtilsMessengerEXT(
 	VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
 	const VkAllocationCallbacks* pAllocator,
 	VkDebugUtilsMessengerEXT* pDebugMessenger
-) const noexcept {
-	PFN_vkCreateDebugUtilsMessengerEXT function =
+) noexcept {
+	auto function =
 		reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>
 		(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
 
@@ -39,8 +39,8 @@ VkResult DebugLayerManager::CreateDebugUtilsMessengerEXT(
 void DebugLayerManager::DestroyDebugUtilsMessengerEXT(
 	VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
 	const VkAllocationCallbacks* pAllocator
-) const noexcept {
-	PFN_vkDestroyDebugUtilsMessengerEXT function =
+) noexcept {
+	auto function =
 		reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>
 		(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
 

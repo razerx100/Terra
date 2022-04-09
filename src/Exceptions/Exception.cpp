@@ -43,6 +43,14 @@ GenericException::GenericException(
 	GenerateWhatBuffer();
 }
 
+GenericException::GenericException(
+	int line, const char* file,
+	std::string&& errorText
+) noexcept
+	: Exception(line, file), m_errorText(std::move(errorText)) {
+	GenerateWhatBuffer();
+}
+
 void GenericException::GenerateWhatBuffer() noexcept {
 	std::ostringstream oss;
 	oss << GetType() << "\n"

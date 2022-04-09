@@ -6,6 +6,7 @@ class IShader {
 public:
 	virtual ~IShader() = default;
 
+	[[nodiscard]]
 	virtual VkShaderModule GetByteCode() const noexcept = 0;
 };
 #endif

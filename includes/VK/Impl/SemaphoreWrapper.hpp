@@ -6,8 +6,9 @@
 class SemaphoreWrapper : public ISemaphoreWrapper {
 public:
 	SemaphoreWrapper(VkDevice device, size_t count);
-	~SemaphoreWrapper() noexcept;
+	~SemaphoreWrapper() noexcept override;
 
+	[[nodiscard]]
 	VkSemaphore GetSemaphore(size_t index) const noexcept override;
 
 private:

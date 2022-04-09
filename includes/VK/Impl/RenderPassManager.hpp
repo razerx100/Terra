@@ -5,8 +5,9 @@
 class RenderPassManager : public IRenderPassManager {
 public:
 	RenderPassManager(VkDevice device, VkFormat swapchainFormat);
-	~RenderPassManager() noexcept;
+	~RenderPassManager() noexcept override;
 
+	[[nodiscard]]
 	VkRenderPass GetRenderPass() const noexcept override;
 
 	void CreateRenderPass(VkDevice device, VkFormat swapchainFormat) override;

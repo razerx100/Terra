@@ -90,7 +90,7 @@ VkBuffer ResourceBuffer::AddBuffer(VkDevice device, const void* source, size_t b
 }
 
 void ResourceBuffer::CopyData() noexcept {
-	for (auto& bufferData : m_uploadBufferData)
+	for (const auto& bufferData : m_uploadBufferData)
 		memcpy(m_cpuHandle + bufferData.offset, bufferData.data, bufferData.size);
 }
 
@@ -127,7 +127,7 @@ void ResourceBuffer::RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer
 void ResourceBuffer::ReleaseUploadBuffer(VkDevice device) noexcept {
 	m_gpuBuffers = std::vector<VkBuffer>();
 
-	for (auto& buffer : m_uploadBufferData)
+	for (const auto& buffer : m_uploadBufferData)
 		vkDestroyBuffer(device, buffer.buffer, nullptr);
 
 	m_uploadBufferMemory.reset();

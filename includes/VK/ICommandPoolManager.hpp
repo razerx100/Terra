@@ -9,6 +9,8 @@ public:
 
 	virtual void Reset(size_t bufferIndex) = 0;
 	virtual void Close(size_t bufferIndex) = 0;
+
+	[[nodiscard]]
 	virtual VkCommandBuffer GetCommandBuffer(size_t bufferIndex) const noexcept = 0;
 };
 

@@ -16,13 +16,15 @@ public:
 		const std::vector<std::uint32_t>& queueFamilyIndices,
 		bool uploadBuffer, BufferType type = BufferType::Invalid
 	);
-	~DeviceMemory() noexcept;
+	~DeviceMemory() noexcept override;
 
 	void AllocateMemory(
 		size_t memorySize
 	) override;
 
+	[[nodiscard]]
 	VkDeviceMemory GetMemoryHandle() const noexcept override;
+	[[nodiscard]]
 	size_t GetAlignment() const noexcept override;
 
 private:

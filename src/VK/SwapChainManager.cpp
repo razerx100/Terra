@@ -6,7 +6,9 @@ SwapChainManager::SwapChainManager(
 	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
 	std::uint32_t width, std::uint32_t height, size_t bufferCount,
 	VkQueue presentQueue, size_t queueFamily
-) : m_deviceRef(device), m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
+) : m_swapchain(VK_NULL_HANDLE), m_deviceRef(device),
+	m_swapchainFormat{}, m_swapchainExtent{},
+	m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
 	m_currentFrameIndex(0u) {
 
 	bool useless;
@@ -128,7 +130,7 @@ void SwapChainManager::PresentImage(
 	presentInfo.waitSemaphoreCount = 1u;
 	presentInfo.pWaitSemaphores = &renderSemaphore;
 
-	VkSwapchainKHR swapchains[] = { m_swapchain };
+	const VkSwapchainKHR swapchains[] = { m_swapchain };
 	presentInfo.swapchainCount = 1u;
 	presentInfo.pSwapchains = swapchains;
 	presentInfo.pImageIndices = &imageIndex;
@@ -149,7 +151,7 @@ bool SwapChainManager::ResizeSwapchain(
 	VkRenderPass renderPass, bool& formatChanged
 ) {
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
-		IDeviceManager* deviceManRef = DeviceInst::GetRef();
+		const IDeviceManager* const deviceManRef = DeviceInst::GetRef();
 		vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
 
 		CleanUpSwapchain();
@@ -185,7 +187,7 @@ void SwapChainManager::CreateSwapchain(
 	m_swapchainExtent = swapExtent;
 	m_swapchainFormat = swapFormat.format;
 
-	std::uint32_t imageCount = static_cast<std::uint32_t>(bufferCount);
+	auto imageCount = static_cast<std::uint32_t>(bufferCount);
 	if (swapCapabilities.capabilities.maxImageCount > 0u
 		&& swapCapabilities.capabilities.maxImageCount < imageCount)
 		imageCount = swapCapabilities.capabilities.maxImageCount;

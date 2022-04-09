@@ -6,6 +6,7 @@ class ISurfaceManager {
 public:
 	virtual ~ISurfaceManager() = default;
 
+	[[nodiscard]]
 	virtual VkSurfaceKHR GetSurface() const noexcept = 0;
 };
 

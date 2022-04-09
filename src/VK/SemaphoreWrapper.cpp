@@ -15,8 +15,8 @@ SemaphoreWrapper::SemaphoreWrapper(VkDevice device, size_t count)
 }
 
 SemaphoreWrapper::~SemaphoreWrapper() noexcept {
-	for (size_t index = 0u; index < m_semaphores.size(); ++index)
-		vkDestroySemaphore(m_deviceRef, m_semaphores[index], nullptr);
+	for (const auto semaphore : m_semaphores)
+		vkDestroySemaphore(m_deviceRef, semaphore, nullptr);
 }
 
 VkSemaphore SemaphoreWrapper::GetSemaphore(size_t index) const noexcept {

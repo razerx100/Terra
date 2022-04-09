@@ -12,6 +12,7 @@ public:
 		VkSemaphore imageSemaphore
 	) = 0;
 
+	[[nodiscard]]
 	virtual VkSemaphore GetRenderSemaphore() const noexcept = 0;
 
 	virtual void SetNextFrameIndex(size_t index) noexcept = 0;

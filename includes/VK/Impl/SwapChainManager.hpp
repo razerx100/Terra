@@ -11,13 +11,19 @@ public:
 		std::uint32_t width, std::uint32_t height, size_t bufferCount,
 		VkQueue presentQueue, size_t queueFamily
 	);
-	~SwapChainManager() noexcept;
+	~SwapChainManager() noexcept override;
 
+	[[nodiscard]]
 	VkSwapchainKHR GetRef() const noexcept override;
+	[[nodiscard]]
 	VkExtent2D GetSwapExtent() const noexcept override;
+	[[nodiscard]]
 	VkFormat GetSwapFormat() const noexcept override;
+	[[nodiscard]]
 	size_t GetAvailableImageIndex() const noexcept override;
+	[[nodiscard]]
 	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept override;
+	[[nodiscard]]
 	VkSemaphore GetImageSemaphore() const noexcept override;
 
 	void SetNextFrameIndex(size_t index) noexcept override;
@@ -35,12 +41,15 @@ public:
 	) override;
 
 private:
+	[[nodiscard]]
 	VkSurfaceFormatKHR ChooseSurfaceFormat(
 		const std::vector<VkSurfaceFormatKHR>& availableFormats
 	) const noexcept;
+	[[nodiscard]]
 	VkPresentModeKHR ChoosePresentMode(
 		const std::vector<VkPresentModeKHR>& availableModes
 	) const noexcept;
+	[[nodiscard]]
 	VkExtent2D ChooseSwapExtent(
 		const VkSurfaceCapabilitiesKHR& capabilities,
 		std::uint32_t width, std::uint32_t height

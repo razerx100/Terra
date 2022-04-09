@@ -18,8 +18,8 @@ FenceWrapper::FenceWrapper(VkDevice device, size_t bufferCount, bool signaled)
 }
 
 FenceWrapper::~FenceWrapper() noexcept {
-	for (size_t index = 0u; index < m_fences.size(); ++index)
-		vkDestroyFence(m_deviceRef, m_fences[index], nullptr);
+	for (const auto fence : m_fences)
+		vkDestroyFence(m_deviceRef, fence, nullptr);
 }
 
 VkFence FenceWrapper::GetFence(size_t index) const noexcept {

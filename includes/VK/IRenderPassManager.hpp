@@ -6,6 +6,7 @@ class IRenderPassManager {
 public:
 	virtual ~IRenderPassManager() = default;
 
+	[[nodiscard]]
 	virtual VkRenderPass GetRenderPass() const noexcept = 0;
 	virtual void CreateRenderPass(VkDevice device, VkFormat swapchainFormat) = 0;
 };

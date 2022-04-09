@@ -6,6 +6,7 @@ class IPipelineLayout {
 public:
 	virtual ~IPipelineLayout() = default;
 
+	[[nodiscard]]
 	virtual VkPipelineLayout GetLayout() const noexcept = 0;
 };
 #endif

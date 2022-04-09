@@ -3,7 +3,7 @@
 
 RenderPassManager::RenderPassManager(
 	VkDevice device, VkFormat swapchainFormat
-) : m_deviceRef(device) {
+) : m_deviceRef(device), m_renderPass(VK_NULL_HANDLE) {
 	CreateRenderPass(device, swapchainFormat);
 }
 

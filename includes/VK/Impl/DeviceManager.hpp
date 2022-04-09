@@ -4,7 +4,7 @@
 
 class DeviceManager : public IDeviceManager {
 public:
-	~DeviceManager() noexcept;
+	~DeviceManager() noexcept override;
 
 	void CreatePhysicalDevice(
 		VkInstance instance,
@@ -14,8 +14,11 @@ public:
 
 	QueueData GetQueue(QueueType type) noexcept override;
 
+	[[nodiscard]]
 	VkPhysicalDevice GetPhysicalDevice() const noexcept override;
+	[[nodiscard]]
 	VkDevice GetLogicalDevice() const noexcept override;
+	[[nodiscard]]
 	SwapChainInfo GetSwapChainInfo() const noexcept override;
 
 private:

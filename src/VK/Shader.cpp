@@ -30,11 +30,11 @@ VkShaderModule Shader::GetByteCode() const noexcept {
 std::vector<char> Shader::LoadBinary(const std::string& fileName) {
 	std::ifstream shader(fileName.c_str(), std::ios_base::binary | std::ios_base::ate);
 
-	size_t shaderSize = static_cast<size_t>(shader.tellg());
+	const size_t shaderSize = static_cast<size_t>(shader.tellg());
 	shader.seekg(0u);
 
 	std::vector<char> byteCode(shaderSize);
-	shader.read(byteCode.data(), shaderSize);
+	shader.read(byteCode.data(), static_cast<std::streamsize>(shaderSize));
 
 	return byteCode;
 }

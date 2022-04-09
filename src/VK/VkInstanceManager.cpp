@@ -1,8 +1,11 @@
 #include <VkInstanceManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <InstanceManager.hpp>
+#include <string>
 
-InstanceManager::InstanceManager(const char* appName) {
+using namespace std::string_literals;
+
+InstanceManager::InstanceManager(const char* appName) : m_vkInstance(VK_NULL_HANDLE) {
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = appName;
@@ -85,9 +88,7 @@ void InstanceManager::CheckExtensionSupport() const {
 
 		if (!found)
 			VK_GENERIC_THROW(
-				(std::string("The extension ")
-					+ requiredExtension + " isn't supported."
-					).c_str()
+				"The extension "s + requiredExtension + " isn't supported."s
 			);
 	}
 }
@@ -111,9 +112,7 @@ void InstanceManager::CheckLayerSupport() const {
 
 		if (!found)
 			VK_GENERIC_THROW(
-				(std::string("The layer ")
-					+ requiredLayer + " isn't supported."
-					).c_str()
+				"The layer "s + requiredLayer + " isn't supported."s
 			);
 	}
 }

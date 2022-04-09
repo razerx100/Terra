@@ -24,7 +24,7 @@ const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const n
 void VertexLayout::InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept {
 	size_t vertexSize = 0u;
 	for (size_t index = 0u; index < inputLayout.size(); ++index) {
-		size_t elementTypeID = static_cast<size_t>(inputLayout[index]);
+		const auto elementTypeID = static_cast<size_t>(inputLayout[index]);
 
 		m_attrDescs.emplace_back(
 			static_cast<std::uint32_t>(index),

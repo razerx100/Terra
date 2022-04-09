@@ -11,6 +11,7 @@ class IBindInstanceGFX {
 public:
 	virtual ~IBindInstanceGFX() = default;
 
+	[[nodiscard]]
 	virtual VertexLayout GetVertexLayout() const noexcept = 0;
 
 	virtual void AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept = 0;

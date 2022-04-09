@@ -6,6 +6,7 @@ class ISemaphoreWrapper {
 public:
 	virtual ~ISemaphoreWrapper() = default;
 
+	[[nodiscard]]
 	virtual VkSemaphore GetSemaphore(size_t index) const noexcept = 0;
 };
 

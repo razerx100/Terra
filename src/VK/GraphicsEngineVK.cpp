@@ -10,7 +10,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 	m_bufferCount(bufferCount), m_renderPassInfo{} {
 
 	m_backgroundColour.color = {
-		0.1f, 0.1f, 0.1f, 0.1f
+		{0.1f, 0.1f, 0.1f, 0.1f }
 	};
 
 	m_renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -141,7 +141,7 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 
 void GraphicsEngineVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept {
 	m_backgroundColour.color = {
-		colourVector.x, colourVector.y, colourVector.z, colourVector.w
+		{colourVector.x, colourVector.y, colourVector.z, colourVector.w}
 	};
 }
 
@@ -157,12 +157,12 @@ void GraphicsEngineVK::Render() {
 	IGraphicsQueueManager* graphicsQueueRef = GfxQueInst::GetRef();
 
 	graphicsQueueRef->WaitForGPU();
-	size_t imageIndex = swapchainRef->GetAvailableImageIndex();
+	const size_t imageIndex = swapchainRef->GetAvailableImageIndex();
 	commandPoolRef->Reset(imageIndex);
 
 	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer(imageIndex);
 
-	IViewportAndScissorManager* viewportRef = ViewPAndScsrInst::GetRef();
+	const IViewportAndScissorManager* const viewportRef = ViewPAndScsrInst::GetRef();
 
 	vkCmdSetViewport(commandBuffer, 0u, 1u, viewportRef->GetViewportRef());
 	vkCmdSetScissor(commandBuffer, 0u, 1u, viewportRef->GetScissorRef());
@@ -185,7 +185,7 @@ void GraphicsEngineVK::Render() {
 		static_cast<std::uint32_t>(imageIndex), graphicsQueueRef->GetRenderSemaphore()
 	);
 
-	size_t nextFrame = (imageIndex + 1u) % m_bufferCount;
+	const size_t nextFrame = (imageIndex + 1u) % m_bufferCount;
 	swapchainRef->SetNextFrameIndex(nextFrame);
 	graphicsQueueRef->SetNextFrameIndex(nextFrame);
 }
@@ -210,7 +210,7 @@ void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 void GraphicsEngineVK::GetMonitorCoordinates(
 	std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
 ) {
-	Ceres::Rect resolution;
+	Ceres::Rect resolution = {};
 	DisplayInst::GetRef()->GetDisplayResolution(
 		DeviceInst::GetRef()->GetPhysicalDevice(),
 		resolution

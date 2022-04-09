@@ -7,16 +7,16 @@ public:
 	DebugLayerManager(VkInstance instanceRef);
 	~DebugLayerManager() noexcept;
 
-	VkResult CreateDebugUtilsMessengerEXT(
+	static VkResult CreateDebugUtilsMessengerEXT(
 		VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
 		const VkAllocationCallbacks* pAllocator,
 		VkDebugUtilsMessengerEXT* pDebugMessenger
-	) const noexcept;
+	) noexcept;
 
-	void DestroyDebugUtilsMessengerEXT(
+	static void DestroyDebugUtilsMessengerEXT(
 		VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
 		const VkAllocationCallbacks* pAllocator
-	) const noexcept;
+	) noexcept;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

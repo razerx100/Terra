@@ -5,12 +5,12 @@
 
 SurfaceManagerWin32::SurfaceManagerWin32(
 	VkInstance instance, void* windowHandle, void* moduleHandle
-) : m_pInstanceRef(instance) {
+) : m_surface(VK_NULL_HANDLE), m_pInstanceRef(instance) {
 
 	VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hwnd = reinterpret_cast<HWND>(windowHandle);
-	createInfo.hinstance = reinterpret_cast<HINSTANCE>(moduleHandle);
+	createInfo.hwnd = static_cast<HWND>(windowHandle);
+	createInfo.hinstance = static_cast<HINSTANCE>(moduleHandle);
 
 	VkResult result;
 	VK_THROW_FAILED(

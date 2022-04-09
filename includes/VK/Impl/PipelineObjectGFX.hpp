@@ -12,8 +12,9 @@ public:
 		VkShaderModule vertexShader,
 		VkShaderModule fragmentShader
 	);
-	~PipelineObjectGFX() noexcept;
+	~PipelineObjectGFX() noexcept override;
 
+	[[nodiscard]]
 	VkPipeline GetPipelineObject() const noexcept override;
 
 private:

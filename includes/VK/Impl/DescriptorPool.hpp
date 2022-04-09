@@ -6,7 +6,7 @@
 class DescriptorPool : public IDescriptorPool {
 public:
 	DescriptorPool(VkDevice device) noexcept;
-	~DescriptorPool() noexcept;
+	~DescriptorPool() noexcept override;
 
 	void AddDescriptorTypeLimit(
 		DescriptorType type, std::uint32_t descriptorCount

@@ -12,7 +12,7 @@ public:
 		std::uint32_t width, std::uint32_t height,
 		size_t bufferCount
 	);
-	~GraphicsEngineVK() noexcept;
+	~GraphicsEngineVK() noexcept override;
 
 	void Resize(std::uint32_t width, std::uint32_t height) override;
 	void GetMonitorCoordinates(

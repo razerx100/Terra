@@ -87,13 +87,13 @@ size_t DeviceMemory::GetAlignment() const noexcept {
 }
 
 void ConfigureBufferQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndice,
+	const std::vector<std::uint32_t>& queueFamilyIndices,
 	VkBufferCreateInfo& bufferInfo
 ) {
-	if (queueFamilyIndice.size() > 1u) {
+	if (queueFamilyIndices.size() > 1u) {
 		bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		bufferInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueFamilyIndice.size());
-		bufferInfo.pQueueFamilyIndices = queueFamilyIndice.data();
+		bufferInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueFamilyIndices.size());
+		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 	}
 	else
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

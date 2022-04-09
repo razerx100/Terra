@@ -78,11 +78,11 @@ void CpyQueInst::Init(VkDevice device, VkQueue queue) {
 
 void VertexBufferInst::Init(
 	VkDevice logDevice, VkPhysicalDevice phyDevice,
-	const std::vector<std::uint32_t>& queueFamilyIndice
+	const std::vector<std::uint32_t>& queueFamilyIndices
 ) {
 	Set(
 		CreateResourceBufferInstance(
-			logDevice, phyDevice, queueFamilyIndice, BufferType::Vertex
+			logDevice, phyDevice, queueFamilyIndices, BufferType::Vertex
 		)
 	);
 }

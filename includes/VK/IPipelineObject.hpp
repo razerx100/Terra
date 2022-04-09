@@ -6,6 +6,7 @@ class IPipelineObject {
 public:
 	virtual ~IPipelineObject() = default;
 
+	[[nodiscard]]
 	virtual VkPipeline GetPipelineObject() const noexcept = 0;
 };
 #endif

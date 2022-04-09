@@ -11,6 +11,7 @@ public:
 
 	void InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept;
 
+	[[nodiscard]]
 	const VkPipelineVertexInputStateCreateInfo* GetInputInfo() const noexcept;
 
 private:

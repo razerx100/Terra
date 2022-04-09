@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-class BindInstanceGFX : public IBindInstanceGFX {
+class BindInstanceGFX final : public IBindInstanceGFX {
 public:
 	BindInstanceGFX() noexcept;
 	BindInstanceGFX(
@@ -12,6 +12,7 @@ public:
 		std::shared_ptr<IPipelineLayout> layout
 	) noexcept;
 
+	[[nodiscard]]
 	VertexLayout GetVertexLayout() const noexcept override;
 
 	void AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept override;
@@ -39,7 +40,7 @@ private:
 		void AddIndexBuffer(VkBuffer buffer, size_t indexCount) noexcept;
 		void AddPipelineLayout(std::shared_ptr<IPipelineLayout> pipelineLayout) noexcept;
 
-		void Draw(VkCommandBuffer commandBuffer) noexcept;
+		void Draw(VkCommandBuffer commandBuffer) const noexcept;
 
 	private:
 		VkDevice m_deviceRef;

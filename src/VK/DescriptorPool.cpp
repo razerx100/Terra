@@ -15,7 +15,7 @@ DescriptorPool::~DescriptorPool() noexcept {
 void DescriptorPool::AddDescriptorTypeLimit(
 	DescriptorType type, std::uint32_t descriptorCount
 ) noexcept {
-	size_t typeIndex = static_cast<size_t>(type);
+	const auto typeIndex = static_cast<size_t>(type);
 	if (m_typeMap[typeIndex] == -1) {
 		m_typeMap[typeIndex] = static_cast<std::int32_t>(m_descriptorTypeCounts.size());
 		m_descriptorTypeCounts.emplace_back(static_cast<VkDescriptorType>(typeIndex + 6u), 1u);

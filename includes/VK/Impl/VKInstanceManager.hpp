@@ -6,7 +6,7 @@
 class InstanceManager : public IInstanceManager {
 public:
 	InstanceManager(const char* appName);
-	~InstanceManager() noexcept;
+	~InstanceManager() noexcept override;
 
 	VkInstance GetVKInstance() const noexcept override;
 

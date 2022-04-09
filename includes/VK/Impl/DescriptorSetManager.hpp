@@ -7,9 +7,11 @@
 class DescriptorSetManager : public IDescriptorSetManager {
 public:
 	DescriptorSetManager(VkDevice device);
-	~DescriptorSetManager() noexcept;
+	~DescriptorSetManager() noexcept override;
 
+	[[nodiscard]]
 	VulkanDescriptorSetLayouts GetDescriptorSetLayouts() const noexcept override;
+	[[nodiscard]]
 	VkDescriptorSet GetDescriptorSet() const noexcept override;
 
 	void AddSetLayout(

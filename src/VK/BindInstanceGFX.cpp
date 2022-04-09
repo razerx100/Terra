@@ -8,8 +8,9 @@ BindInstanceGFX::BindInstanceGFX(
 	std::unique_ptr<IPipelineObject> pso,
 	std::shared_ptr<IPipelineLayout> layout
 ) noexcept
-	: m_pso(std::move(pso)),
-	m_pipelineLayout(layout),
+	:
+	m_pipelineLayout(std::move(layout)),
+	m_pso(std::move(pso)),
 	m_vertexLayoutAvailable(false) {}
 
 void BindInstanceGFX::AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept {
@@ -21,7 +22,7 @@ void BindInstanceGFX::AddPipelineLayout(
 ) noexcept {
 	m_pipelineLayout = layout;
 
-	for (auto& modelRaw : m_modelsRaw)
+	for (const auto& modelRaw : m_modelsRaw)
 		modelRaw->AddPipelineLayout(layout);
 }
 
@@ -53,7 +54,7 @@ void BindInstanceGFX::BindCommands(VkCommandBuffer commandBuffer) noexcept {
 		commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pso->GetPipelineObject()
 	);
 
-	for (auto& model : m_modelsRaw)
+	for (const auto& model : m_modelsRaw)
 		model->Draw(commandBuffer);
 }
 
@@ -72,11 +73,11 @@ BindInstanceGFX::ModelRaw::ModelRaw(
 	const IModel* const modelRef,
 	VkBuffer vertexBuffer,
 	VkBuffer indexBuffer,
-	size_t indicesCount
+	size_t indexCount
 ) noexcept
 	: m_deviceRef(device),m_modelRef(modelRef),
 	m_vertexBuffer(vertexBuffer), m_indexBuffer(indexBuffer),
-	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indicesCount)) {}
+	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indexCount)) {}
 
 BindInstanceGFX::ModelRaw::~ModelRaw() noexcept {
 	vkDestroyBuffer(m_deviceRef, m_vertexBuffer, nullptr);
@@ -97,14 +98,14 @@ void BindInstanceGFX::ModelRaw::AddIndexBuffer(
 void BindInstanceGFX::ModelRaw::AddPipelineLayout(
 	std::shared_ptr<IPipelineLayout> pipelineLayout
 ) noexcept {
-	m_pPipelineLayout = pipelineLayout;
+	m_pPipelineLayout = std::move(pipelineLayout);
 }
 
-void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) noexcept {
+void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexcept {
 	vkCmdBindVertexBuffers(commandBuffer, 0u, 1u, &m_vertexBuffer, &m_vertexOffset);
 	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer, 0u, VK_INDEX_TYPE_UINT16);
 
-	std::uint32_t textureIndex = m_modelRef->GetTextureIndex();
+	const std::uint32_t textureIndex = m_modelRef->GetTextureIndex();
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
 		24u, 4u, &textureIndex

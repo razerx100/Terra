@@ -6,7 +6,7 @@
 class PipelineLayout : public IPipelineLayout {
 public:
 	PipelineLayout(VkDevice device);
-	~PipelineLayout() noexcept;
+	~PipelineLayout() noexcept override;
 
 	void AddPushConstantRange(
 		VkShaderStageFlags shaderFlag, std::uint32_t rangeSize
@@ -14,6 +14,7 @@ public:
 
 	void CreateLayout();
 
+	[[nodiscard]]
 	VkPipelineLayout GetLayout() const noexcept override;
 
 private:

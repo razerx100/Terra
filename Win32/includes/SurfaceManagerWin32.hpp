@@ -5,8 +5,9 @@
 class SurfaceManagerWin32 : public ISurfaceManager {
 public:
 	SurfaceManagerWin32(VkInstance instance, void* windowHandle, void* moduleHandle);
-	~SurfaceManagerWin32() noexcept;
+	~SurfaceManagerWin32() noexcept override;
 
+	[[nodiscard]]
 	VkSurfaceKHR GetSurface() const noexcept override;
 
 private:

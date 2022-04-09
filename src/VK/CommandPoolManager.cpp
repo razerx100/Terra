@@ -4,7 +4,7 @@
 
 CommandPoolManager::CommandPoolManager(
 	VkDevice device, size_t queueIndex, size_t bufferCount
-) : m_deviceRef(device), m_commandBuffers(bufferCount),
+) : m_deviceRef(device), m_commandPool(VK_NULL_HANDLE), m_commandBuffers(bufferCount),
 	m_beginInfo{} {
 
 	VkCommandPoolCreateInfo poolInfo = {};

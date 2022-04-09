@@ -8,10 +8,12 @@ public:
 	CommandPoolManager(
 		VkDevice device, size_t queueIndex, size_t bufferCount
 	);
-	~CommandPoolManager() noexcept;
+	~CommandPoolManager() noexcept override;
 
 	void Reset(size_t bufferIndex) override;
 	void Close(size_t bufferIndex) override;
+
+	[[nodiscard]]
 	VkCommandBuffer GetCommandBuffer(size_t bufferIndex) const noexcept override;
 
 private:

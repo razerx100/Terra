@@ -9,8 +9,10 @@ class IDescriptorSetManager {
 public:
 	virtual ~IDescriptorSetManager() = default;
 
+	[[nodiscard]]
 	virtual VulkanDescriptorSetLayouts GetDescriptorSetLayouts() const noexcept
 		= 0;
+	[[nodiscard]]
 	virtual VkDescriptorSet GetDescriptorSet() const noexcept = 0;
 
 	virtual void AddSetLayout(

@@ -6,6 +6,7 @@ class IFenceWrapper {
 public:
 	virtual ~IFenceWrapper() = default;
 
+	[[nodiscard]]
 	virtual VkFence GetFence(size_t index) const noexcept = 0;
 
 	virtual void WaitAndResetFence(size_t index) const noexcept = 0;
