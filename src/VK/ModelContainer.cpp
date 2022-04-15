@@ -15,26 +15,24 @@ void ModelContainer::AddModel(
 	m_bindInstance->AddModel(device, modelRef);
 }
 
-void ModelContainer::CopyData() {
-	std::atomic_size_t works = 2u;
+void ModelContainer::CopyData(std::atomic_size_t& workCount) {
+	workCount += 2;
 
 	GetVenusInstance()->SubmitWork(
-		[&works] {
+		[&workCount] {
 			VertexBufferInst::GetRef()->CopyData();
 
-			--works;
+			--workCount;
 		}
 	);
 
 	GetVenusInstance()->SubmitWork(
-		[&works] {
+		[&workCount] {
 			IndexBufferInst::GetRef()->CopyData();
 
-			--works;
+			--workCount;
 		}
 	);
-
-	while (works != 0u);
 }
 
 void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) {
@@ -46,9 +44,9 @@ void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) noexcept {
 	m_bindInstance->BindCommands(commandBuffer);
 }
 
-void ModelContainer::ReleaseUploadBuffers(VkDevice device) {
-	VertexBufferInst::GetRef()->ReleaseUploadBuffer(device);
-	IndexBufferInst::GetRef()->ReleaseUploadBuffer(device);
+void ModelContainer::ReleaseUploadBuffers() {
+	VertexBufferInst::GetRef()->ReleaseUploadBuffer();
+	IndexBufferInst::GetRef()->ReleaseUploadBuffer();
 }
 
 void ModelContainer::CreateBuffers(VkDevice device) {

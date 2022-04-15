@@ -15,9 +15,9 @@ public:
 
 	void InitPipelines(VkDevice device) override;
 	void CreateBuffers(VkDevice device) override;
-	void CopyData() override;
+	void CopyData(std::atomic_size_t& workCount) override;
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) override;
-	void ReleaseUploadBuffers(VkDevice device) override;
+	void ReleaseUploadBuffers() override;
 
 	void BindCommands(VkCommandBuffer commandBuffer) noexcept override;
 

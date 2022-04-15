@@ -11,7 +11,7 @@ public:
 	virtual void CreateBuffer(VkDevice device) = 0;
 	virtual void CopyData() noexcept = 0;
 	virtual void RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer) = 0;
-	virtual void ReleaseUploadBuffer(VkDevice device) noexcept = 0;
+	virtual void ReleaseUploadBuffer() noexcept = 0;
 };
 
 IResourceBuffer* CreateResourceBufferInstance(

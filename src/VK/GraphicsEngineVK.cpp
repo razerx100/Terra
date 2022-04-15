@@ -239,7 +239,13 @@ void GraphicsEngineVK::ProcessData() {
 
 	IModelContainer* modelContainerRef = ModelContainerInst::GetRef();
 	modelContainerRef->CreateBuffers(logicalDevice);
-	modelContainerRef->CopyData();
+
+	// Async Copy
+	std::atomic_size_t works = 0u;
+
+	modelContainerRef->CopyData(works);
+
+	while (works != 0u);
 
 	ICommandPoolManager* copyBufferManager = CpyPoolInst::GetRef();
 	copyBufferManager->Reset(0u);
@@ -255,7 +261,7 @@ void GraphicsEngineVK::ProcessData() {
 
 	modelContainerRef->InitPipelines(logicalDevice);
 
-	modelContainerRef->ReleaseUploadBuffers(logicalDevice);
+	modelContainerRef->ReleaseUploadBuffers();
 }
 
 size_t GraphicsEngineVK::RegisterResource(

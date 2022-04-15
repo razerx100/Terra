@@ -35,7 +35,7 @@ DeviceMemory::DeviceMemory(
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, bufferInfo);
 
-	VkBuffer tempBuffer = nullptr;
+	VkBuffer tempBuffer = VK_NULL_HANDLE;
 
 	VkResult result;
 	VK_THROW_FAILED(result,
