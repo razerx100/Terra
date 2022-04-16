@@ -1,14 +1,14 @@
 #include <TerraInstance.hpp>
-#include <GraphicsEngineVK.hpp>
+#include <RendererVK.hpp>
 
-GraphicsEngine* CreateTerraInstance(
+Renderer* CreateTerraInstance(
 	const char* appName,
 	void* windowHandle,
 	void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	size_t bufferCount
+	std::uint32_t bufferCount
 ) {
-	return new GraphicsEngineVK(
+	return new RendererVK(
 		appName,
 		windowHandle, moduleHandle, width, height, bufferCount
 	);

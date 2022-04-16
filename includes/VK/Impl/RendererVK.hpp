@@ -1,18 +1,18 @@
-#ifndef __GRAPHICS_ENGINE_VK_HPP__
-#define __GRAPHICS_ENGINE_VK_HPP__
-#include <IGraphicsEngine.hpp>
+#ifndef RENDERER_VK_HPP_
+#define RENDERER_VK_HPP_
+#include <Renderer.hpp>
 #include <vulkan/vulkan.hpp>
 #include <string>
 
-class GraphicsEngineVK : public GraphicsEngine {
+class RendererVK : public Renderer {
 public:
-	GraphicsEngineVK(
+	RendererVK(
 		const char* appName,
 		void* windowHandle, void* moduleHandle,
 		std::uint32_t width, std::uint32_t height,
 		size_t bufferCount
 	);
-	~GraphicsEngineVK() noexcept override;
+	~RendererVK() noexcept override;
 
 	void Resize(std::uint32_t width, std::uint32_t height) override;
 	void GetMonitorCoordinates(
@@ -25,6 +25,7 @@ public:
 		size_t width, size_t height, size_t pixelSizeInBytes
 	) override;
 
+	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept override;
 	void SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept override;
 	void SubmitModel(const IModel* const modelRef) override;
 	void Render() override;

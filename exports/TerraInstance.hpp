@@ -1,6 +1,6 @@
-#ifndef __TERRA_INSTANCE_HPP__
-#define __TERRA_INSTANCE_HPP__
-#include <IGraphicsEngine.hpp>
+#ifndef TERRA_INSTANCE_HPP_
+#define TERRA_INSTANCE_HPP_
+#include <Renderer.hpp>
 
 #ifdef BUILD_TERRA
 #define TERRA_DLL __declspec(dllexport)
@@ -8,11 +8,11 @@
 #define TERRA_DLL __declspec(dllimport)
 #endif
 
-TERRA_DLL GraphicsEngine* __cdecl CreateTerraInstance(
+TERRA_DLL Renderer* __cdecl CreateTerraInstance(
 	const char* appName,
 	void* windowHandle,
 	void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	size_t bufferCount = 2u
+	std::uint32_t bufferCount = 2u
 );
 #endif

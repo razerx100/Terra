@@ -1,6 +1,5 @@
 #include <ModelContainer.hpp>
 #include <InstanceManager.hpp>
-#include <VenusInstance.hpp>
 #include <BindInstanceGFX.hpp>
 #include <Shader.hpp>
 #include <PipelineLayout.hpp>
@@ -18,21 +17,21 @@ void ModelContainer::AddModel(
 void ModelContainer::CopyData(std::atomic_size_t& workCount) {
 	workCount += 2;
 
-	GetVenusInstance()->SubmitWork(
-		[&workCount] {
-			VertexBufferInst::GetRef()->CopyData();
+	//GetVenusInstance()->SubmitWork(
+	//	[&workCount] {
+	//		VertexBufferInst::GetRef()->CopyData();
 
-			--workCount;
-		}
-	);
+	//		--workCount;
+	//	}
+	//);
 
-	GetVenusInstance()->SubmitWork(
-		[&workCount] {
-			IndexBufferInst::GetRef()->CopyData();
+	//GetVenusInstance()->SubmitWork(
+	//	[&workCount] {
+	//		IndexBufferInst::GetRef()->CopyData();
 
-			--workCount;
-		}
-	);
+	//		--workCount;
+	//	}
+	//);
 }
 
 void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) {

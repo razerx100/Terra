@@ -1,12 +1,13 @@
-#ifndef __I_GRAPHICS_ENGINE_HPP__
-#define __I_GRAPHICS_ENGINE_HPP__
+#ifndef RENDERER_HPP_
+#define RENDERER_HPP_
 #include <cstdint>
 #include <IModel.hpp>
 #include <CRSStructures.hpp>
+#include <memory>
 
-class GraphicsEngine {
+class Renderer {
 public:
-	virtual ~GraphicsEngine() = default;
+	virtual ~Renderer() = default;
 
 	virtual void Resize(std::uint32_t width, std::uint32_t height) = 0;
 	virtual void GetMonitorCoordinates(
@@ -19,7 +20,8 @@ public:
 		size_t width, size_t height, size_t pixelSizeInBytes
 	) = 0;
 
-	virtual void SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept = 0;
+	virtual void SetThreadPool(std::shared_ptr<class IThreadPool> threadPoolArg) noexcept = 0;
+	virtual void SetBackgroundColour(const Ceres::Float32_4& colour) noexcept = 0;
 	virtual void SubmitModel(const class IModel* const modelRef) = 0;
 	virtual void Render() = 0;
 	virtual void WaitForAsyncTasks() = 0;

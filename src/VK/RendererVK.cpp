@@ -1,7 +1,7 @@
-#include <GraphicsEngineVK.hpp>
+#include <RendererVK.hpp>
 #include <InstanceManager.hpp>
 
-GraphicsEngineVK::GraphicsEngineVK(
+RendererVK::RendererVK(
 	const char* appName,
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
@@ -117,7 +117,7 @@ GraphicsEngineVK::GraphicsEngineVK(
 	UniformBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 
-GraphicsEngineVK::~GraphicsEngineVK() noexcept {
+RendererVK::~RendererVK() noexcept {
 	ViewPAndScsrInst::CleanUp();
 	ModelContainerInst::CleanUp();
 	DescSetMan::CleanUp();
@@ -139,19 +139,19 @@ GraphicsEngineVK::~GraphicsEngineVK() noexcept {
 	VkInstInst::CleanUp();
 }
 
-void GraphicsEngineVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept {
+void RendererVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept {
 	m_backgroundColour.color = {
 		{colourVector.x, colourVector.y, colourVector.z, colourVector.w}
 	};
 }
 
-void GraphicsEngineVK::SubmitModel(const IModel* const modelRef) {
+void RendererVK::SubmitModel(const IModel* const modelRef) {
 	ModelContainerInst::GetRef()->AddModel(
 		DeviceInst::GetRef()->GetLogicalDevice(), modelRef
 	);
 }
 
-void GraphicsEngineVK::Render() {
+void RendererVK::Render() {
 	ISwapChainManager* swapchainRef = SwapChainInst::GetRef();
 	ICommandPoolManager* commandPoolRef = GfxPoolInst::GetRef();
 	IGraphicsQueueManager* graphicsQueueRef = GfxQueInst::GetRef();
@@ -190,7 +190,7 @@ void GraphicsEngineVK::Render() {
 	graphicsQueueRef->SetNextFrameIndex(nextFrame);
 }
 
-void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
+void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
 	ISwapChainManager* swapRef = SwapChainInst::GetRef();
 	IRenderPassManager* rndrPassRef = RndrPassInst::GetRef();
@@ -207,7 +207,7 @@ void GraphicsEngineVK::Resize(std::uint32_t width, std::uint32_t height) {
 	}
 }
 
-void GraphicsEngineVK::GetMonitorCoordinates(
+void RendererVK::GetMonitorCoordinates(
 	std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
 ) {
 	Ceres::Rect resolution = {};
@@ -220,21 +220,21 @@ void GraphicsEngineVK::GetMonitorCoordinates(
 	monitorHeight = resolution.bottom;
 }
 
-void GraphicsEngineVK::WaitForAsyncTasks() {
+void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(
 		DeviceInst::GetRef()->GetLogicalDevice()
 	);
 }
 
-void GraphicsEngineVK::SetShaderPath(const char* path) noexcept {
+void RendererVK::SetShaderPath(const char* path) noexcept {
 	m_shaderPath = path;
 }
 
-void GraphicsEngineVK::InitResourceBasedObjects() {
+void RendererVK::InitResourceBasedObjects() {
 	ModelContainerInst::Init(m_shaderPath.c_str());
 }
 
-void GraphicsEngineVK::ProcessData() {
+void RendererVK::ProcessData() {
 	VkDevice logicalDevice = DeviceInst::GetRef()->GetLogicalDevice();
 
 	IModelContainer* modelContainerRef = ModelContainerInst::GetRef();
@@ -264,9 +264,14 @@ void GraphicsEngineVK::ProcessData() {
 	modelContainerRef->ReleaseUploadBuffers();
 }
 
-size_t GraphicsEngineVK::RegisterResource(
+size_t RendererVK::RegisterResource(
 	const void* data,
 	size_t width, size_t height, size_t pixelSizeInBytes
 ) {
 	return 0u;
 }
+
+void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
+
+}
+

@@ -1,8 +1,9 @@
 # Terra
-Graphics Engine module based on Vulkan. Needs a module and window handle from a Win32 window to work.
+Renderer module based on Vulkan API. Needs a window handle from a Win32 window module to work.
 
 # Library used
 1. [Ceres](https://github.com/razerx100/Ceres).
+2. [Venus](https://github.com/razerx100/Venus).
 
 # Third party library used
 1. [ImGui](https://github.com/ocornut/imgui).
