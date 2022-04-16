@@ -45,7 +45,7 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC Ceres)
 
-target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/VK/Impl/ includes/Exceptions/ templates/ exports/)
+target_include_directories(${PROJECT_NAME} PRIVATE includes/ includes/VK/ includes/Exceptions/ templates/ exports/)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:_DEBUG>" "$<$<CONFIG:RELEASE>:NDEBUG>" BUILD_TERRA)
 
