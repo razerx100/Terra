@@ -4,7 +4,7 @@
 CopyQueueManager::CopyQueueManager(VkDevice device, VkQueue queue)
 	: m_copyQueue(queue) {
 
-	m_fence = std::unique_ptr<IFenceWrapper>(CreateFenceWrapperInstance(device, 1u, false));
+	m_fence = std::make_unique<FenceWrapper>(device, 1u, false);
 }
 
 void CopyQueueManager::SubmitCommandBuffer(VkCommandBuffer commandBuffer) {

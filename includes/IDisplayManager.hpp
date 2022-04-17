@@ -1,5 +1,5 @@
-#ifndef __I_DISPLAY_MANAGER_HPP__
-#define __I_DISPLAY_MANAGER_HPP__
+#ifndef I_DISPLAY_MANAGER_HPP_
+#define I_DISPLAY_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <CRSStructures.hpp>
@@ -12,7 +12,4 @@ public:
 	virtual const std::vector<const char*>& GetRequiredExtensions() const noexcept = 0;
 	virtual void GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) = 0;
 };
-
-IDisplayManager* CreateDisplayManagerInstance();
-
 #endif

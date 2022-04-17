@@ -1,23 +1,22 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <InstanceManager.hpp>
+#include <Terra.hpp>
 
 SwapChainManager::SwapChainManager(
-	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height, size_t bufferCount,
-	VkQueue presentQueue, size_t queueFamily
-) : m_swapchain(VK_NULL_HANDLE), m_deviceRef(device),
+	const SwapChainManagerCreateInfo& swapCreateInfo,
+	VkQueue presentQueue, size_t queueFamilyIndex
+) : m_swapchain(VK_NULL_HANDLE), m_deviceRef(swapCreateInfo.device),
 	m_swapchainFormat{}, m_swapchainExtent{},
-	m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamily),
+	m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamilyIndex),
 	m_currentFrameIndex(0u) {
 
 	bool useless;
-	CreateSwapchain(device, swapCapabilities, surface, bufferCount, width, height, useless);
+	CreateSwapchain(swapCreateInfo, useless);
 	QueryImages();
 	CreateImageViews();
 
-	m_imageSemaphore = std::unique_ptr<ISemaphoreWrapper>(
-		CreateSemaphoreWrapperInstance(device, bufferCount)
+	m_imageSemaphore = std::make_unique<SemaphoreWrapper>(
+			swapCreateInfo.device, swapCreateInfo.bufferCount
 		);
 }
 
@@ -151,17 +150,20 @@ bool SwapChainManager::ResizeSwapchain(
 	VkRenderPass renderPass, bool& formatChanged
 ) {
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
-		const IDeviceManager* const deviceManRef = DeviceInst::GetRef();
-		vkDeviceWaitIdle(deviceManRef->GetLogicalDevice());
+		VkDevice logicalDevice = Terra::device->GetLogicalDevice();
+		vkDeviceWaitIdle(logicalDevice);
 
 		CleanUpSwapchain();
-		CreateSwapchain(
-			deviceManRef->GetLogicalDevice(),
-			deviceManRef->GetSwapChainInfo(),
-			SurfaceInst::GetRef()->GetSurface(),
-			m_swapchainImages.size(),
-			width, height, formatChanged
-		);
+
+		SwapChainManagerCreateInfo createInfo = {};
+		createInfo.device = logicalDevice;
+		createInfo.capabilities = Terra::device->GetSwapChainInfo();
+		createInfo.surface = Terra::surface->GetSurface();
+		createInfo.bufferCount = static_cast<std::uint32_t>(m_swapchainImages.size());
+		createInfo.width = width;
+		createInfo.height = height;
+
+		CreateSwapchain(createInfo, formatChanged);
 		QueryImages();
 		CreateImageViews();
 		CreateFramebuffers(m_deviceRef, renderPass, width, height);
@@ -173,13 +175,19 @@ bool SwapChainManager::ResizeSwapchain(
 }
 
 void SwapChainManager::CreateSwapchain(
-	VkDevice device, const SwapChainInfo& swapCapabilities, VkSurfaceKHR surface,
-	size_t bufferCount, std::uint32_t width, std::uint32_t height,
+	const SwapChainManagerCreateInfo& swapCreateInfo,
 	bool& formatChanged
 ) {
-	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(swapCapabilities.formats);
-	VkPresentModeKHR swapPresentMode = ChoosePresentMode(swapCapabilities.presentModes);
-	VkExtent2D swapExtent = ChooseSwapExtent(swapCapabilities.capabilities, width, height);
+	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(
+		swapCreateInfo.capabilities.formats
+	);
+	VkPresentModeKHR swapPresentMode = ChoosePresentMode(
+		swapCreateInfo.capabilities.presentModes
+	);
+	VkExtent2D swapExtent = ChooseSwapExtent(
+		swapCreateInfo.capabilities.surfaceCapabilities,
+		swapCreateInfo.width, swapCreateInfo.height
+	);
 
 	if (swapFormat.format != m_swapchainFormat)
 		formatChanged = true;
@@ -187,14 +195,14 @@ void SwapChainManager::CreateSwapchain(
 	m_swapchainExtent = swapExtent;
 	m_swapchainFormat = swapFormat.format;
 
-	auto imageCount = static_cast<std::uint32_t>(bufferCount);
-	if (swapCapabilities.capabilities.maxImageCount > 0u
-		&& swapCapabilities.capabilities.maxImageCount < imageCount)
-		imageCount = swapCapabilities.capabilities.maxImageCount;
+	std::uint32_t imageCount = swapCreateInfo.bufferCount;
+	if (swapCreateInfo.capabilities.surfaceCapabilities.maxImageCount > 0u
+		&& swapCreateInfo.capabilities.surfaceCapabilities.maxImageCount < imageCount)
+		imageCount = swapCreateInfo.capabilities.surfaceCapabilities.maxImageCount;
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = surface;
+	createInfo.surface = swapCreateInfo.surface;
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = swapFormat.format;
 	createInfo.imageColorSpace = swapFormat.colorSpace;
@@ -202,14 +210,16 @@ void SwapChainManager::CreateSwapchain(
 	createInfo.imageArrayLayers = 1u;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	createInfo.preTransform = swapCapabilities.capabilities.currentTransform;
+	createInfo.preTransform = swapCreateInfo.capabilities.surfaceCapabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.presentMode = swapPresentMode;
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 	VkResult result;
-	VK_THROW_FAILED(result, vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_swapchain));
+	VK_THROW_FAILED(result,
+		vkCreateSwapchainKHR(swapCreateInfo.device, &createInfo, nullptr, &m_swapchain)
+	);
 }
 
 void SwapChainManager::QueryImages() {

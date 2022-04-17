@@ -1,6 +1,6 @@
 #include <VkInstanceManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <InstanceManager.hpp>
+#include <Terra.hpp>
 #include <string>
 
 using namespace std::string_literals;
@@ -48,7 +48,7 @@ InstanceManager::InstanceManager(const char* appName) : m_vkInstance(VK_NULL_HAN
 	m_extensionNames.emplace_back("VK_KHR_win32_surface");
 #endif
 	AddExtensionNames(
-		DisplayInst::GetRef()->GetRequiredExtensions()
+		Terra::display->GetRequiredExtensions()
 	);
 
 	CheckExtensionSupport();

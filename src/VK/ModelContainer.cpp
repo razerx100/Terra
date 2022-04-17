@@ -1,12 +1,14 @@
 #include <ModelContainer.hpp>
-#include <InstanceManager.hpp>
 #include <BindInstanceGFX.hpp>
 #include <Shader.hpp>
 #include <PipelineLayout.hpp>
 #include <PipelineObjectGFX.hpp>
+#include <Terra.hpp>
 
-ModelContainer::ModelContainer(const char* shaderPath) noexcept
-	: m_bindInstance(std::make_unique<BindInstanceGFX>()), m_shaderPath(shaderPath) {}
+ModelContainer::ModelContainer(std::string shaderPath) noexcept
+	:
+	m_bindInstance(std::make_unique<BindInstanceGFX>()),
+	m_shaderPath(std::move(shaderPath)) {}
 
 void ModelContainer::AddModel(
 	VkDevice device, const IModel* const modelRef
@@ -17,26 +19,26 @@ void ModelContainer::AddModel(
 void ModelContainer::CopyData(std::atomic_size_t& workCount) {
 	workCount += 2;
 
-	//GetVenusInstance()->SubmitWork(
-	//	[&workCount] {
-	//		VertexBufferInst::GetRef()->CopyData();
+	Terra::threadPool->SubmitWork(
+		[&workCount] {
+			Terra::vertexBuffer->CopyData();
 
-	//		--workCount;
-	//	}
-	//);
+			--workCount;
+		}
+	);
 
-	//GetVenusInstance()->SubmitWork(
-	//	[&workCount] {
-	//		IndexBufferInst::GetRef()->CopyData();
+	Terra::threadPool->SubmitWork(
+		[&workCount] {
+			Terra::indexBuffer->CopyData();
 
-	//		--workCount;
-	//	}
-	//);
+			--workCount;
+		}
+	);
 }
 
 void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) {
-	VertexBufferInst::GetRef()->RecordUpload(device, copyBuffer);
-	IndexBufferInst::GetRef()->RecordUpload(device, copyBuffer);
+	Terra::vertexBuffer->RecordUpload(device, copyBuffer);
+	Terra::indexBuffer->RecordUpload(device, copyBuffer);
 }
 
 void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) noexcept {
@@ -44,13 +46,13 @@ void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) noexcept {
 }
 
 void ModelContainer::ReleaseUploadBuffers() {
-	VertexBufferInst::GetRef()->ReleaseUploadBuffer();
-	IndexBufferInst::GetRef()->ReleaseUploadBuffer();
+	Terra::vertexBuffer->ReleaseUploadBuffer();
+	Terra::indexBuffer->ReleaseUploadBuffer();
 }
 
 void ModelContainer::CreateBuffers(VkDevice device) {
-	VertexBufferInst::GetRef()->CreateBuffer(device);
-	IndexBufferInst::GetRef()->CreateBuffer(device);
+	Terra::vertexBuffer->CreateBuffer(device);
+	Terra::indexBuffer->CreateBuffer(device);
 }
 
 void ModelContainer::InitPipelines(VkDevice device) {
@@ -91,7 +93,7 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	std::unique_ptr<PipelineObjectGFX> pso = std::make_unique<PipelineObjectGFX>(
 		device,
 		pipelineLayout->GetLayout(),
-		RndrPassInst::GetRef()->GetRenderPass(),
+		Terra::renderPass->GetRenderPass(),
 		layout.GetInputInfo(),
 		vs->GetByteCode(),
 		fs->GetByteCode()

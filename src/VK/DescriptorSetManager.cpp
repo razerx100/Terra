@@ -72,23 +72,20 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 }
 
 void DescriptorSetManager::BindBuffer(
-	VkDevice device, VkBuffer buffer,
-	std::uint32_t bufferOffset, std::uint32_t bufferSize,
-	std::uint32_t bindingSlot, std::uint32_t descriptorCount,
-	VkDescriptorType descType
+	const BindBufferInputInfo& inputInfo
 ) {
 	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = buffer;
-	bufferInfo.offset = bufferOffset;
-	bufferInfo.range = bufferSize;
+	bufferInfo.buffer = inputInfo.buffer;
+	bufferInfo.offset = inputInfo.bufferOffset;
+	bufferInfo.range = inputInfo.bufferSize;
 
 	VkWriteDescriptorSet setWrite = {};
 	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	setWrite.dstBinding = bindingSlot;
-	setWrite.descriptorCount = descriptorCount;
+	setWrite.dstBinding = inputInfo.bindingSlot;
+	setWrite.descriptorCount = inputInfo.descriptorCount;
 	setWrite.dstSet = m_descriptorSet;
-	setWrite.descriptorType = descType;
+	setWrite.descriptorType = inputInfo.type;
 	setWrite.pBufferInfo = &bufferInfo;
 
-	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
+	vkUpdateDescriptorSets(inputInfo.device, 1u, &setWrite, 0u, nullptr);
 }

@@ -1,7 +1,7 @@
 #include <DeviceManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <algorithm>
-#include <InstanceManager.hpp>
+#include <Terra.hpp>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -182,7 +182,7 @@ void DeviceManager::GetSwapchainCapabilities(
 	VkSurfaceKHR surface,
 	SwapChainInfo& details
 ) const noexcept {
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.surfaceCapabilities);
 
 	std::uint32_t formatCount = 0u;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
@@ -209,7 +209,7 @@ SwapChainInfo DeviceManager::GetSwapChainInfo() const noexcept {
 	SwapChainInfo swapInfo;
 	GetSwapchainCapabilities(
 		m_physicalDevice,
-		SurfaceInst::GetRef()->GetSurface(),
+		Terra::surface->GetSurface(),
 		swapInfo
 	);
 

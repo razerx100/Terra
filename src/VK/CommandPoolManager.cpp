@@ -1,9 +1,8 @@
 #include <CommandPoolManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <ISwapChainManager.hpp>
 
 CommandPoolManager::CommandPoolManager(
-	VkDevice device, size_t queueIndex, size_t bufferCount
+	VkDevice device, size_t queueIndex, std::uint32_t bufferCount
 ) : m_deviceRef(device), m_commandPool(VK_NULL_HANDLE), m_commandBuffers(bufferCount),
 	m_beginInfo{} {
 
@@ -21,7 +20,7 @@ CommandPoolManager::CommandPoolManager(
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocateInfo.commandPool = m_commandPool;
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocateInfo.commandBufferCount = static_cast<std::uint32_t>(bufferCount);
+	allocateInfo.commandBufferCount = bufferCount;
 
 	VK_THROW_FAILED(result,
 		vkAllocateCommandBuffers(device, &allocateInfo, m_commandBuffers.data())

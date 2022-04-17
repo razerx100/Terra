@@ -1,5 +1,5 @@
-#ifndef __SURFACE_MANAGER_WIN32_HPP__
-#define __SURFACE_MANAGER_WIN32_HPP__
+#ifndef SURFACE_MANAGER_WIN32_HPP_
+#define SURFACE_MANAGER_WIN32_HPP_
 #include <ISurfaceManager.hpp>
 
 class SurfaceManagerWin32 : public ISurfaceManager {

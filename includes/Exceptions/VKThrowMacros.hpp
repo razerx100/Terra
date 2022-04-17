@@ -1,5 +1,5 @@
-#ifndef __VK_THROW_MACROS_HPP__
-#define __VK_THROW_MACROS_HPP__
+#ifndef VK_THROW_MACROS_HPP_
+#define VK_THROW_MACROS_HPP_
 #include <VKExceptions.hpp>
 
 #define VK_THROW_FAILED(err, fun) if((err = fun) < 0) throw VKException(__LINE__, __FILE__, err)

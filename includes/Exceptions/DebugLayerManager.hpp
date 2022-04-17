@@ -1,5 +1,5 @@
-#ifndef __DEBUG_LAYER_MANAGER_HPP__
-#define __DEBUG_LAYER_MANAGER_HPP__
+#ifndef DEBUG_LAYER_MANAGER_HPP_
+#define DEBUG_LAYER_MANAGER_HPP_
 #include <vulkan/vulkan.h>
 
 class DebugLayerManager {

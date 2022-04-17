@@ -1,24 +1,24 @@
 #include <BindInstanceGFX.hpp>
-#include <InstanceManager.hpp>
+#include <Terra.hpp>
 
 BindInstanceGFX::BindInstanceGFX() noexcept
 	: m_vertexLayoutAvailable(false) {}
 
 BindInstanceGFX::BindInstanceGFX(
-	std::unique_ptr<IPipelineObject> pso,
-	std::shared_ptr<IPipelineLayout> layout
+	std::unique_ptr<PipelineObjectGFX> pso,
+	std::shared_ptr<PipelineLayout> layout
 ) noexcept
 	:
 	m_pipelineLayout(std::move(layout)),
 	m_pso(std::move(pso)),
 	m_vertexLayoutAvailable(false) {}
 
-void BindInstanceGFX::AddPSO(std::unique_ptr<IPipelineObject> pso) noexcept {
+void BindInstanceGFX::AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept {
 	m_pso = std::move(pso);
 }
 
 void BindInstanceGFX::AddPipelineLayout(
-	std::shared_ptr<IPipelineLayout> layout
+	std::shared_ptr<PipelineLayout> layout
 ) noexcept {
 	m_pipelineLayout = layout;
 
@@ -33,10 +33,10 @@ void BindInstanceGFX::AddModel(
 		std::make_unique<ModelRaw>(
 			device,
 			modelRef,
-			VertexBufferInst::GetRef()->AddBuffer(
+			Terra::vertexBuffer->AddBuffer(
 				device, modelRef->GetVertexData(), modelRef->GetVertexBufferSize()
 			),
-			IndexBufferInst::GetRef()->AddBuffer(
+			Terra::indexBuffer->AddBuffer(
 				device, modelRef->GetIndexData(), modelRef->GetIndexBufferSize()
 			),
 			modelRef->GetIndexCount()
@@ -96,7 +96,7 @@ void BindInstanceGFX::ModelRaw::AddIndexBuffer(
 }
 
 void BindInstanceGFX::ModelRaw::AddPipelineLayout(
-	std::shared_ptr<IPipelineLayout> pipelineLayout
+	std::shared_ptr<PipelineLayout> pipelineLayout
 ) noexcept {
 	m_pPipelineLayout = std::move(pipelineLayout);
 }

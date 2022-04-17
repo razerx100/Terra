@@ -1,14 +1,11 @@
 #include <GraphicsQueueManager.hpp>
 #include <VKThrowMacros.hpp>
 
-GraphicsQueueManager::GraphicsQueueManager(VkDevice device, VkQueue queue, size_t bufferCount)
-	: m_graphicsQueue(queue), m_currentFrameIndex(0u) {
-	m_renderSemaphores = std::unique_ptr<ISemaphoreWrapper>(
-		CreateSemaphoreWrapperInstance(device, bufferCount)
-		);
-	m_fences = std::unique_ptr<IFenceWrapper>(
-		CreateFenceWrapperInstance(device, bufferCount, true)
-		);
+GraphicsQueueManager::GraphicsQueueManager(
+	VkDevice device, VkQueue queue, std::uint32_t bufferCount
+)	: m_graphicsQueue(queue), m_currentFrameIndex(0u) {
+	m_renderSemaphores = std::make_unique<SemaphoreWrapper>(device, bufferCount);
+	m_fences = std::make_unique<FenceWrapper>(device, bufferCount, true);
 }
 
 void GraphicsQueueManager::SubmitCommandBuffer(

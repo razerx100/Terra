@@ -1,11 +1,11 @@
 #include <RendererVK.hpp>
-#include <InstanceManager.hpp>
+#include <Terra.hpp>
 
 RendererVK::RendererVK(
 	const char* appName,
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	size_t bufferCount
+	std::uint32_t bufferCount
 ) : m_backgroundColour{}, m_appName(appName),
 	m_bufferCount(bufferCount), m_renderPassInfo{} {
 
@@ -17,63 +17,64 @@ RendererVK::RendererVK(
 	m_renderPassInfo.renderArea.offset = { 0, 0 };
 	m_renderPassInfo.clearValueCount = 1u;
 
-	ViewPAndScsrInst::Init(width, height);
+	Terra::InitViewportAndScissor(width, height);
 
-	DisplayInst::Init();
+	Terra::InitDisplay();
 
-	VkInstInst::Init(appName);
+	Terra::InitVkInstance(appName);
+
+	VkInstance vkInstance = Terra::vkInstance->GetVKInstance();
 
 #ifdef _DEBUG
-	DebugLayerInst::Init(
-		VkInstInst::GetRef()->GetVKInstance()
-	);
+	Terra::InitDebugLayer(vkInstance);
 #endif
 
 #ifdef TERRA_WIN32
-	SurfaceInst::InitWin32(
-		VkInstInst::GetRef()->GetVKInstance(), windowHandle, moduleHandle
-	);
+	Terra::InitSurface(vkInstance, windowHandle, moduleHandle);
 #endif
 
-	DeviceInst::Init();
-	IDeviceManager* deviceManagerRef = DeviceInst::GetRef();
-	deviceManagerRef->CreatePhysicalDevice(
-		VkInstInst::GetRef()->GetVKInstance(),
-		SurfaceInst::GetRef()->GetSurface()
+	Terra::InitDevice();
+
+	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
+
+	Terra::device->CreatePhysicalDevice(
+		vkInstance,
+		vkSurface
 	);
-	deviceManagerRef->CreateLogicalDevice();
+	Terra::device->CreateLogicalDevice();
 
-	VkDevice logicalDevice = deviceManagerRef->GetLogicalDevice();
+	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
-	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = deviceManagerRef->GetQueue(
+	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
 	);
-	GfxQueInst::Init(
+	Terra::InitGraphicsQueue(
 		logicalDevice,
 		graphicsQueueHandle,
 		bufferCount
 	);
 
-	auto [presentQueueHandle, presentQueueFamilyIndex] = deviceManagerRef->GetQueue(
+	auto [presentQueueHandle, presentQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::PresentQueue
 	);
 
-	SwapChainInst::Init(
-		logicalDevice,
-		deviceManagerRef->GetSwapChainInfo(),
-		SurfaceInst::GetRef()->GetSurface(),
-		width, height, bufferCount,
-		presentQueueHandle,
-		presentQueueFamilyIndex
-	);
+	SwapChainManagerCreateInfo swapCreateInfo = {};
+	swapCreateInfo.device = logicalDevice;
+	swapCreateInfo.capabilities = Terra::device->GetSwapChainInfo();
+	swapCreateInfo.surface = vkSurface;
+	swapCreateInfo.width = width;
+	swapCreateInfo.height = height;
+	swapCreateInfo.bufferCount = bufferCount;
 
-	GfxPoolInst::Init(
+	Terra::InitSwapChain(swapCreateInfo, presentQueueHandle, presentQueueFamilyIndex);
+
+	Terra::InitGraphicsCmdPool(
 		logicalDevice,
 		graphicsQueueFamilyIndex,
 		bufferCount
 	);
 
-	auto [copyQueueHandle, copyQueueFamilyIndex] = deviceManagerRef->GetQueue(
+	auto [copyQueueHandle, copyQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::TransferQueue
 	);
 
@@ -91,52 +92,50 @@ RendererVK::RendererVK(
 		);
 	}
 
-	CpyQueInst::Init(logicalDevice, copyQueueHandle);
+	Terra::InitCopyQueue(logicalDevice, copyQueueHandle);
 
-	CpyPoolInst::Init(logicalDevice, copyQueueFamilyIndex);
+	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
 
-	VkPhysicalDevice physicalDevice = deviceManagerRef->GetPhysicalDevice();
+	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
 
-	DisplayInst::GetRef()->InitDisplayManager(
+	Terra::display->InitDisplayManager(
 		physicalDevice
 	);
 
-	ISwapChainManager* swapRef = SwapChainInst::GetRef();
+	Terra::InitRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
 
-	RndrPassInst::Init(logicalDevice, swapRef->GetSwapFormat());
-
-	swapRef->CreateFramebuffers(
-		logicalDevice, RndrPassInst::GetRef()->GetRenderPass(),
+	Terra::swapChain->CreateFramebuffers(
+		logicalDevice, Terra::renderPass->GetRenderPass(),
 		width, height
 	);
 
-	DescSetMan::Init(logicalDevice);
+	Terra::InitDescriptorSet(logicalDevice);
 
-	VertexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	IndexBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	UniformBufferInst::Init(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitVertexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitIndexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitUniformBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 
 RendererVK::~RendererVK() noexcept {
-	ViewPAndScsrInst::CleanUp();
-	ModelContainerInst::CleanUp();
-	DescSetMan::CleanUp();
-	UniformBufferInst::CleanUp();
-	VertexBufferInst::CleanUp();
-	IndexBufferInst::CleanUp();
-	CpyQueInst::CleanUp();
-	CpyPoolInst::CleanUp();
-	RndrPassInst::CleanUp();
-	SwapChainInst::CleanUp();
-	GfxQueInst::CleanUp();
-	GfxPoolInst::CleanUp();
-	DisplayInst::CleanUp();
-	DeviceInst::CleanUp();
-	SurfaceInst::CleanUp();
+	Terra::viewportAndScissor.reset();
+	Terra::modelContainer.reset();
+	Terra::descriptorSet.reset();
+	Terra::uniformBuffer.reset();
+	Terra::vertexBuffer.reset();
+	Terra::indexBuffer.reset();
+	Terra::copyQueue.reset();
+	Terra::copyCmdPool.reset();
+	Terra::renderPass.reset();
+	Terra::swapChain.reset();
+	Terra::graphicsQueue.reset();
+	Terra::graphicsCmdPool.reset();
+	Terra::display.reset();
+	Terra::device.reset();
+	Terra::surface.reset();
 #ifdef _DEBUG
-	DebugLayerInst::CleanUp();
+	Terra::debugLayer.reset();
 #endif
-	VkInstInst::CleanUp();
+	Terra::vkInstance.reset();
 }
 
 void RendererVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept {
@@ -146,63 +145,56 @@ void RendererVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexc
 }
 
 void RendererVK::SubmitModel(const IModel* const modelRef) {
-	ModelContainerInst::GetRef()->AddModel(
-		DeviceInst::GetRef()->GetLogicalDevice(), modelRef
+	Terra::modelContainer->AddModel(
+		Terra::device->GetLogicalDevice(), modelRef
 	);
 }
 
 void RendererVK::Render() {
-	ISwapChainManager* swapchainRef = SwapChainInst::GetRef();
-	ICommandPoolManager* commandPoolRef = GfxPoolInst::GetRef();
-	IGraphicsQueueManager* graphicsQueueRef = GfxQueInst::GetRef();
+	Terra::graphicsQueue->WaitForGPU();
+	const size_t imageIndex = Terra::swapChain->GetAvailableImageIndex();
+	Terra::graphicsCmdPool->Reset(imageIndex);
 
-	graphicsQueueRef->WaitForGPU();
-	const size_t imageIndex = swapchainRef->GetAvailableImageIndex();
-	commandPoolRef->Reset(imageIndex);
+	VkCommandBuffer commandBuffer = Terra::graphicsCmdPool->GetCommandBuffer(imageIndex);
 
-	VkCommandBuffer commandBuffer = commandPoolRef->GetCommandBuffer(imageIndex);
+	vkCmdSetViewport(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef());
+	vkCmdSetScissor(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef());
 
-	const IViewportAndScissorManager* const viewportRef = ViewPAndScsrInst::GetRef();
-
-	vkCmdSetViewport(commandBuffer, 0u, 1u, viewportRef->GetViewportRef());
-	vkCmdSetScissor(commandBuffer, 0u, 1u, viewportRef->GetScissorRef());
-
-	m_renderPassInfo.renderPass = RndrPassInst::GetRef()->GetRenderPass();
-	m_renderPassInfo.framebuffer = swapchainRef->GetFramebuffer(imageIndex);
-	m_renderPassInfo.renderArea.extent = swapchainRef->GetSwapExtent();
+	m_renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
+	m_renderPassInfo.framebuffer = Terra::swapChain->GetFramebuffer(imageIndex);
+	m_renderPassInfo.renderArea.extent = Terra::swapChain->GetSwapExtent();
 	m_renderPassInfo.pClearValues = &m_backgroundColour;
 
 	vkCmdBeginRenderPass(commandBuffer, &m_renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	ModelContainerInst::GetRef()->BindCommands(commandBuffer);
+	Terra::modelContainer->BindCommands(commandBuffer);
 
 	vkCmdEndRenderPass(commandBuffer);
 
-	commandPoolRef->Close(imageIndex);
+	Terra::graphicsCmdPool->Close(imageIndex);
 
-	graphicsQueueRef->SubmitCommandBuffer(commandBuffer, swapchainRef->GetImageSemaphore());
-	swapchainRef->PresentImage(
-		static_cast<std::uint32_t>(imageIndex), graphicsQueueRef->GetRenderSemaphore()
+	Terra::graphicsQueue->SubmitCommandBuffer(
+		commandBuffer, Terra::swapChain->GetImageSemaphore()
+	);
+	Terra::swapChain->PresentImage(
+		static_cast<std::uint32_t>(imageIndex), Terra::graphicsQueue->GetRenderSemaphore()
 	);
 
 	const size_t nextFrame = (imageIndex + 1u) % m_bufferCount;
-	swapchainRef->SetNextFrameIndex(nextFrame);
-	graphicsQueueRef->SetNextFrameIndex(nextFrame);
+	Terra::swapChain->SetNextFrameIndex(nextFrame);
+	Terra::graphicsQueue->SetNextFrameIndex(nextFrame);
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
-	ISwapChainManager* swapRef = SwapChainInst::GetRef();
-	IRenderPassManager* rndrPassRef = RndrPassInst::GetRef();
-
-	if (swapRef->ResizeSwapchain(
-		width, height, rndrPassRef->GetRenderPass(), hasSwapFormatChanged
+	if (Terra::swapChain->ResizeSwapchain(
+		width, height, Terra::renderPass->GetRenderPass(), hasSwapFormatChanged
 	)) {
-		ViewPAndScsrInst::GetRef()->Resize(width, height);
+		Terra::viewportAndScissor->Resize(width, height);
 
 		if (hasSwapFormatChanged)
-			rndrPassRef->CreateRenderPass(
-				DeviceInst::GetRef()->GetLogicalDevice(), swapRef->GetSwapFormat()
+			Terra::renderPass->CreateRenderPass(
+				Terra::device->GetLogicalDevice(), Terra::swapChain->GetSwapFormat()
 			);
 	}
 }
@@ -211,8 +203,8 @@ void RendererVK::GetMonitorCoordinates(
 	std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
 ) {
 	Ceres::Rect resolution = {};
-	DisplayInst::GetRef()->GetDisplayResolution(
-		DeviceInst::GetRef()->GetPhysicalDevice(),
+	Terra::display->GetDisplayResolution(
+		Terra::device->GetPhysicalDevice(),
 		resolution
 	);
 
@@ -222,7 +214,7 @@ void RendererVK::GetMonitorCoordinates(
 
 void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(
-		DeviceInst::GetRef()->GetLogicalDevice()
+		Terra::device->GetLogicalDevice()
 	);
 }
 
@@ -231,37 +223,33 @@ void RendererVK::SetShaderPath(const char* path) noexcept {
 }
 
 void RendererVK::InitResourceBasedObjects() {
-	ModelContainerInst::Init(m_shaderPath.c_str());
+	Terra::InitModelContainer(m_shaderPath);
 }
 
 void RendererVK::ProcessData() {
-	VkDevice logicalDevice = DeviceInst::GetRef()->GetLogicalDevice();
+	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
-	IModelContainer* modelContainerRef = ModelContainerInst::GetRef();
-	modelContainerRef->CreateBuffers(logicalDevice);
+	Terra::modelContainer->CreateBuffers(logicalDevice);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;
 
-	modelContainerRef->CopyData(works);
+	Terra::modelContainer->CopyData(works);
 
 	while (works != 0u);
 
-	ICommandPoolManager* copyBufferManager = CpyPoolInst::GetRef();
-	copyBufferManager->Reset(0u);
-	VkCommandBuffer copyBuffer = copyBufferManager->GetCommandBuffer(0u);
+	Terra::copyCmdPool->Reset(0u);
+	VkCommandBuffer copyBuffer = Terra::copyCmdPool->GetCommandBuffer(0u);
 
-	modelContainerRef->RecordUploadBuffers(logicalDevice, copyBuffer);
+	Terra::modelContainer->RecordUploadBuffers(logicalDevice, copyBuffer);
 
-	copyBufferManager->Close(0u);
+	Terra::copyCmdPool->Close(0u);
 
-	ICopyQueueManager* copyQueue = CpyQueInst::GetRef();
-	copyQueue->SubmitCommandBuffer(copyBuffer);
-	copyQueue->WaitForGPU();
+	Terra::copyQueue->SubmitCommandBuffer(copyBuffer);
+	Terra::copyQueue->WaitForGPU();
 
-	modelContainerRef->InitPipelines(logicalDevice);
-
-	modelContainerRef->ReleaseUploadBuffers();
+	Terra::modelContainer->InitPipelines(logicalDevice);
+	Terra::modelContainer->ReleaseUploadBuffers();
 }
 
 size_t RendererVK::RegisterResource(
@@ -272,6 +260,6 @@ size_t RendererVK::RegisterResource(
 }
 
 void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
-
+	Terra::SetThreadPool(std::move(threadPoolArg));
 }
 

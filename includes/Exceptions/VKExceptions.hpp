@@ -1,5 +1,5 @@
-#ifndef __VK_EXCEPTIONS_HPP__
-#define __VK_EXCEPTIONS_HPP__
+#ifndef VK_EXCEPTIONS_HPP_
+#define VK_EXCEPTIONS_HPP_
 #include <Exception.hpp>
 #include <vulkan/vulkan.hpp>
 

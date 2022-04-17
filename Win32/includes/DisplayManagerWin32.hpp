@@ -1,5 +1,5 @@
-#ifndef __DISPLAY_MANAGER_WIN32_HPP__
-#define __DISPLAY_MANAGER_WIN32_HPP__
+#ifndef DISPLAY_MANAGER_WIN32_HPP_
+#define DISPLAY_MANAGER_WIN32_HPP_
 #include <IDisplayManager.hpp>
 #include <wrl/client.h>
 #include <dxgi1_6.h>
