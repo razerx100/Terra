@@ -71,27 +71,24 @@ BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, const IModel* const modelRe
 BindInstanceGFX::ModelRaw::ModelRaw(
 	VkDevice device,
 	const IModel* const modelRef,
-	VkBuffer vertexBuffer,
-	VkBuffer indexBuffer,
+	std::unique_ptr<GpuBuffer> vertexBuffer,
+	std::unique_ptr<GpuBuffer> indexBuffer,
 	size_t indexCount
 ) noexcept
 	: m_deviceRef(device),m_modelRef(modelRef),
-	m_vertexBuffer(vertexBuffer), m_indexBuffer(indexBuffer),
+	m_vertexBuffer(std::move(vertexBuffer)), m_indexBuffer(std::move(indexBuffer)),
 	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indexCount)) {}
 
-BindInstanceGFX::ModelRaw::~ModelRaw() noexcept {
-	vkDestroyBuffer(m_deviceRef, m_vertexBuffer, nullptr);
-	vkDestroyBuffer(m_deviceRef, m_indexBuffer, nullptr);
-}
-
-void BindInstanceGFX::ModelRaw::AddVertexBuffer(VkBuffer buffer) noexcept {
-	m_vertexBuffer = buffer;
+void BindInstanceGFX::ModelRaw::AddVertexBuffer(
+	std::unique_ptr<GpuBuffer> buffer
+) noexcept {
+	m_vertexBuffer = std::move(buffer);
 }
 
 void BindInstanceGFX::ModelRaw::AddIndexBuffer(
-	VkBuffer buffer, size_t indexCount
+	std::unique_ptr<GpuBuffer> buffer, size_t indexCount
 ) noexcept {
-	m_indexBuffer = buffer;
+	m_indexBuffer = std::move(buffer);
 	m_indexCount = static_cast<std::uint32_t>(indexCount);
 }
 
@@ -102,8 +99,16 @@ void BindInstanceGFX::ModelRaw::AddPipelineLayout(
 }
 
 void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexcept {
-	vkCmdBindVertexBuffers(commandBuffer, 0u, 1u, &m_vertexBuffer, &m_vertexOffset);
-	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer, 0u, VK_INDEX_TYPE_UINT16);
+	VkBuffer vertexBuffers[] = { m_vertexBuffer->GetBuffer() };
+
+	vkCmdBindVertexBuffers(
+		commandBuffer, 0u, 1u, vertexBuffers,
+		&m_vertexOffset
+	);
+	vkCmdBindIndexBuffer(
+		commandBuffer, m_indexBuffer->GetBuffer(), 0u,
+		VK_INDEX_TYPE_UINT16
+	);
 
 	const std::uint32_t textureIndex = m_modelRef->GetTextureIndex();
 	vkCmdPushConstants(

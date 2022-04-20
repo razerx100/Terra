@@ -8,42 +8,30 @@ DeviceMemory::DeviceMemory(
 ) : m_deviceRef(logDevice), m_bufferMemory(VK_NULL_HANDLE),
 	m_memoryTypeIndex(0u), m_alignment(0u) {
 
-	VkBufferUsageFlags usage = 0u;
+	VkMemoryRequirements memoryReq = {};
 	VkMemoryPropertyFlags properties = 0u;
 
 	if (uploadBuffer) {
-		usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 		properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+
+		UploadBuffer buffer = UploadBuffer(logDevice);
+
+		buffer.CreateBuffer(logDevice, 1u);
+
+		vkGetBufferMemoryRequirements(logDevice, buffer.GetBuffer(), &memoryReq);
 	}
 	else {
-		usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 		properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		if (type == BufferType::Vertex)
-			usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-		else if (type == BufferType::Index)
-			usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-		else if (type == BufferType::UniformAndStorage)
-			usage |=
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		GpuBuffer buffer = GpuBuffer(logDevice);
+
+		buffer.CreateBuffer(
+			logDevice,
+			1u, queueFamilyIndices, type
+		);
+
+		vkGetBufferMemoryRequirements(logDevice, buffer.GetBuffer(), &memoryReq);
 	}
-
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = 1u;
-	bufferInfo.usage = usage;
-
-	ConfigureBufferQueueAccess(queueFamilyIndices, bufferInfo);
-
-	VkBuffer tempBuffer = VK_NULL_HANDLE;
-
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateBuffer(logDevice, &bufferInfo, nullptr, &tempBuffer)
-	);
-
-	VkMemoryRequirements memoryReq = {};
-	vkGetBufferMemoryRequirements(logDevice, tempBuffer, &memoryReq);
 
 	m_alignment = memoryReq.alignment;
 
@@ -56,8 +44,6 @@ DeviceMemory::DeviceMemory(
 			m_memoryTypeIndex = index;
 			break;
 		}
-
-	vkDestroyBuffer(logDevice, tempBuffer, nullptr);
 }
 
 DeviceMemory::~DeviceMemory() noexcept {
@@ -84,17 +70,4 @@ VkDeviceMemory DeviceMemory::GetMemoryHandle() const noexcept {
 
 size_t DeviceMemory::GetAlignment() const noexcept {
 	return m_alignment;
-}
-
-void ConfigureBufferQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndices,
-	VkBufferCreateInfo& bufferInfo
-) {
-	if (queueFamilyIndices.size() > 1u) {
-		bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		bufferInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueFamilyIndices.size());
-		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-	}
-	else
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 }

@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <UploadBuffers.hpp>
+#include <VkBuffers.hpp>
 
 class ResourceBuffer {
 public:
@@ -14,7 +15,9 @@ public:
 		BufferType type
 	);
 
-	VkBuffer AddBuffer(VkDevice device, const void* source, size_t bufferSize);
+	std::unique_ptr<GpuBuffer> AddBuffer(
+		VkDevice device, const void* source, size_t bufferSize
+	);
 	void CreateBuffer(VkDevice device);
 	void CopyData() noexcept;
 	void RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer);
@@ -23,9 +26,9 @@ public:
 private:
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
 	std::unique_ptr<DeviceMemory> m_gpuBufferMemory;
-	std::vector<VkBuffer> m_gpuBuffers;
+	std::vector<GpuBuffer*> m_gpuBuffers;
 	size_t m_currentOffset;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
-	VkBufferCreateInfo m_gpuBufferCreateInfo;
+	BufferType m_type;
 };
 #endif

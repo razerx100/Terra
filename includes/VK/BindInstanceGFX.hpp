@@ -5,6 +5,7 @@
 #include <PipelineObjectGFX.hpp>
 #include <VertexLayout.hpp>
 #include <PipelineLayout.hpp>
+#include <VkBuffers.hpp>
 #include <vector>
 #include <cstdint>
 
@@ -34,14 +35,13 @@ private:
 		ModelRaw(
 			VkDevice device,
 			const IModel* const modelRef,
-			VkBuffer vertexBuffer,
-			VkBuffer indexBuffer,
+			std::unique_ptr<GpuBuffer> vertexBuffer,
+			std::unique_ptr<GpuBuffer> indexBuffer,
 			size_t indexCount
 		) noexcept;
-		~ModelRaw() noexcept;
 
-		void AddVertexBuffer(VkBuffer buffer) noexcept;
-		void AddIndexBuffer(VkBuffer buffer, size_t indexCount) noexcept;
+		void AddVertexBuffer(std::unique_ptr<GpuBuffer> buffer) noexcept;
+		void AddIndexBuffer(std::unique_ptr<GpuBuffer> buffer, size_t indexCount) noexcept;
 		void AddPipelineLayout(std::shared_ptr<PipelineLayout> pipelineLayout) noexcept;
 
 		void Draw(VkCommandBuffer commandBuffer) const noexcept;
@@ -49,8 +49,8 @@ private:
 	private:
 		VkDevice m_deviceRef;
 		const IModel* const m_modelRef;
-		VkBuffer m_vertexBuffer;
-		VkBuffer m_indexBuffer;
+		std::unique_ptr<GpuBuffer> m_vertexBuffer;
+		std::unique_ptr<GpuBuffer> m_indexBuffer;
 		VkDeviceSize m_vertexOffset;
 		std::uint32_t m_indexCount;
 		std::shared_ptr<PipelineLayout> m_pPipelineLayout;

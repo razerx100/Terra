@@ -3,18 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <cstdint>
-
-enum class BufferType {
-	Vertex,
-	Index,
-	UniformAndStorage,
-	Invalid
-};
-
-void ConfigureBufferQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndices,
-	VkBufferCreateInfo& bufferInfo
-);
+#include <VkBuffers.hpp>
 
 class DeviceMemory {
 public:

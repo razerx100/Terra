@@ -3,10 +3,11 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <DeviceMemory.hpp>
+#include <VkBuffers.hpp>
 #include <memory>
 
 struct UploadBufferData {
-	VkBuffer buffer;
+	std::unique_ptr<UploadBuffer> buffer;
 	size_t bufferSize;
 	size_t offset;
 };
@@ -14,7 +15,6 @@ struct UploadBufferData {
 class UploadBuffers {
 public:
 	UploadBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
-	~UploadBuffers() noexcept;
 
 	void AddBuffer(VkDevice device, const void* data, size_t bufferSize);
 
@@ -28,11 +28,9 @@ public:
 	const std::vector<UploadBufferData>& GetUploadBufferData() const noexcept;
 
 private:
-	VkDevice m_deviceRef;
 	std::unique_ptr<DeviceMemory> m_uploadMemory;
 	std::vector<UploadBufferData> m_uploadBufferData;
 	std::vector<const void*> m_dataHandles;
-	VkBufferCreateInfo m_createInfo;
 	std::uint8_t* m_cpuHandle;
 	size_t m_currentOffset;
 };

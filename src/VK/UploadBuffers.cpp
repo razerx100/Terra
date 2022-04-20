@@ -5,20 +5,11 @@
 
 UploadBuffers::UploadBuffers(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) : m_deviceRef(logicalDevice), m_createInfo{}, m_cpuHandle(nullptr), m_currentOffset(0u) {
-
-	m_createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	m_createInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	m_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+) : m_cpuHandle(nullptr), m_currentOffset(0u) {
 
 	m_uploadMemory = std::make_unique<DeviceMemory>(
 		logicalDevice, physicalDevice, std::vector<std::uint32_t>(), true
 		);
-}
-
-UploadBuffers::~UploadBuffers() noexcept {
-	for (const auto& bufferData : m_uploadBufferData)
-		vkDestroyBuffer(m_deviceRef, bufferData.buffer, nullptr);
 }
 
 void UploadBuffers::CreateBuffers(VkDevice device) {
@@ -35,7 +26,9 @@ void UploadBuffers::CreateBuffers(VkDevice device) {
 	VkResult result;
 	for (const UploadBufferData& bufferData : m_uploadBufferData)
 		VK_THROW_FAILED(result,
-			vkBindBufferMemory(device, bufferData.buffer, uploadMemory, bufferData.offset)
+			vkBindBufferMemory(
+				device, bufferData.buffer->GetBuffer(), uploadMemory, bufferData.offset
+			)
 		);
 }
 
@@ -63,16 +56,15 @@ void UploadBuffers::CopyData() noexcept {
 }
 
 void UploadBuffers::AddBuffer(VkDevice device, const void* data, size_t bufferSize) {
-	UploadBufferData bufferData = { VK_NULL_HANDLE, bufferSize, m_currentOffset };
+	UploadBufferData bufferData = {
+		std::make_unique<UploadBuffer>(device), bufferSize, m_currentOffset
+	};
 
 	m_currentOffset += Ceres::Math::Align(bufferSize, m_uploadMemory->GetAlignment());
 
-	m_createInfo.size = static_cast<VkDeviceSize>(bufferSize);
+	bufferData.buffer->CreateBuffer(device, bufferSize);
 
-	VkResult result;
-	VK_THROW_FAILED(result, vkCreateBuffer(device, &m_createInfo, nullptr, &bufferData.buffer));
-
-	m_uploadBufferData.emplace_back(bufferData);
+	m_uploadBufferData.emplace_back(std::move(bufferData));
 	m_dataHandles.emplace_back(data);
 }
 
