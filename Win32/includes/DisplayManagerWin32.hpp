@@ -6,7 +6,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-class DisplayManagerWin32 : public IDisplayManager {
+class DisplayManagerWin32 final : public IDisplayManager {
 public:
 	DisplayManagerWin32();
 

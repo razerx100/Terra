@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 
-class RendererVK : public Renderer {
+class RendererVK final : public Renderer {
 public:
 	RendererVK(
 		const char* appName,

@@ -3,7 +3,7 @@
 #include <Exception.hpp>
 #include <vulkan/vulkan.hpp>
 
-class VKException : public Exception {
+class VKException final : public Exception {
 public:
 	VKException(int line, const char* file, VkResult errorCode) noexcept;
 

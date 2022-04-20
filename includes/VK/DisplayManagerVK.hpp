@@ -2,7 +2,7 @@
 #define DISPLAY_MANAGER_VK_HPP_
 #include <IDisplayManager.hpp>
 
-class DisplayManagerVK : public IDisplayManager {
+class DisplayManagerVK final : public IDisplayManager {
 public:
 	void InitDisplayManager(VkPhysicalDevice gpu) override;
 
