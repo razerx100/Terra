@@ -173,19 +173,17 @@ void ImageBuffer::CopyToImage(
 	copyRegion.imageOffset = imageOffset;
 	copyRegion.imageExtent = imageExtent;
 
-	TransitionImageLayout(copyCmdBuffer, false);
+	TransitionImageLayout(copyCmdBuffer);
 
 	vkCmdCopyBufferToImage(
 		copyCmdBuffer, uploadBuffer,
 		m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1u, &copyRegion
 	);
-
-	TransitionImageLayout(copyCmdBuffer, true);
 }
 
 void ImageBuffer::TransitionImageLayout(
-	VkCommandBuffer cmdBuffer, bool shaderStage
+	VkCommandBuffer cmdBuffer
 ) noexcept {
 	VkImageSubresourceRange subresourceRange = {};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -201,27 +199,21 @@ void ImageBuffer::TransitionImageLayout(
 	barrier.image = m_image;
 	barrier.subresourceRange = subresourceRange;
 
-	VkPipelineStageFlags sourceStage = 0u;
-	VkPipelineStageFlags destinationStage = 0u;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.srcAccessMask = 0u;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-	if (shaderStage) {
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	}
-	else {
-		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.srcAccessMask = 0u;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
+	// TO Shader stage
+	//barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	//barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	//barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	//sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	//destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
 	vkCmdPipelineBarrier(
 		cmdBuffer,

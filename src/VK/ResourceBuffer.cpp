@@ -55,7 +55,7 @@ std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 		m_queueFamilyIndices, m_type
 	);
 
-	m_gpuBuffers.emplace_back(gpuBuffer.get());
+	m_gpuBuffers.emplace_back(gpuBuffer);
 
 	return gpuBuffer;
 }

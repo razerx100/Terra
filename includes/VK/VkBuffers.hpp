@@ -84,9 +84,7 @@ private:
 		VkImageCreateInfo& imageInfo
 	) noexcept;
 
-	void TransitionImageLayout(
-		VkCommandBuffer cmdBuffer, bool shaderStage
-	) noexcept;
+	void TransitionImageLayout(VkCommandBuffer cmdBuffer) noexcept;
 
 private:
 	VkDevice m_deviceRef;
