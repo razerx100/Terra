@@ -6,12 +6,6 @@
 #include <VkBuffers.hpp>
 #include <memory>
 
-struct UploadBufferData {
-	std::unique_ptr<UploadBuffer> buffer;
-	size_t bufferSize;
-	size_t offset;
-};
-
 class UploadBuffers {
 public:
 	UploadBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
@@ -23,13 +17,18 @@ public:
 	void FlushMemory(VkDevice device);
 
 	[[nodiscard]]
-	size_t GetMemoryAlignment() const noexcept;
-	[[nodiscard]]
-	const std::vector<UploadBufferData>& GetUploadBufferData() const noexcept;
+	const std::vector<std::unique_ptr<UploadBuffer>>& GetUploadBuffers() const noexcept;
+
+private:
+	struct UploadBufferData {
+		size_t bufferSize;
+		size_t offset;
+	};
 
 private:
 	std::unique_ptr<DeviceMemory> m_uploadMemory;
 	std::vector<UploadBufferData> m_uploadBufferData;
+	std::vector<std::unique_ptr<UploadBuffer>> m_buffers;
 	std::vector<const void*> m_dataHandles;
 	std::uint8_t* m_cpuHandle;
 	size_t m_currentOffset;

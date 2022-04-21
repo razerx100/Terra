@@ -1,27 +1,19 @@
 #include <TextureStorage.hpp>
 #include <VKThrowMacros.hpp>
+#include <CRSMath.hpp>
+#include <Terra.hpp>
 
-TextureStorage::TextureStorage(const std::vector<std::uint32_t>& queueFamilyIndices) noexcept
-	: m_createInfo{} {
+TextureStorage::TextureStorage(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
+	std::vector<std::uint32_t> queueFamilyIndices
+) : m_currentOffset(0u), m_queueFamilyIndices(std::move(queueFamilyIndices)) {
 
-	m_createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	m_createInfo.imageType = VK_IMAGE_TYPE_2D;
-	m_createInfo.mipLevels = 1u;
-	m_createInfo.arrayLayers = 1u;
-	m_createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	m_createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	m_createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	m_createInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
-	if (queueFamilyIndices.size() > 1u) {
-		m_createInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		m_createInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(
-			queueFamilyIndices.size()
-			);
-		m_createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-	}
-	else
-		m_createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	m_uploadBuffers = std::make_unique<UploadBuffers>(
+		logicalDevice, physicalDevice
+		);
+	m_textureMemory = std::make_unique<DeviceMemory>(
+		logicalDevice, physicalDevice, m_queueFamilyIndices, false, BufferType::Image
+		);
 }
 
 size_t TextureStorage::AddTexture(
@@ -29,34 +21,76 @@ size_t TextureStorage::AddTexture(
 		const void* data,
 		size_t width, size_t height, size_t pixelSizeInBytes
 ) noexcept {
-	if (pixelSizeInBytes == 4u)
-		m_createInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-	else if (pixelSizeInBytes == 16u)
-		m_createInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_textureData.emplace_back(
+		static_cast<std::uint32_t>(width),
+		static_cast<std::uint32_t>(height),
+		m_currentOffset
+	);
 
-	VkExtent3D imageExtent = {};
-	imageExtent.width = static_cast<std::uint32_t>(width);
-	imageExtent.height = static_cast<std::uint32_t>(height);
-	imageExtent.depth = 1u;
+	size_t bufferSize = width * height * pixelSizeInBytes;
 
-	m_createInfo.extent = imageExtent;
+	m_currentOffset += Ceres::Math::Align(
+		bufferSize, m_textureMemory->GetAlignment()
+	);
 
-	VkImage image;
+	m_uploadBuffers->AddBuffer(device, data, bufferSize);
 
-	VkResult result;
-	//VK_THROW_FAILED(result,
-	//	vkCreateImage(device, &m_createInfo, nullptr, &image)
-	//);
+	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
 
-	return 0u;
+	imageBuffer->CreateImage(
+		device,
+		m_textureData.back().width,
+		m_textureData.back().height,
+		static_cast<std::uint32_t>(pixelSizeInBytes),
+		m_queueFamilyIndices
+	);
+
+	m_textures.emplace_back(std::move(imageBuffer));
+
+	return m_textures.size() - 1u;
 }
 
 void TextureStorage::CopyData(std::atomic_size_t& workCount) noexcept {
+	workCount += 1;
 
+	Terra::threadPool->SubmitWork(
+		[&workCount, &uploadBuffers = m_uploadBuffers] {
+			uploadBuffers->CopyData();
+
+			--workCount;
+		}
+	);
 }
 
-void TextureStorage::ReleaseUploadBuffer() noexcept {
+void TextureStorage::ReleaseUploadBuffers() noexcept {
+	m_uploadBuffers.reset();
 }
 
 void TextureStorage::CreateBuffers(VkDevice device) {
+	m_textureMemory->AllocateMemory(m_currentOffset);
+
+	m_uploadBuffers->CreateBuffers(device);
+
+	VkDeviceMemory textureMemory = m_textureMemory->GetMemoryHandle();
+
+	VkResult result;
+	for (size_t index = 0u; index < m_textures.size(); ++index)
+		VK_THROW_FAILED(result,
+			vkBindImageMemory(
+				device, m_textures[index]->GetImage(),
+				textureMemory, m_textureData[index].offset
+			)
+		);
+}
+
+void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept {
+	m_uploadBuffers->FlushMemory(device);
+
+	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
+
+	for (size_t index = 0u; index < m_textureData.size(); ++index)
+		m_textures[index]->CopyToImage(
+			copyCmdBuffer, uploadBuffers[index]->GetBuffer(),
+			m_textureData[index].width, m_textureData[index].height
+		);
 }

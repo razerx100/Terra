@@ -24,10 +24,11 @@ void UploadBuffers::CreateBuffers(VkDevice device) {
 	);
 
 	VkResult result;
-	for (const UploadBufferData& bufferData : m_uploadBufferData)
+	for (size_t index = 0u; index < m_buffers.size(); ++index)
 		VK_THROW_FAILED(result,
 			vkBindBufferMemory(
-				device, bufferData.buffer->GetBuffer(), uploadMemory, bufferData.offset
+				device, m_buffers[index]->GetBuffer(),
+				uploadMemory, m_uploadBufferData[index].offset
 			)
 		);
 }
@@ -56,23 +57,17 @@ void UploadBuffers::CopyData() noexcept {
 }
 
 void UploadBuffers::AddBuffer(VkDevice device, const void* data, size_t bufferSize) {
-	UploadBufferData bufferData = {
-		std::make_unique<UploadBuffer>(device), bufferSize, m_currentOffset
-	};
+	m_uploadBufferData.emplace_back(bufferSize, m_currentOffset);
+	m_buffers.emplace_back(std::make_unique<UploadBuffer>(device));
 
 	m_currentOffset += Ceres::Math::Align(bufferSize, m_uploadMemory->GetAlignment());
 
-	bufferData.buffer->CreateBuffer(device, bufferSize);
+	m_buffers.back()->CreateBuffer(device, bufferSize);
 
-	m_uploadBufferData.emplace_back(std::move(bufferData));
 	m_dataHandles.emplace_back(data);
 }
 
-
-size_t UploadBuffers::GetMemoryAlignment() const noexcept {
-	return m_uploadMemory->GetAlignment();
-}
-
-const std::vector<UploadBufferData>& UploadBuffers::GetUploadBufferData() const noexcept {
-	return m_uploadBufferData;
+const std::vector<std::unique_ptr<UploadBuffer>>& UploadBuffers::GetUploadBuffers(
+) const noexcept {
+	return m_buffers;
 }

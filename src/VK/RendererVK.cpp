@@ -114,6 +114,7 @@ RendererVK::RendererVK(
 	Terra::InitVertexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	Terra::InitIndexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	Terra::InitUniformBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 
 RendererVK::~RendererVK() noexcept {
@@ -123,6 +124,7 @@ RendererVK::~RendererVK() noexcept {
 	Terra::uniformBuffer.reset();
 	Terra::vertexBuffer.reset();
 	Terra::indexBuffer.reset();
+	Terra::textureStorage.reset();
 	Terra::copyQueue.reset();
 	Terra::copyCmdPool.reset();
 	Terra::renderPass.reset();
@@ -230,18 +232,22 @@ void RendererVK::ProcessData() {
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
 	Terra::modelContainer->CreateBuffers(logicalDevice);
+	Terra::textureStorage->CreateBuffers(logicalDevice);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;
 
 	Terra::modelContainer->CopyData(works);
+	Terra::textureStorage->CopyData(works);
 
 	while (works != 0u);
 
+	// Upload to GPU
 	Terra::copyCmdPool->Reset(0u);
 	VkCommandBuffer copyBuffer = Terra::copyCmdPool->GetCommandBuffer(0u);
 
 	Terra::modelContainer->RecordUploadBuffers(logicalDevice, copyBuffer);
+	Terra::textureStorage->RecordUploads(logicalDevice, copyBuffer);
 
 	Terra::copyCmdPool->Close(0u);
 
@@ -249,14 +255,20 @@ void RendererVK::ProcessData() {
 	Terra::copyQueue->WaitForGPU();
 
 	Terra::modelContainer->InitPipelines(logicalDevice);
+
+	// Cleanup Upload Buffers
 	Terra::modelContainer->ReleaseUploadBuffers();
+	Terra::textureStorage->ReleaseUploadBuffers();
 }
 
 size_t RendererVK::RegisterResource(
 	const void* data,
 	size_t width, size_t height, size_t pixelSizeInBytes
 ) {
-	return 0u;
+	return Terra::textureStorage->AddTexture(
+		Terra::device->GetLogicalDevice(),
+		data, width, height, pixelSizeInBytes
+	);
 }
 
 void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {

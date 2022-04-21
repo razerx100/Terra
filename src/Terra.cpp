@@ -25,6 +25,7 @@ namespace Terra {
 	std::unique_ptr<RenderPassManager> renderPass;
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<DescriptorSetManager> descriptorSet;
+	std::unique_ptr<TextureStorage> textureStorage;
 
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
 		threadPool = std::move(threadPoolArg);
@@ -141,5 +142,15 @@ namespace Terra {
 
 	void InitDescriptorSet(VkDevice logicalDevice) {
 		descriptorSet = std::make_unique<DescriptorSetManager>(logicalDevice);
+	}
+
+	void InitTextureStorage(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	) {
+		textureStorage = std::make_unique<TextureStorage>(
+			logicalDevice, physicalDevice,
+			queueFamilyIndices
+			);
 	}
 }

@@ -70,6 +70,10 @@ public:
 		std::uint32_t pixelSizeInBytes,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+	void CopyToImage(
+		VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer,
+		std::uint32_t width, std::uint32_t height
+	) noexcept;
 
 	[[nodiscard]]
 	VkImage GetImage() const noexcept;
@@ -78,6 +82,10 @@ private:
 	static  void ConfigureImageQueueAccess(
 		const std::vector<std::uint32_t>& queueFamilyIndices,
 		VkImageCreateInfo& imageInfo
+	) noexcept;
+
+	void TransitionImageLayout(
+		VkCommandBuffer cmdBuffer, bool shaderStage
 	) noexcept;
 
 private:

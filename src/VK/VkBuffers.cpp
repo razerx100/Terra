@@ -144,3 +144,91 @@ void ImageBuffer::ConfigureImageQueueAccess(
 	else
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 }
+
+void ImageBuffer::CopyToImage(
+	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer,
+	std::uint32_t width, std::uint32_t height
+) noexcept {
+	VkImageSubresourceLayers imageLayer = {};
+	imageLayer.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageLayer.mipLevel = 0u;
+	imageLayer.baseArrayLayer = 0u;
+	imageLayer.layerCount = 1u;
+
+	VkOffset3D imageOffset = {};
+	imageOffset.x = 0u;
+	imageOffset.y = 0u;
+	imageOffset.z = 0u;
+
+	VkExtent3D imageExtent = {};
+	imageExtent.depth = 1u;
+	imageExtent.height = height;
+	imageExtent.width = width;
+
+	VkBufferImageCopy copyRegion = {};
+	copyRegion.bufferOffset = 0u;
+	copyRegion.bufferRowLength = 0u;
+	copyRegion.bufferImageHeight = 0u;
+	copyRegion.imageSubresource = imageLayer;
+	copyRegion.imageOffset = imageOffset;
+	copyRegion.imageExtent = imageExtent;
+
+	TransitionImageLayout(copyCmdBuffer, false);
+
+	vkCmdCopyBufferToImage(
+		copyCmdBuffer, uploadBuffer,
+		m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1u, &copyRegion
+	);
+
+	TransitionImageLayout(copyCmdBuffer, true);
+}
+
+void ImageBuffer::TransitionImageLayout(
+	VkCommandBuffer cmdBuffer, bool shaderStage
+) noexcept {
+	VkImageSubresourceRange subresourceRange = {};
+	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.baseMipLevel = 0u;
+	subresourceRange.levelCount = 1u;
+	subresourceRange.baseArrayLayer = 0u;
+	subresourceRange.layerCount = 1u;
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = m_image;
+	barrier.subresourceRange = subresourceRange;
+
+	VkPipelineStageFlags sourceStage = 0u;
+	VkPipelineStageFlags destinationStage = 0u;
+
+	if (shaderStage) {
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else {
+		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.srcAccessMask = 0u;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+
+	vkCmdPipelineBarrier(
+		cmdBuffer,
+		sourceStage, destinationStage,
+		0u,
+		0u, nullptr,
+		0u, nullptr,
+		1u, &barrier
+	);
+}

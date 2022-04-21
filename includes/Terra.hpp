@@ -15,6 +15,7 @@
 #include <RenderPassManager.hpp>
 #include <ModelContainer.hpp>
 #include <DescriptorSetManager.hpp>
+#include <TextureStorage.hpp>
 #include <memory>
 
 namespace Terra {
@@ -37,6 +38,7 @@ namespace Terra {
 	extern std::unique_ptr<RenderPassManager> renderPass;
 	extern std::unique_ptr<ModelContainer> modelContainer;
 	extern std::unique_ptr<DescriptorSetManager> descriptorSet;
+	extern std::unique_ptr<TextureStorage> textureStorage;
 
 	// Initialization functions
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept;
@@ -77,5 +79,9 @@ namespace Terra {
 	void InitRenderPass(VkDevice logicalDevice, VkFormat swapChainFormat);
 	void InitModelContainer(const std::string& shaderPath);
 	void InitDescriptorSet(VkDevice logicalDevice);
+	void InitTextureStorage(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	);
 }
 #endif

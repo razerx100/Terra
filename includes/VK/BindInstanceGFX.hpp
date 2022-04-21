@@ -35,13 +35,13 @@ private:
 		ModelRaw(
 			VkDevice device,
 			const IModel* const modelRef,
-			std::unique_ptr<GpuBuffer> vertexBuffer,
-			std::unique_ptr<GpuBuffer> indexBuffer,
+			std::shared_ptr<GpuBuffer> vertexBuffer,
+			std::shared_ptr<GpuBuffer> indexBuffer,
 			size_t indexCount
 		) noexcept;
 
-		void AddVertexBuffer(std::unique_ptr<GpuBuffer> buffer) noexcept;
-		void AddIndexBuffer(std::unique_ptr<GpuBuffer> buffer, size_t indexCount) noexcept;
+		void AddVertexBuffer(std::shared_ptr<GpuBuffer> buffer) noexcept;
+		void AddIndexBuffer(std::shared_ptr<GpuBuffer> buffer, size_t indexCount) noexcept;
 		void AddPipelineLayout(std::shared_ptr<PipelineLayout> pipelineLayout) noexcept;
 
 		void Draw(VkCommandBuffer commandBuffer) const noexcept;
@@ -49,8 +49,8 @@ private:
 	private:
 		VkDevice m_deviceRef;
 		const IModel* const m_modelRef;
-		std::unique_ptr<GpuBuffer> m_vertexBuffer;
-		std::unique_ptr<GpuBuffer> m_indexBuffer;
+		std::shared_ptr<GpuBuffer> m_vertexBuffer;
+		std::shared_ptr<GpuBuffer> m_indexBuffer;
 		VkDeviceSize m_vertexOffset;
 		std::uint32_t m_indexCount;
 		std::shared_ptr<PipelineLayout> m_pPipelineLayout;

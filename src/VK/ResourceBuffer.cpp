@@ -4,18 +4,18 @@
 #include <VKThrowMacros.hpp>
 
 ResourceBuffer::ResourceBuffer(
-	VkDevice logDevice, VkPhysicalDevice phyDevice,
-	const std::vector<std::uint32_t>& queueFamilyIndices,
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
+	std::vector<std::uint32_t> queueFamilyIndices,
 	BufferType type
 )
-	: m_currentOffset(0u), m_queueFamilyIndices(queueFamilyIndices), m_type(type) {
+	: m_currentOffset(0u), m_queueFamilyIndices(std::move(queueFamilyIndices)), m_type(type) {
 
 	m_uploadBuffers = std::make_unique<UploadBuffers>(
-		logDevice, phyDevice
+		logicalDevice, physicalDevice
 		);
 
 	m_gpuBufferMemory = std::make_unique<DeviceMemory>(
-		logDevice, phyDevice, queueFamilyIndices, false, type
+		logicalDevice, physicalDevice, m_queueFamilyIndices, false, type
 		);
 }
 
@@ -26,29 +26,29 @@ void ResourceBuffer::CreateBuffer(VkDevice device) {
 
 	VkDeviceMemory gpuOnlyMemory = m_gpuBufferMemory->GetMemoryHandle();
 
-	const std::vector<UploadBufferData>& uploadBufferData = m_uploadBuffers->GetUploadBufferData();
-
 	VkResult result;
 	for (size_t index = 0u; index < m_gpuBuffers.size(); ++index) {
 		VK_THROW_FAILED(result,
 			vkBindBufferMemory(
 				device, m_gpuBuffers[index]->GetBuffer(), gpuOnlyMemory,
-				uploadBufferData[index].offset
+				m_gpuBufferData[index].offset
 			)
 		);
 	}
 }
 
-std::unique_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
+std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 	VkDevice device, const void* source, size_t bufferSize
 ) {
-	std::unique_ptr<GpuBuffer> gpuBuffer = std::make_unique<GpuBuffer>(device);
+	m_gpuBufferData.emplace_back(bufferSize, m_currentOffset);
 
 	m_currentOffset += Ceres::Math::Align(
-		bufferSize, m_uploadBuffers->GetMemoryAlignment()
+		bufferSize, m_gpuBufferMemory->GetAlignment()
 	);
 
 	m_uploadBuffers->AddBuffer(device, source, bufferSize);
+
+	std::shared_ptr<GpuBuffer> gpuBuffer = std::make_shared<GpuBuffer>(device);
 
 	gpuBuffer->CreateBuffer(
 		device, bufferSize,
@@ -67,23 +67,23 @@ void ResourceBuffer::CopyData() noexcept {
 void ResourceBuffer::RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer) {
 	m_uploadBuffers->FlushMemory(device);
 
-	const std::vector<UploadBufferData>& uploadBufferData = m_uploadBuffers->GetUploadBufferData();
+	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
-	for (size_t index = 0u; index < uploadBufferData.size(); ++index) {
+	for (size_t index = 0u; index < m_gpuBufferData.size(); ++index) {
 		VkBufferCopy copyRegion = {};
 		copyRegion.srcOffset = 0u;
 		copyRegion.dstOffset = 0u;
-		copyRegion.size = uploadBufferData[index].bufferSize;
+		copyRegion.size = static_cast<VkDeviceSize>(m_gpuBufferData[index].bufferSize);
 
 		vkCmdCopyBuffer(
-			copyCmdBuffer, uploadBufferData[index].buffer->GetBuffer(),
+			copyCmdBuffer, uploadBuffers[index]->GetBuffer(),
 			m_gpuBuffers[index]->GetBuffer(), 1u, &copyRegion
 		);
 	}
 }
 
 void ResourceBuffer::ReleaseUploadBuffer() noexcept {
-	m_gpuBuffers = std::vector<GpuBuffer*>();
+	m_gpuBuffers = std::vector<std::shared_ptr<GpuBuffer>>();
 
 	m_uploadBuffers.reset();
 }

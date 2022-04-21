@@ -8,7 +8,7 @@
 class DeviceMemory {
 public:
 	DeviceMemory(
-		VkDevice logDevice, VkPhysicalDevice phyDevice,
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 		const std::vector<std::uint32_t>& queueFamilyIndices,
 		bool uploadBuffer, BufferType type = BufferType::Invalid
 	);

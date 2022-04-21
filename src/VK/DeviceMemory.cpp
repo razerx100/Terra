@@ -2,10 +2,10 @@
 #include <VKThrowMacros.hpp>
 
 DeviceMemory::DeviceMemory(
-	VkDevice logDevice, VkPhysicalDevice phyDevice,
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	const std::vector<std::uint32_t>& queueFamilyIndices,
 	bool uploadBuffer, BufferType type
-) : m_deviceRef(logDevice), m_bufferMemory(VK_NULL_HANDLE),
+) : m_deviceRef(logicalDevice), m_bufferMemory(VK_NULL_HANDLE),
 	m_memoryTypeIndex(0u), m_alignment(0u) {
 
 	VkMemoryRequirements memoryReq = {};
@@ -14,29 +14,42 @@ DeviceMemory::DeviceMemory(
 	if (uploadBuffer) {
 		properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
-		UploadBuffer buffer = UploadBuffer(logDevice);
+		UploadBuffer buffer = UploadBuffer(logicalDevice);
 
-		buffer.CreateBuffer(logDevice, 1u);
+		buffer.CreateBuffer(logicalDevice, 1u);
 
-		vkGetBufferMemoryRequirements(logDevice, buffer.GetBuffer(), &memoryReq);
+		vkGetBufferMemoryRequirements(logicalDevice, buffer.GetBuffer(), &memoryReq);
 	}
 	else {
 		properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-		GpuBuffer buffer = GpuBuffer(logDevice);
+		if(type == BufferType::Image) {
+			ImageBuffer image = ImageBuffer(logicalDevice);
 
-		buffer.CreateBuffer(
-			logDevice,
-			1u, queueFamilyIndices, type
-		);
+			image.CreateImage(
+				logicalDevice,
+				1u, 1u, 4u,
+				queueFamilyIndices
+			);
 
-		vkGetBufferMemoryRequirements(logDevice, buffer.GetBuffer(), &memoryReq);
+			vkGetImageMemoryRequirements(logicalDevice, image.GetImage(), &memoryReq);
+		}
+		else {
+			GpuBuffer buffer = GpuBuffer(logicalDevice);
+
+			buffer.CreateBuffer(
+				logicalDevice,
+				1u, queueFamilyIndices, type
+			);
+
+			vkGetBufferMemoryRequirements(logicalDevice, buffer.GetBuffer(), &memoryReq);
+		}
 	}
 
 	m_alignment = memoryReq.alignment;
 
 	VkPhysicalDeviceMemoryProperties memoryProp = {};
-	vkGetPhysicalDeviceMemoryProperties(phyDevice, &memoryProp);
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProp);
 
 	for(size_t index = 0u; index < memoryProp.memoryTypeCount; ++index)
 		if ((memoryReq.memoryTypeBits & (1u << index))

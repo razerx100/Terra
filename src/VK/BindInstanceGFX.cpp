@@ -71,8 +71,8 @@ BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, const IModel* const modelRe
 BindInstanceGFX::ModelRaw::ModelRaw(
 	VkDevice device,
 	const IModel* const modelRef,
-	std::unique_ptr<GpuBuffer> vertexBuffer,
-	std::unique_ptr<GpuBuffer> indexBuffer,
+	std::shared_ptr<GpuBuffer> vertexBuffer,
+	std::shared_ptr<GpuBuffer> indexBuffer,
 	size_t indexCount
 ) noexcept
 	: m_deviceRef(device),m_modelRef(modelRef),
@@ -80,13 +80,13 @@ BindInstanceGFX::ModelRaw::ModelRaw(
 	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indexCount)) {}
 
 void BindInstanceGFX::ModelRaw::AddVertexBuffer(
-	std::unique_ptr<GpuBuffer> buffer
+	std::shared_ptr<GpuBuffer> buffer
 ) noexcept {
 	m_vertexBuffer = std::move(buffer);
 }
 
 void BindInstanceGFX::ModelRaw::AddIndexBuffer(
-	std::unique_ptr<GpuBuffer> buffer, size_t indexCount
+	std::shared_ptr<GpuBuffer> buffer, size_t indexCount
 ) noexcept {
 	m_indexBuffer = std::move(buffer);
 	m_indexCount = static_cast<std::uint32_t>(indexCount);
