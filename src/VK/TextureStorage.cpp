@@ -23,9 +23,6 @@ TextureStorage::TextureStorage(
 
 TextureStorage::~TextureStorage() noexcept {
 	vkDestroySampler(m_deviceRef, m_textureSampler, nullptr);
-
-	for (VkImageView imageView : m_textureViews)
-		vkDestroyImageView(m_deviceRef, imageView, nullptr);
 }
 
 size_t TextureStorage::AddTexture(
@@ -45,7 +42,6 @@ size_t TextureStorage::AddTexture(
 		static_cast<std::uint32_t>(height),
 		m_currentOffset, imageFormat
 	);
-	m_textureViews.emplace_back();
 
 	size_t bufferSize = width * height * pixelSizeInBytes;
 
@@ -93,20 +89,16 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 
 	VkDeviceMemory textureMemory = m_textureMemory->GetMemoryHandle();
 
-	VkResult result;
-	for (size_t index = 0u; index < m_textures.size(); ++index)
-		VK_THROW_FAILED(result,
-			vkBindImageMemory(
-				device, m_textures[index]->GetImage(),
-				textureMemory, m_textureData[index].offset
-			)
-		);
+	for (size_t index = 0u; index < m_textures.size(); ++index) {
+		auto& texture = m_textures[index];
+		ImageData& imageData = m_textureData[index];
 
-	for (size_t index = 0u; index < m_textureViews.size(); ++index)
-		CreateImageView(
-			device, m_textures[index]->GetImage(),
-			&m_textureViews[index], m_textureData[index].format
+		texture->BindImageToMemory(
+			device, textureMemory,
+			static_cast<VkDeviceSize>(imageData.offset)
 		);
+		texture->CreateImageView(device, imageData.format);
+	}
 }
 
 void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept {

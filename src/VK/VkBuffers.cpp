@@ -1,5 +1,6 @@
 #include <VkBuffers.hpp>
 #include <VKThrowMacros.hpp>
+#include <ObjectCreationFunctions.hpp>
 
 // Base Buffer
 BaseBuffer::BaseBuffer(
@@ -89,6 +90,7 @@ ImageBuffer::ImageBuffer(
 ) noexcept : m_deviceRef(device), m_image(VK_NULL_HANDLE) {}
 
 ImageBuffer::~ImageBuffer() noexcept {
+	vkDestroyImageView(m_deviceRef, m_imageView, nullptr);
 	vkDestroyImage(m_deviceRef, m_image, nullptr);
 }
 
@@ -122,6 +124,10 @@ void ImageBuffer::CreateImage(
 	VK_THROW_FAILED(result,
 		vkCreateImage(device, &createInfo, nullptr, &m_image)
 	);
+}
+
+VkImageView ImageBuffer::GetImageView() const noexcept {
+	return m_imageView;
 }
 
 VkImage ImageBuffer::GetImage() const noexcept {
@@ -224,5 +230,27 @@ void ImageBuffer::TransitionImageLayout(
 		0u, nullptr,
 		0u, nullptr,
 		1u, &barrier
+	);
+}
+
+void ImageBuffer::BindImageToMemory(
+	VkDevice device, VkDeviceMemory memory,
+	VkDeviceSize offset
+) {
+	VkResult result;
+	VK_THROW_FAILED(result,
+		vkBindImageMemory(
+			device, m_image,
+			memory, offset
+		)
+	);
+}
+
+void ImageBuffer::CreateImageView(
+	VkDevice device, VkFormat format
+) noexcept {
+	::CreateImageView(
+		device, m_image,
+		&m_imageView, format
 	);
 }

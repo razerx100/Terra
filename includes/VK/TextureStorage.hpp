@@ -40,7 +40,6 @@ private:
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::vector<ImageData> m_textureData;
-	std::vector<VkImageView> m_textureViews;
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;
 };

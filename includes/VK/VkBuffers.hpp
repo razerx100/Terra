@@ -74,10 +74,19 @@ public:
 		VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer,
 		std::uint32_t width, std::uint32_t height
 	) noexcept;
+	void BindImageToMemory(
+		VkDevice device, VkDeviceMemory memory,
+		VkDeviceSize offset
+	);
+	void CreateImageView(
+		VkDevice device, VkFormat format
+	) noexcept;
 	void TransitionImageLayout(
 		VkCommandBuffer cmdBuffer, bool shaderStage
 	) noexcept;
 
+	[[nodiscard]]
+	VkImageView GetImageView() const noexcept;
 	[[nodiscard]]
 	VkImage GetImage() const noexcept;
 
@@ -90,5 +99,6 @@ private:
 private:
 	VkDevice m_deviceRef;
 	VkImage m_image;
+	VkImageView m_imageView;
 };
 #endif
