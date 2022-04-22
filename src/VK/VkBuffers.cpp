@@ -87,7 +87,9 @@ void GpuBuffer::CreateBuffer(
 
 ImageBuffer::ImageBuffer(
 	VkDevice device
-) noexcept : m_deviceRef(device), m_image(VK_NULL_HANDLE) {}
+) noexcept
+	: m_deviceRef(device),
+	m_image(VK_NULL_HANDLE), m_imageView(VK_NULL_HANDLE) {}
 
 ImageBuffer::~ImageBuffer() noexcept {
 	vkDestroyImageView(m_deviceRef, m_imageView, nullptr);
