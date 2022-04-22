@@ -2,11 +2,14 @@
 #include <VKThrowMacros.hpp>
 #include <CRSMath.hpp>
 #include <Terra.hpp>
+#include <ObjectCreationFunctions.hpp>
 
 TextureStorage::TextureStorage(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	std::vector<std::uint32_t> queueFamilyIndices
-) : m_currentOffset(0u), m_queueFamilyIndices(std::move(queueFamilyIndices)) {
+) : m_currentOffset(0u),
+	m_queueFamilyIndices(std::move(queueFamilyIndices)),
+	m_textureSampler(VK_NULL_HANDLE), m_deviceRef(logicalDevice) {
 
 	m_uploadBuffers = std::make_unique<UploadBuffers>(
 		logicalDevice, physicalDevice
@@ -14,6 +17,15 @@ TextureStorage::TextureStorage(
 	m_textureMemory = std::make_unique<DeviceMemory>(
 		logicalDevice, physicalDevice, m_queueFamilyIndices, false, BufferType::Image
 		);
+
+	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
+}
+
+TextureStorage::~TextureStorage() noexcept {
+	vkDestroySampler(m_deviceRef, m_textureSampler, nullptr);
+
+	for (VkImageView imageView : m_textureViews)
+		vkDestroyImageView(m_deviceRef, imageView, nullptr);
 }
 
 size_t TextureStorage::AddTexture(
@@ -21,11 +33,19 @@ size_t TextureStorage::AddTexture(
 		const void* data,
 		size_t width, size_t height, size_t pixelSizeInBytes
 ) noexcept {
+	VkFormat imageFormat = VK_FORMAT_UNDEFINED;
+
+	if (pixelSizeInBytes == 4u)
+		imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	else if (pixelSizeInBytes == 16u)
+		imageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+
 	m_textureData.emplace_back(
 		static_cast<std::uint32_t>(width),
 		static_cast<std::uint32_t>(height),
-		m_currentOffset
+		m_currentOffset, imageFormat
 	);
+	m_textureViews.emplace_back();
 
 	size_t bufferSize = width * height * pixelSizeInBytes;
 
@@ -41,7 +61,7 @@ size_t TextureStorage::AddTexture(
 		device,
 		m_textureData.back().width,
 		m_textureData.back().height,
-		static_cast<std::uint32_t>(pixelSizeInBytes),
+		imageFormat,
 		m_queueFamilyIndices
 	);
 
@@ -80,6 +100,12 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 				device, m_textures[index]->GetImage(),
 				textureMemory, m_textureData[index].offset
 			)
+		);
+
+	for (size_t index = 0u; index < m_textureViews.size(); ++index)
+		CreateImageView(
+			device, m_textures[index]->GetImage(),
+			&m_textureViews[index], m_textureData[index].format
 		);
 }
 

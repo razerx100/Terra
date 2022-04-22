@@ -28,7 +28,7 @@ DeviceMemory::DeviceMemory(
 
 			image.CreateImage(
 				logicalDevice,
-				1u, 1u, 4u,
+				1u, 1u, VK_FORMAT_R8G8B8A8_SRGB,
 				queueFamilyIndices
 			);
 

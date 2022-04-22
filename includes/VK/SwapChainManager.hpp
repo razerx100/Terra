@@ -41,7 +41,7 @@ public:
 		VkSemaphore renderSemaphore
 	);
 	bool ResizeSwapchain(
-		std::uint32_t width, std::uint32_t height,
+		VkDevice device, std::uint32_t width, std::uint32_t height,
 		VkRenderPass renderPass, bool& formatChanged
 	);
 	void CreateFramebuffers(
@@ -65,7 +65,7 @@ private:
 	) const noexcept;
 
 	void QueryImages();
-	void CreateImageViews();
+	void CreateImageViews(VkDevice device);
 	void CreateSwapchain(
 		const SwapChainManagerCreateInfo& swapCreateInfo,
 		bool& formatChanged

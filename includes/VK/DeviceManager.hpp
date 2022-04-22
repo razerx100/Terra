@@ -54,6 +54,8 @@ private:
 	};
 
 private:
+	using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
+
 	bool CheckDeviceType(
 		VkPhysicalDevice device,
 		VkPhysicalDeviceType deviceType
@@ -66,11 +68,15 @@ private:
 	bool CheckDeviceExtensionSupport(
 		VkPhysicalDevice device
 	) const noexcept;
+	bool IsDeviceSuitable(
+		VkPhysicalDevice device, VkSurfaceKHR surface,
+		FamilyInfo& familyInfos
+	) const noexcept;
 
 	void GetQueueSupportInfo(
 		VkPhysicalDevice device,
 		VkSurfaceKHR surface,
-		std::vector<std::pair<size_t, QueueType>>& familyInfos
+		FamilyInfo& familyInfos
 	) const noexcept;
 	void GetSwapchainCapabilities(
 		VkPhysicalDevice device,
@@ -79,7 +85,7 @@ private:
 	) const noexcept;
 
 	void SetQueueFamilyInfo(
-		std::vector<std::pair<size_t, QueueType>>& familyInfos
+		FamilyInfo& familyInfos
 	) noexcept;
 
 private:

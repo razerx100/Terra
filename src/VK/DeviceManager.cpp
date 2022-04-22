@@ -23,15 +23,9 @@ void DeviceManager::CreatePhysicalDevice(
 
 	for (VkPhysicalDevice device : devices)
 		if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
-			SwapChainInfo swapDetails = {};
-			GetSwapchainCapabilities(device, surface, swapDetails);
-			std::vector<std::pair<size_t, QueueType>> familyInfos;
-			GetQueueSupportInfo(device, surface, familyInfos);
+			FamilyInfo familyInfos;
 
-			if (CheckDeviceExtensionSupport(device)
-				&& swapDetails.IsCapable()
-				&& !familyInfos.empty()) {
-
+			if (IsDeviceSuitable(device, surface, familyInfos)) {
 				SetQueueFamilyInfo(familyInfos);
 				m_physicalDevice = device;
 				found = true;
@@ -43,15 +37,9 @@ void DeviceManager::CreatePhysicalDevice(
 	if (!found)
 		for (VkPhysicalDevice device : devices)
 			if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)) {
-				SwapChainInfo swapDetails = {};
-				GetSwapchainCapabilities(device, surface, swapDetails);
-				std::vector<std::pair<size_t, QueueType>> familyInfos;
-				GetQueueSupportInfo(device, surface, familyInfos);
+				FamilyInfo familyInfos;
 
-				if (CheckDeviceExtensionSupport(device)
-					&& swapDetails.IsCapable()
-					&& !familyInfos.empty()) {
-
+				if (IsDeviceSuitable(device, surface, familyInfos)) {
 					SetQueueFamilyInfo(familyInfos);
 					m_physicalDevice = device;
 					found = true;
@@ -83,6 +71,7 @@ void DeviceManager::CreateLogicalDevice() {
 	}
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -217,7 +206,7 @@ SwapChainInfo DeviceManager::GetSwapChainInfo() const noexcept {
 }
 
 void DeviceManager::SetQueueFamilyInfo(
-	std::vector<std::pair<size_t, QueueType>>& familyInfos
+	FamilyInfo& familyInfos
 ) noexcept {
 	std::sort(familyInfos.begin(), familyInfos.end(),
 		[](
@@ -228,21 +217,21 @@ void DeviceManager::SetQueueFamilyInfo(
 		}
 	);
 
-	size_t lastFamily = familyInfos[0u].first;
+	auto [lastFamily, queueType] = familyInfos[0];
+	std::uint32_t queueFlag = queueType;
 	size_t queueCount = 1u;
-	std::uint32_t queueFlag = familyInfos[0u].second;
 
 	for (size_t index = 1u; index < familyInfos.size(); ++index) {
-		const auto& familyInfo = familyInfos[index];
+		const auto [familyIndex, familyType] = familyInfos[index];
 
-		if (lastFamily == familyInfo.first) {
+		if (lastFamily == familyIndex) {
 			++queueCount;
-			queueFlag |= familyInfo.second;
+			queueFlag |= familyType;
 		}
 		else {
 			m_usableQueueFamilies.emplace_back(lastFamily, queueFlag, queueCount, 0u);
-			lastFamily = familyInfo.first;
-			queueFlag = familyInfo.second;
+			lastFamily = familyIndex;
+			queueFlag = familyType;
 			queueCount = 1u;
 		}
 	}
@@ -253,7 +242,7 @@ void DeviceManager::SetQueueFamilyInfo(
 void DeviceManager::GetQueueSupportInfo(
 	VkPhysicalDevice device,
 	VkSurfaceKHR surface,
-	std::vector<std::pair<size_t, QueueType>>& familyInfos
+	FamilyInfo& familyInfos
 ) const noexcept {
 	std::uint32_t queueFamilyCount = 0u;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -266,7 +255,7 @@ void DeviceManager::GetQueueSupportInfo(
 	bool present = false;
 	bool graphics = false;
 
-	std::vector<std::pair<size_t, QueueType>> tempData;
+	FamilyInfo tempData;
 
 	// Transfer only
 	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
@@ -359,4 +348,24 @@ void DeviceManager::GetQueueSupportInfo(
 
 	if (graphics && present && compute && transfer)
 		std::copy(tempData.begin(), tempData.end(), std::back_inserter(familyInfos));
+}
+
+bool DeviceManager::IsDeviceSuitable(
+	VkPhysicalDevice device, VkSurfaceKHR surface,
+	FamilyInfo& familyInfos
+) const noexcept {
+	SwapChainInfo swapDetails = {};
+	GetSwapchainCapabilities(device, surface, swapDetails);
+	GetQueueSupportInfo(device, surface, familyInfos);
+
+	VkPhysicalDeviceFeatures features = {};
+	vkGetPhysicalDeviceFeatures(device, &features);
+
+	if (CheckDeviceExtensionSupport(device)
+		&& swapDetails.IsCapable()
+		&& !familyInfos.empty()
+		&& features.samplerAnisotropy)
+		return true;
+	else
+		return false;
 }

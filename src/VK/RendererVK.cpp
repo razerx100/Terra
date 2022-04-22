@@ -190,7 +190,9 @@ void RendererVK::Render() {
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
 	if (Terra::swapChain->ResizeSwapchain(
-		width, height, Terra::renderPass->GetRenderPass(), hasSwapFormatChanged
+		Terra::device->GetLogicalDevice(),
+		width, height, Terra::renderPass->GetRenderPass(),
+		hasSwapFormatChanged
 	)) {
 		Terra::viewportAndScissor->Resize(width, height);
 

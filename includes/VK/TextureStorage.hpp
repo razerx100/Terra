@@ -12,6 +12,7 @@ public:
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 		std::vector<std::uint32_t> queueFamilyIndices
 	);
+	~TextureStorage() noexcept;
 
 	size_t AddTexture(
 		VkDevice device,
@@ -29,6 +30,7 @@ private:
 		std::uint32_t width;
 		std::uint32_t height;
 		size_t offset;
+		VkFormat format;
 	};
 
 private:
@@ -38,5 +40,8 @@ private:
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::vector<ImageData> m_textureData;
+	std::vector<VkImageView> m_textureViews;
+	VkSampler m_textureSampler;
+	VkDevice m_deviceRef;
 };
 #endif

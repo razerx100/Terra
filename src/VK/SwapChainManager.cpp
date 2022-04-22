@@ -1,6 +1,7 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <Terra.hpp>
+#include <ObjectCreationFunctions.hpp>
 
 SwapChainManager::SwapChainManager(
 	const SwapChainManagerCreateInfo& swapCreateInfo,
@@ -13,7 +14,7 @@ SwapChainManager::SwapChainManager(
 	bool useless;
 	CreateSwapchain(swapCreateInfo, useless);
 	QueryImages();
-	CreateImageViews();
+	CreateImageViews(swapCreateInfo.device);
 
 	m_imageSemaphore = std::make_unique<SemaphoreWrapper>(
 			swapCreateInfo.device, swapCreateInfo.bufferCount
@@ -79,30 +80,14 @@ VkExtent2D SwapChainManager::ChooseSwapExtent(
 	}
 }
 
-void SwapChainManager::CreateImageViews() {
+void SwapChainManager::CreateImageViews(VkDevice device) {
 	m_swapchainImageViews.resize(m_swapchainImages.size());
 
-	for (size_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
-		VkImageViewCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_swapchainImages[index];
-		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = m_swapchainFormat;
-		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel = 0u;
-		createInfo.subresourceRange.levelCount = 1u;
-		createInfo.subresourceRange.baseArrayLayer = 0u;
-		createInfo.subresourceRange.layerCount = 1u;
-
-		VkResult result;
-		VK_THROW_FAILED(result,
-			vkCreateImageView(m_deviceRef, &createInfo, nullptr, &m_swapchainImageViews[index])
+	for (size_t index = 0u; index < m_swapchainImageViews.size(); ++index)
+		CreateImageView(
+			device, m_swapchainImages[index],
+			&m_swapchainImageViews[index], m_swapchainFormat
 		);
-	}
 }
 
 size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
@@ -146,7 +131,7 @@ VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept
 }
 
 bool SwapChainManager::ResizeSwapchain(
-	std::uint32_t width, std::uint32_t height,
+	VkDevice device, std::uint32_t width, std::uint32_t height,
 	VkRenderPass renderPass, bool& formatChanged
 ) {
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
@@ -165,8 +150,8 @@ bool SwapChainManager::ResizeSwapchain(
 
 		CreateSwapchain(createInfo, formatChanged);
 		QueryImages();
-		CreateImageViews();
-		CreateFramebuffers(m_deviceRef, renderPass, width, height);
+		CreateImageViews(device);
+		CreateFramebuffers(device, renderPass, width, height);
 
 		return true;
 	}
