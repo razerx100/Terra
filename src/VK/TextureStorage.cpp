@@ -112,6 +112,8 @@ void TextureStorage::SetDescriptorLayouts(VkDevice device) noexcept {
 	descInfo.descriptorCount = static_cast<std::uint32_t>(m_textures.size());
 	descInfo.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
+	inputInfo.descriptorInfo = descInfo;
+
 	for (auto& texture : m_textures) {
 		inputInfo.imageView = texture->GetImageView();
 

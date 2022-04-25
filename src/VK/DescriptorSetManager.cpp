@@ -56,7 +56,7 @@ void DescriptorSetManager::BindBuffer(
 	setWrite.descriptorCount = bufferInfo.descriptorInfo.descriptorCount;
 	setWrite.dstSet = m_descriptorSet;
 	setWrite.descriptorType = bufferInfo.descriptorInfo.type;
-	setWrite.dstArrayElement = 1u;
+	setWrite.dstArrayElement = 0u;
 	setWrite.pBufferInfo = &descBufferInfo;
 
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
@@ -76,7 +76,7 @@ void DescriptorSetManager::BindImageView(
 	setWrite.descriptorCount = imageInfo.descriptorInfo.descriptorCount;
 	setWrite.dstSet = m_descriptorSet;
 	setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	setWrite.dstArrayElement = 1u;
+	setWrite.dstArrayElement = 0u;
 	setWrite.pImageInfo = &descImageInfo;
 
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);

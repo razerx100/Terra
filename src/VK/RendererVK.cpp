@@ -256,17 +256,6 @@ void RendererVK::ProcessData() {
 	Terra::copyQueue->SubmitCommandBuffer(copyBuffer);
 	Terra::copyQueue->WaitForGPU();
 
-	// Transition image layouts
-	Terra::graphicsCmdPool->Reset(0u);
-	VkCommandBuffer graphicsBuffer = Terra::graphicsCmdPool->GetCommandBuffer(0u);
-
-	Terra::textureStorage->TransitionImages(graphicsBuffer);
-
-	Terra::graphicsCmdPool->Close(0u);
-
-	Terra::graphicsQueue->SubmitCommandBuffer(graphicsBuffer);
-	Terra::graphicsQueue->WaitForGPU();
-
 	Terra::textureStorage->SetDescriptorLayouts(logicalDevice);
 
 	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
