@@ -34,6 +34,21 @@ void GraphicsQueueManager::SubmitCommandBuffer(
 	);
 }
 
+void GraphicsQueueManager::SubmitCommandBuffer(
+	VkCommandBuffer commandBuffer,
+	size_t fenceIndex
+) {
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1u;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	VkResult result;
+	VK_THROW_FAILED(result,
+		vkQueueSubmit(m_graphicsQueue, 1u, &submitInfo, m_fences->GetFence(fenceIndex))
+	);
+}
+
 VkSemaphore GraphicsQueueManager::GetRenderSemaphore() const noexcept {
 	return m_renderSemaphores->GetSemaphore(m_currentFrameIndex);
 }

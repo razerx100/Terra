@@ -1,36 +1,31 @@
 #include <DescriptorPool.hpp>
 #include <VKThrowMacros.hpp>
+#include <vector>
 
 DescriptorPool::DescriptorPool(VkDevice device) noexcept
-	: m_deviceRef(device), m_descriptorPool(VK_NULL_HANDLE) {
-	m_typeMap = {
-		-1, -1, -1
-	};
-}
+	: m_deviceRef(device), m_descriptorPool(VK_NULL_HANDLE) {}
 
 DescriptorPool::~DescriptorPool() noexcept {
 	vkDestroyDescriptorPool(m_deviceRef, m_descriptorPool, nullptr);
 }
 
 void DescriptorPool::AddDescriptorTypeLimit(
-	DescriptorType type, std::uint32_t descriptorCount
+	VkDescriptorType type, std::uint32_t descriptorCount
 ) noexcept {
-	const auto typeIndex = static_cast<size_t>(type);
-	if (m_typeMap[typeIndex] == -1) {
-		m_typeMap[typeIndex] = static_cast<std::int32_t>(m_descriptorTypeCounts.size());
-		m_descriptorTypeCounts.emplace_back(static_cast<VkDescriptorType>(typeIndex + 6u), 1u);
-	}
-	else
-		m_descriptorTypeCounts[m_typeMap[typeIndex]].descriptorCount += descriptorCount;
+	m_typeMap[type] += descriptorCount;
 }
 
 void DescriptorPool::CreatePool(VkDevice device, std::uint32_t setLayoutCount) {
+	std::vector<VkDescriptorPoolSize> descriptorTypeCounts;
+	for (auto [type, descCount] : m_typeMap)
+		descriptorTypeCounts.emplace_back(type, descCount);
+
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.flags = 0u;
 	poolInfo.maxSets = setLayoutCount;
-	poolInfo.poolSizeCount = static_cast<std::uint32_t>(m_descriptorTypeCounts.size());
-	poolInfo.pPoolSizes = m_descriptorTypeCounts.data();
+	poolInfo.poolSizeCount = static_cast<std::uint32_t>(descriptorTypeCounts.size());
+	poolInfo.pPoolSizes = descriptorTypeCounts.data();
 
 	VkResult result;
 	VK_THROW_FAILED(result,

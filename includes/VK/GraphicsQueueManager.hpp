@@ -13,6 +13,10 @@ public:
 		VkCommandBuffer commandBuffer,
 		VkSemaphore imageSemaphore
 	);
+	void SubmitCommandBuffer(
+		VkCommandBuffer commandBuffer,
+		size_t fenceIndex = 0u
+	);
 
 	[[nodiscard]]
 	VkSemaphore GetRenderSemaphore() const noexcept;

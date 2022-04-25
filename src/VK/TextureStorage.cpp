@@ -101,6 +101,24 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 	}
 }
 
+void TextureStorage::SetDescriptorLayouts(VkDevice device) noexcept {
+	BindImageViewInputInfo inputInfo = {};
+	inputInfo.device = device;
+	inputInfo.sampler = m_textureSampler;
+	inputInfo.shaderBits = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	DescriptorInfo descInfo = {};
+	descInfo.bindingSlot = 0u;
+	descInfo.descriptorCount = static_cast<std::uint32_t>(m_textures.size());
+	descInfo.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	for (auto& texture : m_textures) {
+		inputInfo.imageView = texture->GetImageView();
+
+		Terra::descriptorSet->AddSetLayout(inputInfo);
+	}
+}
+
 void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept {
 	m_uploadBuffers->FlushMemory(device);
 
@@ -111,4 +129,9 @@ void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffe
 			copyCmdBuffer, uploadBuffers[index]->GetBuffer(),
 			m_textureData[index].width, m_textureData[index].height
 		);
+}
+
+void TextureStorage::TransitionImages(VkCommandBuffer graphicsBuffer) noexcept {
+	for (auto& texture : m_textures)
+		texture->TransitionImageLayout(graphicsBuffer, true);
 }
