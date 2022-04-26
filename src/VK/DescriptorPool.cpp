@@ -22,7 +22,7 @@ void DescriptorPool::CreatePool(VkDevice device, std::uint32_t setLayoutCount) {
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.flags = 0u;
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 	poolInfo.maxSets = setLayoutCount;
 	poolInfo.poolSizeCount = static_cast<std::uint32_t>(descriptorTypeCounts.size());
 	poolInfo.pPoolSizes = descriptorTypeCounts.data();

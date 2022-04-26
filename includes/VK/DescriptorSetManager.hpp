@@ -13,22 +13,6 @@ struct DescriptorInfo {
 	VkDescriptorType type;
 };
 
-struct BindBufferInputInfo {
-	VkDevice device;
-	VkBuffer buffer;
-	std::uint32_t bufferSize;
-	VkShaderStageFlags shaderBits;
-	DescriptorInfo descriptorInfo;
-};
-
-struct BindImageViewInputInfo {
-	VkDevice device;
-	VkImageView imageView;
-	VkSampler sampler;
-	VkShaderStageFlags shaderBits;
-	DescriptorInfo descriptorInfo;
-};
-
 class DescriptorSetManager {
 public:
 	DescriptorSetManager(VkDevice device);
@@ -40,26 +24,28 @@ public:
 	VkDescriptorSet GetDescriptorSet() const noexcept;
 
 	void AddSetLayout(
-		const BindBufferInputInfo& inputInfo
+		VkDevice device, DescriptorInfo descInfo,
+		VkShaderStageFlags shaderFlag,
+		std::vector<VkDescriptorBufferInfo>&& bufferInfo
 	);
 
 	void AddSetLayout(
-		const BindImageViewInputInfo& inputInfo
+		VkDevice device, DescriptorInfo descInfo,
+		VkShaderStageFlags shaderFlag,
+		std::vector<VkDescriptorImageInfo>&& imageInfo
 	);
 
 	void CreateDescriptorSets(VkDevice device);
 
 private:
 	struct BufferInfo {
-		VkBuffer buffer;
-		VkDeviceSize size;
 		DescriptorInfo descriptorInfo;
+		std::vector<VkDescriptorBufferInfo> buffers;
 	};
 
 	struct ImageInfo {
-		VkImageView imageView;
-		VkSampler sampler;
 		DescriptorInfo descriptorInfo;
+		std::vector<VkDescriptorImageInfo> images;
 	};
 
 	void BindBuffer(

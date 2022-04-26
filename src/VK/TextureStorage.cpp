@@ -102,23 +102,27 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 }
 
 void TextureStorage::SetDescriptorLayouts(VkDevice device) noexcept {
-	BindImageViewInputInfo inputInfo = {};
-	inputInfo.device = device;
-	inputInfo.sampler = m_textureSampler;
-	inputInfo.shaderBits = VK_SHADER_STAGE_FRAGMENT_BIT;
-
 	DescriptorInfo descInfo = {};
 	descInfo.bindingSlot = 0u;
 	descInfo.descriptorCount = static_cast<std::uint32_t>(m_textures.size());
 	descInfo.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-	inputInfo.descriptorInfo = descInfo;
+	std::vector<VkDescriptorImageInfo> imageInfos;
+
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.sampler = m_textureSampler;
 
 	for (auto& texture : m_textures) {
-		inputInfo.imageView = texture->GetImageView();
+		imageInfo.imageView = texture->GetImageView();
 
-		Terra::descriptorSet->AddSetLayout(inputInfo);
+		imageInfos.emplace_back(imageInfo);
 	}
+
+	Terra::descriptorSet->AddSetLayout(
+		device, descInfo, VK_SHADER_STAGE_FRAGMENT_BIT,
+		std::move(imageInfos)
+	);
 }
 
 void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept {

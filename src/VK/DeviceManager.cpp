@@ -73,13 +73,23 @@ void DeviceManager::CreateLogicalDevice() {
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
 
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
+	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+	indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures2.features = deviceFeatures;
+	deviceFeatures2.pNext = &indexingFeatures;
+
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
 	createInfo.queueCreateInfoCount = static_cast<std::uint32_t>(queueCreateInfos.size());
-	createInfo.pEnabledFeatures = &deviceFeatures;
 	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(m_extensionNames.size());
 	createInfo.ppEnabledExtensionNames = m_extensionNames.data();
+	createInfo.pNext = &deviceFeatures2;
 
 	VkResult result;
 	VK_THROW_FAILED(result,
@@ -358,13 +368,21 @@ bool DeviceManager::IsDeviceSuitable(
 	GetSwapchainCapabilities(device, surface, swapDetails);
 	GetQueueSupportInfo(device, surface, familyInfos);
 
-	VkPhysicalDeviceFeatures features = {};
-	vkGetPhysicalDeviceFeatures(device, &features);
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
+	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+	VkPhysicalDeviceFeatures2 features2 = {};
+	features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	features2.pNext = &indexingFeatures;
+
+	vkGetPhysicalDeviceFeatures2(device, &features2);
 
 	if (CheckDeviceExtensionSupport(device)
 		&& swapDetails.IsCapable()
 		&& !familyInfos.empty()
-		&& features.samplerAnisotropy)
+		&& features2.features.samplerAnisotropy
+		&& indexingFeatures.descriptorBindingPartiallyBound
+		&& indexingFeatures.runtimeDescriptorArray)
 		return true;
 	else
 		return false;
