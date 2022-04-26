@@ -133,6 +133,6 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 		0u, 24u, &texInfo
 	);
 
-	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, m_modelRef->GetTextureIndex());
+	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);
 }
 
