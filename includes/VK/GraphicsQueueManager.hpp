@@ -14,11 +14,17 @@ public:
 		VkSemaphore imageSemaphore
 	);
 
+	void SubmitCommandBuffer(
+		VkCommandBuffer commandBuffer,
+		size_t fenceIndex = 0u
+	);
+
 	[[nodiscard]]
 	VkSemaphore GetRenderSemaphore() const noexcept;
 
 	void SetNextFrameIndex(size_t index) noexcept;
-	void WaitForGPU();
+	void ResetFence() const noexcept;
+	void WaitForGPU() const noexcept;
 
 private:
 	VkQueue m_graphicsQueue;

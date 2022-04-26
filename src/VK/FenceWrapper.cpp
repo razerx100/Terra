@@ -26,7 +26,10 @@ VkFence FenceWrapper::GetFence(size_t index) const noexcept {
 	return m_fences[index];
 }
 
-void FenceWrapper::WaitAndResetFence(size_t index) const noexcept {
+void FenceWrapper::WaitForFence(size_t index) const noexcept {
 	vkWaitForFences(m_deviceRef, 1u, &m_fences[index], VK_TRUE, UINT64_MAX);
+}
+
+void FenceWrapper::ResetFence(size_t index) const noexcept {
 	vkResetFences(m_deviceRef, 1u, &m_fences[index]);
 }

@@ -11,7 +11,9 @@ public:
 	[[nodiscard]]
 	VkFence GetFence(size_t index) const noexcept;
 
-	void WaitAndResetFence(size_t index) const noexcept;
+	void WaitForFence(size_t index) const noexcept;
+
+	void ResetFence(size_t index) const noexcept;
 
 private:
 	VkDevice m_deviceRef;

@@ -19,6 +19,10 @@ void CopyQueueManager::SubmitCommandBuffer(VkCommandBuffer commandBuffer) {
 	);
 }
 
-void CopyQueueManager::WaitForGPU() {
-	m_fence->WaitAndResetFence(0u);
+void CopyQueueManager::WaitForGPU() const noexcept {
+	m_fence->WaitForFence(0u);
+}
+
+void CopyQueueManager::ResetFence() const noexcept {
+	m_fence->ResetFence(0u);
 }

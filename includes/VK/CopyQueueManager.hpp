@@ -9,7 +9,8 @@ public:
 	CopyQueueManager(VkDevice device, VkQueue queue);
 
 	void SubmitCommandBuffer(VkCommandBuffer commandBuffer);
-	void WaitForGPU();
+	void WaitForGPU() const noexcept;
+	void ResetFence() const noexcept;
 
 private:
 	VkQueue m_copyQueue;

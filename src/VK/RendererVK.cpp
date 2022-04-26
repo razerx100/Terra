@@ -154,6 +154,8 @@ void RendererVK::SubmitModel(const IModel* const modelRef) {
 
 void RendererVK::Render() {
 	Terra::graphicsQueue->WaitForGPU();
+	Terra::graphicsQueue->ResetFence();
+
 	const size_t imageIndex = Terra::swapChain->GetAvailableImageIndex();
 	Terra::graphicsCmdPool->Reset(imageIndex);
 
@@ -255,6 +257,21 @@ void RendererVK::ProcessData() {
 
 	Terra::copyQueue->SubmitCommandBuffer(copyBuffer);
 	Terra::copyQueue->WaitForGPU();
+	Terra::copyQueue->ResetFence();
+
+	// Transition Images to Fragment Optimal
+	Terra::graphicsCmdPool->Reset(0u);
+
+	VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdPool->GetCommandBuffer(0u);
+
+	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
+
+	Terra::graphicsCmdPool->Close(0u);
+
+	Terra::graphicsQueue->ResetFence();
+	Terra::graphicsQueue->SubmitCommandBuffer(graphicsCmdBuffer);
+	Terra::graphicsQueue->WaitForGPU();
+	// Leaving the fence in signaled state
 
 	Terra::textureStorage->SetDescriptorLayouts(logicalDevice);
 
