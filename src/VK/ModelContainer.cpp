@@ -41,8 +41,11 @@ void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBu
 	Terra::indexBuffer->RecordUpload(device, copyBuffer);
 }
 
-void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) noexcept {
-	m_bindInstance->BindCommands(commandBuffer);
+void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
+	m_bindInstance->BindCommands(
+		commandBuffer,
+		Terra::descriptorSet->GetDescriptorSet()
+	);
 }
 
 void ModelContainer::ReleaseUploadBuffers() {
@@ -55,10 +58,14 @@ void ModelContainer::CreateBuffers(VkDevice device) {
 	Terra::indexBuffer->CreateBuffer(device);
 }
 
-void ModelContainer::InitPipelines(VkDevice device) {
+void ModelContainer::InitPipelines(
+	VkDevice device,
+	const std::vector<VkDescriptorSetLayout>& setLayout
+) {
 	auto [pso, pipelineLayout] = CreatePipeline(
 		device,
-		m_bindInstance->GetVertexLayout()
+		m_bindInstance->GetVertexLayout(),
+		setLayout
 	);
 
 	m_bindInstance->AddPipelineLayout(pipelineLayout);
@@ -67,7 +74,8 @@ void ModelContainer::InitPipelines(VkDevice device) {
 }
 
 ModelContainer::Pipeline ModelContainer::CreatePipeline(
-	VkDevice device, const VertexLayout& layout
+	VkDevice device, const VertexLayout& layout,
+	const std::vector<VkDescriptorSetLayout>& setLayout
 ) const {
 	std::shared_ptr<PipelineLayout> pipelineLayout =
 		std::make_shared<PipelineLayout>(device);
@@ -82,7 +90,7 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 		4u
 	);
 
-	pipelineLayout->CreateLayout();
+	pipelineLayout->CreateLayout(setLayout);
 
 	std::unique_ptr<Shader> vs = std::make_unique<Shader>(device);
 	vs->CreateShader(device, m_shaderPath + "VertexShader.spv");

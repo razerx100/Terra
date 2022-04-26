@@ -12,7 +12,9 @@ public:
 		VkShaderStageFlags shaderFlag, std::uint32_t rangeSize
 	) noexcept;
 
-	void CreateLayout();
+	void CreateLayout(
+		const std::vector<VkDescriptorSetLayout>& setLayout
+	);
 
 	[[nodiscard]]
 	VkPipelineLayout GetLayout() const noexcept;

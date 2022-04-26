@@ -259,7 +259,11 @@ void RendererVK::ProcessData() {
 	Terra::textureStorage->SetDescriptorLayouts(logicalDevice);
 
 	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
-	Terra::modelContainer->InitPipelines(logicalDevice);
+
+	Terra::modelContainer->InitPipelines(
+		logicalDevice,
+		Terra::descriptorSet->GetDescriptorSetLayouts()
+	);
 
 	// Cleanup Upload Buffers
 	Terra::modelContainer->ReleaseUploadBuffers();

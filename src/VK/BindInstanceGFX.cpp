@@ -49,13 +49,24 @@ void BindInstanceGFX::AddModel(
 	}
 }
 
-void BindInstanceGFX::BindCommands(VkCommandBuffer commandBuffer) noexcept {
+void BindInstanceGFX::BindCommands(
+	VkCommandBuffer graphicsCmdBuffer,
+	VkDescriptorSet descriptorSet
+) const noexcept {
 	vkCmdBindPipeline(
-		commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pso->GetPipelineObject()
+		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pso->GetPipelineObject()
+	);
+
+	VkDescriptorSet descSets[] = { descriptorSet };
+
+	vkCmdBindDescriptorSets(
+		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		m_pipelineLayout->GetLayout(), 0u, 1u,
+		descSets, 0u, nullptr
 	);
 
 	for (const auto& model : m_modelsRaw)
-		model->Draw(commandBuffer);
+		model->Draw(graphicsCmdBuffer);
 }
 
 VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {

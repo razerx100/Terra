@@ -26,7 +26,10 @@ public:
 		VkDevice device, const IModel* const modelRef
 	) noexcept;
 
-	void BindCommands(VkCommandBuffer commandBuffer) noexcept;
+	void BindCommands(
+		VkCommandBuffer graphicsCmdBuffer,
+		VkDescriptorSet descriptorSet
+	) const noexcept;
 
 private:
 	class ModelRaw {
