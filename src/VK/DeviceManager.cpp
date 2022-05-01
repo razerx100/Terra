@@ -1,15 +1,13 @@
 #include <DeviceManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <algorithm>
-#include <Terra.hpp>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-void DeviceManager::CreatePhysicalDevice(
-	VkInstance instance,
-	VkSurfaceKHR surface
+void DeviceManager::FindPhysicalDevice(
+	VkInstance instance, VkSurfaceKHR surface
 ) {
 	std::uint32_t deviceCount = 0u;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -19,37 +17,34 @@ void DeviceManager::CreatePhysicalDevice(
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-	bool found = false;
 
-	for (VkPhysicalDevice device : devices)
-		if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
-			FamilyInfo familyInfos;
+	VkPhysicalDevice suitableDevice = QueryPhysicalDevices(
+		devices, surface, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	);
 
-			if (IsDeviceSuitable(device, surface, familyInfos)) {
-				SetQueueFamilyInfo(familyInfos);
-				m_physicalDevice = device;
-				found = true;
+	if (suitableDevice == VK_NULL_HANDLE)
+		suitableDevice = QueryPhysicalDevices(
+			devices, surface, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+		);
 
-				break;
-			}
-		}
-
-	if (!found)
-		for (VkPhysicalDevice device : devices)
-			if (CheckDeviceType(device, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)) {
-				FamilyInfo familyInfos;
-
-				if (IsDeviceSuitable(device, surface, familyInfos)) {
-					SetQueueFamilyInfo(familyInfos);
-					m_physicalDevice = device;
-					found = true;
-
-					break;
-				}
-			}
-
-	if (!found)
+	if (suitableDevice == VK_NULL_HANDLE)
 		VK_GENERIC_THROW("No GPU with all Queue Family support found.");
+	else {
+		SetQueueFamilyInfo(suitableDevice, surface);
+		m_physicalDevice = suitableDevice;
+	}
+}
+
+VkPhysicalDevice DeviceManager::QueryPhysicalDevices(
+	const std::vector<VkPhysicalDevice>& devices,
+	VkSurfaceKHR surface, VkPhysicalDeviceType deviceType
+) const noexcept {
+	for (VkPhysicalDevice device : devices)
+		if (CheckDeviceType(device, deviceType))
+			if (IsDeviceSuitable(device, surface))
+				return device;
+
+	return VK_NULL_HANDLE;
 }
 
 void DeviceManager::CreateLogicalDevice() {
@@ -98,8 +93,7 @@ void DeviceManager::CreateLogicalDevice() {
 }
 
 bool DeviceManager::CheckDeviceType(
-	VkPhysicalDevice device,
-	VkPhysicalDeviceType deviceType
+	VkPhysicalDevice device, VkPhysicalDeviceType deviceType
 ) const noexcept {
 	VkPhysicalDeviceProperties deviceProperty;
 	vkGetPhysicalDeviceProperties(device, &deviceProperty);
@@ -137,19 +131,6 @@ QueueData DeviceManager::GetQueue(QueueType type) noexcept {
 	return { queue, familyIndex };
 }
 
-bool DeviceManager::CheckPresentSupport(
-	VkPhysicalDevice device,
-	VkSurfaceKHR surface,
-	size_t index
-) const noexcept {
-	VkBool32 presentSupport = false;
-	vkGetPhysicalDeviceSurfaceSupportKHR(
-		device, static_cast<std::uint32_t>(index), surface, &presentSupport
-	);
-
-	return presentSupport;
-}
-
 bool DeviceManager::CheckDeviceExtensionSupport(
 	VkPhysicalDevice device
 ) const noexcept {
@@ -176,48 +157,11 @@ bool DeviceManager::CheckDeviceExtensionSupport(
 	return true;
 }
 
-void DeviceManager::GetSwapchainCapabilities(
-	VkPhysicalDevice device,
-	VkSurfaceKHR surface,
-	SwapChainInfo& details
-) const noexcept {
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.surfaceCapabilities);
-
-	std::uint32_t formatCount = 0u;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-	if (formatCount) {
-		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(
-			device, surface, &formatCount, details.formats.data()
-		);
-	}
-
-	std::uint32_t presentModeCount = 0u;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-	if (presentModeCount) {
-		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(
-			device, surface, &presentModeCount, details.presentModes.data()
-		);
-	}
-}
-
-SwapChainInfo DeviceManager::GetSwapChainInfo() const noexcept {
-	SwapChainInfo swapInfo;
-	GetSwapchainCapabilities(
-		m_physicalDevice,
-		Terra::surface->GetSurface(),
-		swapInfo
-	);
-
-	return swapInfo;
-}
-
 void DeviceManager::SetQueueFamilyInfo(
-	FamilyInfo& familyInfos
+	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept {
+	FamilyInfo familyInfos = QueryQueueFamilyInfo(device, surface);
+
 	std::sort(familyInfos.begin(), familyInfos.end(),
 		[](
 			std::pair<size_t, QueueType> pair1,
@@ -249,124 +193,11 @@ void DeviceManager::SetQueueFamilyInfo(
 	m_usableQueueFamilies.emplace_back(lastFamily, queueFlag, queueCount, 0u);
 }
 
-void DeviceManager::GetQueueSupportInfo(
-	VkPhysicalDevice device,
-	VkSurfaceKHR surface,
-	FamilyInfo& familyInfos
-) const noexcept {
-	std::uint32_t queueFamilyCount = 0u;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-	bool transfer = false;
-	bool compute = false;
-	bool present = false;
-	bool graphics = false;
-
-	FamilyInfo tempData;
-
-	// Transfer only
-	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-		VkQueueFamilyProperties& queueFamily = queueFamilies[index];
-
-		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
-			&& !(queueFamily.queueFlags & 3u)) {
-			tempData.emplace_back(index, QueueType::TransferQueue);
-			transfer = true;
-			--queueFamily.queueCount;
-
-			break;
-		}
-	}
-
-	if (transfer)
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
-
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				&& queueFamily.queueCount) {
-				tempData.emplace_back(index, QueueType::ComputeQueue);
-				compute = true;
-				--queueFamily.queueCount;
-
-				break;
-			}
-		}
-	else
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
-
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-				&& queueFamily.queueCount >= 2) {
-				tempData.emplace_back(index, QueueType::TransferQueue);
-				tempData.emplace_back(index, QueueType::ComputeQueue);
-				compute = true;
-				transfer = true;
-				queueFamily.queueCount -= 2;
-
-				break;
-			}
-		}
-
-	if (!transfer)
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
-
-			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
-				&& queueFamily.queueCount) {
-				tempData.emplace_back(index, QueueType::TransferQueue);
-				transfer = true;
-				--queueFamily.queueCount;
-
-				break;
-			}
-		}
-
-	if (!compute)
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
-
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& queueFamily.queueCount) {
-				tempData.emplace_back(index, QueueType::ComputeQueue);
-				compute = true;
-				--queueFamily.queueCount;
-
-				break;
-			}
-		}
-
-	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
-			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
-
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
-			&& CheckPresentSupport(device, surface, index)
-			&& queueFamily.queueCount >= 2) {
-			tempData.emplace_back(index, QueueType::GraphicsQueue);
-			tempData.emplace_back(index, QueueType::PresentQueue);
-			graphics = true;
-			present = true;
-			queueFamily.queueCount -= 2;
-
-			break;
-		}
-	}
-
-	if (graphics && present && compute && transfer)
-		std::copy(tempData.begin(), tempData.end(), std::back_inserter(familyInfos));
-}
-
 bool DeviceManager::IsDeviceSuitable(
-	VkPhysicalDevice device, VkSurfaceKHR surface,
-	FamilyInfo& familyInfos
+	VkPhysicalDevice device, VkSurfaceKHR surface
 ) const noexcept {
-	SwapChainInfo swapDetails = {};
-	GetSwapchainCapabilities(device, surface, swapDetails);
-	GetQueueSupportInfo(device, surface, familyInfos);
+	SurfaceInfo surfaceInfo = QuerySurfaceCapabilities(device, surface);
+	FamilyInfo familyInfos = QueryQueueFamilyInfo(device, surface);
 
 	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
 	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
@@ -378,8 +209,8 @@ bool DeviceManager::IsDeviceSuitable(
 	vkGetPhysicalDeviceFeatures2(device, &features2);
 
 	if (CheckDeviceExtensionSupport(device)
-		&& swapDetails.IsCapable()
-		&& !familyInfos.empty()
+		&& surfaceInfo.IsCapable()
+		&& !std::empty(familyInfos)
 		&& features2.features.samplerAnisotropy
 		&& indexingFeatures.descriptorBindingPartiallyBound
 		&& indexingFeatures.runtimeDescriptorArray)

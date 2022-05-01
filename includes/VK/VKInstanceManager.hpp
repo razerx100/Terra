@@ -2,21 +2,26 @@
 #define VK_INSTANCE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <string>
 
 class InstanceManager {
 public:
-	InstanceManager(const char* appName);
+	InstanceManager(const char* appName) noexcept;
 	~InstanceManager() noexcept;
 
+	void AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
+	void CreateInstance();
+
+	[[nodiscard]]
 	VkInstance GetVKInstance() const noexcept;
 
 private:
 	void CheckExtensionSupport() const;
 	void CheckLayerSupport() const;
-	void AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
 
 private:
 	VkInstance m_vkInstance;
+	std::string m_appName;
 
 	std::vector<const char*> m_extensionNames = {
 		"VK_KHR_surface"

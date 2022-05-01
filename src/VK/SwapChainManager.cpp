@@ -1,7 +1,6 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
 #include <Terra.hpp>
-#include <ObjectCreationFunctions.hpp>
 
 SwapChainManager::SwapChainManager(
 	const SwapChainManagerCreateInfo& swapCreateInfo,
@@ -9,7 +8,7 @@ SwapChainManager::SwapChainManager(
 ) : m_swapchain(VK_NULL_HANDLE), m_deviceRef(swapCreateInfo.device),
 	m_swapchainFormat{}, m_swapchainExtent{},
 	m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamilyIndex),
-	m_currentFrameIndex(0u) {
+	m_currentFrameIndex(0u), m_surfaceInfo(swapCreateInfo.surfaceInfo) {
 
 	bool useless;
 	CreateSwapchain(swapCreateInfo, useless);
@@ -131,19 +130,19 @@ VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept
 }
 
 bool SwapChainManager::ResizeSwapchain(
-	VkDevice device, std::uint32_t width, std::uint32_t height,
+	VkDevice device, VkSurfaceKHR surface,
+	std::uint32_t width, std::uint32_t height,
 	VkRenderPass renderPass, bool& formatChanged
 ) {
 	if (width != m_swapchainExtent.width || height != m_swapchainExtent.height) {
-		VkDevice logicalDevice = Terra::device->GetLogicalDevice();
-		vkDeviceWaitIdle(logicalDevice);
+		vkDeviceWaitIdle(device);
 
 		CleanUpSwapchain();
 
 		SwapChainManagerCreateInfo createInfo = {};
-		createInfo.device = logicalDevice;
-		createInfo.capabilities = Terra::device->GetSwapChainInfo();
-		createInfo.surface = Terra::surface->GetSurface();
+		createInfo.device = device;
+		createInfo.surfaceInfo = m_surfaceInfo;
+		createInfo.surface = surface;
 		createInfo.bufferCount = static_cast<std::uint32_t>(m_swapchainImages.size());
 		createInfo.width = width;
 		createInfo.height = height;
@@ -164,13 +163,13 @@ void SwapChainManager::CreateSwapchain(
 	bool& formatChanged
 ) {
 	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(
-		swapCreateInfo.capabilities.formats
+		swapCreateInfo.surfaceInfo.formats
 	);
 	VkPresentModeKHR swapPresentMode = ChoosePresentMode(
-		swapCreateInfo.capabilities.presentModes
+		swapCreateInfo.surfaceInfo.presentModes
 	);
 	VkExtent2D swapExtent = ChooseSwapExtent(
-		swapCreateInfo.capabilities.surfaceCapabilities,
+		swapCreateInfo.surfaceInfo.capabilities,
 		swapCreateInfo.width, swapCreateInfo.height
 	);
 
@@ -181,9 +180,9 @@ void SwapChainManager::CreateSwapchain(
 	m_swapchainFormat = swapFormat.format;
 
 	std::uint32_t imageCount = swapCreateInfo.bufferCount;
-	if (swapCreateInfo.capabilities.surfaceCapabilities.maxImageCount > 0u
-		&& swapCreateInfo.capabilities.surfaceCapabilities.maxImageCount < imageCount)
-		imageCount = swapCreateInfo.capabilities.surfaceCapabilities.maxImageCount;
+	if (swapCreateInfo.surfaceInfo.capabilities.maxImageCount > 0u
+		&& swapCreateInfo.surfaceInfo.capabilities.maxImageCount < imageCount)
+		imageCount = swapCreateInfo.surfaceInfo.capabilities.maxImageCount;
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -196,7 +195,7 @@ void SwapChainManager::CreateSwapchain(
 	createInfo.imageUsage =
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	createInfo.preTransform = swapCreateInfo.capabilities.surfaceCapabilities.currentTransform;
+	createInfo.preTransform = swapCreateInfo.surfaceInfo.capabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.presentMode = swapPresentMode;
 	createInfo.clipped = VK_TRUE;

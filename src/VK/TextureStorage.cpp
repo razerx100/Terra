@@ -2,7 +2,7 @@
 #include <VKThrowMacros.hpp>
 #include <CRSMath.hpp>
 #include <Terra.hpp>
-#include <ObjectCreationFunctions.hpp>
+#include <VkHelperFunctions.hpp>
 
 TextureStorage::TextureStorage(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,

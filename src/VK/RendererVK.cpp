@@ -7,21 +7,19 @@ RendererVK::RendererVK(
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount
 ) : m_backgroundColour{}, m_appName(appName),
-	m_bufferCount(bufferCount), m_renderPassInfo{} {
+	m_bufferCount(bufferCount) {
 
 	m_backgroundColour.color = {
 		{0.1f, 0.1f, 0.1f, 0.1f }
 	};
-
-	m_renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	m_renderPassInfo.renderArea.offset = { 0, 0 };
-	m_renderPassInfo.clearValueCount = 1u;
 
 	Terra::InitViewportAndScissor(width, height);
 
 	Terra::InitDisplay();
 
 	Terra::InitVkInstance(appName);
+	Terra::vkInstance->AddExtensionNames(Terra::display->GetRequiredExtensions());
+	Terra::vkInstance->CreateInstance();
 
 	VkInstance vkInstance = Terra::vkInstance->GetVKInstance();
 
@@ -37,9 +35,8 @@ RendererVK::RendererVK(
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
 
-	Terra::device->CreatePhysicalDevice(
-		vkInstance,
-		vkSurface
+	Terra::device->FindPhysicalDevice(
+		vkInstance, vkSurface
 	);
 	Terra::device->CreateLogicalDevice();
 
@@ -58,9 +55,11 @@ RendererVK::RendererVK(
 		QueueType::PresentQueue
 	);
 
+	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
+
 	SwapChainManagerCreateInfo swapCreateInfo = {};
 	swapCreateInfo.device = logicalDevice;
-	swapCreateInfo.capabilities = Terra::device->GetSwapChainInfo();
+	swapCreateInfo.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface);
 	swapCreateInfo.surface = vkSurface;
 	swapCreateInfo.width = width;
 	swapCreateInfo.height = height;
@@ -95,8 +94,6 @@ RendererVK::RendererVK(
 	Terra::InitCopyQueue(logicalDevice, copyQueueHandle);
 
 	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
-
-	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
 
 	Terra::display->InitDisplayManager(
 		physicalDevice
@@ -164,12 +161,16 @@ void RendererVK::Render() {
 	vkCmdSetViewport(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef());
 	vkCmdSetScissor(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef());
 
-	m_renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
-	m_renderPassInfo.framebuffer = Terra::swapChain->GetFramebuffer(imageIndex);
-	m_renderPassInfo.renderArea.extent = Terra::swapChain->GetSwapExtent();
-	m_renderPassInfo.pClearValues = &m_backgroundColour;
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.clearValueCount = 1u;
+	renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
+	renderPassInfo.framebuffer = Terra::swapChain->GetFramebuffer(imageIndex);
+	renderPassInfo.renderArea.extent = Terra::swapChain->GetSwapExtent();
+	renderPassInfo.pClearValues = &m_backgroundColour;
 
-	vkCmdBeginRenderPass(commandBuffer, &m_renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	Terra::modelContainer->BindCommands(commandBuffer);
 
@@ -193,6 +194,7 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	bool hasSwapFormatChanged = false;
 	if (Terra::swapChain->ResizeSwapchain(
 		Terra::device->GetLogicalDevice(),
+		Terra::surface->GetSurface(),
 		width, height, Terra::renderPass->GetRenderPass(),
 		hasSwapFormatChanged
 	)) {

@@ -41,7 +41,5 @@ private:
 
 	std::string m_shaderPath;
 	std::uint32_t m_bufferCount;
-
-	VkRenderPassBeginInfo m_renderPassInfo;
 };
 #endif

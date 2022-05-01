@@ -1,6 +1,6 @@
 #include <VkBuffers.hpp>
 #include <VKThrowMacros.hpp>
-#include <ObjectCreationFunctions.hpp>
+#include <VkHelperFunctions.hpp>
 
 // Base Buffer
 BaseBuffer::BaseBuffer(

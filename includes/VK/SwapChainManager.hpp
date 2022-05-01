@@ -4,11 +4,12 @@
 #include <DeviceManager.hpp>
 #include <SemaphoreWrapper.hpp>
 #include <memory>
+#include <VkHelperFunctions.hpp>
 
 struct SwapChainManagerCreateInfo {
 	VkDevice device;
 	VkSurfaceKHR surface;
-	SwapChainInfo capabilities;
+	SurfaceInfo surfaceInfo;
 	std::uint32_t width;
 	std::uint32_t height;
 	std::uint32_t bufferCount;
@@ -41,7 +42,8 @@ public:
 		VkSemaphore renderSemaphore
 	);
 	bool ResizeSwapchain(
-		VkDevice device, std::uint32_t width, std::uint32_t height,
+		VkDevice device, VkSurfaceKHR surface,
+		std::uint32_t width, std::uint32_t height,
 		VkRenderPass renderPass, bool& formatChanged
 	);
 	void CreateFramebuffers(
@@ -84,5 +86,6 @@ private:
 	size_t m_presentFamilyIndex;
 	std::unique_ptr<SemaphoreWrapper> m_imageSemaphore;
 	size_t m_currentFrameIndex;
+	SurfaceInfo m_surfaceInfo;
 };
 #endif

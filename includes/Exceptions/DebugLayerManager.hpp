@@ -2,6 +2,10 @@
 #define DEBUG_LAYER_MANAGER_HPP_
 #include <vulkan/vulkan.h>
 
+void PopulateDebugMessengerCreateInfo(
+	VkDebugUtilsMessengerCreateInfoEXT& createInfo
+) noexcept;
+
 class DebugLayerManager {
 public:
 	DebugLayerManager(VkInstance instanceRef);
@@ -25,15 +29,8 @@ public:
 		void* pUserData
 	);
 
-	static void PopulateDebugMessengerCreateInfo(
-		VkDebugUtilsMessengerCreateInfoEXT& createInfo
-	) noexcept;
-
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 	VkInstance m_pInstanceRef;
 };
-
-DebugLayerManager* CreateDebugLayerInstance(VkInstance instanceRef);
-
 #endif

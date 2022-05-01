@@ -2,37 +2,16 @@
 #define DEVICE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <VkHelperFunctions.hpp>
 
-struct SwapChainInfo {
-	VkSurfaceCapabilitiesKHR surfaceCapabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-
-	[[nodiscard]]
-	bool IsCapable() const noexcept {
-		return !formats.empty() && !presentModes.empty();
-	}
-};
-
-struct QueueData {
-	VkQueue queueHandle;
-	size_t queueFamilyIndex;
-};
-
-enum QueueType {
-	TransferQueue = 1,
-	ComputeQueue = 2,
-	GraphicsQueue = 4,
-	PresentQueue = 8
-};
+using QueueData = std::pair<VkQueue, size_t>;
 
 class DeviceManager {
 public:
 	~DeviceManager() noexcept;
 
-	void CreatePhysicalDevice(
-		VkInstance instance,
-		VkSurfaceKHR surface
+	void FindPhysicalDevice(
+		VkInstance instance, VkSurfaceKHR surface
 	);
 	void CreateLogicalDevice();
 
@@ -42,8 +21,6 @@ public:
 	VkPhysicalDevice GetPhysicalDevice() const noexcept;
 	[[nodiscard]]
 	VkDevice GetLogicalDevice() const noexcept;
-	[[nodiscard]]
-	SwapChainInfo GetSwapChainInfo() const noexcept;
 
 private:
 	struct QueueFamilyInfo {
@@ -54,38 +31,25 @@ private:
 	};
 
 private:
-	using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
-
 	bool CheckDeviceType(
 		VkPhysicalDevice device,
 		VkPhysicalDeviceType deviceType
-	) const noexcept;
-	bool CheckPresentSupport(
-		VkPhysicalDevice device,
-		VkSurfaceKHR surface,
-		size_t index
 	) const noexcept;
 	bool CheckDeviceExtensionSupport(
 		VkPhysicalDevice device
 	) const noexcept;
 	bool IsDeviceSuitable(
-		VkPhysicalDevice device, VkSurfaceKHR surface,
-		FamilyInfo& familyInfos
+		VkPhysicalDevice device, VkSurfaceKHR surface
 	) const noexcept;
 
-	void GetQueueSupportInfo(
-		VkPhysicalDevice device,
-		VkSurfaceKHR surface,
-		FamilyInfo& familyInfos
-	) const noexcept;
-	void GetSwapchainCapabilities(
-		VkPhysicalDevice device,
-		VkSurfaceKHR surface,
-		SwapChainInfo& details
+	[[nodiscard]]
+	VkPhysicalDevice QueryPhysicalDevices(
+		const std::vector<VkPhysicalDevice>& devices,
+		VkSurfaceKHR surface, VkPhysicalDeviceType deviceType
 	) const noexcept;
 
 	void SetQueueFamilyInfo(
-		FamilyInfo& familyInfos
+		VkPhysicalDevice device, VkSurfaceKHR surface
 	) noexcept;
 
 private:

@@ -60,7 +60,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 	return VK_FALSE;
 }
 
-void DebugLayerManager::PopulateDebugMessengerCreateInfo(
+void PopulateDebugMessengerCreateInfo(
 	VkDebugUtilsMessengerCreateInfoEXT& createInfo
 ) noexcept {
 	createInfo = {};
@@ -72,6 +72,6 @@ void DebugLayerManager::PopulateDebugMessengerCreateInfo(
 		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	createInfo.pfnUserCallback = DebugCallback;
+	createInfo.pfnUserCallback = DebugLayerManager::DebugCallback;
 }
 

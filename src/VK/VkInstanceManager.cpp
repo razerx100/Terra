@@ -1,65 +1,9 @@
 #include <VkInstanceManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <Terra.hpp>
-#include <string>
+#include <DebugLayerManager.hpp>
 
-using namespace std::string_literals;
-
-InstanceManager::InstanceManager(const char* appName) : m_vkInstance(VK_NULL_HANDLE) {
-	VkApplicationInfo appInfo = {};
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = appName;
-	appInfo.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u);
-	appInfo.pEngineName = "Terra";
-	appInfo.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
-
-	VkInstanceCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pApplicationInfo = &appInfo;
-
-#ifdef _DEBUG
-	const bool enableValidationLayers = true;
-#else
-	const bool enableValidationLayers = false;
-#endif
-
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
-
-	if (enableValidationLayers) {
-		CheckLayerSupport();
-		createInfo.enabledLayerCount = static_cast<std::uint32_t>(
-			m_validationLayersNames.size()
-			);
-		createInfo.ppEnabledLayerNames = m_validationLayersNames.data();
-
-		m_extensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-		DebugLayerManager::PopulateDebugMessengerCreateInfo(debugCreateInfo);
-		createInfo.pNext =
-			reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
-	}
-	else {
-		createInfo.enabledLayerCount = 0u;
-		createInfo.pNext = nullptr;
-	}
-
-#ifdef TERRA_WIN32
-	m_extensionNames.emplace_back("VK_KHR_win32_surface");
-#endif
-	AddExtensionNames(
-		Terra::display->GetRequiredExtensions()
-	);
-
-	CheckExtensionSupport();
-	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
-		m_extensionNames.size()
-		);
-	createInfo.ppEnabledExtensionNames = m_extensionNames.data();
-
-	VkResult result;
-	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
-}
+InstanceManager::InstanceManager(const char* appName) noexcept
+	: m_vkInstance(VK_NULL_HANDLE), m_appName(appName) {}
 
 InstanceManager::~InstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);
@@ -88,7 +32,7 @@ void InstanceManager::CheckExtensionSupport() const {
 
 		if (!found)
 			VK_GENERIC_THROW(
-				"The extension "s + requiredExtension + " isn't supported."s
+				std::string("The extension ") + requiredExtension + " isn't supported."
 			);
 	}
 }
@@ -112,7 +56,7 @@ void InstanceManager::CheckLayerSupport() const {
 
 		if (!found)
 			VK_GENERIC_THROW(
-				"The layer "s + requiredLayer + " isn't supported."s
+				std::string("The layer ") + requiredLayer + " isn't supported."
 			);
 	}
 }
@@ -120,6 +64,61 @@ void InstanceManager::CheckLayerSupport() const {
 void InstanceManager::AddExtensionNames(
 	const std::vector<const char*>& extensionNames
 ) noexcept {
-	for (auto& name : extensionNames)
-		m_extensionNames.emplace_back(name);
+	m_extensionNames.insert(
+		std::end(m_extensionNames),
+		std::begin(extensionNames), std::end(extensionNames)
+	);
+}
+
+void InstanceManager::CreateInstance() {
+	VkApplicationInfo appInfo = {};
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = m_appName.c_str();
+	appInfo.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u);
+	appInfo.pEngineName = "Terra";
+	appInfo.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u);
+	appInfo.apiVersion = VK_API_VERSION_1_0;
+
+	VkInstanceCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pApplicationInfo = &appInfo;
+
+#ifdef _DEBUG
+	const bool enableValidationLayers = true;
+#else
+	const bool enableValidationLayers = false;
+#endif
+
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+
+	if (enableValidationLayers) {
+		CheckLayerSupport();
+		createInfo.enabledLayerCount = static_cast<std::uint32_t>(
+			m_validationLayersNames.size()
+			);
+		createInfo.ppEnabledLayerNames = m_validationLayersNames.data();
+
+		m_extensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+		PopulateDebugMessengerCreateInfo(debugCreateInfo);
+		createInfo.pNext =
+			reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
+	}
+	else {
+		createInfo.enabledLayerCount = 0u;
+		createInfo.pNext = nullptr;
+	}
+
+#ifdef TERRA_WIN32
+	m_extensionNames.emplace_back("VK_KHR_win32_surface");
+#endif
+
+	CheckExtensionSupport();
+	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
+		m_extensionNames.size()
+		);
+	createInfo.ppEnabledExtensionNames = m_extensionNames.data();
+
+	VkResult result;
+	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
 }
