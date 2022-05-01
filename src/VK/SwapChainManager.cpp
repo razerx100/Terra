@@ -1,6 +1,5 @@
 #include <SwapChainManager.hpp>
 #include <VKThrowMacros.hpp>
-#include <Terra.hpp>
 
 SwapChainManager::SwapChainManager(
 	const SwapChainManagerCreateInfo& swapCreateInfo,
@@ -44,7 +43,7 @@ VkSurfaceFormatKHR SwapChainManager::ChooseSurfaceFormat(
 			&& surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
 			return surfaceFormat;
 
-	return availableFormats[0u];
+	return std::empty(availableFormats) ? VkSurfaceFormatKHR() : availableFormats[0u];
 }
 
 VkPresentModeKHR SwapChainManager::ChoosePresentMode(
