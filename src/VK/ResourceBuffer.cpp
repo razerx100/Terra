@@ -1,7 +1,7 @@
 #include <ResourceBuffer.hpp>
 #include <DeviceMemory.hpp>
-#include <CRSMath.hpp>
 #include <VKThrowMacros.hpp>
+#include <VkHelperFunctions.hpp>
 
 ResourceBuffer::ResourceBuffer(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
@@ -42,7 +42,7 @@ std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 ) {
 	m_gpuBufferData.emplace_back(bufferSize, m_currentOffset);
 
-	m_currentOffset += Ceres::Math::Align(
+	m_currentOffset += Align(
 		bufferSize, m_gpuBufferMemory->GetAlignment()
 	);
 

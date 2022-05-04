@@ -1,7 +1,7 @@
 #include <UploadBuffers.hpp>
 #include <DeviceMemory.hpp>
 #include <VKThrowMacros.hpp>
-#include <CRSMath.hpp>
+#include <VkHelperFunctions.hpp>
 
 UploadBuffers::UploadBuffers(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
@@ -60,7 +60,7 @@ void UploadBuffers::AddBuffer(VkDevice device, const void* data, size_t bufferSi
 	m_uploadBufferData.emplace_back(bufferSize, m_currentOffset);
 	m_buffers.emplace_back(std::make_unique<UploadBuffer>(device));
 
-	m_currentOffset += Ceres::Math::Align(bufferSize, m_uploadMemory->GetAlignment());
+	m_currentOffset += Align(bufferSize, m_uploadMemory->GetAlignment());
 
 	m_buffers.back()->CreateBuffer(device, bufferSize);
 

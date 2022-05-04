@@ -95,10 +95,6 @@ RendererVK::RendererVK(
 
 	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
 
-	Terra::display->InitDisplayManager(
-		physicalDevice
-	);
-
 	Terra::InitRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
 
 	Terra::swapChain->CreateFramebuffers(
@@ -137,9 +133,9 @@ RendererVK::~RendererVK() noexcept {
 	Terra::vkInstance.reset();
 }
 
-void RendererVK::SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept {
+void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
 	m_backgroundColour.color = {
-		{colourVector.x, colourVector.y, colourVector.z, colourVector.w}
+		{colourVector[0], colourVector[1], colourVector[2], colourVector[3]}
 	};
 }
 
@@ -207,17 +203,10 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	}
 }
 
-void RendererVK::GetMonitorCoordinates(
-	std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
-) {
-	Ceres::Rect resolution = {};
-	Terra::display->GetDisplayResolution(
-		Terra::device->GetPhysicalDevice(),
-		resolution
+Renderer::Resolution RendererVK::GetDisplayCoordinates(std::uint32_t displayIndex) const {
+	return Terra::display->GetDisplayResolution(
+		Terra::device->GetPhysicalDevice(), displayIndex
 	);
-
-	monitorWidth = resolution.right;
-	monitorHeight = resolution.bottom;
 }
 
 void RendererVK::WaitForAsyncTasks() {

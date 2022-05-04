@@ -5,50 +5,49 @@ DisplayManagerWin32::DisplayManagerWin32() {
 	CreateDXGIFactory2(0u, __uuidof(IDXGIFactory1), &m_pFactory);
 }
 
-void DisplayManagerWin32::InitDisplayManager(VkPhysicalDevice gpu) {
-	LUID gpuLUid;
-	GetLUIDFromVKDevice(gpu, gpuLUid);
-	MatchAdapter(gpuLUid);
-}
-
 const std::vector<const char*>& DisplayManagerWin32::GetRequiredExtensions() const noexcept {
 	return m_requiredExtensions;
 }
 
-void DisplayManagerWin32::GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) {
+IDisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
+	VkPhysicalDevice gpu, std::uint32_t displayIndex
+) const {
 	DXGI_ADAPTER_DESC gpuDesc = {};
 	LUID gpuLUid;
 	GetLUIDFromVKDevice(gpu, gpuLUid);
-	m_pD3DGPU->GetDesc(&gpuDesc);
 
-	if (!AreLUIDsSame(gpuDesc.AdapterLuid, gpuLUid))
-		MatchAdapter(gpuLUid);
+	ComPtr<IDXGIAdapter1> d3dGpu = GetAdapter(gpuLUid);
+
+	if (!d3dGpu)
+		VK_GENERIC_THROW("GPU ID doesn't match.");
+
+	d3dGpu->GetDesc(&gpuDesc);
 
 	ComPtr<IDXGIOutput> pDisplayOutput;
-	m_pD3DGPU->EnumOutputs(0u, &pDisplayOutput);
+	if (FAILED(d3dGpu->EnumOutputs(displayIndex, &pDisplayOutput)))
+		VK_GENERIC_THROW("Searched GPU couldn't be found.");
 
 	DXGI_OUTPUT_DESC displayData = {};
 	pDisplayOutput->GetDesc(&displayData);
 
-	displayRect.top = static_cast<std::uint64_t>(displayData.DesktopCoordinates.top);
-	displayRect.bottom = static_cast<std::uint64_t>(displayData.DesktopCoordinates.bottom);
-	displayRect.right = static_cast<std::uint64_t>(displayData.DesktopCoordinates.right);
-	displayRect.left = static_cast<std::uint64_t>(displayData.DesktopCoordinates.left);
+	return {
+		static_cast<std::uint64_t>(displayData.DesktopCoordinates.right),
+		static_cast<std::uint64_t>(displayData.DesktopCoordinates.bottom)
+	};
 }
 
-void DisplayManagerWin32::MatchAdapter(const LUID& adapterLUid) {
+ComPtr<IDXGIAdapter1> DisplayManagerWin32::GetAdapter(const LUID& adapterLUid) const noexcept {
 	ComPtr<IDXGIAdapter1> pAdapter;
 	DXGI_ADAPTER_DESC gpuDesc = {};
 	for (size_t index = 0u;
-		m_pFactory->EnumAdapters1(
-			static_cast<UINT>(index), &pAdapter) != DXGI_ERROR_NOT_FOUND;) {
+		m_pFactory->EnumAdapters1(static_cast<UINT>(index), &pAdapter) != DXGI_ERROR_NOT_FOUND;) {
 
 		pAdapter->GetDesc(&gpuDesc);
-		if (AreLUIDsSame(gpuDesc.AdapterLuid, adapterLUid)) {
-			m_pD3DGPU.Swap(pAdapter);
-			break;
-		}
+		if (AreLUIDsSame(gpuDesc.AdapterLuid, adapterLUid))
+			return pAdapter;
 	}
+
+	return nullptr;
 }
 
 bool DisplayManagerWin32::AreLUIDsSame(const LUID& lUid1, const LUID& lUid2) const noexcept {

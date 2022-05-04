@@ -2,14 +2,18 @@
 #define I_DISPLAY_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
-#include <CRSStructures.hpp>
 
 class IDisplayManager {
 public:
+	using Resolution = std::pair<std::uint64_t, std::uint64_t>;
+
 	virtual ~IDisplayManager() = default;
 
-	virtual void InitDisplayManager(VkPhysicalDevice gpu) = 0;
+	[[nodiscard]]
 	virtual const std::vector<const char*>& GetRequiredExtensions() const noexcept = 0;
-	virtual void GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) = 0;
+	[[nodiscard]]
+	virtual Resolution GetDisplayResolution(
+		VkPhysicalDevice gpu, std::uint32_t displayIndex
+	) const = 0;
 };
 #endif

@@ -49,4 +49,9 @@ bool CheckPresentSupport(
 SurfaceInfo QuerySurfaceCapabilities(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept;
+
+[[nodiscard]]
+constexpr size_t Align(size_t address, size_t alignment) noexcept {
+	return (address + (alignment - 1u)) & ~(alignment - 1u);
+}
 #endif

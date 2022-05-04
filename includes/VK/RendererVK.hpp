@@ -15,9 +15,9 @@ public:
 	~RendererVK() noexcept override;
 
 	void Resize(std::uint32_t width, std::uint32_t height) override;
-	void GetMonitorCoordinates(
-		std::uint64_t& monitorWidth, std::uint64_t& monitorHeight
-	) override;
+
+	[[nodiscard]]
+	Resolution GetDisplayCoordinates(std::uint32_t displayIndex = 0u) const override;
 
 	[[nodiscard]]
 	size_t RegisterResource(
@@ -26,7 +26,7 @@ public:
 	) override;
 
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept override;
-	void SetBackgroundColour(const Ceres::Float32_4& colourVector) noexcept override;
+	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept override;
 	void SubmitModel(const IModel* const modelRef) override;
 	void Render() override;
 	void WaitForAsyncTasks() override;

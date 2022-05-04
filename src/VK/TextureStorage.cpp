@@ -1,6 +1,5 @@
 #include <TextureStorage.hpp>
 #include <VKThrowMacros.hpp>
-#include <CRSMath.hpp>
 #include <Terra.hpp>
 #include <VkHelperFunctions.hpp>
 
@@ -45,7 +44,7 @@ size_t TextureStorage::AddTexture(
 
 	size_t bufferSize = width * height * pixelSizeInBytes;
 
-	m_currentOffset += Ceres::Math::Align(
+	m_currentOffset += Align(
 		bufferSize, m_textureMemory->GetAlignment()
 	);
 

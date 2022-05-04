@@ -10,17 +10,19 @@ class DisplayManagerWin32 final : public IDisplayManager {
 public:
 	DisplayManagerWin32();
 
-	void InitDisplayManager(VkPhysicalDevice gpu) override;
-
 	[[nodiscard]]
 	const std::vector<const char*>& GetRequiredExtensions() const noexcept override;
-	void GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) override;
+	[[nodiscard]]
+	Resolution GetDisplayResolution(
+		VkPhysicalDevice gpu, std::uint32_t displayIndex
+	) const override;
 
 private:
 	[[nodiscard]]
 	bool AreLUIDsSame(const LUID& lUid1, const LUID& lUid2) const noexcept;
+	[[nodiscard]]
+	ComPtr<IDXGIAdapter1> GetAdapter(const LUID& adapterLUid) const noexcept;
 
-	void MatchAdapter(const LUID& adapterLUid);
 	void GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) const;
 
 private:
@@ -30,7 +32,6 @@ private:
 	};
 
 	ComPtr<IDXGIFactory1> m_pFactory;
-	ComPtr<IDXGIAdapter1> m_pD3DGPU;
 };
 
 #endif

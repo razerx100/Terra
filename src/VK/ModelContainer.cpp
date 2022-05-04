@@ -1,5 +1,4 @@
 #include <ModelContainer.hpp>
-#include <BindInstanceGFX.hpp>
 #include <Shader.hpp>
 #include <PipelineLayout.hpp>
 #include <PipelineObjectGFX.hpp>

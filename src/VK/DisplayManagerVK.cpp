@@ -1,20 +1,22 @@
 #include <DisplayManagerVK.hpp>
+#include <VKThrowMacros.hpp>
 
-void DisplayManagerVK::InitDisplayManager(VkPhysicalDevice gpu) {}
-
-void DisplayManagerVK::GetDisplayResolution(VkPhysicalDevice gpu, Ceres::Rect& displayRect) {
-	std::uint32_t displayCount;
+IDisplayManager::Resolution DisplayManagerVK::GetDisplayResolution(
+	VkPhysicalDevice gpu, std::uint32_t displayIndex
+) const {
+	std::uint32_t displayCount = 0u;
 	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, nullptr);
 
 	std::vector<VkDisplayPropertiesKHR> displayProperties(displayCount);
 	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, displayProperties.data());
 
-	displayRect = {};
-	// Only handling the first monitor
-	if (displayCount == 1u) {
-		displayRect.right = displayProperties[0u].physicalResolution.width;
-		displayRect.bottom = displayProperties[0u].physicalResolution.height;
-	}
+	if (displayCount <= displayIndex)
+		VK_GENERIC_THROW("Searched GPU couldn't be found.");
+
+	auto [width, height] =
+		displayProperties[static_cast<size_t>(displayIndex)].physicalResolution;
+
+	return { width, height };
 }
 
 const std::vector<const char*>& DisplayManagerVK::GetRequiredExtensions() const noexcept {
