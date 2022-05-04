@@ -39,8 +39,8 @@ IDisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
 ComPtr<IDXGIAdapter1> DisplayManagerWin32::GetAdapter(const LUID& adapterLUid) const noexcept {
 	ComPtr<IDXGIAdapter1> pAdapter;
 	DXGI_ADAPTER_DESC gpuDesc = {};
-	for (size_t index = 0u;
-		m_pFactory->EnumAdapters1(static_cast<UINT>(index), &pAdapter) != DXGI_ERROR_NOT_FOUND;) {
+	for (UINT index = 0u;
+		m_pFactory->EnumAdapters1(index, &pAdapter) != DXGI_ERROR_NOT_FOUND;) {
 
 		pAdapter->GetDesc(&gpuDesc);
 		if (AreLUIDsSame(gpuDesc.AdapterLuid, adapterLUid))
