@@ -56,28 +56,6 @@ VkPresentModeKHR SwapChainManager::ChoosePresentMode(
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D SwapChainManager::ChooseSwapExtent(
-	const VkSurfaceCapabilitiesKHR& capabilities,
-	std::uint32_t width, std::uint32_t height
-) const noexcept {
-	if (capabilities.currentExtent.width != UINT32_MAX)
-		return capabilities.currentExtent;
-	else {
-		VkExtent2D extent = {
-			width, height
-		};
-
-		extent.height = std::clamp(
-			extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height
-		);
-		extent.height = std::clamp(
-			extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width
-		);
-
-		return extent;
-	}
-}
-
 void SwapChainManager::CreateImageViews(VkDevice device) {
 	m_swapchainImageViews.resize(m_swapchainImages.size());
 
@@ -167,10 +145,7 @@ void SwapChainManager::CreateSwapchain(
 	VkPresentModeKHR swapPresentMode = ChoosePresentMode(
 		swapCreateInfo.surfaceInfo.presentModes
 	);
-	VkExtent2D swapExtent = ChooseSwapExtent(
-		swapCreateInfo.surfaceInfo.capabilities,
-		swapCreateInfo.width, swapCreateInfo.height
-	);
+	VkExtent2D swapExtent = { swapCreateInfo.width, swapCreateInfo.height };
 
 	if (swapFormat.format != m_swapchainFormat)
 		formatChanged = true;

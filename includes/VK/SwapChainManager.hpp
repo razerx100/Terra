@@ -60,11 +60,6 @@ private:
 	VkPresentModeKHR ChoosePresentMode(
 		const std::vector<VkPresentModeKHR>& availableModes
 	) const noexcept;
-	[[nodiscard]]
-	VkExtent2D ChooseSwapExtent(
-		const VkSurfaceCapabilitiesKHR& capabilities,
-		std::uint32_t width, std::uint32_t height
-	) const noexcept;
 
 	void QueryImages();
 	void CreateImageViews(VkDevice device);
