@@ -149,7 +149,7 @@ void RendererVK::Render() {
 	Terra::graphicsQueue->WaitForGPU();
 	Terra::graphicsQueue->ResetFence();
 
-	const size_t imageIndex = Terra::swapChain->GetAvailableImageIndex();
+	size_t imageIndex = Terra::swapChain->GetAvailableImageIndex();
 	Terra::graphicsCmdPool->Reset(imageIndex);
 
 	VkCommandBuffer commandBuffer = Terra::graphicsCmdPool->GetCommandBuffer(imageIndex);
@@ -181,7 +181,9 @@ void RendererVK::Render() {
 		static_cast<std::uint32_t>(imageIndex), Terra::graphicsQueue->GetRenderSemaphore()
 	);
 
-	const size_t nextFrame = (imageIndex + 1u) % m_bufferCount;
+	const size_t nextFrame =
+		++imageIndex >= m_bufferCount ? imageIndex % m_bufferCount : imageIndex;
+
 	Terra::swapChain->SetNextFrameIndex(nextFrame);
 	Terra::graphicsQueue->SetNextFrameIndex(nextFrame);
 }

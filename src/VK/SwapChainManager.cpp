@@ -146,6 +146,7 @@ void SwapChainManager::CreateSwapchain(
 		swapCreateInfo.surfaceInfo.presentModes
 	);
 	VkExtent2D swapExtent = { swapCreateInfo.width, swapCreateInfo.height };
+	m_surfaceInfo.capabilities.currentExtent = swapExtent;
 
 	if (swapFormat.format != m_swapchainFormat)
 		formatChanged = true;

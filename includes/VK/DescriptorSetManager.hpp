@@ -5,39 +5,16 @@
 #include <DescriptorPool.hpp>
 #include <memory>
 
-using VulkanDescriptorSetLayouts = const std::vector<VkDescriptorSetLayout>&;
-
-struct DescriptorInfo {
-	std::uint32_t bindingSlot;
-	std::uint32_t descriptorCount;
-	VkDescriptorType type;
-};
-
 class DescriptorSetManager {
 public:
-	DescriptorSetManager(VkDevice device);
-	~DescriptorSetManager() noexcept;
+	using VulkanDescriptorSetLayouts = const std::vector<VkDescriptorSetLayout>&;
 
-	[[nodiscard]]
-	VulkanDescriptorSetLayouts GetDescriptorSetLayouts() const noexcept;
-	[[nodiscard]]
-	VkDescriptorSet GetDescriptorSet() const noexcept;
+	struct DescriptorInfo {
+		std::uint32_t bindingSlot;
+		std::uint32_t descriptorCount;
+		VkDescriptorType type;
+	};
 
-	void AddSetLayout(
-		VkDevice device, DescriptorInfo descInfo,
-		VkShaderStageFlags shaderFlag,
-		std::vector<VkDescriptorBufferInfo>&& bufferInfo
-	);
-
-	void AddSetLayout(
-		VkDevice device, DescriptorInfo descInfo,
-		VkShaderStageFlags shaderFlag,
-		std::vector<VkDescriptorImageInfo>&& imageInfo
-	);
-
-	void CreateDescriptorSets(VkDevice device);
-
-private:
 	struct BufferInfo {
 		DescriptorInfo descriptorInfo;
 		std::vector<VkDescriptorBufferInfo> buffers;
@@ -47,6 +24,39 @@ private:
 		DescriptorInfo descriptorInfo;
 		std::vector<VkDescriptorImageInfo> images;
 	};
+
+public:
+	DescriptorSetManager(VkDevice device);
+	~DescriptorSetManager() noexcept;
+
+	[[nodiscard]]
+	VulkanDescriptorSetLayouts GetDescriptorSetLayouts() const noexcept;
+	[[nodiscard]]
+	VkDescriptorSet GetDescriptorSet() const noexcept;
+
+	void AddSetLayoutAndQueueForBinding(
+		VkDevice device, DescriptorInfo descInfo,
+		VkShaderStageFlags shaderFlag,
+		std::vector<VkDescriptorBufferInfo>&& bufferInfo
+	);
+
+	void AddSetLayoutAndQueueForBinding(
+		VkDevice device, DescriptorInfo descInfo,
+		VkShaderStageFlags shaderFlag,
+		std::vector<VkDescriptorImageInfo>&& imageInfo
+	);
+
+	void AddSetLayoutImage(
+		VkDevice device, const DescriptorInfo& descInfo,
+		VkShaderStageFlags shaderFlag
+	);
+
+	void AddSetLayoutBuffer(
+		VkDevice device, const DescriptorInfo& descInfo,
+		VkShaderStageFlags shaderFlag
+	);
+
+	void CreateDescriptorSets(VkDevice device);
 
 	void BindBuffer(
 		VkDevice device, const BufferInfo& bufferInfo

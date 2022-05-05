@@ -12,7 +12,8 @@ DescriptorSetManager::~DescriptorSetManager() noexcept {
 	m_descriptorPool.reset();
 }
 
-VulkanDescriptorSetLayouts DescriptorSetManager::GetDescriptorSetLayouts() const noexcept {
+DescriptorSetManager::VulkanDescriptorSetLayouts DescriptorSetManager::GetDescriptorSetLayouts(
+) const noexcept {
 	return m_descriptorSetLayouts;
 }
 
@@ -72,10 +73,9 @@ void DescriptorSetManager::BindImageView(
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
 }
 
-void DescriptorSetManager::AddSetLayout(
-	VkDevice device, DescriptorInfo descInfo,
-	VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorBufferInfo>&& bufferInfo
+void DescriptorSetManager::AddSetLayoutImage(
+	VkDevice device, const DescriptorInfo& descInfo,
+	VkShaderStageFlags shaderFlag
 ) {
 	VkDescriptorSetLayoutBinding layoutBinding = {};
 	layoutBinding.binding = descInfo.bindingSlot;
@@ -113,14 +113,11 @@ void DescriptorSetManager::AddSetLayout(
 	m_descriptorPool->AddDescriptorTypeLimit(
 		descInfo.type, descInfo.descriptorCount
 	);
-
-	m_bufferInfos.emplace_back(std::move(descInfo), std::move(bufferInfo));
 }
 
-void DescriptorSetManager::AddSetLayout(
-	VkDevice device, DescriptorInfo descInfo,
-	VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorImageInfo>&& imageInfo
+void DescriptorSetManager::AddSetLayoutBuffer(
+	VkDevice device, const DescriptorInfo& descInfo,
+	VkShaderStageFlags shaderFlag
 ) {
 	VkDescriptorSetLayoutBinding layoutBinding = {};
 	layoutBinding.binding = descInfo.bindingSlot;
@@ -132,7 +129,7 @@ void DescriptorSetManager::AddSetLayout(
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	createInfo.bindingCount = 1u;
 	createInfo.pBindings = &layoutBinding;
-	createInfo.flags = 0u;
+	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
 	VkDescriptorSetLayout layout;
 
@@ -146,7 +143,24 @@ void DescriptorSetManager::AddSetLayout(
 	m_descriptorPool->AddDescriptorTypeLimit(
 		descInfo.type, descInfo.descriptorCount
 	);
+}
+
+void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
+	VkDevice device, DescriptorInfo descInfo,
+	VkShaderStageFlags shaderFlag,
+	std::vector<VkDescriptorBufferInfo>&& bufferInfo
+) {
+	AddSetLayoutBuffer(device, descInfo, shaderFlag);
+
+	m_bufferInfos.emplace_back(std::move(descInfo), std::move(bufferInfo));
+}
+
+void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
+	VkDevice device, DescriptorInfo descInfo,
+	VkShaderStageFlags shaderFlag,
+	std::vector<VkDescriptorImageInfo>&& imageInfo
+) {
+	AddSetLayoutImage(device, descInfo, shaderFlag);
 
 	m_imageInfos.emplace_back(std::move(descInfo), std::move(imageInfo));
 }
-
