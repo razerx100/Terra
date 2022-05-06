@@ -11,10 +11,10 @@ public:
 	void AddDescriptorTypeLimit(
 		VkDescriptorType type, std::uint32_t descriptorCount
 	) noexcept;
-	void CreatePool(VkDevice device, std::uint32_t setLayoutCount);
+	void CreatePool(VkDevice device);
 	void AllocateDescriptors(
-		VkDevice device, const VkDescriptorSetLayout* setLayouts,
-		VkDescriptorSet* descriptorSets, std::uint32_t setCount = 1u
+		VkDevice device, VkDescriptorSetLayout setLayout,
+		VkDescriptorSet* descriptorSets
 	) const;
 
 private:

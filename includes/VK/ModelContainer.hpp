@@ -18,7 +18,7 @@ public:
 
 	void InitPipelines(
 		VkDevice device,
-		const std::vector<VkDescriptorSetLayout>& setLayout
+		VkDescriptorSetLayout setLayout
 	);
 	void CreateBuffers(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
@@ -38,7 +38,7 @@ private:
 
 	Pipeline CreatePipeline(
 		VkDevice device, const VertexLayout& layout,
-		const std::vector<VkDescriptorSetLayout>& setLayout
+		VkDescriptorSetLayout setLayout
 	) const;
 
 private:

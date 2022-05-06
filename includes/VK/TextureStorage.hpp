@@ -22,7 +22,7 @@ public:
 
 	void RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept;
 	void TransitionImages(VkCommandBuffer graphicsBuffer) noexcept;
-	void SetDescriptorLayouts(VkDevice device) noexcept;
+	void SetDescriptorLayouts() const noexcept;
 
 	void CopyData(std::atomic_size_t& workCount) noexcept;
 	void ReleaseUploadBuffers() noexcept;

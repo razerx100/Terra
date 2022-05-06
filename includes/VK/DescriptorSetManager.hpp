@@ -5,8 +5,6 @@
 #include <DescriptorPool.hpp>
 #include <memory>
 
-using VulkanDescriptorSetLayouts = const std::vector<VkDescriptorSetLayout>&;
-
 struct DescriptorInfo {
 	std::uint32_t bindingSlot;
 	std::uint32_t descriptorCount;
@@ -39,40 +37,36 @@ public:
 	~DescriptorSetManager() noexcept;
 
 	[[nodiscard]]
-	VulkanDescriptorSetLayouts GetDescriptorSetLayouts() const noexcept;
+	VkDescriptorSetLayout GetDescriptorSetLayout() const noexcept;
 	[[nodiscard]]
 	VkDescriptorSet GetDescriptorSet() const noexcept;
 
 	void AddSetLayoutAndQueueForBinding(
-		VkDevice device, DescriptorInfo descInfo,
-		VkShaderStageFlags shaderFlag,
+		DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
 		std::vector<VkDescriptorBufferInfo>&& bufferInfo
 	);
 
 	void AddSetLayoutAndQueueForBinding(
-		VkDevice device, DescriptorInfo descInfo,
-		VkShaderStageFlags shaderFlag,
+		DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
 		std::vector<VkDescriptorImageInfo>&& imageInfo
 	);
 
-	void AddSetLayoutImage(
-		VkDevice device, const DescriptorInfo& descInfo,
-		VkShaderStageFlags shaderFlag
-	);
-
-	void AddSetLayoutBuffer(
-		VkDevice device, const DescriptorInfo& descInfo,
-		VkShaderStageFlags shaderFlag
+	void AddSetLayout(
+		const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag
 	);
 
 	void CreateDescriptorSets(VkDevice device);
 
 private:
+	void CreateSetLayout(VkDevice device);
+
+private:
 	VkDevice m_deviceRef;
 	VkDescriptorSet m_descriptorSet;
+	VkDescriptorSetLayout m_descriptorSetLayout;
 	std::unique_ptr<DescriptorPool> m_descriptorPool;
-	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 	std::vector<DescBufferInfo> m_bufferInfos;
 	std::vector<DescImageInfo> m_imageInfos;
+	std::vector<VkDescriptorSetLayoutBinding> m_layoutBindings;
 };
 #endif

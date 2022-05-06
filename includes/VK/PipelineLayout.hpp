@@ -13,7 +13,7 @@ public:
 	) noexcept;
 
 	void CreateLayout(
-		const std::vector<VkDescriptorSetLayout>& setLayout
+		VkDescriptorSetLayout setLayout
 	);
 
 	[[nodiscard]]

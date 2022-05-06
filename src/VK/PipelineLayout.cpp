@@ -22,12 +22,15 @@ void PipelineLayout::AddPushConstantRange(
 }
 
 void PipelineLayout::CreateLayout(
-	const std::vector<VkDescriptorSetLayout>& setLayout
+	VkDescriptorSetLayout setLayout
 ) {
 	VkPipelineLayoutCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.setLayoutCount = static_cast<std::uint32_t>(setLayout.size());
-	createInfo.pSetLayouts = setLayout.data();
+	createInfo.setLayoutCount = 1u;
+
+	VkDescriptorSetLayout setLayouts[] = { setLayout };
+
+	createInfo.pSetLayouts = setLayouts;
 	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(m_pushRanges.size());
 	createInfo.pPushConstantRanges = m_pushRanges.data();
 

@@ -272,13 +272,13 @@ void RendererVK::ProcessData() {
 	Terra::graphicsQueue->WaitForGPU();
 	// Leaving the fence in signaled state
 
-	Terra::textureStorage->SetDescriptorLayouts(logicalDevice);
+	Terra::textureStorage->SetDescriptorLayouts();
 
 	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
 
 	Terra::modelContainer->InitPipelines(
 		logicalDevice,
-		Terra::descriptorSet->GetDescriptorSetLayouts()
+		Terra::descriptorSet->GetDescriptorSetLayout()
 	);
 
 	// Cleanup Upload Buffers

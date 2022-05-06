@@ -15,7 +15,7 @@ void DescriptorPool::AddDescriptorTypeLimit(
 	m_typeMap[type] += descriptorCount;
 }
 
-void DescriptorPool::CreatePool(VkDevice device, std::uint32_t setLayoutCount) {
+void DescriptorPool::CreatePool(VkDevice device) {
 	std::vector<VkDescriptorPoolSize> descriptorTypeCounts;
 	for (auto [type, descCount] : m_typeMap)
 		descriptorTypeCounts.emplace_back(type, descCount);
@@ -23,7 +23,7 @@ void DescriptorPool::CreatePool(VkDevice device, std::uint32_t setLayoutCount) {
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
-	poolInfo.maxSets = setLayoutCount;
+	poolInfo.maxSets = 1u;
 	poolInfo.poolSizeCount = static_cast<std::uint32_t>(descriptorTypeCounts.size());
 	poolInfo.pPoolSizes = descriptorTypeCounts.data();
 
@@ -34,14 +34,16 @@ void DescriptorPool::CreatePool(VkDevice device, std::uint32_t setLayoutCount) {
 }
 
 void DescriptorPool::AllocateDescriptors(
-	VkDevice device, const VkDescriptorSetLayout* setLayouts,
-	VkDescriptorSet* descriptorSets, std::uint32_t setCount
+	VkDevice device, VkDescriptorSetLayout setLayout,
+	VkDescriptorSet* descriptorSets
 ) const {
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = m_descriptorPool;
-	allocInfo.descriptorSetCount = setCount;
-	allocInfo.pSetLayouts = setLayouts;
+	allocInfo.descriptorSetCount = 1u;
+
+	VkDescriptorSetLayout layouts[] = { setLayout };
+	allocInfo.pSetLayouts = layouts;
 
 	VkResult result;
 	VK_THROW_FAILED(result,

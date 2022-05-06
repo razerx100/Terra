@@ -67,7 +67,7 @@ void ModelContainer::CreateBuffers(
 
 void ModelContainer::InitPipelines(
 	VkDevice device,
-	const std::vector<VkDescriptorSetLayout>& setLayout
+	VkDescriptorSetLayout setLayout
 ) {
 	auto [pso, pipelineLayout] = CreatePipeline(
 		device,
@@ -82,7 +82,7 @@ void ModelContainer::InitPipelines(
 
 ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	VkDevice device, const VertexLayout& layout,
-	const std::vector<VkDescriptorSetLayout>& setLayout
+	VkDescriptorSetLayout setLayout
 ) const {
 	std::shared_ptr<PipelineLayout> pipelineLayout =
 		std::make_shared<PipelineLayout>(device);

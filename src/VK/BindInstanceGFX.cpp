@@ -88,7 +88,7 @@ void BindInstanceGFX::InitializeTransformBuffer(
 	m_pTransformBuffer = std::make_unique<UploadBufferSingle>(logicalDevice, physicalDevice);
 	m_pTransformBuffer->CreateBuffer(
 		logicalDevice, bufferSize,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
 	);
 
 	DescriptorInfo descInfo = {};
@@ -106,7 +106,7 @@ void BindInstanceGFX::InitializeTransformBuffer(
 	bufferInfos.emplace_back(std::move(bufferInfo));
 
 	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
-		logicalDevice, descInfo, VK_SHADER_STAGE_VERTEX_BIT, std::move(bufferInfos)
+		descInfo, VK_SHADER_STAGE_VERTEX_BIT, std::move(bufferInfos)
 	);
 }
 

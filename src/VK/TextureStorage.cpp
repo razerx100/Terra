@@ -100,7 +100,7 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 	}
 }
 
-void TextureStorage::SetDescriptorLayouts(VkDevice device) noexcept {
+void TextureStorage::SetDescriptorLayouts() const noexcept {
 	DescriptorInfo descInfo = {};
 	descInfo.bindingSlot = 0u;
 	descInfo.descriptorCount = static_cast<std::uint32_t>(m_textures.size());
@@ -119,7 +119,7 @@ void TextureStorage::SetDescriptorLayouts(VkDevice device) noexcept {
 	}
 
 	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
-		device, descInfo, VK_SHADER_STAGE_FRAGMENT_BIT,
+		descInfo, VK_SHADER_STAGE_FRAGMENT_BIT,
 		std::move(imageInfos)
 	);
 }

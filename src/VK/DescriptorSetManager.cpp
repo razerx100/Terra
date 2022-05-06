@@ -36,18 +36,18 @@ void BindImageView(
 // DescriptorSet Manager
 
 DescriptorSetManager::DescriptorSetManager(VkDevice device)
-	: m_deviceRef(device), m_descriptorSet(VK_NULL_HANDLE) {
+	: m_deviceRef(device), m_descriptorSet(VK_NULL_HANDLE),
+	m_descriptorSetLayout(VK_NULL_HANDLE) {
 	m_descriptorPool = std::make_unique<DescriptorPool>(device);
 }
 
 DescriptorSetManager::~DescriptorSetManager() noexcept {
-	for (const auto layout : m_descriptorSetLayouts)
-		vkDestroyDescriptorSetLayout(m_deviceRef, layout, nullptr);
+	vkDestroyDescriptorSetLayout(m_deviceRef, m_descriptorSetLayout, nullptr);
 	m_descriptorPool.reset();
 }
 
-VulkanDescriptorSetLayouts DescriptorSetManager::GetDescriptorSetLayouts() const noexcept {
-	return m_descriptorSetLayouts;
+VkDescriptorSetLayout DescriptorSetManager::GetDescriptorSetLayout() const noexcept {
+	return m_descriptorSetLayout;
 }
 
 VkDescriptorSet DescriptorSetManager::GetDescriptorSet() const noexcept {
@@ -55,30 +55,27 @@ VkDescriptorSet DescriptorSetManager::GetDescriptorSet() const noexcept {
 }
 
 void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
-	if (!m_descriptorSetLayouts.empty()) {
-		m_descriptorPool->CreatePool(
-			device,
-			static_cast<std::uint32_t>(m_descriptorSetLayouts.size())
-		);
-		m_descriptorPool->AllocateDescriptors(
-			device, m_descriptorSetLayouts.data(),
-			&m_descriptorSet
-		);
+	m_descriptorPool->CreatePool(device);
 
-		for (const DescBufferInfo& bufferInfo : m_bufferInfos)
-			BindBuffer(device, m_descriptorSet, bufferInfo);
+	CreateSetLayout(device);
 
-		for (const DescImageInfo& imageInfo : m_imageInfos)
-			BindImageView(device, m_descriptorSet, imageInfo);
+	m_descriptorPool->AllocateDescriptors(
+		device, m_descriptorSetLayout,
+		&m_descriptorSet
+	);
 
-		m_bufferInfos = std::vector<DescBufferInfo>();
-		m_imageInfos = std::vector<DescImageInfo>();
-	}
+	for (const DescBufferInfo& bufferInfo : m_bufferInfos)
+		BindBuffer(device, m_descriptorSet, bufferInfo);
+
+	for (const DescImageInfo& imageInfo : m_imageInfos)
+		BindImageView(device, m_descriptorSet, imageInfo);
+
+	m_bufferInfos = std::vector<DescBufferInfo>();
+	m_imageInfos = std::vector<DescImageInfo>();
 }
 
-void DescriptorSetManager::AddSetLayoutImage(
-	VkDevice device, const DescriptorInfo& descInfo,
-	VkShaderStageFlags shaderFlag
+void DescriptorSetManager::AddSetLayout(
+	const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag
 ) {
 	VkDescriptorSetLayoutBinding layoutBinding = {};
 	layoutBinding.binding = descInfo.bindingSlot;
@@ -86,10 +83,36 @@ void DescriptorSetManager::AddSetLayoutImage(
 	layoutBinding.descriptorType = descInfo.type;
 	layoutBinding.stageFlags = shaderFlag;
 
+	m_layoutBindings.emplace_back(std::move(layoutBinding));
+
+	m_descriptorPool->AddDescriptorTypeLimit(
+		descInfo.type, descInfo.descriptorCount
+	);
+}
+
+void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
+	DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
+	std::vector<VkDescriptorBufferInfo>&& bufferInfo
+) {
+	AddSetLayout(descInfo, shaderFlag);
+
+	m_bufferInfos.emplace_back(std::move(descInfo), std::move(bufferInfo));
+}
+
+void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
+	DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
+	std::vector<VkDescriptorImageInfo>&& imageInfo
+) {
+	AddSetLayout(descInfo, shaderFlag);
+
+	m_imageInfos.emplace_back(std::move(descInfo), std::move(imageInfo));
+}
+
+void DescriptorSetManager::CreateSetLayout(VkDevice device) {
 	VkDescriptorSetLayoutCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.bindingCount = 1u;
-	createInfo.pBindings = &layoutBinding;
+	createInfo.bindingCount = static_cast<std::uint32_t>(std::size(m_layoutBindings));
+	createInfo.pBindings = std::data(m_layoutBindings);
 	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
 	VkDescriptorBindingFlags bindlessFlag =
@@ -104,66 +127,8 @@ void DescriptorSetManager::AddSetLayoutImage(
 
 	createInfo.pNext = &flagsCreateInfo;
 
-	VkDescriptorSetLayout layout;
-
 	VkResult result;
 	VK_THROW_FAILED(result,
-		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &layout)
+		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &m_descriptorSetLayout)
 	);
-
-	m_descriptorSetLayouts.emplace_back(layout);
-
-	m_descriptorPool->AddDescriptorTypeLimit(
-		descInfo.type, descInfo.descriptorCount
-	);
-}
-
-void DescriptorSetManager::AddSetLayoutBuffer(
-	VkDevice device, const DescriptorInfo& descInfo,
-	VkShaderStageFlags shaderFlag
-) {
-	VkDescriptorSetLayoutBinding layoutBinding = {};
-	layoutBinding.binding = descInfo.bindingSlot;
-	layoutBinding.descriptorCount = descInfo.descriptorCount;
-	layoutBinding.descriptorType = descInfo.type;
-	layoutBinding.stageFlags = shaderFlag;
-
-	VkDescriptorSetLayoutCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.bindingCount = 1u;
-	createInfo.pBindings = &layoutBinding;
-	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-
-	VkDescriptorSetLayout layout;
-
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &layout)
-	);
-
-	m_descriptorSetLayouts.emplace_back(layout);
-
-	m_descriptorPool->AddDescriptorTypeLimit(
-		descInfo.type, descInfo.descriptorCount
-	);
-}
-
-void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
-	VkDevice device, DescriptorInfo descInfo,
-	VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorBufferInfo>&& bufferInfo
-) {
-	AddSetLayoutBuffer(device, descInfo, shaderFlag);
-
-	m_bufferInfos.emplace_back(std::move(descInfo), std::move(bufferInfo));
-}
-
-void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
-	VkDevice device, DescriptorInfo descInfo,
-	VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorImageInfo>&& imageInfo
-) {
-	AddSetLayoutImage(device, descInfo, shaderFlag);
-
-	m_imageInfos.emplace_back(std::move(descInfo), std::move(imageInfo));
 }
