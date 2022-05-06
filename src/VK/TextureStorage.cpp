@@ -120,7 +120,7 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 
 	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
 		descInfo, VK_SHADER_STAGE_FRAGMENT_BIT,
-		std::move(imageInfos), true
+		std::move(imageInfos)
 	);
 }
 

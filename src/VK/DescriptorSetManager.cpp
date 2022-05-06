@@ -75,8 +75,7 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 }
 
 void DescriptorSetManager::AddSetLayout(
-	const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag,
-	bool bindless
+	const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag
 ) {
 	VkDescriptorSetLayoutBinding layoutBinding = {};
 	layoutBinding.binding = descInfo.bindingSlot;
@@ -90,35 +89,25 @@ void DescriptorSetManager::AddSetLayout(
 		descInfo.type, descInfo.descriptorCount
 	);
 
-	VkDescriptorBindingFlags bindFlags = 0u;
-
-	if (bindless)
-		bindFlags =
-		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-		VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-	else
-		bindFlags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+	VkDescriptorBindingFlags bindFlags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
 	m_bindingFlags.emplace_back(bindFlags);
 }
 
 void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
 	DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorBufferInfo>&& bufferInfo,
-	bool bindless
+	std::vector<VkDescriptorBufferInfo>&& bufferInfo
 ) {
-	AddSetLayout(descInfo, shaderFlag, bindless);
+	AddSetLayout(descInfo, shaderFlag);
 
 	m_bufferInfos.emplace_back(std::move(descInfo), std::move(bufferInfo));
 }
 
 void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
 	DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorImageInfo>&& imageInfo,
-	bool bindless
+	std::vector<VkDescriptorImageInfo>&& imageInfo
 ) {
-	AddSetLayout(descInfo, shaderFlag, bindless);
+	AddSetLayout(descInfo, shaderFlag);
 
 	m_imageInfos.emplace_back(std::move(descInfo), std::move(imageInfo));
 }
