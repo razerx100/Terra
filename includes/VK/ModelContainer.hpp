@@ -20,12 +20,17 @@ public:
 		VkDevice device,
 		const std::vector<VkDescriptorSetLayout>& setLayout
 	);
-	void CreateBuffers(VkDevice device);
+	void CreateBuffers(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
+	);
 	void CopyData(std::atomic_size_t& workCount);
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer);
 	void ReleaseUploadBuffers();
 
-	void BindCommands(VkCommandBuffer commandBuffer) const noexcept;
+	void BindCommands(
+		VkDevice device,
+		VkCommandBuffer commandBuffer
+	) const noexcept;
 
 private:
 	using Pipeline =

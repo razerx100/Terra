@@ -71,3 +71,64 @@ const std::vector<std::unique_ptr<UploadBuffer>>& UploadBuffers::GetUploadBuffer
 ) const noexcept {
 	return m_buffers;
 }
+
+// Upload Buffer Single
+
+UploadBufferSingle::UploadBufferSingle(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
+) : m_pCpuHandle(nullptr), m_bufferSize(0u) {
+
+	m_pBufferMemory = std::make_unique<DeviceMemory>(
+		logicalDevice, physicalDevice, std::vector<std::uint32_t>(), true
+		);
+	m_pBuffer = std::make_unique<UploadBuffer>(logicalDevice);
+}
+
+void UploadBufferSingle::CreateBuffer(VkDevice device, size_t bufferSize) {
+	m_pBuffer->CreateBuffer(device, bufferSize);
+	m_pBufferMemory->AllocateMemory(bufferSize);
+	m_bufferSize = bufferSize;
+
+	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
+
+	vkMapMemory(
+		device, uploadMemory,
+		0u, VK_WHOLE_SIZE, 0u,
+		reinterpret_cast<void**>(&m_pCpuHandle)
+	);
+
+	VkResult result;
+	VK_THROW_FAILED(result,
+		vkBindBufferMemory(
+			device, m_pBuffer->GetBuffer(),
+			uploadMemory, 0u
+		)
+	);
+}
+
+void UploadBufferSingle::FlushMemory(VkDevice device) {
+	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
+
+	VkMappedMemoryRange memoryRange = {};
+	memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+	memoryRange.memory = uploadMemory;
+	memoryRange.offset = 0u;
+	memoryRange.size = VK_WHOLE_SIZE;
+
+	VkResult result;
+	VK_THROW_FAILED(result, vkFlushMappedMemoryRanges(device, 1u, &memoryRange));
+}
+
+void UploadBufferSingle::CopyData(const void* data, size_t bufferSize) {
+	if (bufferSize > m_bufferSize)
+		VK_GENERIC_THROW("Buffer size bigger than size limit.");
+
+	memcpy(m_pCpuHandle, data, bufferSize);
+}
+
+VkBuffer UploadBufferSingle::GetBuffer() const noexcept {
+	if (m_pBuffer)
+		return m_pBuffer->GetBuffer();
+	else
+		return VK_NULL_HANDLE;
+}

@@ -8,6 +8,7 @@
 #include <VkBuffers.hpp>
 #include <vector>
 #include <cstdint>
+#include <UploadBuffers.hpp>
 
 class BindInstanceGFX {
 public:
@@ -25,10 +26,11 @@ public:
 	void AddModel(
 		VkDevice device, const IModel* const modelRef
 	) noexcept;
+	void InitializeTransformBuffer(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 
 	void BindCommands(
-		VkCommandBuffer graphicsCmdBuffer,
-		VkDescriptorSet descriptorSet
+		VkDevice device,
+		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 	) const noexcept;
 
 private:
@@ -47,6 +49,10 @@ private:
 		void AddIndexBuffer(std::shared_ptr<GpuBuffer> buffer, size_t indexCount) noexcept;
 		void AddPipelineLayout(std::shared_ptr<PipelineLayout> pipelineLayout) noexcept;
 
+		void UpdateBuffers(
+			VkDevice device,
+			UploadBufferSingle* pBuffer
+		) const noexcept;
 		void Draw(VkCommandBuffer commandBuffer) const noexcept;
 
 	private:
@@ -66,5 +72,6 @@ private:
 
 	bool m_vertexLayoutAvailable;
 	VertexLayout m_vertexLayout;
+	std::unique_ptr<UploadBufferSingle> m_pTransformBuffer;
 };
 #endif

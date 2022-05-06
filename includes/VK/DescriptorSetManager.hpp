@@ -5,26 +5,35 @@
 #include <DescriptorPool.hpp>
 #include <memory>
 
+using VulkanDescriptorSetLayouts = const std::vector<VkDescriptorSetLayout>&;
+
+struct DescriptorInfo {
+	std::uint32_t bindingSlot;
+	std::uint32_t descriptorCount;
+	VkDescriptorType type;
+};
+
+struct DescBufferInfo {
+	DescriptorInfo descriptorInfo;
+	std::vector<VkDescriptorBufferInfo> buffers;
+};
+
+struct DescImageInfo {
+	DescriptorInfo descriptorInfo;
+	std::vector<VkDescriptorImageInfo> images;
+};
+
+void BindBuffer(
+	VkDevice device, VkDescriptorSet descSet,
+	const DescBufferInfo& bufferInfo
+) noexcept;
+
+void BindImageView(
+	VkDevice device, VkDescriptorSet descSet,
+	const DescImageInfo& imageInfo
+) noexcept;
+
 class DescriptorSetManager {
-public:
-	using VulkanDescriptorSetLayouts = const std::vector<VkDescriptorSetLayout>&;
-
-	struct DescriptorInfo {
-		std::uint32_t bindingSlot;
-		std::uint32_t descriptorCount;
-		VkDescriptorType type;
-	};
-
-	struct BufferInfo {
-		DescriptorInfo descriptorInfo;
-		std::vector<VkDescriptorBufferInfo> buffers;
-	};
-
-	struct ImageInfo {
-		DescriptorInfo descriptorInfo;
-		std::vector<VkDescriptorImageInfo> images;
-	};
-
 public:
 	DescriptorSetManager(VkDevice device);
 	~DescriptorSetManager() noexcept;
@@ -58,21 +67,12 @@ public:
 
 	void CreateDescriptorSets(VkDevice device);
 
-	void BindBuffer(
-		VkDevice device, const BufferInfo& bufferInfo
-	) const noexcept;
-
-	void BindImageView(
-		VkDevice device, const ImageInfo& imageInfo
-	) const noexcept;
-
-
 private:
 	VkDevice m_deviceRef;
 	VkDescriptorSet m_descriptorSet;
 	std::unique_ptr<DescriptorPool> m_descriptorPool;
 	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
-	std::vector<BufferInfo> m_bufferInfos;
-	std::vector<ImageInfo> m_imageInfos;
+	std::vector<DescBufferInfo> m_bufferInfos;
+	std::vector<DescImageInfo> m_imageInfos;
 };
 #endif

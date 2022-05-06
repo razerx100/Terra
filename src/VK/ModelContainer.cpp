@@ -40,8 +40,12 @@ void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBu
 	Terra::indexBuffer->RecordUpload(device, copyBuffer);
 }
 
-void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
+void ModelContainer::BindCommands(
+	VkDevice device,
+	VkCommandBuffer commandBuffer
+) const noexcept {
 	m_bindInstance->BindCommands(
+		device,
 		commandBuffer,
 		Terra::descriptorSet->GetDescriptorSet()
 	);
@@ -52,9 +56,13 @@ void ModelContainer::ReleaseUploadBuffers() {
 	Terra::indexBuffer->ReleaseUploadBuffer();
 }
 
-void ModelContainer::CreateBuffers(VkDevice device) {
-	Terra::vertexBuffer->CreateBuffer(device);
-	Terra::indexBuffer->CreateBuffer(device);
+void ModelContainer::CreateBuffers(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
+) {
+	Terra::vertexBuffer->CreateBuffer(logicalDevice);
+	Terra::indexBuffer->CreateBuffer(logicalDevice);
+
+	m_bindInstance->InitializeTransformBuffer(logicalDevice, physicalDevice);
 }
 
 void ModelContainer::InitPipelines(

@@ -1,6 +1,40 @@
 #include <DescriptorSetManager.hpp>
 #include <VKThrowMacros.hpp>
 
+void BindBuffer(
+	VkDevice device, VkDescriptorSet descSet,
+	const DescBufferInfo& bufferInfo
+) noexcept {
+	VkWriteDescriptorSet setWrite = {};
+	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	setWrite.dstBinding = bufferInfo.descriptorInfo.bindingSlot;
+	setWrite.descriptorCount = bufferInfo.descriptorInfo.descriptorCount;
+	setWrite.dstSet = descSet;
+	setWrite.descriptorType = bufferInfo.descriptorInfo.type;
+	setWrite.dstArrayElement = 0u;
+	setWrite.pBufferInfo = bufferInfo.buffers.data();
+
+	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
+}
+
+void BindImageView(
+	VkDevice device, VkDescriptorSet descSet,
+	const DescImageInfo& imageInfo
+) noexcept {
+	VkWriteDescriptorSet setWrite = {};
+	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	setWrite.dstBinding = imageInfo.descriptorInfo.bindingSlot;
+	setWrite.descriptorCount = imageInfo.descriptorInfo.descriptorCount;
+	setWrite.dstSet = descSet;
+	setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	setWrite.dstArrayElement = 0u;
+	setWrite.pImageInfo = imageInfo.images.data();
+
+	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
+}
+
+// DescriptorSet Manager
+
 DescriptorSetManager::DescriptorSetManager(VkDevice device)
 	: m_deviceRef(device), m_descriptorSet(VK_NULL_HANDLE) {
 	m_descriptorPool = std::make_unique<DescriptorPool>(device);
@@ -12,8 +46,7 @@ DescriptorSetManager::~DescriptorSetManager() noexcept {
 	m_descriptorPool.reset();
 }
 
-DescriptorSetManager::VulkanDescriptorSetLayouts DescriptorSetManager::GetDescriptorSetLayouts(
-) const noexcept {
+VulkanDescriptorSetLayouts DescriptorSetManager::GetDescriptorSetLayouts() const noexcept {
 	return m_descriptorSetLayouts;
 }
 
@@ -32,45 +65,15 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 			&m_descriptorSet
 		);
 
-		for (const BufferInfo& bufferInfo : m_bufferInfos)
-			BindBuffer(device, bufferInfo);
+		for (const DescBufferInfo& bufferInfo : m_bufferInfos)
+			BindBuffer(device, m_descriptorSet, bufferInfo);
 
-		for (const ImageInfo& imageInfo : m_imageInfos)
-			BindImageView(device, imageInfo);
+		for (const DescImageInfo& imageInfo : m_imageInfos)
+			BindImageView(device, m_descriptorSet, imageInfo);
 
-		m_bufferInfos = std::vector<BufferInfo>();
-		m_imageInfos = std::vector<ImageInfo>();
+		m_bufferInfos = std::vector<DescBufferInfo>();
+		m_imageInfos = std::vector<DescImageInfo>();
 	}
-}
-
-void DescriptorSetManager::BindBuffer(
-	VkDevice device, const BufferInfo& bufferInfo
-) const noexcept {
-	VkWriteDescriptorSet setWrite = {};
-	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	setWrite.dstBinding = bufferInfo.descriptorInfo.bindingSlot;
-	setWrite.descriptorCount = bufferInfo.descriptorInfo.descriptorCount;
-	setWrite.dstSet = m_descriptorSet;
-	setWrite.descriptorType = bufferInfo.descriptorInfo.type;
-	setWrite.dstArrayElement = 0u;
-	setWrite.pBufferInfo = bufferInfo.buffers.data();
-
-	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
-}
-
-void DescriptorSetManager::BindImageView(
-	VkDevice device, const ImageInfo& imageInfo
-) const noexcept {
-	VkWriteDescriptorSet setWrite = {};
-	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	setWrite.dstBinding = imageInfo.descriptorInfo.bindingSlot;
-	setWrite.descriptorCount = imageInfo.descriptorInfo.descriptorCount;
-	setWrite.dstSet = m_descriptorSet;
-	setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	setWrite.dstArrayElement = 0u;
-	setWrite.pImageInfo = imageInfo.images.data();
-
-	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
 }
 
 void DescriptorSetManager::AddSetLayoutImage(

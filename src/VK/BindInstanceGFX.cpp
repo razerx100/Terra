@@ -1,6 +1,8 @@
 #include <BindInstanceGFX.hpp>
 #include <Terra.hpp>
 
+#include <DirectXMath.h>
+
 BindInstanceGFX::BindInstanceGFX() noexcept
 	: m_vertexLayoutAvailable(false) {}
 
@@ -50,8 +52,8 @@ void BindInstanceGFX::AddModel(
 }
 
 void BindInstanceGFX::BindCommands(
-	VkCommandBuffer graphicsCmdBuffer,
-	VkDescriptorSet descriptorSet
+	VkDevice device,
+	VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 ) const noexcept {
 	vkCmdBindPipeline(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pso->GetPipelineObject()
@@ -65,12 +67,42 @@ void BindInstanceGFX::BindCommands(
 		descSets, 0u, nullptr
 	);
 
-	for (const auto& model : m_modelsRaw)
+	for (const auto& model : m_modelsRaw) {
+		model->UpdateBuffers(
+			device,
+			m_pTransformBuffer.get()
+		);
 		model->Draw(graphicsCmdBuffer);
+	}
 }
 
 VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {
 	return m_vertexLayout;
+}
+
+void BindInstanceGFX::InitializeTransformBuffer(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
+) {
+	size_t bufferSize = sizeof(DirectX::XMMATRIX);
+
+	m_pTransformBuffer = std::make_unique<UploadBufferSingle>(logicalDevice, physicalDevice);
+	m_pTransformBuffer->CreateBuffer(logicalDevice, bufferSize);
+
+	DescriptorInfo descInfo = {};
+	descInfo.bindingSlot = 0u;
+	descInfo.descriptorCount = 1u;
+	descInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+
+	VkDescriptorBufferInfo bufferInfo = {};
+	bufferInfo.buffer = m_pTransformBuffer->GetBuffer();
+	bufferInfo.offset = 0u;
+	bufferInfo.range = static_cast<VkDeviceSize>(bufferSize);
+
+	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
+		logicalDevice, descInfo, VK_SHADER_STAGE_VERTEX_BIT, std::move(bufferInfos)
+	);
 }
 
 // Model Raw
@@ -134,5 +166,18 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 	);
 
 	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);
+}
+
+void BindInstanceGFX::ModelRaw::UpdateBuffers(
+	VkDevice device,
+	UploadBufferSingle* pBuffer
+) const noexcept {
+	DirectX::XMMATRIX transform = m_modelRef->GetTransform();
+
+	pBuffer->CopyData(
+		&transform, sizeof(transform)
+	);
+
+	pBuffer->FlushMemory(device);
 }
 
