@@ -74,6 +74,7 @@ void DeviceManager::CreateLogicalDevice() {
 	indexingFeatures.runtimeDescriptorArray = VK_TRUE;
 	indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 	indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+	indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

@@ -75,7 +75,8 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 }
 
 void DescriptorSetManager::AddSetLayout(
-	const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag
+	const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag,
+	bool bindless
 ) {
 	VkDescriptorSetLayoutBinding layoutBinding = {};
 	layoutBinding.binding = descInfo.bindingSlot;
@@ -88,22 +89,36 @@ void DescriptorSetManager::AddSetLayout(
 	m_descriptorPool->AddDescriptorTypeLimit(
 		descInfo.type, descInfo.descriptorCount
 	);
+
+	VkDescriptorBindingFlags bindFlags = 0u;
+
+	if (bindless)
+		bindFlags =
+		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+		VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+	else
+		bindFlags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+	m_bindingFlags.emplace_back(bindFlags);
 }
 
 void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
 	DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorBufferInfo>&& bufferInfo
+	std::vector<VkDescriptorBufferInfo>&& bufferInfo,
+	bool bindless
 ) {
-	AddSetLayout(descInfo, shaderFlag);
+	AddSetLayout(descInfo, shaderFlag, bindless);
 
 	m_bufferInfos.emplace_back(std::move(descInfo), std::move(bufferInfo));
 }
 
 void DescriptorSetManager::AddSetLayoutAndQueueForBinding(
 	DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-	std::vector<VkDescriptorImageInfo>&& imageInfo
+	std::vector<VkDescriptorImageInfo>&& imageInfo,
+	bool bindless
 ) {
-	AddSetLayout(descInfo, shaderFlag);
+	AddSetLayout(descInfo, shaderFlag, bindless);
 
 	m_imageInfos.emplace_back(std::move(descInfo), std::move(imageInfo));
 }
@@ -115,15 +130,10 @@ void DescriptorSetManager::CreateSetLayout(VkDevice device) {
 	createInfo.pBindings = std::data(m_layoutBindings);
 	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
-	VkDescriptorBindingFlags bindlessFlag =
-		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
-		VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-
 	VkDescriptorSetLayoutBindingFlagsCreateInfo flagsCreateInfo = {};
 	flagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-	flagsCreateInfo.bindingCount = 1u;
-	flagsCreateInfo.pBindingFlags = &bindlessFlag;
+	flagsCreateInfo.bindingCount = static_cast<std::uint32_t>(std::size(m_bindingFlags));
+	flagsCreateInfo.pBindingFlags = std::data(m_bindingFlags);
 
 	createInfo.pNext = &flagsCreateInfo;
 

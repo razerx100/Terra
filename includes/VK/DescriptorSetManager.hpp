@@ -43,16 +43,19 @@ public:
 
 	void AddSetLayoutAndQueueForBinding(
 		DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-		std::vector<VkDescriptorBufferInfo>&& bufferInfo
+		std::vector<VkDescriptorBufferInfo>&& bufferInfo,
+		bool bindless = false
 	);
 
 	void AddSetLayoutAndQueueForBinding(
 		DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-		std::vector<VkDescriptorImageInfo>&& imageInfo
+		std::vector<VkDescriptorImageInfo>&& imageInfo,
+		bool bindless = false
 	);
 
 	void AddSetLayout(
-		const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag
+		const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag,
+		bool bindless = false
 	);
 
 	void CreateDescriptorSets(VkDevice device);
@@ -68,5 +71,6 @@ private:
 	std::vector<DescBufferInfo> m_bufferInfos;
 	std::vector<DescImageInfo> m_imageInfos;
 	std::vector<VkDescriptorSetLayoutBinding> m_layoutBindings;
+	std::vector<VkDescriptorBindingFlags> m_bindingFlags;
 };
 #endif
