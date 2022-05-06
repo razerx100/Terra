@@ -86,7 +86,10 @@ void BindInstanceGFX::InitializeTransformBuffer(
 	size_t bufferSize = sizeof(DirectX::XMMATRIX);
 
 	m_pTransformBuffer = std::make_unique<UploadBufferSingle>(logicalDevice, physicalDevice);
-	m_pTransformBuffer->CreateBuffer(logicalDevice, bufferSize);
+	m_pTransformBuffer->CreateBuffer(
+		logicalDevice, bufferSize,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+	);
 
 	DescriptorInfo descInfo = {};
 	descInfo.bindingSlot = 0u;
@@ -99,6 +102,8 @@ void BindInstanceGFX::InitializeTransformBuffer(
 	bufferInfo.buffer = m_pTransformBuffer->GetBuffer();
 	bufferInfo.offset = 0u;
 	bufferInfo.range = static_cast<VkDeviceSize>(bufferSize);
+
+	bufferInfos.emplace_back(std::move(bufferInfo));
 
 	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
 		logicalDevice, descInfo, VK_SHADER_STAGE_VERTEX_BIT, std::move(bufferInfos)

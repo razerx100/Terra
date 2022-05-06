@@ -35,7 +35,8 @@ UploadBuffer::UploadBuffer(
 ) noexcept : BaseBuffer(device) {}
 
 void UploadBuffer::CreateBuffer(
-	VkDevice device, size_t bufferSize
+	VkDevice device, size_t bufferSize,
+	VkBufferUsageFlags bufferFlags
 ) {
 	VkBufferCreateInfo createInfo = {};
 
@@ -43,6 +44,8 @@ void UploadBuffer::CreateBuffer(
 	createInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	createInfo.size = static_cast<VkDeviceSize>(bufferSize);
+
+	createInfo.usage |= bufferFlags;
 
 	VkResult result;
 	VK_THROW_FAILED(result,

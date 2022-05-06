@@ -38,7 +38,10 @@ class UploadBufferSingle {
 public:
 	UploadBufferSingle(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 
-	void CreateBuffer(VkDevice device, size_t bufferSize);
+	void CreateBuffer(
+		VkDevice device, size_t bufferSize,
+		VkBufferUsageFlags bufferFlags
+	);
 	void FlushMemory(VkDevice device);
 	void CopyData(const void* data, size_t bufferSize);
 

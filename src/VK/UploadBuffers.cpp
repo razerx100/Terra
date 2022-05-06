@@ -84,9 +84,14 @@ UploadBufferSingle::UploadBufferSingle(
 	m_pBuffer = std::make_unique<UploadBuffer>(logicalDevice);
 }
 
-void UploadBufferSingle::CreateBuffer(VkDevice device, size_t bufferSize) {
-	m_pBuffer->CreateBuffer(device, bufferSize);
-	m_pBufferMemory->AllocateMemory(bufferSize);
+void UploadBufferSingle::CreateBuffer(
+	VkDevice device, size_t bufferSize,
+	VkBufferUsageFlags bufferFlags
+) {
+	m_pBuffer->CreateBuffer(device, bufferSize, bufferFlags);
+	m_pBufferMemory->AllocateMemory(
+		Align(bufferSize, m_pBufferMemory->GetAlignment())
+	);
 	m_bufferSize = bufferSize;
 
 	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();

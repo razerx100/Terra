@@ -53,7 +53,8 @@ public:
 	) noexcept;
 
 	void CreateBuffer(
-		VkDevice device, size_t bufferSize
+		VkDevice device, size_t bufferSize,
+		VkBufferUsageFlags bufferFlags = 0u
 	);
 };
 
