@@ -74,16 +74,12 @@ VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {
 	return m_vertexLayout;
 }
 
-void BindInstanceGFX::InitSingleFrameBuffers(
-	VkDevice device
+void BindInstanceGFX::InitSingleFrameBuffers() {}
+
+void BindInstanceGFX::AddDescriptorForBuffer(
+	VkBuffer buffer, size_t bufferSize,
+	VkShaderStageFlagBits shaderStage
 ) {
-	size_t bufferSize = sizeof(DirectX::XMMATRIX);
-
-	m_pTransformBuffer->CreateBuffer(
-		device, bufferSize,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-	);
-
 	DescriptorInfo descInfo = {};
 	descInfo.bindingSlot = 0u;
 	descInfo.descriptorCount = 1u;
@@ -92,15 +88,15 @@ void BindInstanceGFX::InitSingleFrameBuffers(
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 
 	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = m_pTransformBuffer->GetBuffer();
+	bufferInfo.buffer = buffer;
 	bufferInfo.offset = 0u;
 	bufferInfo.range = static_cast<VkDeviceSize>(bufferSize);
 
 	bufferInfos.emplace_back(std::move(bufferInfo));
 
-	//Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
-	//	descInfo, VK_SHADER_STAGE_VERTEX_BIT, std::move(bufferInfos)
-	//);
+	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
+		descInfo, shaderStage, std::move(bufferInfos)
+	);
 }
 
 // Model Raw
@@ -139,11 +135,6 @@ void BindInstanceGFX::ModelRaw::AddPipelineLayout(
 	m_pPipelineLayout = std::move(pipelineLayout);
 }
 
-struct PushData {
-	DirectX::XMMATRIX transform;
-	TextureData texInfo;
-};
-
 void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexcept {
 	VkBuffer vertexBuffers[] = { m_vertexBuffer->GetBuffer() };
 
@@ -159,17 +150,20 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 	const std::uint32_t textureIndex = m_modelRef->GetTextureIndex();
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
-		24u, 4u, &textureIndex
+		88u, 4u, &textureIndex
 	);
 
 	const TextureData& texInfo = m_modelRef->GetTextureInfo();
 	DirectX::XMMATRIX transform = m_modelRef->GetTransform();
 
-	PushData pushData = { transform, texInfo };
+	vkCmdPushConstants(
+		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
+		0u, 64u, &transform
+	);
 
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-		0u, 88u, &pushData
+		64u, 24u, &texInfo
 	);
 
 	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);

@@ -26,7 +26,7 @@ public:
 	void AddModel(
 		VkDevice device, const IModel* const modelRef
 	) noexcept;
-	void InitSingleFrameBuffers(VkDevice device);
+	void InitSingleFrameBuffers();
 
 	void BindCommands(
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
@@ -65,12 +65,17 @@ private:
 	};
 
 private:
+	void AddDescriptorForBuffer(
+		VkBuffer buffer, size_t bufferSize,
+		VkShaderStageFlagBits shaderStage
+	);
+
+private:
 	std::shared_ptr<PipelineLayout> m_pipelineLayout;
 	std::unique_ptr<PipelineObjectGFX> m_pso;
 	std::vector<std::unique_ptr<ModelRaw>> m_modelsRaw;
 
 	bool m_vertexLayoutAvailable;
 	VertexLayout m_vertexLayout;
-	std::unique_ptr<UploadBufferSingle> m_pTransformBuffer;
 };
 #endif

@@ -56,7 +56,7 @@ void ModelContainer::CreateBuffers(VkDevice device) {
 	Terra::vertexBuffer->CreateBuffer(device);
 	Terra::indexBuffer->CreateBuffer(device);
 
-	m_bindInstance->InitSingleFrameBuffers(device);
+	m_bindInstance->InitSingleFrameBuffers();
 }
 
 void ModelContainer::InitPipelines(
