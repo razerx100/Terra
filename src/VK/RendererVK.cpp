@@ -168,10 +168,7 @@ void RendererVK::Render() {
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	Terra::modelContainer->BindCommands(
-		Terra::device->GetLogicalDevice(),
-		commandBuffer
-	);
+	Terra::modelContainer->BindCommands(commandBuffer);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -231,10 +228,7 @@ void RendererVK::InitResourceBasedObjects() {
 void RendererVK::ProcessData() {
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
-	Terra::modelContainer->CreateBuffers(
-		logicalDevice,
-		Terra::device->GetPhysicalDevice()
-	);
+	Terra::modelContainer->CreateBuffers(logicalDevice);
 	Terra::textureStorage->CreateBuffers(logicalDevice);
 
 	// Async Copy

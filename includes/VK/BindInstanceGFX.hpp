@@ -26,10 +26,9 @@ public:
 	void AddModel(
 		VkDevice device, const IModel* const modelRef
 	) noexcept;
-	void InitializeTransformBuffer(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
+	void InitSingleFrameBuffers(VkDevice device);
 
 	void BindCommands(
-		VkDevice device,
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 	) const noexcept;
 

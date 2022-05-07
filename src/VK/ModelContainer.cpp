@@ -40,12 +40,8 @@ void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBu
 	Terra::indexBuffer->RecordUpload(device, copyBuffer);
 }
 
-void ModelContainer::BindCommands(
-	VkDevice device,
-	VkCommandBuffer commandBuffer
-) const noexcept {
+void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
 	m_bindInstance->BindCommands(
-		device,
 		commandBuffer,
 		Terra::descriptorSet->GetDescriptorSet()
 	);
@@ -56,13 +52,11 @@ void ModelContainer::ReleaseUploadBuffers() {
 	Terra::indexBuffer->ReleaseUploadBuffer();
 }
 
-void ModelContainer::CreateBuffers(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) {
-	Terra::vertexBuffer->CreateBuffer(logicalDevice);
-	Terra::indexBuffer->CreateBuffer(logicalDevice);
+void ModelContainer::CreateBuffers(VkDevice device) {
+	Terra::vertexBuffer->CreateBuffer(device);
+	Terra::indexBuffer->CreateBuffer(device);
 
-	m_bindInstance->InitializeTransformBuffer(logicalDevice, physicalDevice);
+	m_bindInstance->InitSingleFrameBuffers(device);
 }
 
 void ModelContainer::InitPipelines(
@@ -90,7 +84,7 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	// Push constants needs to be serialized according to the shader stages
 	pipelineLayout->AddPushConstantRange(
 		VK_SHADER_STAGE_VERTEX_BIT,
-		24u
+		88u
 	);
 	pipelineLayout->AddPushConstantRange(
 		VK_SHADER_STAGE_FRAGMENT_BIT,
