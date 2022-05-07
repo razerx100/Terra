@@ -33,7 +33,7 @@ namespace Terra {
 	extern std::unique_ptr<ISurfaceManager> surface;
 	extern std::unique_ptr<ResourceBuffer> vertexBuffer;
 	extern std::unique_ptr<ResourceBuffer> indexBuffer;
-	extern std::unique_ptr<ResourceBuffer> uniformBuffer;
+	extern std::unique_ptr<HostAccessibleBuffers> uniformBuffer;
 	extern std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	extern std::unique_ptr<RenderPassManager> renderPass;
 	extern std::unique_ptr<ModelContainer> modelContainer;
@@ -72,8 +72,7 @@ namespace Terra {
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void InitUniformBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
 	);
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
 	void InitRenderPass(VkDevice logicalDevice, VkFormat swapChainFormat);

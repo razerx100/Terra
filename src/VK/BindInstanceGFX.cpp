@@ -168,17 +168,3 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 
 	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);
 }
-
-void BindInstanceGFX::ModelRaw::UpdateBuffers(
-	VkDevice device,
-	UploadBufferSingle* pBuffer
-) const noexcept {
-	DirectX::XMMATRIX transform = m_modelRef->GetTransform();
-
-	pBuffer->CopyData(
-		&transform, sizeof(transform)
-	);
-
-	pBuffer->FlushMemory(device);
-}
-

@@ -56,6 +56,14 @@ public:
 		VkDevice device, size_t bufferSize,
 		VkBufferUsageFlags bufferFlags = 0u
 	);
+
+	void SetCpuHandle(std::uint8_t* cpuHandle) noexcept;
+
+	[[nodiscard]]
+	std::uint8_t* GetCpuHandle() const noexcept;
+
+private:
+	std::uint8_t* m_pCpuHandle;
 };
 
 class ImageBuffer {

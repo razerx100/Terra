@@ -106,7 +106,7 @@ RendererVK::RendererVK(
 
 	Terra::InitVertexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	Terra::InitIndexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	Terra::InitUniformBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitUniformBuffer(logicalDevice, physicalDevice);
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 }
 

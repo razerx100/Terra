@@ -3,19 +3,21 @@
 #include <VKThrowMacros.hpp>
 #include <VkHelperFunctions.hpp>
 
-UploadBuffers::UploadBuffers(
+// Cpu Base Buffers
+
+_CpuBaseBuffers::_CpuBaseBuffers(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
 ) : m_cpuHandle(nullptr), m_currentOffset(0u) {
 
-	m_uploadMemory = std::make_unique<DeviceMemory>(
+	m_pBufferMemory = std::make_unique<DeviceMemory>(
 		logicalDevice, physicalDevice, std::vector<std::uint32_t>(), true
 		);
 }
 
-void UploadBuffers::CreateBuffers(VkDevice device) {
-	m_uploadMemory->AllocateMemory(m_currentOffset);
+void _CpuBaseBuffers::CreateBuffers(VkDevice device) {
+	m_pBufferMemory->AllocateMemory(m_currentOffset);
 
-	VkDeviceMemory uploadMemory = m_uploadMemory->GetMemoryHandle();
+	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
 
 	vkMapMemory(
 		device, uploadMemory,
@@ -24,17 +26,19 @@ void UploadBuffers::CreateBuffers(VkDevice device) {
 	);
 
 	VkResult result;
-	for (size_t index = 0u; index < m_buffers.size(); ++index)
+	for (size_t index = 0u; index < std::size(m_pBuffers); ++index)
 		VK_THROW_FAILED(result,
 			vkBindBufferMemory(
-				device, m_buffers[index]->GetBuffer(),
-				uploadMemory, m_uploadBufferData[index].offset
+				device, m_pBuffers[index]->GetBuffer(),
+				uploadMemory, m_allocationData[index].offset
 			)
 		);
+
+	AfterCreationStuff();
 }
 
-void UploadBuffers::FlushMemory(VkDevice device) {
-	VkDeviceMemory uploadMemory = m_uploadMemory->GetMemoryHandle();
+void _CpuBaseBuffers::FlushMemory(VkDevice device) {
+	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
 
 	VkMappedMemoryRange memoryRange = {};
 	memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -44,96 +48,74 @@ void UploadBuffers::FlushMemory(VkDevice device) {
 
 	VkResult result;
 	VK_THROW_FAILED(result, vkFlushMappedMemoryRanges(device, 1u, &memoryRange));
-
-	vkUnmapMemory(device, uploadMemory);
 }
 
+void _CpuBaseBuffers::AfterCreationStuff() {}
+
+// Upload Buffers
+
+UploadBuffers::UploadBuffers(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
+) : _CpuBaseBuffers(logicalDevice, physicalDevice) {}
+
 void UploadBuffers::CopyData() noexcept {
-	for (size_t index = 0u; index < m_uploadBufferData.size(); ++index)
+	for (size_t index = 0u; index < m_allocationData.size(); ++index)
 		memcpy(
-			m_cpuHandle + m_uploadBufferData[index].offset, m_dataHandles[index],
-			m_uploadBufferData[index].bufferSize
+			m_cpuHandle + m_allocationData[index].offset, m_dataHandles[index],
+			m_allocationData[index].bufferSize
 		);
 }
 
 void UploadBuffers::AddBuffer(VkDevice device, const void* data, size_t bufferSize) {
-	m_uploadBufferData.emplace_back(bufferSize, m_currentOffset);
-	m_buffers.emplace_back(std::make_unique<UploadBuffer>(device));
+	m_allocationData.emplace_back(bufferSize, m_currentOffset);
 
-	m_currentOffset += Align(bufferSize, m_uploadMemory->GetAlignment());
+	m_currentOffset += Align(bufferSize, m_pBufferMemory->GetAlignment());
 
-	m_buffers.back()->CreateBuffer(device, bufferSize);
+	std::shared_ptr<UploadBuffer> uploadBuffer = std::make_shared<UploadBuffer>(device);
+
+	uploadBuffer->CreateBuffer(device, bufferSize);
+
+	m_pBuffers.emplace_back(std::move(uploadBuffer));
 
 	m_dataHandles.emplace_back(data);
 }
 
-const std::vector<std::unique_ptr<UploadBuffer>>& UploadBuffers::GetUploadBuffers(
+const std::vector<std::shared_ptr<UploadBuffer>>& UploadBuffers::GetUploadBuffers(
 ) const noexcept {
-	return m_buffers;
+	return m_pBuffers;
 }
 
-// Upload Buffer Single
-
-UploadBufferSingle::UploadBufferSingle(
+// Host accessible Buffers
+HostAccessibleBuffers::HostAccessibleBuffers(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) : m_pCpuHandle(nullptr), m_bufferSize(0u) {
+) : _CpuBaseBuffers(logicalDevice, physicalDevice) {}
 
-	m_pBufferMemory = std::make_unique<DeviceMemory>(
-		logicalDevice, physicalDevice, std::vector<std::uint32_t>(), true
-		);
-	m_pBuffer = std::make_unique<UploadBuffer>(logicalDevice);
-}
-
-void UploadBufferSingle::CreateBuffer(
+std::shared_ptr<UploadBuffer> HostAccessibleBuffers::AddBuffer(
 	VkDevice device, size_t bufferSize,
-	VkBufferUsageFlags bufferFlags
+	VkBufferUsageFlags bufferStageFlag
 ) {
-	m_pBuffer->CreateBuffer(device, bufferSize, bufferFlags);
-	m_pBufferMemory->AllocateMemory(
-		Align(bufferSize, m_pBufferMemory->GetAlignment())
-	);
-	m_bufferSize = bufferSize;
+	m_allocationData.emplace_back(bufferSize, m_currentOffset);
 
-	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
+	m_currentOffset += Align(bufferSize, m_pBufferMemory->GetAlignment());
 
-	vkMapMemory(
-		device, uploadMemory,
-		0u, VK_WHOLE_SIZE, 0u,
-		reinterpret_cast<void**>(&m_pCpuHandle)
-	);
+	std::shared_ptr<UploadBuffer> hostBuffer = std::make_shared<UploadBuffer>(device);
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkBindBufferMemory(
-			device, m_pBuffer->GetBuffer(),
-			uploadMemory, 0u
-		)
-	);
+	bufferStageFlag |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+	hostBuffer->CreateBuffer(device, bufferSize, bufferStageFlag);
+
+	m_pBuffers.emplace_back(hostBuffer);
+
+	return hostBuffer;
 }
 
-void UploadBufferSingle::FlushMemory(VkDevice device) {
-	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
-
-	VkMappedMemoryRange memoryRange = {};
-	memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-	memoryRange.memory = uploadMemory;
-	memoryRange.offset = 0u;
-	memoryRange.size = VK_WHOLE_SIZE;
-
-	VkResult result;
-	VK_THROW_FAILED(result, vkFlushMappedMemoryRanges(device, 1u, &memoryRange));
+void HostAccessibleBuffers::AfterCreationStuff() {
+	for (size_t index = 0u; index < std::size(m_pBuffers); ++index)
+		m_pBuffers[index]->SetCpuHandle(m_cpuHandle + m_allocationData[index].offset);
 }
 
-void UploadBufferSingle::CopyData(const void* data, size_t bufferSize) {
-	if (bufferSize > m_bufferSize)
-		VK_GENERIC_THROW("Buffer size bigger than size limit.");
+void HostAccessibleBuffers::ResetBufferData() noexcept {
+	m_pBuffers = std::vector<std::shared_ptr<UploadBuffer>>();
 
-	memcpy(m_pCpuHandle, data, bufferSize);
-}
-
-VkBuffer UploadBufferSingle::GetBuffer() const noexcept {
-	if (m_pBuffer)
-		return m_pBuffer->GetBuffer();
-	else
-		return VK_NULL_HANDLE;
+	m_allocationData = std::vector<BufferData>();
 }

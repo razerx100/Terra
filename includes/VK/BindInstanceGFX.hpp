@@ -48,10 +48,6 @@ private:
 		void AddIndexBuffer(std::shared_ptr<GpuBuffer> buffer, size_t indexCount) noexcept;
 		void AddPipelineLayout(std::shared_ptr<PipelineLayout> pipelineLayout) noexcept;
 
-		void UpdateBuffers(
-			VkDevice device,
-			UploadBufferSingle* pBuffer
-		) const noexcept;
 		void Draw(VkCommandBuffer commandBuffer) const noexcept;
 
 	private:

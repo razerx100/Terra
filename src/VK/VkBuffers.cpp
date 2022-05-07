@@ -53,6 +53,14 @@ void UploadBuffer::CreateBuffer(
 	);
 }
 
+void UploadBuffer::SetCpuHandle(std::uint8_t* cpuHandle) noexcept {
+	m_pCpuHandle = cpuHandle;
+}
+
+std::uint8_t* UploadBuffer::GetCpuHandle() const noexcept {
+	return m_pCpuHandle;
+}
+
 // Gpu Buffer
 
 GpuBuffer::GpuBuffer(
