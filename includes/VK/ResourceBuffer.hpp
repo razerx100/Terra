@@ -18,7 +18,7 @@ public:
 	std::shared_ptr<GpuBuffer> AddBuffer(
 		VkDevice device, const void* source, size_t bufferSize
 	);
-	void CreateBuffer(VkDevice device);
+	void CreateBuffers(VkDevice device);
 	void CopyData() noexcept;
 	void RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer);
 	void ReleaseUploadBuffer() noexcept;

@@ -51,7 +51,12 @@ void BindInstanceGFX::AddModel(
 	}
 }
 
-void BindInstanceGFX::BindCommands(
+void BindInstanceGFX::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
+	for (const auto& model : m_modelsRaw)
+		model->Draw(graphicsCmdBuffer);
+}
+
+void BindInstanceGFX::BindPipeline(
 	VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 ) const noexcept {
 	vkCmdBindPipeline(
@@ -65,38 +70,10 @@ void BindInstanceGFX::BindCommands(
 		m_pipelineLayout->GetLayout(), 0u, 1u,
 		descSets, 0u, nullptr
 	);
-
-	for (const auto& model : m_modelsRaw)
-		model->Draw(graphicsCmdBuffer);
 }
 
 VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {
 	return m_vertexLayout;
-}
-
-void BindInstanceGFX::InitSingleFrameBuffers() {}
-
-void BindInstanceGFX::AddDescriptorForBuffer(
-	VkBuffer buffer, size_t bufferSize,
-	VkShaderStageFlagBits shaderStage
-) {
-	DescriptorInfo descInfo = {};
-	descInfo.bindingSlot = 0u;
-	descInfo.descriptorCount = 1u;
-	descInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-
-	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = buffer;
-	bufferInfo.offset = 0u;
-	bufferInfo.range = static_cast<VkDeviceSize>(bufferSize);
-
-	bufferInfos.emplace_back(std::move(bufferInfo));
-
-	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
-		descInfo, shaderStage, std::move(bufferInfos)
-	);
 }
 
 // Model Raw
@@ -154,11 +131,11 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 	);
 
 	const TextureData& texInfo = m_modelRef->GetTextureInfo();
-	DirectX::XMMATRIX transform = m_modelRef->GetTransform();
+	DirectX::XMMATRIX modelMat = m_modelRef->GetModelMatrix();
 
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-		0u, 64u, &transform
+		0u, 64u, &modelMat
 	);
 
 	vkCmdPushConstants(

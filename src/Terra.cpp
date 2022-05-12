@@ -6,6 +6,8 @@
 #include <DisplayManagerVK.hpp>
 #endif
 
+#include <CameraManager.hpp>
+
 namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;
 	std::unique_ptr<DebugLayerManager> debugLayer;
@@ -26,6 +28,7 @@ namespace Terra {
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<DescriptorSetManager> descriptorSet;
 	std::unique_ptr<TextureStorage> textureStorage;
+	std::unique_ptr<CameraManager> cameraManager;
 
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
 		threadPool = std::move(threadPoolArg);
@@ -133,8 +136,11 @@ namespace Terra {
 		renderPass = std::make_unique<RenderPassManager>(logicalDevice, swapChainFormat);
 	}
 
-	void InitModelContainer(const std::string& shaderPath) {
-		modelContainer = std::make_unique<ModelContainer>(shaderPath);
+	void InitModelContainer(
+		const std::string& shaderPath,
+		VkDevice logicalDevice
+	) {
+		modelContainer = std::make_unique<ModelContainer>(shaderPath, logicalDevice);
 	}
 
 	void InitDescriptorSet(VkDevice logicalDevice) {
@@ -149,5 +155,9 @@ namespace Terra {
 			logicalDevice, physicalDevice,
 			queueFamilyIndices
 			);
+	}
+
+	void InitCameraManager() {
+		cameraManager = std::make_unique<CameraManager>();
 	}
 }

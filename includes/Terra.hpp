@@ -18,6 +18,8 @@
 #include <TextureStorage.hpp>
 #include <memory>
 
+class CameraManager;
+
 namespace Terra {
 	// Variables
 	extern std::shared_ptr<IThreadPool> threadPool;
@@ -39,6 +41,7 @@ namespace Terra {
 	extern std::unique_ptr<ModelContainer> modelContainer;
 	extern std::unique_ptr<DescriptorSetManager> descriptorSet;
 	extern std::unique_ptr<TextureStorage> textureStorage;
+	extern std::unique_ptr<CameraManager> cameraManager;
 
 	// Initialization functions
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept;
@@ -76,11 +79,15 @@ namespace Terra {
 	);
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
 	void InitRenderPass(VkDevice logicalDevice, VkFormat swapChainFormat);
-	void InitModelContainer(const std::string& shaderPath);
+	void InitModelContainer(
+		const std::string& shaderPath,
+		VkDevice logicalDevice
+	);
 	void InitDescriptorSet(VkDevice logicalDevice);
 	void InitTextureStorage(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+	void InitCameraManager();
 }
 #endif

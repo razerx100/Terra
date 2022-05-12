@@ -4,10 +4,13 @@
 #include <PipelineObjectGFX.hpp>
 #include <Terra.hpp>
 
-ModelContainer::ModelContainer(std::string shaderPath) noexcept
+ModelContainer::ModelContainer(
+	std::string shaderPath, VkDevice device
+) noexcept
 	:
 	m_bindInstance(std::make_unique<BindInstanceGFX>()),
-	m_shaderPath(std::move(shaderPath)) {}
+	m_shaderPath(std::move(shaderPath)),
+	m_pPerFrameBuffers(std::make_unique<PerFrameBuffers>(device)) {}
 
 void ModelContainer::AddModel(
 	VkDevice device, const IModel* const modelRef
@@ -41,10 +44,14 @@ void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBu
 }
 
 void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
-	m_bindInstance->BindCommands(
+	m_bindInstance->BindPipeline(
 		commandBuffer,
 		Terra::descriptorSet->GetDescriptorSet()
 	);
+
+	m_pPerFrameBuffers->UpdatePerFrameBuffers();
+
+	m_bindInstance->DrawModels(commandBuffer);
 }
 
 void ModelContainer::ReleaseUploadBuffers() {
@@ -53,10 +60,9 @@ void ModelContainer::ReleaseUploadBuffers() {
 }
 
 void ModelContainer::CreateBuffers(VkDevice device) {
-	Terra::vertexBuffer->CreateBuffer(device);
-	Terra::indexBuffer->CreateBuffer(device);
-
-	m_bindInstance->InitSingleFrameBuffers();
+	Terra::vertexBuffer->CreateBuffers(device);
+	Terra::indexBuffer->CreateBuffers(device);
+	Terra::uniformBuffer->CreateBuffers(device);
 }
 
 void ModelContainer::InitPipelines(

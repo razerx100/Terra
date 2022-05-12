@@ -26,9 +26,9 @@ public:
 	void AddModel(
 		VkDevice device, const IModel* const modelRef
 	) noexcept;
-	void InitSingleFrameBuffers();
 
-	void BindCommands(
+	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept;
+	void BindPipeline(
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 	) const noexcept;
 
@@ -59,12 +59,6 @@ private:
 		std::uint32_t m_indexCount;
 		std::shared_ptr<PipelineLayout> m_pPipelineLayout;
 	};
-
-private:
-	void AddDescriptorForBuffer(
-		VkBuffer buffer, size_t bufferSize,
-		VkShaderStageFlagBits shaderStage
-	);
 
 private:
 	std::shared_ptr<PipelineLayout> m_pipelineLayout;

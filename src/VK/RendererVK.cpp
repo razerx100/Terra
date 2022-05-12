@@ -1,6 +1,8 @@
 #include <RendererVK.hpp>
 #include <Terra.hpp>
 
+#include <CameraManager.hpp>
+
 RendererVK::RendererVK(
 	const char* appName,
 	void* windowHandle, void* moduleHandle,
@@ -108,9 +110,21 @@ RendererVK::RendererVK(
 	Terra::InitIndexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	Terra::InitUniformBuffer(logicalDevice, physicalDevice);
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+
+	Terra::InitCameraManager();
+	Terra::cameraManager->SetViewMatrix(
+		DirectX::XMMatrixTranslation(0.f, 0.f, 3.f)
+	);
+	Terra::cameraManager->SetProjectionMatrix(
+		DirectX::XMMatrixPerspectiveLH(
+			static_cast<float>(width), static_cast<float>(height),
+			0.1f, 100.f
+		)
+	);
 }
 
 RendererVK::~RendererVK() noexcept {
+	Terra::cameraManager.reset();
 	Terra::viewportAndScissor.reset();
 	Terra::modelContainer.reset();
 	Terra::descriptorSet.reset();
@@ -198,6 +212,13 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	)) {
 		Terra::viewportAndScissor->Resize(width, height);
 
+		Terra::cameraManager->SetProjectionMatrix(
+			DirectX::XMMatrixPerspectiveLH(
+				static_cast<float>(width), static_cast<float>(height),
+				0.1f, 100.f
+			)
+		);
+
 		if (hasSwapFormatChanged)
 			Terra::renderPass->CreateRenderPass(
 				Terra::device->GetLogicalDevice(), Terra::swapChain->GetSwapFormat()
@@ -222,7 +243,10 @@ void RendererVK::SetShaderPath(const char* path) noexcept {
 }
 
 void RendererVK::InitResourceBasedObjects() {
-	Terra::InitModelContainer(m_shaderPath);
+	Terra::InitModelContainer(
+		m_shaderPath,
+		Terra::device->GetLogicalDevice()
+	);
 }
 
 void RendererVK::ProcessData() {

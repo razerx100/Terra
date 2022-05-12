@@ -4,7 +4,6 @@ ViewportAndScissorManager::ViewportAndScissorManager(
 	std::uint32_t width, std::uint32_t height
 ) : m_viewport{}, m_scissor{} {
 	m_viewport.x = 0.0f;
-	m_viewport.y = 0.0f;
 	m_viewport.minDepth = 0.0f;
 	m_viewport.maxDepth = 1.0f;
 	ResizeViewport(width, height);
@@ -30,7 +29,8 @@ void ViewportAndScissorManager::ResizeViewport(
 	std::uint32_t width, std::uint32_t height
 ) noexcept {
 	m_viewport.width = static_cast<float>(width);
-	m_viewport.height = static_cast<float>(height);
+	m_viewport.height = -1.f * static_cast<float>(height);
+	m_viewport.y = static_cast<float>(height);
 }
 
 void ViewportAndScissorManager::ResizeScissor(

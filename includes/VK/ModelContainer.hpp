@@ -7,10 +7,13 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <PerFrameBuffers.hpp>
 
 class ModelContainer {
 public:
-	ModelContainer(std::string shaderPath) noexcept;
+	ModelContainer(
+		std::string shaderPath, VkDevice device
+	) noexcept;
 
 	void AddModel(
 		VkDevice device, const IModel* const modelRef
@@ -38,6 +41,7 @@ private:
 
 private:
 	std::unique_ptr<BindInstanceGFX> m_bindInstance;
+	std::unique_ptr<PerFrameBuffers> m_pPerFrameBuffers;
 
 	std::string m_shaderPath;
 };

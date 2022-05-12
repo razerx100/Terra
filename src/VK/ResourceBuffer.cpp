@@ -19,7 +19,7 @@ ResourceBuffer::ResourceBuffer(
 		);
 }
 
-void ResourceBuffer::CreateBuffer(VkDevice device) {
+void ResourceBuffer::CreateBuffers(VkDevice device) {
 	m_gpuBufferMemory->AllocateMemory(m_currentOffset);
 
 	m_uploadBuffers->CreateBuffers(device);
