@@ -113,11 +113,12 @@ RendererVK::RendererVK(
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetViewMatrix(
-		DirectX::XMMatrixTranslation(0.f, 0.f, 3.f)
+		DirectX::XMMatrixTranslation(0.f, 0.f, 1.f)
 	);
 	Terra::cameraManager->SetProjectionMatrix(
-		DirectX::XMMatrixPerspectiveLH(
-			static_cast<float>(width), static_cast<float>(height),
+		DirectX::XMMatrixPerspectiveFovLH(
+			DirectX::XMConvertToRadians(65.f),
+			static_cast<float>(width) / static_cast<float>(height),
 			0.1f, 100.f
 		)
 	);
@@ -213,8 +214,9 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 		Terra::viewportAndScissor->Resize(width, height);
 
 		Terra::cameraManager->SetProjectionMatrix(
-			DirectX::XMMatrixPerspectiveLH(
-				static_cast<float>(width), static_cast<float>(height),
+			DirectX::XMMatrixPerspectiveFovLH(
+				DirectX::XMConvertToRadians(65.f),
+				static_cast<float>(width) / static_cast<float>(height),
 				0.1f, 100.f
 			)
 		);
