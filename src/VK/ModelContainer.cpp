@@ -9,8 +9,8 @@ ModelContainer::ModelContainer(
 ) noexcept
 	:
 	m_bindInstance(std::make_unique<BindInstanceGFX>()),
-	m_shaderPath(std::move(shaderPath)),
-	m_pPerFrameBuffers(std::make_unique<PerFrameBuffers>(device)) {}
+	m_pPerFrameBuffers(std::make_unique<PerFrameBuffers>(device)),
+	m_shaderPath(std::move(shaderPath)) {}
 
 void ModelContainer::AddModel(
 	VkDevice device, const IModel* const modelRef
