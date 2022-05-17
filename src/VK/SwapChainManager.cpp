@@ -113,8 +113,6 @@ void SwapChainManager::ResizeSwapchain(
 	VkRenderPass renderPass, VkImageView depthImageView,
 	bool& formatChanged
 ) {
-	vkDeviceWaitIdle(device);
-
 	CleanUpSwapchain();
 
 	SwapChainManagerCreateInfo createInfo = {};

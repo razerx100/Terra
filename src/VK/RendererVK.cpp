@@ -223,6 +223,8 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		VkDevice device = Terra::device->GetLogicalDevice();
 
+		vkDeviceWaitIdle(device);
+
 		Terra::depthBuffer->CleanUp(device);
 		Terra::depthBuffer->CreateDepthBuffer(device, width, height);
 
