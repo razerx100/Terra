@@ -147,19 +147,6 @@ VkImage ImageBuffer::GetImage() const noexcept {
 	return m_image;
 }
 
-void ImageBuffer::ConfigureImageQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndices,
-	VkImageCreateInfo& imageInfo
-) noexcept {
-	if (queueFamilyIndices.size() > 1u) {
-		imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		imageInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueFamilyIndices.size());
-		imageInfo.pQueueFamilyIndices = queueFamilyIndices.data();
-	}
-	else
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-}
-
 void ImageBuffer::CopyToImage(
 	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer,
 	std::uint32_t width, std::uint32_t height
@@ -264,6 +251,6 @@ void ImageBuffer::CreateImageView(
 ) noexcept {
 	::CreateImageView(
 		device, m_image,
-		&m_imageView, format
+		&m_imageView, format, VK_IMAGE_ASPECT_COLOR_BIT
 	);
 }

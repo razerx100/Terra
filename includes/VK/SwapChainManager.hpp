@@ -41,13 +41,15 @@ public:
 		std::uint32_t imageIndex,
 		VkSemaphore renderSemaphore
 	);
-	bool ResizeSwapchain(
+	void ResizeSwapchain(
 		VkDevice device, VkSurfaceKHR surface,
 		std::uint32_t width, std::uint32_t height,
-		VkRenderPass renderPass, bool& formatChanged
+		VkRenderPass renderPass, VkImageView depthImageView,
+		bool& formatChanged
 	);
 	void CreateFramebuffers(
-		VkDevice device, VkRenderPass renderPass,
+		VkDevice device,
+		VkRenderPass renderPass, VkImageView depthImageView,
 		std::uint32_t width, std::uint32_t height
 	);
 

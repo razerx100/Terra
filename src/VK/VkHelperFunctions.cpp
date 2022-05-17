@@ -3,7 +3,7 @@
 
 void CreateImageView(
 	VkDevice device, VkImage image, VkImageView* imageView,
-	VkFormat imageFormat
+	VkFormat imageFormat, VkImageAspectFlags aspectFlags
 ) {
 	VkImageViewCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -14,7 +14,7 @@ void CreateImageView(
 	createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 	createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 	createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	createInfo.subresourceRange.aspectMask = aspectFlags;
 	createInfo.subresourceRange.baseMipLevel = 0u;
 	createInfo.subresourceRange.levelCount = 1u;
 	createInfo.subresourceRange.baseArrayLayer = 0u;
@@ -220,4 +220,37 @@ SurfaceInfo QuerySurfaceCapabilities(
 	}
 
 	return surfaceInfo;
+}
+
+void ConfigureImageQueueAccess(
+	const std::vector<std::uint32_t>& queueFamilyIndices,
+	VkImageCreateInfo& imageInfo
+) noexcept {
+	if (std::size(queueFamilyIndices) > 1u) {
+		imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+		imageInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(
+			std::size(queueFamilyIndices)
+			);
+		imageInfo.pQueueFamilyIndices = std::data(queueFamilyIndices);
+	}
+	else
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+}
+
+size_t FindMemoryType(
+	VkPhysicalDevice physicalDevice,
+	const VkMemoryRequirements& memoryReq, VkMemoryPropertyFlags propertiesToCheck
+) noexcept {
+	VkPhysicalDeviceMemoryProperties memoryProp = {};
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProp);
+
+	for(size_t index = 0u; index < memoryProp.memoryTypeCount; ++index)
+		if ((memoryReq.memoryTypeBits & (1u << index))
+			&& (memoryProp.memoryTypes[index].propertyFlags & propertiesToCheck)
+			== propertiesToCheck) {
+
+			return index;
+		}
+
+	return 0u;
 }

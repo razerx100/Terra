@@ -100,12 +100,6 @@ public:
 	VkImage GetImage() const noexcept;
 
 private:
-	static  void ConfigureImageQueueAccess(
-		const std::vector<std::uint32_t>& queueFamilyIndices,
-		VkImageCreateInfo& imageInfo
-	) noexcept;
-
-private:
 	VkDevice m_deviceRef;
 	VkImage m_image;
 	VkImageView m_imageView;

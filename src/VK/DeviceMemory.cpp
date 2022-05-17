@@ -1,5 +1,6 @@
 #include <DeviceMemory.hpp>
 #include <VKThrowMacros.hpp>
+#include <VkHelperFunctions.hpp>
 
 DeviceMemory::DeviceMemory(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
@@ -48,15 +49,7 @@ DeviceMemory::DeviceMemory(
 
 	m_alignment = memoryReq.alignment;
 
-	VkPhysicalDeviceMemoryProperties memoryProp = {};
-	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProp);
-
-	for(size_t index = 0u; index < memoryProp.memoryTypeCount; ++index)
-		if ((memoryReq.memoryTypeBits & (1u << index))
-			&& (memoryProp.memoryTypes[index].propertyFlags & properties) == properties) {
-			m_memoryTypeIndex = index;
-			break;
-		}
+	m_memoryTypeIndex = FindMemoryType(physicalDevice, memoryReq, properties);
 }
 
 DeviceMemory::~DeviceMemory() noexcept {

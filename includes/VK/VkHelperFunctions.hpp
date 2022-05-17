@@ -25,7 +25,7 @@ using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
 
 void CreateImageView(
 	VkDevice device, VkImage image, VkImageView* imageView,
-	VkFormat imageFormat
+	VkFormat imageFormat, VkImageAspectFlags aspectFlags
 );
 
 void CreateSampler(
@@ -33,6 +33,17 @@ void CreateSampler(
 	VkSampler* sampler,
 	bool anisotropy = false, float maxAnisotropy = 1.f
 );
+
+void ConfigureImageQueueAccess(
+	const std::vector<std::uint32_t>& queueFamilyIndices,
+	VkImageCreateInfo& imageInfo
+) noexcept;
+
+[[nodiscard]]
+size_t FindMemoryType(
+	VkPhysicalDevice physicalDevice,
+	const VkMemoryRequirements& memoryReq, VkMemoryPropertyFlags propertiesToCheck
+) noexcept;
 
 [[nodiscard]]
 FamilyInfo QueryQueueFamilyInfo(

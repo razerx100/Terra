@@ -1,5 +1,6 @@
 #include <RendererVK.hpp>
 #include <Terra.hpp>
+#include <array>
 
 #include <CameraManager.hpp>
 
@@ -9,9 +10,9 @@ RendererVK::RendererVK(
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount
 ) : m_backgroundColour{}, m_appName(appName),
-	m_bufferCount(bufferCount) {
+	m_bufferCount(bufferCount), m_width(width), m_height(height) {
 
-	m_backgroundColour.color = {
+	m_backgroundColour = {
 		{0.1f, 0.1f, 0.1f, 0.1f }
 	};
 
@@ -97,10 +98,17 @@ RendererVK::RendererVK(
 
 	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
 
-	Terra::InitRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
+	Terra::InitDepthBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, width, height);
+
+	Terra::InitRenderPass(
+		logicalDevice,
+		Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
+	);
 
 	Terra::swapChain->CreateFramebuffers(
-		logicalDevice, Terra::renderPass->GetRenderPass(),
+		logicalDevice,
+		Terra::renderPass->GetRenderPass(), Terra::depthBuffer->GetDepthImageView(),
 		width, height
 	);
 
@@ -136,6 +144,7 @@ RendererVK::~RendererVK() noexcept {
 	Terra::copyQueue.reset();
 	Terra::copyCmdPool.reset();
 	Terra::renderPass.reset();
+	Terra::depthBuffer.reset();
 	Terra::swapChain.reset();
 	Terra::graphicsQueue.reset();
 	Terra::graphicsCmdPool.reset();
@@ -149,7 +158,7 @@ RendererVK::~RendererVK() noexcept {
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
-	m_backgroundColour.color = {
+	m_backgroundColour = {
 		{colourVector[0], colourVector[1], colourVector[2], colourVector[3]}
 	};
 }
@@ -172,14 +181,18 @@ void RendererVK::Render() {
 	vkCmdSetViewport(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef());
 	vkCmdSetScissor(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef());
 
+	std::array<VkClearValue, 2> clearValues = {};
+	clearValues[0].color = m_backgroundColour;
+	clearValues[1].depthStencil = { 1.f, 0 };
+
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.clearValueCount = 1u;
 	renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
 	renderPassInfo.framebuffer = Terra::swapChain->GetFramebuffer(imageIndex);
 	renderPassInfo.renderArea.extent = Terra::swapChain->GetSwapExtent();
-	renderPassInfo.pClearValues = &m_backgroundColour;
+	renderPassInfo.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues));
+	renderPassInfo.pClearValues = std::data(clearValues);
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -204,13 +217,21 @@ void RendererVK::Render() {
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
-	bool hasSwapFormatChanged = false;
-	if (Terra::swapChain->ResizeSwapchain(
-		Terra::device->GetLogicalDevice(),
-		Terra::surface->GetSurface(),
-		width, height, Terra::renderPass->GetRenderPass(),
-		hasSwapFormatChanged
-	)) {
+	if (width != m_width || height != m_height) {
+		VkDevice device = Terra::device->GetLogicalDevice();
+
+		Terra::depthBuffer->CleanUp(device);
+		Terra::depthBuffer->CreateDepthBuffer(device, width, height);
+
+		bool hasSwapFormatChanged = false;
+		Terra::swapChain->ResizeSwapchain(
+			device,
+			Terra::surface->GetSurface(),
+			width, height,
+			Terra::renderPass->GetRenderPass(), Terra::depthBuffer->GetDepthImageView(),
+			hasSwapFormatChanged
+		);
+
 		Terra::viewportAndScissor->Resize(width, height);
 
 		Terra::cameraManager->SetProjectionMatrix(
@@ -223,7 +244,8 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		if (hasSwapFormatChanged)
 			Terra::renderPass->CreateRenderPass(
-				Terra::device->GetLogicalDevice(), Terra::swapChain->GetSwapFormat()
+				Terra::device->GetLogicalDevice(),
+				Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
 			);
 	}
 }

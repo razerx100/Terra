@@ -16,6 +16,7 @@
 #include <ModelContainer.hpp>
 #include <DescriptorSetManager.hpp>
 #include <TextureStorage.hpp>
+#include <DepthBuffer.hpp>
 #include <memory>
 
 class CameraManager;
@@ -42,6 +43,7 @@ namespace Terra {
 	extern std::unique_ptr<DescriptorSetManager> descriptorSet;
 	extern std::unique_ptr<TextureStorage> textureStorage;
 	extern std::unique_ptr<CameraManager> cameraManager;
+	extern std::unique_ptr<DepthBuffer> depthBuffer;
 
 	// Initialization functions
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept;
@@ -78,7 +80,10 @@ namespace Terra {
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
 	);
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
-	void InitRenderPass(VkDevice logicalDevice, VkFormat swapChainFormat);
+	void InitRenderPass(
+		VkDevice logicalDevice,
+		VkFormat swapChainFormat, VkFormat depthFormat
+	);
 	void InitModelContainer(
 		const std::string& shaderPath,
 		VkDevice logicalDevice
@@ -89,5 +94,9 @@ namespace Terra {
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void InitCameraManager();
+	void InitDepthBuffer(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	);
 }
 #endif

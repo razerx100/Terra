@@ -29,6 +29,7 @@ namespace Terra {
 	std::unique_ptr<DescriptorSetManager> descriptorSet;
 	std::unique_ptr<TextureStorage> textureStorage;
 	std::unique_ptr<CameraManager> cameraManager;
+	std::unique_ptr<DepthBuffer> depthBuffer;
 
 	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
 		threadPool = std::move(threadPoolArg);
@@ -132,8 +133,13 @@ namespace Terra {
 			);
 	}
 
-	void InitRenderPass(VkDevice logicalDevice, VkFormat swapChainFormat) {
-		renderPass = std::make_unique<RenderPassManager>(logicalDevice, swapChainFormat);
+	void InitRenderPass(
+		VkDevice logicalDevice,
+		VkFormat swapChainFormat, VkFormat depthFormat
+	) {
+		renderPass = std::make_unique<RenderPassManager>(
+			logicalDevice, swapChainFormat, depthFormat
+			);
 	}
 
 	void InitModelContainer(
@@ -159,5 +165,14 @@ namespace Terra {
 
 	void InitCameraManager() {
 		cameraManager = std::make_unique<CameraManager>();
+	}
+
+	void InitDepthBuffer(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	) {
+		depthBuffer = std::make_unique<DepthBuffer>(
+			logicalDevice, physicalDevice, queueFamilyIndices
+			);
 	}
 }
