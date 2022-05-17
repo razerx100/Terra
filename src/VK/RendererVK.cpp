@@ -218,6 +218,9 @@ void RendererVK::Render() {
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	if (width != m_width || height != m_height) {
+		m_width = width;
+		m_height = height;
+
 		VkDevice device = Terra::device->GetLogicalDevice();
 
 		Terra::depthBuffer->CleanUp(device);
