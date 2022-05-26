@@ -120,7 +120,7 @@ RendererVK::RendererVK(
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 
 	Terra::InitCameraManager();
-	Terra::cameraManager->SetProjectionMatrix(width, height);
+	Terra::cameraManager->SetSceneResolution(width, height);
 }
 
 RendererVK::~RendererVK() noexcept {
@@ -230,7 +230,7 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		Terra::viewportAndScissor->Resize(width, height);
 
-		Terra::cameraManager->SetProjectionMatrix(width, height);
+		Terra::cameraManager->SetSceneResolution(width, height);
 
 		if (hasSwapFormatChanged)
 			Terra::renderPass->CreateRenderPass(
