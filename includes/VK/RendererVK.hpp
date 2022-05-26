@@ -35,6 +35,9 @@ public:
 	void InitResourceBasedObjects() override;
 	void ProcessData() override;
 
+	void SetViewMatrix(const DirectX::XMMATRIX& viewMatrix) noexcept override;
+	void SetFov(std::uint32_t fovAngleInDegree) noexcept override;
+
 private:
 	VkClearColorValue m_backgroundColour;
 	const std::string m_appName;

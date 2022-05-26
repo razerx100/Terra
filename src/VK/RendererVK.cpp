@@ -120,16 +120,7 @@ RendererVK::RendererVK(
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 
 	Terra::InitCameraManager();
-	Terra::cameraManager->SetViewMatrix(
-		DirectX::XMMatrixTranslation(0.f, 0.f, 1.f)
-	);
-	Terra::cameraManager->SetProjectionMatrix(
-		DirectX::XMMatrixPerspectiveFovLH(
-			DirectX::XMConvertToRadians(65.f),
-			static_cast<float>(width) / static_cast<float>(height),
-			0.1f, 100.f
-		)
-	);
+	Terra::cameraManager->SetProjectionMatrix(width, height);
 }
 
 RendererVK::~RendererVK() noexcept {
@@ -239,13 +230,7 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		Terra::viewportAndScissor->Resize(width, height);
 
-		Terra::cameraManager->SetProjectionMatrix(
-			DirectX::XMMatrixPerspectiveFovLH(
-				DirectX::XMConvertToRadians(65.f),
-				static_cast<float>(width) / static_cast<float>(height),
-				0.1f, 100.f
-			)
-		);
+		Terra::cameraManager->SetProjectionMatrix(width, height);
 
 		if (hasSwapFormatChanged)
 			Terra::renderPass->CreateRenderPass(
@@ -347,3 +332,10 @@ void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexc
 	Terra::SetThreadPool(std::move(threadPoolArg));
 }
 
+void RendererVK::SetViewMatrix(const DirectX::XMMATRIX& viewMatrix) noexcept {
+	Terra::cameraManager->SetViewMatrix(viewMatrix);
+}
+
+void RendererVK::SetFov(std::uint32_t fovAngleInDegree) noexcept {
+	Terra::cameraManager->SetFov(fovAngleInDegree);
+}
