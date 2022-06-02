@@ -19,6 +19,8 @@
 #include <DepthBuffer.hpp>
 #include <memory>
 
+#include <ISharedDataContainer.hpp>
+
 class CameraManager;
 
 namespace Terra {
@@ -44,9 +46,10 @@ namespace Terra {
 	extern std::unique_ptr<TextureStorage> textureStorage;
 	extern std::unique_ptr<CameraManager> cameraManager;
 	extern std::unique_ptr<DepthBuffer> depthBuffer;
+	extern std::shared_ptr<ISharedDataContainer> sharedData;
 
 	// Initialization functions
-	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept;
+	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept;
 	void InitDebugLayer(VkInstance instance);
 	void InitGraphicsCmdPool(
 		VkDevice logicalDevice, size_t queueIndex, std::uint32_t bufferCount
@@ -98,5 +101,6 @@ namespace Terra {
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;
 }
 #endif

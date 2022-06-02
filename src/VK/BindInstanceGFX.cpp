@@ -1,6 +1,6 @@
 #include <BindInstanceGFX.hpp>
-#include <Terra.hpp>
 
+#include <Terra.hpp>
 #include <DirectXMath.h>
 
 BindInstanceGFX::BindInstanceGFX() noexcept

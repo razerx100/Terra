@@ -30,8 +30,9 @@ namespace Terra {
 	std::unique_ptr<TextureStorage> textureStorage;
 	std::unique_ptr<CameraManager> cameraManager;
 	std::unique_ptr<DepthBuffer> depthBuffer;
+	std::shared_ptr<ISharedDataContainer> sharedData;
 
-	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
+	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept {
 		threadPool = std::move(threadPoolArg);
 	}
 
@@ -174,5 +175,9 @@ namespace Terra {
 		depthBuffer = std::make_unique<DepthBuffer>(
 			logicalDevice, physicalDevice, queueFamilyIndices
 			);
+	}
+
+	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept {
+		sharedData = std::move(sharedDataArg);
 	}
 }

@@ -1,7 +1,8 @@
 #include <TextureStorage.hpp>
 #include <VKThrowMacros.hpp>
-#include <Terra.hpp>
 #include <VkHelperFunctions.hpp>
+
+#include <Terra.hpp>
 
 TextureStorage::TextureStorage(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,

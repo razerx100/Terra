@@ -1,7 +1,7 @@
 #include <RendererVK.hpp>
-#include <Terra.hpp>
 #include <array>
 
+#include <Terra.hpp>
 #include <CameraManager.hpp>
 
 RendererVK::RendererVK(
@@ -332,10 +332,8 @@ void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexc
 	Terra::SetThreadPool(std::move(threadPoolArg));
 }
 
-void RendererVK::SetViewMatrix(const DirectX::XMMATRIX& viewMatrix) noexcept {
-	Terra::cameraManager->SetViewMatrix(viewMatrix);
-}
-
-void RendererVK::SetFov(std::uint32_t fovAngleInDegree) noexcept {
-	Terra::cameraManager->SetFov(fovAngleInDegree);
+void RendererVK::SetSharedDataContainer(
+	std::shared_ptr<ISharedDataContainer> sharedData
+) noexcept {
+	Terra::SetSharedData(std::move(sharedData));
 }
