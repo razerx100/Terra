@@ -13,15 +13,14 @@
 #include <ResourceBuffer.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <RenderPassManager.hpp>
-#include <ModelContainer.hpp>
 #include <DescriptorSetManager.hpp>
 #include <TextureStorage.hpp>
 #include <DepthBuffer.hpp>
 #include <memory>
 
+#include <ModelContainer.hpp>
 #include <ISharedDataContainer.hpp>
-
-class CameraManager;
+#include <CameraManager.hpp>
 
 namespace Terra {
 	// Variables

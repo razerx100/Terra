@@ -1,8 +1,8 @@
-#include <ModelContainer.hpp>
 #include <Shader.hpp>
 #include <PipelineLayout.hpp>
-#include <PipelineObjectGFX.hpp>
 
+#include <ModelContainer.hpp>
+#include <PipelineObjectGFX.hpp>
 #include <Terra.hpp>
 
 ModelContainer::ModelContainer(
@@ -13,10 +13,8 @@ ModelContainer::ModelContainer(
 	m_pPerFrameBuffers(std::make_unique<PerFrameBuffers>(device)),
 	m_shaderPath(std::move(shaderPath)) {}
 
-void ModelContainer::AddModel(
-	VkDevice device, const IModel* const modelRef
-) {
-	m_bindInstance->AddModel(device, modelRef);
+void ModelContainer::AddModel(VkDevice device, std::shared_ptr<IModel>&& model) {
+	m_bindInstance->AddModel(device, std::move(model));
 }
 
 void ModelContainer::CopyData(std::atomic_size_t& workCount) {

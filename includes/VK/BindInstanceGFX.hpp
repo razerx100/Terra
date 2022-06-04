@@ -1,21 +1,21 @@
 #ifndef BIND_INSTANCE_GFX_HPP_
 #define BIND_INSTANCE_GFX_HPP_
 #include <vulkan/vulkan.hpp>
-#include <IModel.hpp>
 #include <PipelineObjectGFX.hpp>
-#include <VertexLayout.hpp>
 #include <PipelineLayout.hpp>
 #include <VkBuffers.hpp>
 #include <vector>
 #include <cstdint>
 #include <UploadBuffers.hpp>
 
+#include <VertexLayout.hpp>
+#include <IModel.hpp>
+
 class BindInstanceGFX {
 public:
 	BindInstanceGFX() noexcept;
 	BindInstanceGFX(
-		std::unique_ptr<PipelineObjectGFX> pso,
-		std::shared_ptr<PipelineLayout> layout
+		std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
 	) noexcept;
 
 	[[nodiscard]]
@@ -23,9 +23,7 @@ public:
 
 	void AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept;
 	void AddPipelineLayout(std::shared_ptr<PipelineLayout> layout) noexcept;
-	void AddModel(
-		VkDevice device, const IModel* const modelRef
-	) noexcept;
+	void AddModel(VkDevice device, std::shared_ptr<IModel>&& model) noexcept;
 
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 	void BindPipeline(
@@ -35,13 +33,13 @@ public:
 private:
 	class ModelRaw {
 	public:
-		ModelRaw(VkDevice device, const IModel* const modelRef) noexcept;
+		ModelRaw(VkDevice device, std::shared_ptr<IModel>&& model) noexcept;
 		ModelRaw(
 			VkDevice device,
-			const IModel* const modelRef,
 			std::shared_ptr<GpuBuffer> vertexBuffer,
 			std::shared_ptr<GpuBuffer> indexBuffer,
-			size_t indexCount
+			size_t indexCount,
+			std::shared_ptr<IModel>&& model
 		) noexcept;
 
 		void AddVertexBuffer(std::shared_ptr<GpuBuffer> buffer) noexcept;
@@ -52,7 +50,7 @@ private:
 
 	private:
 		VkDevice m_deviceRef;
-		const IModel* const m_modelRef;
+		std::shared_ptr<IModel> m_model;
 		std::shared_ptr<GpuBuffer> m_vertexBuffer;
 		std::shared_ptr<GpuBuffer> m_indexBuffer;
 		VkDeviceSize m_vertexOffset;

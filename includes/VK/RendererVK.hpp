@@ -1,8 +1,9 @@
 #ifndef RENDERER_VK_HPP_
 #define RENDERER_VK_HPP_
-#include <Renderer.hpp>
 #include <vulkan/vulkan.hpp>
 #include <string>
+
+#include <Renderer.hpp>
 
 class RendererVK final : public Renderer {
 public:
@@ -25,9 +26,9 @@ public:
 		size_t width, size_t height, size_t pixelSizeInBytes
 	) override;
 
-	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept override;
+	void SetThreadPool(std::shared_ptr<class IThreadPool> threadPoolArg) noexcept override;
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept override;
-	void SubmitModel(const IModel* const modelRef) override;
+	void SubmitModel(std::shared_ptr<IModel> model) override;
 	void Render() override;
 	void WaitForAsyncTasks() override;
 

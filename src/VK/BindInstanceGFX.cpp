@@ -1,14 +1,11 @@
 #include <BindInstanceGFX.hpp>
-
 #include <Terra.hpp>
-#include <DirectXMath.h>
 
 BindInstanceGFX::BindInstanceGFX() noexcept
 	: m_vertexLayoutAvailable(false) {}
 
 BindInstanceGFX::BindInstanceGFX(
-	std::unique_ptr<PipelineObjectGFX> pso,
-	std::shared_ptr<PipelineLayout> layout
+	std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
 ) noexcept
 	:
 	m_pipelineLayout(std::move(layout)),
@@ -28,27 +25,28 @@ void BindInstanceGFX::AddPipelineLayout(
 		modelRaw->AddPipelineLayout(layout);
 }
 
-void BindInstanceGFX::AddModel(
-	VkDevice device, const IModel* const modelRef
-) noexcept {
-	m_modelsRaw.emplace_back(
-		std::make_unique<ModelRaw>(
-			device,
-			modelRef,
-			Terra::vertexBuffer->AddBuffer(
-				device, modelRef->GetVertexData(), modelRef->GetVertexBufferSize()
-			),
-			Terra::indexBuffer->AddBuffer(
-				device, modelRef->GetIndexData(), modelRef->GetIndexBufferSize()
-			),
-			modelRef->GetIndexCount()
-			)
-	);
-
+void BindInstanceGFX::AddModel(VkDevice device, std::shared_ptr<IModel>&& model) noexcept {
 	if (!m_vertexLayoutAvailable) {
-		m_vertexLayout.InitLayout(modelRef->GetVertexLayout());
+		m_vertexLayout.InitLayout(model->GetVertexLayout());
 		m_vertexLayoutAvailable = true;
 	}
+
+	std::shared_ptr<GpuBuffer> vertexBuffer = Terra::vertexBuffer->AddBuffer(
+			device, model->GetVertexData(), model->GetVertexBufferSize()
+		);
+
+	std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
+		device, model->GetIndexData(), model->GetIndexBufferSize()
+	);
+
+	size_t indexCount = model->GetIndexCount();
+
+	m_modelsRaw.emplace_back(
+		std::make_unique<ModelRaw>(
+			device, std::move(vertexBuffer), std::move(indexBuffer), indexCount,
+			std::move(model)
+			)
+	);
 }
 
 void BindInstanceGFX::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
@@ -77,19 +75,19 @@ VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {
 }
 
 // Model Raw
-BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, const IModel* const modelRef) noexcept
-	: m_deviceRef(device), m_modelRef(modelRef),
+BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, std::shared_ptr<IModel>&& model) noexcept
+	: m_deviceRef(device), m_model(std::move(model)),
 	m_vertexBuffer(VK_NULL_HANDLE), m_indexBuffer(VK_NULL_HANDLE),
 	m_vertexOffset(0u), m_indexCount(0u) {}
 
 BindInstanceGFX::ModelRaw::ModelRaw(
 	VkDevice device,
-	const IModel* const modelRef,
 	std::shared_ptr<GpuBuffer> vertexBuffer,
 	std::shared_ptr<GpuBuffer> indexBuffer,
-	size_t indexCount
+	size_t indexCount,
+	std::shared_ptr<IModel>&& model
 ) noexcept
-	: m_deviceRef(device),m_modelRef(modelRef),
+	: m_deviceRef(device), m_model(std::move(model)),
 	m_vertexBuffer(std::move(vertexBuffer)), m_indexBuffer(std::move(indexBuffer)),
 	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indexCount)) {}
 
@@ -124,14 +122,14 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 		VK_INDEX_TYPE_UINT16
 	);
 
-	const std::uint32_t textureIndex = m_modelRef->GetTextureIndex();
+	const std::uint32_t textureIndex = m_model->GetTextureIndex();
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
 		88u, 4u, &textureIndex
 	);
 
-	const TextureData& texInfo = m_modelRef->GetTextureInfo();
-	DirectX::XMMATRIX modelMat = m_modelRef->GetModelMatrix();
+	const TextureData& texInfo = m_model->GetTextureInfo();
+	DirectX::XMMATRIX modelMat = m_model->GetModelMatrix();
 
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,

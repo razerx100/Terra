@@ -1,4 +1,3 @@
-#include <Terra.hpp>
 #ifdef TERRA_WIN32
 #include <DisplayManagerWin32.hpp>
 #include <SurfaceManagerWin32.hpp>
@@ -6,7 +5,7 @@
 #include <DisplayManagerVK.hpp>
 #endif
 
-#include <CameraManager.hpp>
+#include <Terra.hpp>
 
 namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;

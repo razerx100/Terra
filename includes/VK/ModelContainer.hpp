@@ -2,22 +2,18 @@
 #define MODEL_CONTAINER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <atomic>
-#include <IModel.hpp>
-#include <BindInstanceGFX.hpp>
 #include <string>
 #include <memory>
 #include <vector>
 #include <PerFrameBuffers.hpp>
 
+#include <BindInstanceGFX.hpp>
+
 class ModelContainer {
 public:
-	ModelContainer(
-		std::string shaderPath, VkDevice device
-	) noexcept;
+	ModelContainer(std::string shaderPath, VkDevice device) noexcept;
 
-	void AddModel(
-		VkDevice device, const IModel* const modelRef
-	);
+	void AddModel(VkDevice device, std::shared_ptr<IModel>&& model);
 
 	void InitPipelines(
 		VkDevice device,

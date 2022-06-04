@@ -1,8 +1,9 @@
 #ifndef VERTEX_LAYOUT_HPP_
 #define VERTEX_LAYOUT_HPP_
 #include <vulkan/vulkan.hpp>
-#include <IModel.hpp>
 #include <vector>
+
+#include <IModel.hpp>
 
 class VertexLayout {
 public:

@@ -1,8 +1,7 @@
-#include <RendererVK.hpp>
 #include <array>
 
+#include <RendererVK.hpp>
 #include <Terra.hpp>
-#include <CameraManager.hpp>
 
 RendererVK::RendererVK(
 	const char* appName,
@@ -154,9 +153,9 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 	};
 }
 
-void RendererVK::SubmitModel(const IModel* const modelRef) {
+void RendererVK::SubmitModel(std::shared_ptr<IModel> model) {
 	Terra::modelContainer->AddModel(
-		Terra::device->GetLogicalDevice(), modelRef
+		Terra::device->GetLogicalDevice(), std::move(model)
 	);
 }
 
