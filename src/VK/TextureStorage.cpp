@@ -26,9 +26,9 @@ TextureStorage::~TextureStorage() noexcept {
 }
 
 size_t TextureStorage::AddTexture(
-		VkDevice device,
-		const void* data,
-		size_t width, size_t height, size_t pixelSizeInBytes
+	VkDevice device,
+	std::unique_ptr<std::uint8_t> textureDataHandle,
+	size_t width, size_t height, size_t pixelSizeInBytes
 ) noexcept {
 	VkFormat imageFormat = VK_FORMAT_UNDEFINED;
 
@@ -37,10 +37,11 @@ size_t TextureStorage::AddTexture(
 	else if (pixelSizeInBytes == 16u)
 		imageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
 
+	std::uint32_t width32 = static_cast<std::uint32_t>(width);
+	std::uint32_t height32 = static_cast<std::uint32_t>(height);
+
 	m_textureData.emplace_back(
-		static_cast<std::uint32_t>(width),
-		static_cast<std::uint32_t>(height),
-		m_currentOffset, imageFormat
+		width32, height32, m_currentOffset, imageFormat
 	);
 
 	size_t bufferSize = width * height * pixelSizeInBytes;
@@ -49,21 +50,17 @@ size_t TextureStorage::AddTexture(
 		bufferSize, m_textureMemory->GetAlignment()
 	);
 
-	m_uploadBuffers->AddBuffer(device, data, bufferSize);
+	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
 
 	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
 
 	imageBuffer->CreateImage(
-		device,
-		m_textureData.back().width,
-		m_textureData.back().height,
-		imageFormat,
-		m_queueFamilyIndices
+		device, width32, height32, imageFormat, m_queueFamilyIndices
 	);
 
 	m_textures.emplace_back(std::move(imageBuffer));
 
-	return m_textures.size() - 1u;
+	return std::size(m_textures) - 1u;
 }
 
 void TextureStorage::CopyData(std::atomic_size_t& workCount) noexcept {
@@ -89,7 +86,7 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 
 	VkDeviceMemory textureMemory = m_textureMemory->GetMemoryHandle();
 
-	for (size_t index = 0u; index < m_textures.size(); ++index) {
+	for (size_t index = 0u; index < std::size(m_textures); ++index) {
 		auto& texture = m_textures[index];
 		ImageData& imageData = m_textureData[index];
 
@@ -104,7 +101,7 @@ void TextureStorage::CreateBuffers(VkDevice device) {
 void TextureStorage::SetDescriptorLayouts() const noexcept {
 	DescriptorInfo descInfo = {};
 	descInfo.bindingSlot = 1u;
-	descInfo.descriptorCount = static_cast<std::uint32_t>(m_textures.size());
+	descInfo.descriptorCount = static_cast<std::uint32_t>(std::size(m_textures));
 	descInfo.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
@@ -130,7 +127,7 @@ void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffe
 
 	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
-	for (size_t index = 0u; index < m_textureData.size(); ++index)
+	for (size_t index = 0u; index < std::size(m_textureData); ++index)
 		m_textures[index]->CopyToImage(
 			copyCmdBuffer, uploadBuffers[index]->GetBuffer(),
 			m_textureData[index].width, m_textureData[index].height

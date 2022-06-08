@@ -59,14 +59,16 @@ UploadBuffers::UploadBuffers(
 ) : _CpuBaseBuffers(logicalDevice, physicalDevice) {}
 
 void UploadBuffers::CopyData() noexcept {
-	for (size_t index = 0u; index < m_allocationData.size(); ++index)
+	for (size_t index = 0u; index < std::size(m_allocationData); ++index)
 		memcpy(
-			m_cpuHandle + m_allocationData[index].offset, m_dataHandles[index],
+			m_cpuHandle + m_allocationData[index].offset, m_dataHandles[index].get(),
 			m_allocationData[index].bufferSize
 		);
 }
 
-void UploadBuffers::AddBuffer(VkDevice device, const void* data, size_t bufferSize) {
+void UploadBuffers::AddBuffer(
+	VkDevice device, std::unique_ptr<std::uint8_t> dataHandles, size_t bufferSize
+) {
 	m_allocationData.emplace_back(bufferSize, m_currentOffset);
 
 	m_currentOffset += Align(bufferSize, m_pBufferMemory->GetAlignment());
@@ -77,7 +79,7 @@ void UploadBuffers::AddBuffer(VkDevice device, const void* data, size_t bufferSi
 
 	m_pBuffers.emplace_back(std::move(uploadBuffer));
 
-	m_dataHandles.emplace_back(data);
+	m_dataHandles.emplace_back(std::move(dataHandles));
 }
 
 const std::vector<std::shared_ptr<UploadBuffer>>& UploadBuffers::GetUploadBuffers(

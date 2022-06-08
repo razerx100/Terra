@@ -35,7 +35,9 @@ class UploadBuffers : public _CpuBaseBuffers {
 public:
 	UploadBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 
-	void AddBuffer(VkDevice device, const void* data, size_t bufferSize);
+	void AddBuffer(
+		VkDevice device, std::unique_ptr<std::uint8_t> dataHandles, size_t bufferSize
+	);
 
 	void CopyData() noexcept;
 
@@ -43,7 +45,7 @@ public:
 	const std::vector<std::shared_ptr<UploadBuffer>>& GetUploadBuffers() const noexcept;
 
 private:
-	std::vector<const void*> m_dataHandles;
+	std::vector<std::unique_ptr<std::uint8_t>> m_dataHandles;
 };
 
 class HostAccessibleBuffers : public _CpuBaseBuffers {

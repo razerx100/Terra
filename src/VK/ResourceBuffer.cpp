@@ -7,8 +7,7 @@ ResourceBuffer::ResourceBuffer(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	std::vector<std::uint32_t> queueFamilyIndices,
 	BufferType type
-)
-	: m_currentOffset(0u), m_queueFamilyIndices(std::move(queueFamilyIndices)), m_type(type) {
+) : m_currentOffset(0u), m_queueFamilyIndices(std::move(queueFamilyIndices)), m_type(type) {
 
 	m_uploadBuffers = std::make_unique<UploadBuffers>(
 		logicalDevice, physicalDevice
@@ -27,7 +26,7 @@ void ResourceBuffer::CreateBuffers(VkDevice device) {
 	VkDeviceMemory gpuOnlyMemory = m_gpuBufferMemory->GetMemoryHandle();
 
 	VkResult result;
-	for (size_t index = 0u; index < m_gpuBuffers.size(); ++index) {
+	for (size_t index = 0u; index < std::size(m_gpuBuffers); ++index) {
 		VK_THROW_FAILED(result,
 			vkBindBufferMemory(
 				device, m_gpuBuffers[index]->GetBuffer(), gpuOnlyMemory,
@@ -38,7 +37,7 @@ void ResourceBuffer::CreateBuffers(VkDevice device) {
 }
 
 std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
-	VkDevice device, const void* source, size_t bufferSize
+	VkDevice device, std::unique_ptr<std::uint8_t> sourceHandle, size_t bufferSize
 ) {
 	m_gpuBufferData.emplace_back(bufferSize, m_currentOffset);
 
@@ -46,7 +45,7 @@ std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 		bufferSize, m_gpuBufferMemory->GetAlignment()
 	);
 
-	m_uploadBuffers->AddBuffer(device, source, bufferSize);
+	m_uploadBuffers->AddBuffer(device, std::move(sourceHandle), bufferSize);
 
 	std::shared_ptr<GpuBuffer> gpuBuffer = std::make_shared<GpuBuffer>(device);
 
@@ -69,7 +68,7 @@ void ResourceBuffer::RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer
 
 	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
-	for (size_t index = 0u; index < m_gpuBufferData.size(); ++index) {
+	for (size_t index = 0u; index < std::size(m_gpuBufferData); ++index) {
 		VkBufferCopy copyRegion = {};
 		copyRegion.srcOffset = 0u;
 		copyRegion.dstOffset = 0u;

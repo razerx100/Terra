@@ -19,7 +19,7 @@ public:
 
 	[[nodiscard]] // Returns index of the resource in Resource Heap
 	virtual size_t RegisterResource(
-		const void* data,
+		std::unique_ptr<std::uint8_t> textureData,
 		size_t width, size_t height, size_t pixelSizeInBytes
 	) = 0;
 

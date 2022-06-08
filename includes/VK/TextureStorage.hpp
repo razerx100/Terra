@@ -16,7 +16,7 @@ public:
 
 	size_t AddTexture(
 		VkDevice device,
-		const void* data,
+		std::unique_ptr<std::uint8_t> textureDataHandle,
 		size_t width, size_t height, size_t pixelSizeInBytes
 	) noexcept;
 
