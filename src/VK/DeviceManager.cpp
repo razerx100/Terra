@@ -165,11 +165,12 @@ void DeviceManager::SetQueueFamilyInfo(
 ) {
 	FamilyInfo familyInfos;
 
+	// QueueFamily check should have already been done, so familyInfoCheck should return
+	// a value for sure
 	if (auto familyInfoCheck = QueryQueueFamilyInfo(device, surface); familyInfoCheck)
-		familyInfoCheck = std::move(*familyInfoCheck);
-	else
-		VK_GENERIC_THROW("No suitable queueFamily found.");
+		familyInfos = std::move(*familyInfoCheck);
 
+	// Sorting family indices to find consecuitive different queue types with same index
 	std::ranges::sort(familyInfos,
 		[](
 			const std::pair<size_t, QueueType>& pair1,
@@ -179,26 +180,26 @@ void DeviceManager::SetQueueFamilyInfo(
 		}
 	);
 
-	auto& [lastFamily, queueType] = familyInfos[0];
+	auto& [previousFamilyIndex, queueType] = familyInfos.front();
 	std::uint32_t queueFlag = queueType;
 	size_t queueCount = 1u;
 
 	for (size_t index = 1u; index < std::size(familyInfos); ++index) {
 		const auto& [familyIndex, familyType] = familyInfos[index];
 
-		if (lastFamily == familyIndex) {
+		if (previousFamilyIndex == familyIndex) {
 			++queueCount;
 			queueFlag |= familyType;
 		}
 		else {
-			m_usableQueueFamilies.emplace_back(lastFamily, queueFlag, queueCount, 0u);
-			lastFamily = familyIndex;
+			m_usableQueueFamilies.emplace_back(previousFamilyIndex, queueFlag, queueCount, 0u);
+			previousFamilyIndex = familyIndex;
 			queueFlag = familyType;
 			queueCount = 1u;
 		}
 	}
 
-	m_usableQueueFamilies.emplace_back(lastFamily, queueFlag, queueCount, 0u);
+	m_usableQueueFamilies.emplace_back(previousFamilyIndex, queueFlag, queueCount, 0u);
 }
 
 bool DeviceManager::IsDeviceSuitable(
@@ -208,7 +209,7 @@ bool DeviceManager::IsDeviceSuitable(
 	FamilyInfo familyInfos;
 
 	if (auto familyInfoCheck = QueryQueueFamilyInfo(device, surface); familyInfoCheck)
-		familyInfoCheck = std::move(*familyInfoCheck);
+		familyInfos = std::move(*familyInfoCheck);
 	else
 		return false;
 
