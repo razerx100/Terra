@@ -37,10 +37,7 @@ public:
 	VkSemaphore GetImageSemaphore() const noexcept;
 
 	void SetNextFrameIndex(size_t index) noexcept;
-	void PresentImage(
-		std::uint32_t imageIndex,
-		VkSemaphore renderSemaphore
-	);
+	void PresentImage(std::uint32_t imageIndex);
 	void ResizeSwapchain(
 		VkDevice device, VkSurfaceKHR surface,
 		std::uint32_t width, std::uint32_t height,

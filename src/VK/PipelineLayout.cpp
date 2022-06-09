@@ -31,8 +31,8 @@ void PipelineLayout::CreateLayout(
 	VkDescriptorSetLayout setLayouts[] = { setLayout };
 
 	createInfo.pSetLayouts = setLayouts;
-	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(m_pushRanges.size());
-	createInfo.pPushConstantRanges = m_pushRanges.data();
+	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(std::size(m_pushRanges));
+	createInfo.pPushConstantRanges = std::data(m_pushRanges);
 
 	VkResult result;
 	VK_THROW_FAILED(result,

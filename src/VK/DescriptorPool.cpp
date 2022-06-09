@@ -17,7 +17,7 @@ void DescriptorPool::AddDescriptorTypeLimit(
 
 void DescriptorPool::CreatePool(VkDevice device) {
 	std::vector<VkDescriptorPoolSize> descriptorTypeCounts;
-	for (auto [type, descCount] : m_typeMap)
+	for (auto& [type, descCount] : m_typeMap)
 		descriptorTypeCounts.emplace_back(type, descCount);
 
 	VkDescriptorPoolCreateInfo poolInfo = {};

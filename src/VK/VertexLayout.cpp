@@ -23,7 +23,7 @@ const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const n
 
 void VertexLayout::InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept {
 	size_t vertexSize = 0u;
-	for (size_t index = 0u; index < inputLayout.size(); ++index) {
+	for (size_t index = 0u; index < std::size(inputLayout); ++index) {
 		const auto elementTypeID = static_cast<size_t>(inputLayout[index]);
 
 		m_attrDescs.emplace_back(
@@ -43,6 +43,7 @@ void VertexLayout::InitLayout(const std::vector<VertexElementType>& inputLayout)
 	m_createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	m_createInfo.vertexBindingDescriptionCount = 1u;
 	m_createInfo.pVertexBindingDescriptions = &m_bindingDesc;
-	m_createInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(m_attrDescs.size());
-	m_createInfo.pVertexAttributeDescriptions = m_attrDescs.data();
+	m_createInfo.vertexAttributeDescriptionCount =
+		static_cast<std::uint32_t>(std::size(m_attrDescs));
+	m_createInfo.pVertexAttributeDescriptions = std::data(m_attrDescs);
 }

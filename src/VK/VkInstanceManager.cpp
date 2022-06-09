@@ -19,7 +19,7 @@ void InstanceManager::CheckExtensionSupport() const {
 
 	std::vector<VkExtensionProperties> extensions(extensionCount);
 	vkEnumerateInstanceExtensionProperties(
-		nullptr, &extensionCount, extensions.data()
+		nullptr, &extensionCount, std::data(extensions)
 	);
 
 	for (const char* requiredExtension : m_extensionNames) {
@@ -43,7 +43,7 @@ void InstanceManager::CheckLayerSupport() const {
 
 	std::vector<VkLayerProperties> availableLayers(layerCount);
 	vkEnumerateInstanceLayerProperties(
-		&layerCount, availableLayers.data()
+		&layerCount, std::data(availableLayers)
 	);
 
 	for (const char* requiredLayer : m_validationLayersNames) {
@@ -94,9 +94,9 @@ void InstanceManager::CreateInstance() {
 	if (enableValidationLayers) {
 		CheckLayerSupport();
 		createInfo.enabledLayerCount = static_cast<std::uint32_t>(
-			m_validationLayersNames.size()
+			std::size(m_validationLayersNames)
 			);
-		createInfo.ppEnabledLayerNames = m_validationLayersNames.data();
+		createInfo.ppEnabledLayerNames = std::data(m_validationLayersNames);
 
 		m_extensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -115,9 +115,9 @@ void InstanceManager::CreateInstance() {
 
 	CheckExtensionSupport();
 	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
-		m_extensionNames.size()
+		std::size(m_extensionNames)
 		);
-	createInfo.ppEnabledExtensionNames = m_extensionNames.data();
+	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
 
 	VkResult result;
 	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));

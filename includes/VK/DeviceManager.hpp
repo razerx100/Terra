@@ -50,7 +50,7 @@ private:
 
 	void SetQueueFamilyInfo(
 		VkPhysicalDevice device, VkSurfaceKHR surface
-	) noexcept;
+	);
 
 private:
 	VkPhysicalDevice m_physicalDevice;

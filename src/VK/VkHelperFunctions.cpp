@@ -69,24 +69,25 @@ void CreateSampler(
 	);
 }
 
-FamilyInfo QueryQueueFamilyInfo(
+std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept {
 	std::uint32_t queueFamilyCount = 0u;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+	vkGetPhysicalDeviceQueueFamilyProperties(
+		device, &queueFamilyCount, std::data(queueFamilies)
+	);
 
 	bool transfer = false;
 	bool compute = false;
-	bool present = false;
 	bool graphics = false;
 
 	FamilyInfo familyInfo;
 
 	// Transfer only
-	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+	for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 		VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
 		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
@@ -100,7 +101,7 @@ FamilyInfo QueryQueueFamilyInfo(
 	}
 
 	if (transfer)
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
 			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
@@ -114,7 +115,7 @@ FamilyInfo QueryQueueFamilyInfo(
 			}
 		}
 	else
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
 			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
@@ -131,7 +132,7 @@ FamilyInfo QueryQueueFamilyInfo(
 		}
 
 	if (!transfer)
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
 			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
@@ -145,7 +146,7 @@ FamilyInfo QueryQueueFamilyInfo(
 		}
 
 	if (!compute)
-		for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
 			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
@@ -158,31 +159,28 @@ FamilyInfo QueryQueueFamilyInfo(
 			}
 		}
 
-	for (size_t index = 0u; index < queueFamilies.size(); ++index) {
+	for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
 			&& CheckPresentSupport(device, surface, index)
-			&& queueFamily.queueCount >= 2) {
+			&& queueFamily.queueCount >= 1) {
 			familyInfo.emplace_back(index, QueueType::GraphicsQueue);
-			familyInfo.emplace_back(index, QueueType::PresentQueue);
 			graphics = true;
-			present = true;
-			queueFamily.queueCount -= 2;
+			--queueFamily.queueCount;
 
 			break;
 		}
 	}
 
-	if (graphics && present && compute && transfer)
+	if (graphics && compute && transfer)
 		return familyInfo;
 	else
-		return FamilyInfo();
+		return {};
 }
 
 bool CheckPresentSupport(
-	VkPhysicalDevice device, VkSurfaceKHR surface,
-	size_t index
+	VkPhysicalDevice device, VkSurfaceKHR surface, size_t index
 ) noexcept {
 	VkBool32 presentSupport = false;
 	vkGetPhysicalDeviceSurfaceSupportKHR(
@@ -205,7 +203,7 @@ SurfaceInfo QuerySurfaceCapabilities(
 	if (formatCount) {
 		surfaceInfo.formats.resize(formatCount);
 		vkGetPhysicalDeviceSurfaceFormatsKHR(
-			device, surface, &formatCount, surfaceInfo.formats.data()
+			device, surface, &formatCount, std::data(surfaceInfo.formats)
 		);
 	}
 
@@ -215,7 +213,7 @@ SurfaceInfo QuerySurfaceCapabilities(
 	if (presentModeCount) {
 		surfaceInfo.presentModes.resize(presentModeCount);
 		vkGetPhysicalDeviceSurfacePresentModesKHR(
-			device, surface, &presentModeCount, surfaceInfo.presentModes.data()
+			device, surface, &presentModeCount, std::data(surfaceInfo.presentModes)
 		);
 	}
 

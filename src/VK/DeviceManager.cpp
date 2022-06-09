@@ -1,5 +1,6 @@
 #include <DeviceManager.hpp>
 #include <VKThrowMacros.hpp>
+#include <ranges>
 #include <algorithm>
 
 DeviceManager::~DeviceManager() noexcept {
@@ -16,7 +17,7 @@ void DeviceManager::FindPhysicalDevice(
 		VK_GENERIC_THROW("No GPU with Vulkan support.");
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+	vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
 
 	VkPhysicalDevice suitableDevice = QueryPhysicalDevices(
 		devices, surface, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
@@ -52,17 +53,17 @@ void DeviceManager::CreateLogicalDevice() {
 	for (const auto& info : m_usableQueueFamilies)
 		mostQueueCount = std::max(mostQueueCount, info.queueRequired);
 
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(m_usableQueueFamilies.size());
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(std::size(m_usableQueueFamilies));
 	const std::vector<float> queuePriorities(mostQueueCount, 1.0f);
 
-	for (size_t index = 0u; index < queueCreateInfos.size(); ++index) {
+	for (size_t index = 0u; index < std::size(queueCreateInfos); ++index) {
 		VkDeviceQueueCreateInfo& queueCreateInfo = queueCreateInfos[index];
 		const QueueFamilyInfo& queueFamilyInfo = m_usableQueueFamilies[index];
 
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex = static_cast<std::uint32_t>(queueFamilyInfo.index);
 		queueCreateInfo.queueCount = static_cast<std::uint32_t>(queueFamilyInfo.queueRequired);
-		queueCreateInfo.pQueuePriorities = queuePriorities.data();
+		queueCreateInfo.pQueuePriorities = std::data(queuePriorities);
 	}
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
@@ -82,10 +83,10 @@ void DeviceManager::CreateLogicalDevice() {
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pQueueCreateInfos = queueCreateInfos.data();
-	createInfo.queueCreateInfoCount = static_cast<std::uint32_t>(queueCreateInfos.size());
-	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(m_extensionNames.size());
-	createInfo.ppEnabledExtensionNames = m_extensionNames.data();
+	createInfo.pQueueCreateInfos = std::data(queueCreateInfos);
+	createInfo.queueCreateInfoCount = static_cast<std::uint32_t>(std::size(queueCreateInfos));
+	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(std::size(m_extensionNames));
+	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
 	createInfo.pNext = &deviceFeatures2;
 
 	VkResult result;
@@ -114,7 +115,7 @@ VkDevice DeviceManager::GetLogicalDevice() const noexcept {
 QueueData DeviceManager::GetQueue(QueueType type) noexcept {
 	VkQueue queue;
 	size_t familyIndex = 0u;
-	for (size_t index = 0u; index < m_usableQueueFamilies.size(); ++index)
+	for (size_t index = 0u; index < std::size(m_usableQueueFamilies); ++index)
 		if (m_usableQueueFamilies[index].typeFlags & type) {
 			familyIndex = index;
 
@@ -141,7 +142,7 @@ bool DeviceManager::CheckDeviceExtensionSupport(
 
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 	vkEnumerateDeviceExtensionProperties(
-		device, nullptr, &extensionCount, availableExtensions.data()
+		device, nullptr, &extensionCount, std::data(availableExtensions)
 	);
 
 	for (const char* requiredExtension : m_extensionNames) {
@@ -161,24 +162,29 @@ bool DeviceManager::CheckDeviceExtensionSupport(
 
 void DeviceManager::SetQueueFamilyInfo(
 	VkPhysicalDevice device, VkSurfaceKHR surface
-) noexcept {
-	FamilyInfo familyInfos = QueryQueueFamilyInfo(device, surface);
+) {
+	FamilyInfo familyInfos;
 
-	std::sort(familyInfos.begin(), familyInfos.end(),
+	if (auto familyInfoCheck = QueryQueueFamilyInfo(device, surface); familyInfoCheck)
+		familyInfoCheck = std::move(*familyInfoCheck);
+	else
+		VK_GENERIC_THROW("No suitable queueFamily found.");
+
+	std::ranges::sort(familyInfos,
 		[](
-			std::pair<size_t, QueueType> pair1,
-			std::pair<size_t, QueueType> pair2
+			const std::pair<size_t, QueueType>& pair1,
+			const std::pair<size_t, QueueType>& pair2
 			) {
 				return pair1.first < pair2.first;
 		}
 	);
 
-	auto [lastFamily, queueType] = familyInfos[0];
+	auto& [lastFamily, queueType] = familyInfos[0];
 	std::uint32_t queueFlag = queueType;
 	size_t queueCount = 1u;
 
-	for (size_t index = 1u; index < familyInfos.size(); ++index) {
-		const auto [familyIndex, familyType] = familyInfos[index];
+	for (size_t index = 1u; index < std::size(familyInfos); ++index) {
+		const auto& [familyIndex, familyType] = familyInfos[index];
 
 		if (lastFamily == familyIndex) {
 			++queueCount;
@@ -199,7 +205,12 @@ bool DeviceManager::IsDeviceSuitable(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) const noexcept {
 	SurfaceInfo surfaceInfo = QuerySurfaceCapabilities(device, surface);
-	FamilyInfo familyInfos = QueryQueueFamilyInfo(device, surface);
+	FamilyInfo familyInfos;
+
+	if (auto familyInfoCheck = QueryQueueFamilyInfo(device, surface); familyInfoCheck)
+		familyInfoCheck = std::move(*familyInfoCheck);
+	else
+		return false;
 
 	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
 	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;

@@ -57,9 +57,9 @@ VkPresentModeKHR SwapChainManager::ChoosePresentMode(
 }
 
 void SwapChainManager::CreateImageViews(VkDevice device) {
-	m_swapchainImageViews.resize(m_swapchainImages.size());
+	m_swapchainImageViews.resize(std::size(m_swapchainImages));
 
-	for (size_t index = 0u; index < m_swapchainImageViews.size(); ++index)
+	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
 		CreateImageView(
 			device, m_swapchainImages[index],
 			&m_swapchainImageViews[index], m_swapchainFormat,
@@ -81,15 +81,9 @@ size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
 	return static_cast<size_t>(imageIndex);
 }
 
-void SwapChainManager::PresentImage(
-	std::uint32_t imageIndex,
-	VkSemaphore renderSemaphore
-) {
+void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1u;
-	presentInfo.pWaitSemaphores = &renderSemaphore;
 
 	const VkSwapchainKHR swapchains[] = { m_swapchain };
 	presentInfo.swapchainCount = 1u;
@@ -119,7 +113,7 @@ void SwapChainManager::ResizeSwapchain(
 	createInfo.device = device;
 	createInfo.surfaceInfo = m_surfaceInfo;
 	createInfo.surface = surface;
-	createInfo.bufferCount = static_cast<std::uint32_t>(m_swapchainImages.size());
+	createInfo.bufferCount = static_cast<std::uint32_t>(std::size(m_swapchainImages));
 	createInfo.width = width;
 	createInfo.height = height;
 
@@ -180,7 +174,9 @@ void SwapChainManager::QueryImages() {
 	std::uint32_t imageCount;
 	vkGetSwapchainImagesKHR(m_deviceRef, m_swapchain, &imageCount, nullptr);
 	m_swapchainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(m_deviceRef, m_swapchain, &imageCount, m_swapchainImages.data());
+	vkGetSwapchainImagesKHR(
+		m_deviceRef, m_swapchain, &imageCount, std::data(m_swapchainImages)
+	);
 }
 
 void SwapChainManager::CleanUpSwapchain() noexcept {
@@ -209,7 +205,7 @@ void SwapChainManager::CreateFramebuffers(
 	m_frameBuffers.resize(std::size(m_swapchainImageViews));
 
 	VkResult result;
-	for (size_t index = 0u; index < m_swapchainImageViews.size(); ++index) {
+	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index) {
 		VkImageView attachments[] = { m_swapchainImageViews[index], depthImageView };
 
 		VkFramebufferCreateInfo frameBufferInfo = {};

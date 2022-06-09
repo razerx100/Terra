@@ -53,10 +53,6 @@ RendererVK::RendererVK(
 		bufferCount
 	);
 
-	auto [presentQueueHandle, presentQueueFamilyIndex] = Terra::device->GetQueue(
-		QueueType::PresentQueue
-	);
-
 	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
 
 	SwapChainManagerCreateInfo swapCreateInfo = {};
@@ -67,7 +63,8 @@ RendererVK::RendererVK(
 	swapCreateInfo.height = height;
 	swapCreateInfo.bufferCount = bufferCount;
 
-	Terra::InitSwapChain(swapCreateInfo, presentQueueHandle, presentQueueFamilyIndex);
+	// Graphics and Present queues should be the same
+	Terra::InitSwapChain(swapCreateInfo, graphicsQueueHandle, graphicsQueueFamilyIndex);
 
 	Terra::InitGraphicsCmdPool(
 		logicalDevice,
@@ -195,9 +192,7 @@ void RendererVK::Render() {
 	Terra::graphicsQueue->SubmitCommandBuffer(
 		commandBuffer, Terra::swapChain->GetImageSemaphore()
 	);
-	Terra::swapChain->PresentImage(
-		static_cast<std::uint32_t>(imageIndex), Terra::graphicsQueue->GetRenderSemaphore()
-	);
+	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(imageIndex));
 
 	const size_t nextFrame =
 		++imageIndex >= m_bufferCount ? imageIndex % m_bufferCount : imageIndex;

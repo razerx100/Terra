@@ -1,13 +1,13 @@
 #ifndef VK_HELPER_FUNCTIONS_
 #define VK_HELPER_FUNCTIONS_
 #include <vulkan/vulkan.hpp>
+#include <optional>
 #include <vector>
 
 enum QueueType {
 	TransferQueue = 1,
 	ComputeQueue = 2,
-	GraphicsQueue = 4,
-	PresentQueue = 8
+	GraphicsQueue = 4
 };
 
 struct SurfaceInfo {
@@ -29,8 +29,7 @@ void CreateImageView(
 );
 
 void CreateSampler(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-	VkSampler* sampler,
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSampler* sampler,
 	bool anisotropy = false, float maxAnisotropy = 1.f
 );
 
@@ -46,14 +45,13 @@ size_t FindMemoryType(
 ) noexcept;
 
 [[nodiscard]]
-FamilyInfo QueryQueueFamilyInfo(
+std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept;
 
 [[nodiscard]]
 bool CheckPresentSupport(
-	VkPhysicalDevice device, VkSurfaceKHR surface,
-	size_t index
+	VkPhysicalDevice device, VkSurfaceKHR surface, size_t index
 ) noexcept;
 
 [[nodiscard]]

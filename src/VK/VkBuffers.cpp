@@ -19,10 +19,12 @@ void BaseBuffer::ConfigureBufferQueueAccess(
 	const std::vector<std::uint32_t>& queueFamilyIndices,
 	VkBufferCreateInfo& bufferInfo
 ) noexcept {
-	if (queueFamilyIndices.size() > 1u) {
+	size_t queueIndicesSize = std::size(queueFamilyIndices);
+
+	if (queueIndicesSize > 1u) {
 		bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		bufferInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueFamilyIndices.size());
-		bufferInfo.pQueueFamilyIndices = queueFamilyIndices.data();
+		bufferInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(queueIndicesSize);
+		bufferInfo.pQueueFamilyIndices = std::data(queueFamilyIndices);
 	}
 	else
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -32,7 +34,7 @@ void BaseBuffer::ConfigureBufferQueueAccess(
 
 UploadBuffer::UploadBuffer(
 	VkDevice device
-) noexcept : BaseBuffer(device) {}
+) noexcept : BaseBuffer(device), m_pCpuHandle(nullptr) {}
 
 void UploadBuffer::CreateBuffer(
 	VkDevice device, size_t bufferSize,

@@ -12,7 +12,7 @@ void BindBuffer(
 	setWrite.dstSet = descSet;
 	setWrite.descriptorType = bufferInfo.descriptorInfo.type;
 	setWrite.dstArrayElement = 0u;
-	setWrite.pBufferInfo = bufferInfo.buffers.data();
+	setWrite.pBufferInfo = std::data(bufferInfo.buffers);
 
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
 }
@@ -28,7 +28,7 @@ void BindImageView(
 	setWrite.dstSet = descSet;
 	setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	setWrite.dstArrayElement = 0u;
-	setWrite.pImageInfo = imageInfo.images.data();
+	setWrite.pImageInfo = std::data(imageInfo.images);
 
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
 }
