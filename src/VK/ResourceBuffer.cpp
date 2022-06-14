@@ -58,12 +58,11 @@ std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetBufferMemoryRequirements(device, gpuBuffer->GetBuffer(), &memoryRequirements);
 
-	bufferSize = memoryRequirements.size;
 	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
 
 	m_gpuBufferData.emplace_back(bufferSize, m_currentOffset);
 
-	m_currentOffset += bufferSize;
+	m_currentOffset += memoryRequirements.size;
 
 	m_gpuBuffers.emplace_back(gpuBuffer);
 

@@ -84,11 +84,9 @@ void UploadBuffers::AddBuffer(
 
 	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
 
-	bufferSize = memoryRequirements.size;
-
 	m_allocationData.emplace_back(bufferSize, m_currentOffset);
 
-	m_currentOffset += bufferSize;
+	m_currentOffset += memoryRequirements.size;
 
 	m_pBuffers.emplace_back(std::move(uploadBuffer));
 

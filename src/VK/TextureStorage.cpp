@@ -50,6 +50,9 @@ size_t TextureStorage::AddTexture(
 	std::uint32_t width32 = static_cast<std::uint32_t>(width);
 	std::uint32_t height32 = static_cast<std::uint32_t>(height);
 
+	size_t bufferSize = width * height * pixelSizeInBytes;
+	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
+
 	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
 	imageBuffer->CreateImage(
 		device, width32, height32, imageFormat, m_queueFamilyIndices
@@ -58,16 +61,13 @@ size_t TextureStorage::AddTexture(
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetImageMemoryRequirements(device, imageBuffer->GetImage(), &memoryRequirements);
 
-	size_t bufferSize = memoryRequirements.size;
 	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
-
-	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
 
 	m_textureData.emplace_back(
 		width32, height32, m_currentOffset, imageFormat
 	);
 
-	m_currentOffset += bufferSize;
+	m_currentOffset += memoryRequirements.size;
 
 	m_textures.emplace_back(std::move(imageBuffer));
 
