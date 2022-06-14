@@ -9,8 +9,14 @@ _CpuBaseBuffers::_CpuBaseBuffers(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
 ) : m_cpuHandle(nullptr), m_currentOffset(0u) {
 
+	UploadBuffer buffer = UploadBuffer(logicalDevice);
+	buffer.CreateBuffer(logicalDevice, 1u);
+
+	VkMemoryRequirements memoryReq = {};
+	vkGetBufferMemoryRequirements(logicalDevice, buffer.GetBuffer(), &memoryReq);
+
 	m_pBufferMemory = std::make_unique<DeviceMemory>(
-		logicalDevice, physicalDevice, std::vector<std::uint32_t>(), true
+		logicalDevice, physicalDevice, memoryReq, true
 		);
 }
 
@@ -69,13 +75,20 @@ void UploadBuffers::CopyData() noexcept {
 void UploadBuffers::AddBuffer(
 	VkDevice device, std::unique_ptr<std::uint8_t> dataHandles, size_t bufferSize
 ) {
-	m_allocationData.emplace_back(bufferSize, m_currentOffset);
-
-	m_currentOffset += Align(bufferSize, m_pBufferMemory->GetAlignment());
-
 	std::shared_ptr<UploadBuffer> uploadBuffer = std::make_shared<UploadBuffer>(device);
 
 	uploadBuffer->CreateBuffer(device, bufferSize);
+
+	VkMemoryRequirements memoryRequirements = {};
+	vkGetBufferMemoryRequirements(device, uploadBuffer->GetBuffer(), &memoryRequirements);
+
+	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+
+	bufferSize = memoryRequirements.size;
+
+	m_allocationData.emplace_back(bufferSize, m_currentOffset);
+
+	m_currentOffset += bufferSize;
 
 	m_pBuffers.emplace_back(std::move(uploadBuffer));
 
@@ -96,10 +109,6 @@ std::shared_ptr<UploadBuffer> HostAccessibleBuffers::AddBuffer(
 	VkDevice device, size_t bufferSize,
 	VkBufferUsageFlags bufferStageFlag
 ) {
-	m_allocationData.emplace_back(bufferSize, m_currentOffset);
-
-	m_currentOffset += Align(bufferSize, m_pBufferMemory->GetAlignment());
-
 	std::shared_ptr<UploadBuffer> hostBuffer = std::make_shared<UploadBuffer>(device);
 
 	bufferStageFlag |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -107,6 +116,17 @@ std::shared_ptr<UploadBuffer> HostAccessibleBuffers::AddBuffer(
 	hostBuffer->CreateBuffer(device, bufferSize, bufferStageFlag);
 
 	m_pBuffers.emplace_back(hostBuffer);
+
+	VkMemoryRequirements memoryRequirements = {};
+	vkGetBufferMemoryRequirements(device, hostBuffer->GetBuffer(), &memoryRequirements);
+
+	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+
+	bufferSize = memoryRequirements.size;
+
+	m_allocationData.emplace_back(bufferSize, m_currentOffset);
+
+	m_currentOffset += bufferSize;
 
 	return hostBuffer;
 }

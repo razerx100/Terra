@@ -8,14 +8,24 @@ TextureStorage::TextureStorage(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	std::vector<std::uint32_t> queueFamilyIndices
 ) : m_currentOffset(0u),
-	m_queueFamilyIndices(std::move(queueFamilyIndices)),
-	m_textureSampler(VK_NULL_HANDLE), m_deviceRef(logicalDevice) {
+m_queueFamilyIndices(std::move(queueFamilyIndices)),
+m_textureSampler(VK_NULL_HANDLE), m_deviceRef(logicalDevice) {
 
-	m_uploadBuffers = std::make_unique<UploadBuffers>(
-		logicalDevice, physicalDevice
-		);
+	m_uploadBuffers = std::make_unique<UploadBuffers>(logicalDevice, physicalDevice);
+
+	ImageBuffer image = ImageBuffer(logicalDevice);
+
+	image.CreateImage(
+		logicalDevice,
+		1u, 1u, VK_FORMAT_R8G8B8A8_SRGB,
+		m_queueFamilyIndices
+	);
+
+	VkMemoryRequirements memoryReq = {};
+	vkGetImageMemoryRequirements(logicalDevice, image.GetImage(), &memoryReq);
+
 	m_textureMemory = std::make_unique<DeviceMemory>(
-		logicalDevice, physicalDevice, m_queueFamilyIndices, false, BufferType::Image
+		logicalDevice, physicalDevice, memoryReq, false
 		);
 
 	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
@@ -40,23 +50,24 @@ size_t TextureStorage::AddTexture(
 	std::uint32_t width32 = static_cast<std::uint32_t>(width);
 	std::uint32_t height32 = static_cast<std::uint32_t>(height);
 
+	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
+	imageBuffer->CreateImage(
+		device, width32, height32, imageFormat, m_queueFamilyIndices
+	);
+
+	VkMemoryRequirements memoryRequirements = {};
+	vkGetImageMemoryRequirements(device, imageBuffer->GetImage(), &memoryRequirements);
+
+	size_t bufferSize = memoryRequirements.size;
+	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+
+	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
+
 	m_textureData.emplace_back(
 		width32, height32, m_currentOffset, imageFormat
 	);
 
-	size_t bufferSize = width * height * pixelSizeInBytes;
-
-	m_currentOffset += Align(
-		bufferSize, m_textureMemory->GetAlignment()
-	);
-
-	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
-
-	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
-
-	imageBuffer->CreateImage(
-		device, width32, height32, imageFormat, m_queueFamilyIndices
-	);
+	m_currentOffset += bufferSize;
 
 	m_textures.emplace_back(std::move(imageBuffer));
 

@@ -9,24 +9,18 @@ class DeviceMemory {
 public:
 	DeviceMemory(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices,
-		bool uploadBuffer, BufferType type = BufferType::Invalid
+		const VkMemoryRequirements& memoryRequirements, bool uploadBuffer
 	);
 	~DeviceMemory() noexcept;
 
-	void AllocateMemory(
-		size_t memorySize
-	);
+	void AllocateMemory(size_t memorySize);
 
 	[[nodiscard]]
 	VkDeviceMemory GetMemoryHandle() const noexcept;
-	[[nodiscard]]
-	size_t GetAlignment() const noexcept;
 
 private:
 	VkDevice m_deviceRef;
 	VkDeviceMemory m_bufferMemory;
 	size_t m_memoryTypeIndex;
-	size_t m_alignment;
 };
 #endif
