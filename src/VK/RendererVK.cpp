@@ -314,11 +314,11 @@ void RendererVK::ProcessData() {
 
 size_t RendererVK::RegisterResource(
 	std::unique_ptr<std::uint8_t> textureData,
-	size_t width, size_t height, size_t pixelSizeInBytes
+	size_t width, size_t height, bool components16bits
 ) {
 	return Terra::textureStorage->AddTexture(
 		Terra::device->GetLogicalDevice(),
-		std::move(textureData), width, height, pixelSizeInBytes
+		std::move(textureData), width, height, components16bits
 	);
 }
 

@@ -38,19 +38,24 @@ TextureStorage::~TextureStorage() noexcept {
 size_t TextureStorage::AddTexture(
 	VkDevice device,
 	std::unique_ptr<std::uint8_t> textureDataHandle,
-	size_t width, size_t height, size_t pixelSizeInBytes
+	size_t width, size_t height, bool components16bits
 ) noexcept {
 	VkFormat imageFormat = VK_FORMAT_UNDEFINED;
 
-	if (pixelSizeInBytes == 4u)
+	size_t bytesPerPixel = 0u;
+	if (components16bits) {
+		imageFormat = VK_FORMAT_R16G16B16A16_UNORM;
+		bytesPerPixel = 8u;
+	}
+	else {
 		imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
-	else if (pixelSizeInBytes == 16u)
-		imageFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+		bytesPerPixel = 4u;
+	}
 
 	std::uint32_t width32 = static_cast<std::uint32_t>(width);
 	std::uint32_t height32 = static_cast<std::uint32_t>(height);
 
-	size_t bufferSize = width * height * pixelSizeInBytes;
+	size_t bufferSize = width * height * bytesPerPixel;
 	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
 
 	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
