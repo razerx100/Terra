@@ -12,7 +12,7 @@ RendererVK::RendererVK(
 	m_bufferCount(bufferCount), m_width(width), m_height(height) {
 
 	m_backgroundColour = {
-		{0.1f, 0.1f, 0.1f, 0.1f }
+		{0.0001f, 0.0001f, 0.0001f, 0.0001f }
 	};
 
 	Terra::InitViewportAndScissor(width, height);

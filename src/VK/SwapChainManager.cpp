@@ -38,10 +38,16 @@ VkFormat SwapChainManager::GetSwapFormat() const noexcept {
 VkSurfaceFormatKHR SwapChainManager::ChooseSurfaceFormat(
 	const std::vector<VkSurfaceFormatKHR>& availableFormats
 ) const noexcept {
-	for (const VkSurfaceFormatKHR& surfaceFormat : availableFormats)
-		if (surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB
-			&& surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+	for (const VkSurfaceFormatKHR& surfaceFormat : availableFormats) {
+		bool surfaceCheck =
+			surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB
+			||
+			surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB;
+		if (surfaceCheck
+			&&
+			surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
 			return surfaceFormat;
+	}
 
 	return std::empty(availableFormats) ? VkSurfaceFormatKHR() : availableFormats[0u];
 }
@@ -155,8 +161,7 @@ void SwapChainManager::CreateSwapchain(
 	createInfo.imageColorSpace = swapFormat.colorSpace;
 	createInfo.imageExtent = swapExtent;
 	createInfo.imageArrayLayers = 1u;
-	createInfo.imageUsage =
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	createInfo.preTransform = swapCreateInfo.surfaceInfo.capabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
