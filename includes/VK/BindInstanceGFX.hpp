@@ -63,7 +63,6 @@ private:
 	std::unique_ptr<PipelineObjectGFX> m_pso;
 	std::vector<std::unique_ptr<ModelRaw>> m_modelsRaw;
 
-	bool m_vertexLayoutAvailable;
 	VertexLayout m_vertexLayout;
 };
 #endif

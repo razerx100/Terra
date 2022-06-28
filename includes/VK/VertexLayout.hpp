@@ -3,17 +3,15 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
-#include <IModel.hpp>
-
 class VertexLayout {
 public:
 	VertexLayout() noexcept;
-	VertexLayout(const std::vector<VertexElementType>& inputLayout) noexcept;
-
-	void InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept;
 
 	[[nodiscard]]
 	const VkPipelineVertexInputStateCreateInfo* GetInputInfo() const noexcept;
+
+private:
+	void InitLayout() noexcept;
 
 private:
 	VkPipelineVertexInputStateCreateInfo m_createInfo;

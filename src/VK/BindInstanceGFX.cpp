@@ -2,15 +2,14 @@
 #include <Terra.hpp>
 
 BindInstanceGFX::BindInstanceGFX() noexcept
-	: m_vertexLayoutAvailable(false) {}
+	: m_vertexLayout() {}
 
 BindInstanceGFX::BindInstanceGFX(
 	std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
 ) noexcept
 	:
 	m_pipelineLayout(std::move(layout)),
-	m_pso(std::move(pso)),
-	m_vertexLayoutAvailable(false) {}
+	m_pso(std::move(pso)), m_vertexLayout() {}
 
 void BindInstanceGFX::AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept {
 	m_pso = std::move(pso);
@@ -26,11 +25,6 @@ void BindInstanceGFX::AddPipelineLayout(
 }
 
 void BindInstanceGFX::AddModel(VkDevice device, std::shared_ptr<IModel>&& model) noexcept {
-	if (!m_vertexLayoutAvailable) {
-		m_vertexLayout.InitLayout(model->GetVertexLayout());
-		m_vertexLayoutAvailable = true;
-	}
-
 	std::shared_ptr<GpuBuffer> vertexBuffer = Terra::vertexBuffer->AddBuffer(
 			device, model->GetVertexData(), model->GetVertexBufferSize()
 		);
@@ -125,10 +119,10 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 	const std::uint32_t textureIndex = m_model->GetTextureIndex();
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
-		88u, 4u, &textureIndex
+		72u, 4u, &textureIndex
 	);
 
-	const TextureData& texInfo = m_model->GetTextureInfo();
+	TextureOffset texOffset = m_model->GetTextureOffset();
 	DirectX::XMMATRIX modelMat = m_model->GetModelMatrix();
 
 	vkCmdPushConstants(
@@ -138,7 +132,7 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-		64u, 24u, &texInfo
+		64u, 8u, &texOffset
 	);
 
 	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);

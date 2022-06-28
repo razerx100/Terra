@@ -1,44 +1,27 @@
 #include <VertexLayout.hpp>
 
-static const std::vector<VkFormat> vertexElementTypeFormatMap{
-	VK_FORMAT_R32G32B32_SFLOAT,
-	VK_FORMAT_R32G32B32A32_SFLOAT
-};
-
-static const std::vector<size_t> vertexElementTypeSizeMap{
-	12u,
-	16u
-};
-
-VertexLayout::VertexLayout() noexcept : m_createInfo{}, m_bindingDesc{} {}
-
-VertexLayout::VertexLayout(const std::vector<VertexElementType>& inputLayout) noexcept
-	: m_createInfo{}, m_bindingDesc {} {
-	InitLayout(inputLayout);
+VertexLayout::VertexLayout() noexcept : m_createInfo{}, m_bindingDesc{} {
+	InitLayout();
 }
 
 const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const noexcept {
 	return &m_createInfo;
 }
 
-void VertexLayout::InitLayout(const std::vector<VertexElementType>& inputLayout) noexcept {
-	size_t vertexSize = 0u;
-	for (size_t index = 0u; index < std::size(inputLayout); ++index) {
-		const auto elementTypeID = static_cast<size_t>(inputLayout[index]);
+void VertexLayout::InitLayout() noexcept {
+	std::uint32_t binding = 0u;
 
-		m_attrDescs.emplace_back(
-			static_cast<std::uint32_t>(index),
-			0u,
-			vertexElementTypeFormatMap[elementTypeID],
-			static_cast<std::uint32_t>(vertexSize)
-		);
+	// Position
+	std::uint32_t vertexSize = 12u;
+	m_attrDescs.emplace_back(0u, binding, VK_FORMAT_R32G32B32_SFLOAT, vertexSize);
 
-		vertexSize += vertexElementTypeSizeMap[elementTypeID];
-	}
+	// UV
+	vertexSize += 8u;
+	m_attrDescs.emplace_back(1u, binding, VK_FORMAT_R32G32_SFLOAT, vertexSize);
 
-	m_bindingDesc.binding = 0u;
+	m_bindingDesc.binding = binding;
 	m_bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	m_bindingDesc.stride = static_cast<std::uint32_t>(vertexSize);
+	m_bindingDesc.stride = vertexSize;
 
 	m_createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	m_createInfo.vertexBindingDescriptionCount = 1u;
