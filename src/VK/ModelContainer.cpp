@@ -64,15 +64,8 @@ void ModelContainer::CreateBuffers(VkDevice device) {
 	Terra::uniformBuffer->CreateBuffers(device);
 }
 
-void ModelContainer::InitPipelines(
-	VkDevice device,
-	VkDescriptorSetLayout setLayout
-) {
-	auto [pso, pipelineLayout] = CreatePipeline(
-		device,
-		m_bindInstance->GetVertexLayout(),
-		setLayout
-	);
+void ModelContainer::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {
+	auto [pso, pipelineLayout] = CreatePipeline(device, setLayout);
 
 	m_bindInstance->AddPipelineLayout(pipelineLayout);
 
@@ -80,8 +73,7 @@ void ModelContainer::InitPipelines(
 }
 
 ModelContainer::Pipeline ModelContainer::CreatePipeline(
-	VkDevice device, const VertexLayout& layout,
-	VkDescriptorSetLayout setLayout
+	VkDevice device, VkDescriptorSetLayout setLayout
 ) const {
 	std::shared_ptr<PipelineLayout> pipelineLayout =
 		std::make_shared<PipelineLayout>(device);
@@ -104,17 +96,19 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	std::unique_ptr<Shader> fs = std::make_unique<Shader>(device);
 	fs->CreateShader(device, m_shaderPath + "FragmentShader.spv");
 
+	VertexLayout vertexLayout{};
+	vertexLayout.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u);
+	vertexLayout.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u);
+	vertexLayout.InitLayout();
+
 	std::unique_ptr<PipelineObjectGFX> pso = std::make_unique<PipelineObjectGFX>(
 		device,
 		pipelineLayout->GetLayout(),
 		Terra::renderPass->GetRenderPass(),
-		layout.GetInputInfo(),
+		vertexLayout.GetInputInfo(),
 		vs->GetByteCode(),
 		fs->GetByteCode()
 		);
 
-	return {
-		std::move(pso),
-		pipelineLayout
-	};
+	return { std::move(pso), pipelineLayout };
 }

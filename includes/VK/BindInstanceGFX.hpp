@@ -13,13 +13,10 @@
 
 class BindInstanceGFX {
 public:
-	BindInstanceGFX() noexcept;
+	BindInstanceGFX() = default;
 	BindInstanceGFX(
 		std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
 	) noexcept;
-
-	[[nodiscard]]
-	VertexLayout GetVertexLayout() const noexcept;
 
 	void AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept;
 	void AddPipelineLayout(std::shared_ptr<PipelineLayout> layout) noexcept;
@@ -62,7 +59,5 @@ private:
 	std::shared_ptr<PipelineLayout> m_pipelineLayout;
 	std::unique_ptr<PipelineObjectGFX> m_pso;
 	std::vector<std::unique_ptr<ModelRaw>> m_modelsRaw;
-
-	VertexLayout m_vertexLayout;
 };
 #endif

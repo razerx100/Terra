@@ -15,10 +15,7 @@ public:
 
 	void AddModel(VkDevice device, std::shared_ptr<IModel>&& model);
 
-	void InitPipelines(
-		VkDevice device,
-		VkDescriptorSetLayout setLayout
-	);
+	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
 	void CreateBuffers(VkDevice device);
 	void CopyData(std::atomic_size_t& workCount);
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer);
@@ -30,10 +27,7 @@ private:
 	using Pipeline =
 		std::pair<std::unique_ptr<PipelineObjectGFX>, std::shared_ptr<PipelineLayout>>;
 
-	Pipeline CreatePipeline(
-		VkDevice device, const VertexLayout& layout,
-		VkDescriptorSetLayout setLayout
-	) const;
+	Pipeline CreatePipeline(VkDevice device, VkDescriptorSetLayout setLayout) const;
 
 private:
 	std::unique_ptr<BindInstanceGFX> m_bindInstance;

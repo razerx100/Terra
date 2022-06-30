@@ -1,15 +1,9 @@
 #include <BindInstanceGFX.hpp>
 #include <Terra.hpp>
 
-BindInstanceGFX::BindInstanceGFX() noexcept
-	: m_vertexLayout() {}
-
 BindInstanceGFX::BindInstanceGFX(
 	std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
-) noexcept
-	:
-	m_pipelineLayout(std::move(layout)),
-	m_pso(std::move(pso)), m_vertexLayout() {}
+) noexcept : m_pipelineLayout(std::move(layout)), m_pso(std::move(pso)) {}
 
 void BindInstanceGFX::AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept {
 	m_pso = std::move(pso);
@@ -62,10 +56,6 @@ void BindInstanceGFX::BindPipeline(
 		m_pipelineLayout->GetLayout(), 0u, 1u,
 		descSets, 0u, nullptr
 	);
-}
-
-VertexLayout BindInstanceGFX::GetVertexLayout() const noexcept {
-	return m_vertexLayout;
 }
 
 // Model Raw
