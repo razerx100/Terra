@@ -109,11 +109,11 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 	const std::uint32_t textureIndex = m_model->GetTextureIndex();
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
-		72u, 4u, &textureIndex
+		80u, 4u, &textureIndex
 	);
 
-	TextureOffset texOffset = m_model->GetTextureOffset();
-	DirectX::XMMATRIX modelMat = m_model->GetModelMatrix();
+	const UVInfo uvInfo = m_model->GetUVInfo();
+	const DirectX::XMMATRIX modelMat = m_model->GetModelMatrix();
 
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
@@ -122,7 +122,7 @@ void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexce
 
 	vkCmdPushConstants(
 		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-		64u, 8u, &texOffset
+		64u, 16u, &uvInfo
 	);
 
 	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);

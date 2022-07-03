@@ -81,7 +81,7 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	// Push constants needs to be serialized according to the shader stages
 	pipelineLayout->AddPushConstantRange(
 		VK_SHADER_STAGE_VERTEX_BIT,
-		72u
+		80u
 	);
 	pipelineLayout->AddPushConstantRange(
 		VK_SHADER_STAGE_FRAGMENT_BIT,
