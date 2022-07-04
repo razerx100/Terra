@@ -20,10 +20,6 @@ endif()
 
 file(GLOB_RECURSE SRC src/*.cpp includes/*.hpp templates/*.hpp exports/*.hpp)
 
-if(IMGUIFLAG STREQUAL "ENABLE")
-    file(GLOB_RECURSE IMGUI ImGui/*.cpp ImGui/*.h)
-endif()
-
 if(PLATFORM STREQUAL "WINDOWS")
     file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
 endif()
@@ -48,11 +44,6 @@ if(PLATFORM STREQUAL "WINDOWS")
     target_link_libraries(${PROJECT_NAME} PRIVATE
         dxgi.lib
     )
-endif()
-
-if(IMGUIFLAG STREQUAL "ENABLE")
-    target_include_directories(${PROJECT_NAME} PRIVATE ImGui/includes/)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE _IMGUI)
 endif()
 
 if(MSVC)
