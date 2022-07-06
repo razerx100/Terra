@@ -1,8 +1,9 @@
 #include <BindInstanceGFX.hpp>
 #include <Terra.hpp>
 
+// Bind Instance Base
 BindInstanceGFX::BindInstanceGFX(
-	std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
+	std::unique_ptr<PipelineObjectGFX> pso, std::unique_ptr<PipelineLayout> layout
 ) noexcept : m_pipelineLayout(std::move(layout)), m_pso(std::move(pso)) {}
 
 void BindInstanceGFX::AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept {
@@ -10,36 +11,14 @@ void BindInstanceGFX::AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept {
 }
 
 void BindInstanceGFX::AddPipelineLayout(
-	std::shared_ptr<PipelineLayout> layout
+	std::unique_ptr<PipelineLayout> layout
 ) noexcept {
-	m_pipelineLayout = layout;
+	m_pipelineLayout = std::move(layout);
 
-	for (const auto& modelRaw : m_modelsRaw)
-		modelRaw->AddPipelineLayout(layout);
-}
+	VkPipelineLayout pipelineLayout = m_pipelineLayout->GetLayout();
 
-void BindInstanceGFX::AddModel(VkDevice device, std::shared_ptr<IModel>&& model) noexcept {
-	std::shared_ptr<GpuBuffer> vertexBuffer = Terra::vertexBuffer->AddBuffer(
-			device, model->GetVertexData(), model->GetVertexBufferSize()
-		);
-
-	std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
-		device, model->GetIndexData(), model->GetIndexBufferSize()
-	);
-
-	size_t indexCount = model->GetIndexCount();
-
-	m_modelsRaw.emplace_back(
-		std::make_unique<ModelRaw>(
-			device, std::move(vertexBuffer), std::move(indexBuffer), indexCount,
-			std::move(model)
-			)
-	);
-}
-
-void BindInstanceGFX::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
-	for (const auto& model : m_modelsRaw)
-		model->Draw(graphicsCmdBuffer);
+	for (const auto& model : m_models)
+		model->AddPipelineLayout(pipelineLayout);
 }
 
 void BindInstanceGFX::BindPipeline(
@@ -58,72 +37,68 @@ void BindInstanceGFX::BindPipeline(
 	);
 }
 
-// Model Raw
-BindInstanceGFX::ModelRaw::ModelRaw(VkDevice device, std::shared_ptr<IModel>&& model) noexcept
-	: m_deviceRef(device), m_model(std::move(model)),
-	m_vertexBuffer(VK_NULL_HANDLE), m_indexBuffer(VK_NULL_HANDLE),
-	m_vertexOffset(0u), m_indexCount(0u) {}
-
-BindInstanceGFX::ModelRaw::ModelRaw(
-	VkDevice device,
-	std::shared_ptr<GpuBuffer> vertexBuffer,
-	std::shared_ptr<GpuBuffer> indexBuffer,
-	size_t indexCount,
-	std::shared_ptr<IModel>&& model
-) noexcept
-	: m_deviceRef(device), m_model(std::move(model)),
-	m_vertexBuffer(std::move(vertexBuffer)), m_indexBuffer(std::move(indexBuffer)),
-	m_vertexOffset(0u), m_indexCount(static_cast<std::uint32_t>(indexCount)) {}
-
-void BindInstanceGFX::ModelRaw::AddVertexBuffer(
-	std::shared_ptr<GpuBuffer> buffer
+// Bind Instance Per Model Vertex
+void BindInstancePerVertex::AddModels(
+	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+	std::unique_ptr<IModelInputs> modelInputs
 ) noexcept {
-	m_vertexBuffer = std::move(buffer);
+	std::shared_ptr<GpuBuffer> vertexBuffer = Terra::vertexBuffer->AddBuffer(
+		device, modelInputs->GetVertexData(), modelInputs->GetVertexBufferSize()
+	);
+
+	std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
+		device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
+	);
+
+	auto modelManager = std::make_unique<ModelManagerPerVertex>(
+		std::move(vertexBuffer), std::move(indexBuffer)
+		);
+
+	for (auto& model : models)
+		modelManager->AddInstance(std::move(model));
+
+	m_models.emplace_back(std::move(modelManager));
 }
 
-void BindInstanceGFX::ModelRaw::AddIndexBuffer(
-	std::shared_ptr<GpuBuffer> buffer, size_t indexCount
-) noexcept {
-	m_indexBuffer = std::move(buffer);
-	m_indexCount = static_cast<std::uint32_t>(indexCount);
+void BindInstancePerVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
+	for (const auto& model : m_models) {
+		model->BindInputs(graphicsCmdBuffer);
+		model->BindInstances(graphicsCmdBuffer);
+	}
 }
 
-void BindInstanceGFX::ModelRaw::AddPipelineLayout(
-	std::shared_ptr<PipelineLayout> pipelineLayout
+// Bind Instance Global Vertex
+// This won't work. Placeholder for now
+void BindInstanceGVertex::AddModels(
+	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+	std::unique_ptr<IModelInputs> modelInputs
 ) noexcept {
-	m_pPipelineLayout = std::move(pipelineLayout);
+	m_vertexBuffer = Terra::vertexBuffer->AddBuffer(
+		device, modelInputs->GetVertexData(), modelInputs->GetVertexBufferSize()
+	);
+
+	std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
+		device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
+	);
+
+	auto modelManager = std::make_unique<ModelManagerGVertex>(std::move(indexBuffer));
+
+	for (auto& model : models)
+		modelManager->AddInstance(std::move(model));
+
+	m_models.emplace_back(std::move(modelManager));
 }
 
-void BindInstanceGFX::ModelRaw::Draw(VkCommandBuffer commandBuffer) const noexcept {
+void BindInstanceGVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
 	VkBuffer vertexBuffers[] = { m_vertexBuffer->GetBuffer() };
+	static const VkDeviceSize vertexOffsets[] = { 0u };
 
 	vkCmdBindVertexBuffers(
-		commandBuffer, 0u, 1u, vertexBuffers,
-		&m_vertexOffset
-	);
-	vkCmdBindIndexBuffer(
-		commandBuffer, m_indexBuffer->GetBuffer(), 0u,
-		VK_INDEX_TYPE_UINT16
+		graphicsCmdBuffer, 0u, 1u, vertexBuffers, vertexOffsets
 	);
 
-	const std::uint32_t textureIndex = m_model->GetTextureIndex();
-	vkCmdPushConstants(
-		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT,
-		80u, 4u, &textureIndex
-	);
-
-	const UVInfo uvInfo = m_model->GetUVInfo();
-	const DirectX::XMMATRIX modelMat = m_model->GetModelMatrix();
-
-	vkCmdPushConstants(
-		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-		0u, 64u, &modelMat
-	);
-
-	vkCmdPushConstants(
-		commandBuffer, m_pPipelineLayout->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT,
-		64u, 16u, &uvInfo
-	);
-
-	vkCmdDrawIndexed(commandBuffer, m_indexCount, 1u, 0u, 0u, 0u);
+	for (const auto& model : m_models) {
+		model->BindInputs(graphicsCmdBuffer);
+		model->BindInstances(graphicsCmdBuffer);
+	}
 }

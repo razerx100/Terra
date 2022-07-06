@@ -13,7 +13,10 @@ class ModelContainer {
 public:
 	ModelContainer(std::string shaderPath, VkDevice device) noexcept;
 
-	void AddModel(VkDevice device, std::shared_ptr<IModel>&& model);
+	void AddModels(
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+		std::unique_ptr<IModelInputs> modelInputs
+	);
 
 	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
 	void CreateBuffers(VkDevice device);
@@ -25,7 +28,7 @@ public:
 
 private:
 	using Pipeline =
-		std::pair<std::unique_ptr<PipelineObjectGFX>, std::shared_ptr<PipelineLayout>>;
+		std::pair<std::unique_ptr<PipelineObjectGFX>, std::unique_ptr<PipelineLayout>>;
 
 	Pipeline CreatePipeline(VkDevice device, VkDescriptorSetLayout setLayout) const;
 

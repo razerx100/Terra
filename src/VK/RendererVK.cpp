@@ -150,9 +150,11 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 	};
 }
 
-void RendererVK::SubmitModel(std::shared_ptr<IModel> model) {
-	Terra::modelContainer->AddModel(
-		Terra::device->GetLogicalDevice(), std::move(model)
+void RendererVK::SubmitModels(
+	std::vector<std::shared_ptr<IModel>>&& models, std::unique_ptr<IModelInputs> modelInputs
+) {
+	Terra::modelContainer->AddModels(
+		Terra::device->GetLogicalDevice(), std::move(models), std::move(modelInputs)
 	);
 }
 

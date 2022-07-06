@@ -1,5 +1,6 @@
 #include <Shader.hpp>
 #include <PipelineLayout.hpp>
+#include <VertexLayout.hpp>
 
 #include <ModelContainer.hpp>
 #include <PipelineObjectGFX.hpp>
@@ -8,13 +9,15 @@
 ModelContainer::ModelContainer(
 	std::string shaderPath, VkDevice device
 ) noexcept
-	:
-	m_bindInstance(std::make_unique<BindInstanceGFX>()),
+	: m_bindInstance(std::make_unique<BindInstancePerVertex>()),
 	m_pPerFrameBuffers(std::make_unique<PerFrameBuffers>(device)),
 	m_shaderPath(std::move(shaderPath)) {}
 
-void ModelContainer::AddModel(VkDevice device, std::shared_ptr<IModel>&& model) {
-	m_bindInstance->AddModel(device, std::move(model));
+void ModelContainer::AddModels(
+	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+	std::unique_ptr<IModelInputs> modelInputs
+) {
+	m_bindInstance->AddModels(device, std::move(models), std::move(modelInputs));
 }
 
 void ModelContainer::CopyData(std::atomic_size_t& workCount) {
@@ -67,7 +70,7 @@ void ModelContainer::CreateBuffers(VkDevice device) {
 void ModelContainer::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {
 	auto [pso, pipelineLayout] = CreatePipeline(device, setLayout);
 
-	m_bindInstance->AddPipelineLayout(pipelineLayout);
+	m_bindInstance->AddPipelineLayout(std::move(pipelineLayout));
 
 	m_bindInstance->AddPSO(std::move(pso));
 }
@@ -75,10 +78,9 @@ void ModelContainer::InitPipelines(VkDevice device, VkDescriptorSetLayout setLay
 ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	VkDevice device, VkDescriptorSetLayout setLayout
 ) const {
-	std::shared_ptr<PipelineLayout> pipelineLayout =
-		std::make_shared<PipelineLayout>(device);
+	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
 
-	// Push constants needs to be serialized according to the shader stages
+	// Push constants needs to be serialised according to the shader stages
 	pipelineLayout->AddPushConstantRange(
 		VK_SHADER_STAGE_VERTEX_BIT,
 		80u
@@ -90,10 +92,10 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 
 	pipelineLayout->CreateLayout(setLayout);
 
-	std::unique_ptr<Shader> vs = std::make_unique<Shader>(device);
+	auto vs = std::make_unique<Shader>(device);
 	vs->CreateShader(device, m_shaderPath + "VertexShader.spv");
 
-	std::unique_ptr<Shader> fs = std::make_unique<Shader>(device);
+	auto fs = std::make_unique<Shader>(device);
 	fs->CreateShader(device, m_shaderPath + "FragmentShader.spv");
 
 	VertexLayout vertexLayout{};
@@ -101,7 +103,7 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 	vertexLayout.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u);
 	vertexLayout.InitLayout();
 
-	std::unique_ptr<PipelineObjectGFX> pso = std::make_unique<PipelineObjectGFX>(
+	auto pso = std::make_unique<PipelineObjectGFX>(
 		device,
 		pipelineLayout->GetLayout(),
 		Terra::renderPass->GetRenderPass(),
@@ -110,5 +112,5 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 		fs->GetByteCode()
 		);
 
-	return { std::move(pso), pipelineLayout };
+	return { std::move(pso), std::move(pipelineLayout) };
 }

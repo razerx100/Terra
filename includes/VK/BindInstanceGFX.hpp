@@ -7,57 +7,58 @@
 #include <vector>
 #include <cstdint>
 #include <UploadBuffers.hpp>
+#include <ModelManager.hpp>
 
-#include <VertexLayout.hpp>
 #include <IModel.hpp>
 
 class BindInstanceGFX {
 public:
 	BindInstanceGFX() = default;
 	BindInstanceGFX(
-		std::unique_ptr<PipelineObjectGFX> pso, std::shared_ptr<PipelineLayout> layout
+		std::unique_ptr<PipelineObjectGFX> pso, std::unique_ptr<PipelineLayout> layout
 	) noexcept;
 
-	void AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept;
-	void AddPipelineLayout(std::shared_ptr<PipelineLayout> layout) noexcept;
-	void AddModel(VkDevice device, std::shared_ptr<IModel>&& model) noexcept;
+	virtual ~BindInstanceGFX() = default;
 
-	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept;
+	void AddPSO(std::unique_ptr<PipelineObjectGFX> pso) noexcept;
+	void AddPipelineLayout(std::unique_ptr<PipelineLayout> layout) noexcept;
+
 	void BindPipeline(
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 	) const noexcept;
 
-private:
-	class ModelRaw {
-	public:
-		ModelRaw(VkDevice device, std::shared_ptr<IModel>&& model) noexcept;
-		ModelRaw(
-			VkDevice device,
-			std::shared_ptr<GpuBuffer> vertexBuffer,
-			std::shared_ptr<GpuBuffer> indexBuffer,
-			size_t indexCount,
-			std::shared_ptr<IModel>&& model
-		) noexcept;
-
-		void AddVertexBuffer(std::shared_ptr<GpuBuffer> buffer) noexcept;
-		void AddIndexBuffer(std::shared_ptr<GpuBuffer> buffer, size_t indexCount) noexcept;
-		void AddPipelineLayout(std::shared_ptr<PipelineLayout> pipelineLayout) noexcept;
-
-		void Draw(VkCommandBuffer commandBuffer) const noexcept;
-
-	private:
-		VkDevice m_deviceRef;
-		std::shared_ptr<IModel> m_model;
-		std::shared_ptr<GpuBuffer> m_vertexBuffer;
-		std::shared_ptr<GpuBuffer> m_indexBuffer;
-		VkDeviceSize m_vertexOffset;
-		std::uint32_t m_indexCount;
-		std::shared_ptr<PipelineLayout> m_pPipelineLayout;
-	};
+	virtual void AddModels(
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+		std::unique_ptr<IModelInputs> modelInputs
+	) noexcept = 0;
+	virtual void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept = 0;
 
 private:
-	std::shared_ptr<PipelineLayout> m_pipelineLayout;
+	std::unique_ptr<PipelineLayout> m_pipelineLayout;
 	std::unique_ptr<PipelineObjectGFX> m_pso;
-	std::vector<std::unique_ptr<ModelRaw>> m_modelsRaw;
+
+protected:
+	std::vector<std::unique_ptr<ModelManagerVertex>> m_models;
+};
+
+class BindInstancePerVertex : public BindInstanceGFX {
+public:
+	void AddModels(
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+		std::unique_ptr<IModelInputs> modelInputs
+	) noexcept final;
+	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept final;
+};
+
+class BindInstanceGVertex : public BindInstanceGFX {
+public:
+	void AddModels(
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
+		std::unique_ptr<IModelInputs> modelInputs
+	) noexcept final;
+	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept final;
+
+private:
+	std::shared_ptr<GpuBuffer> m_vertexBuffer;
 };
 #endif
