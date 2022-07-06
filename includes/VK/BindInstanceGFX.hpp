@@ -7,7 +7,7 @@
 #include <vector>
 #include <cstdint>
 #include <UploadBuffers.hpp>
-#include <ModelManager.hpp>
+#include <ModelSet.hpp>
 
 #include <IModel.hpp>
 
@@ -38,25 +38,25 @@ private:
 	std::unique_ptr<PipelineObjectGFX> m_pso;
 
 protected:
-	std::vector<std::unique_ptr<ModelManagerVertex>> m_models;
+	std::vector<std::unique_ptr<ModelSetVertex>> m_models;
 };
 
-class BindInstancePerVertex : public BindInstanceGFX {
+class BindInstancePerVertex final : public BindInstanceGFX {
 public:
 	void AddModels(
 		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
 		std::unique_ptr<IModelInputs> modelInputs
-	) noexcept final;
-	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept final;
+	) noexcept override;
+	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept override;
 };
 
-class BindInstanceGVertex : public BindInstanceGFX {
+class BindInstanceGVertex final : public BindInstanceGFX {
 public:
 	void AddModels(
 		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
 		std::unique_ptr<IModelInputs> modelInputs
-	) noexcept final;
-	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept final;
+	) noexcept override;
+	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept override;
 
 private:
 	std::shared_ptr<GpuBuffer> m_vertexBuffer;

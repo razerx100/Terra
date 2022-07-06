@@ -1,4 +1,4 @@
-#include <ModelManager.hpp>
+#include <ModelSet.hpp>
 
 // Model Instance
 ModelInstance::ModelInstance(std::shared_ptr<IModel>&& model) noexcept
@@ -32,28 +32,28 @@ void ModelInstance::Draw(VkCommandBuffer commandBuffer) const noexcept {
 	vkCmdDrawIndexed(commandBuffer, indexCount, 1u, 0u, 0u, 0u);
 }
 
-// Model Manager Vertex
-void ModelManagerVertex::AddInstance(std::shared_ptr<IModel>&& model) noexcept {
+// Model Set Vertex
+void ModelSetVertex::AddInstance(std::shared_ptr<IModel>&& model) noexcept {
 	m_modelInstances.emplace_back(std::move(model));
 }
 
-void ModelManagerVertex::AddPipelineLayout(VkPipelineLayout pipelineLayout) noexcept {
+void ModelSetVertex::AddPipelineLayout(VkPipelineLayout pipelineLayout) noexcept {
 	for (auto& instance : m_modelInstances)
 		instance.AddPipelineLayout(pipelineLayout);
 }
 
-void ModelManagerVertex::BindInstances(VkCommandBuffer commandBuffer) const noexcept {
-	for (auto& instance : m_modelInstances)
+void ModelSetVertex::DrawInstances(VkCommandBuffer commandBuffer) const noexcept {
+	for (const auto& instance : m_modelInstances)
 		instance.Draw(commandBuffer);
 }
 
-// Model Manager Per Vertex
-ModelManagerPerVertex::ModelManagerPerVertex(
+// Model Set Per Vertex
+ModelSetPerVertex::ModelSetPerVertex(
 	std::shared_ptr<GpuBuffer> vertexBuffer, std::shared_ptr<GpuBuffer> indexBuffer
 ) noexcept
 	: m_vertexBuffer{ std::move(vertexBuffer) }, m_indexBuffer{ std::move(indexBuffer) } {}
 
-void ModelManagerPerVertex::BindInputs(VkCommandBuffer commandBuffer) const noexcept {
+void ModelSetPerVertex::BindInputs(VkCommandBuffer commandBuffer) const noexcept {
 	VkBuffer vertexBuffers[] = { m_vertexBuffer->GetBuffer() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
 
@@ -66,11 +66,11 @@ void ModelManagerPerVertex::BindInputs(VkCommandBuffer commandBuffer) const noex
 	);
 }
 
-// Model Manager Global Vertex
-ModelManagerGVertex::ModelManagerGVertex(std::shared_ptr<GpuBuffer> indexBuffer) noexcept
+// Model Set Global Vertex
+ModelSetGVertex::ModelSetGVertex(std::shared_ptr<GpuBuffer> indexBuffer) noexcept
 	: m_indexBuffer{ std::move(indexBuffer) } {}
 
-void ModelManagerGVertex::BindInputs(VkCommandBuffer commandBuffer) const noexcept {
+void ModelSetGVertex::BindInputs(VkCommandBuffer commandBuffer) const noexcept {
 	vkCmdBindIndexBuffer(
 		commandBuffer, m_indexBuffer->GetBuffer(), 0u,
 		VK_INDEX_TYPE_UINT16

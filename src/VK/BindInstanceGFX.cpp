@@ -50,20 +50,20 @@ void BindInstancePerVertex::AddModels(
 		device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
 	);
 
-	auto modelManager = std::make_unique<ModelManagerPerVertex>(
+	auto modelSet = std::make_unique<ModelSetPerVertex>(
 		std::move(vertexBuffer), std::move(indexBuffer)
 		);
 
 	for (auto& model : models)
-		modelManager->AddInstance(std::move(model));
+		modelSet->AddInstance(std::move(model));
 
-	m_models.emplace_back(std::move(modelManager));
+	m_models.emplace_back(std::move(modelSet));
 }
 
 void BindInstancePerVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
 	for (const auto& model : m_models) {
 		model->BindInputs(graphicsCmdBuffer);
-		model->BindInstances(graphicsCmdBuffer);
+		model->DrawInstances(graphicsCmdBuffer);
 	}
 }
 
@@ -81,12 +81,12 @@ void BindInstanceGVertex::AddModels(
 		device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
 	);
 
-	auto modelManager = std::make_unique<ModelManagerGVertex>(std::move(indexBuffer));
+	auto modelSet = std::make_unique<ModelSetGVertex>(std::move(indexBuffer));
 
 	for (auto& model : models)
-		modelManager->AddInstance(std::move(model));
+		modelSet->AddInstance(std::move(model));
 
-	m_models.emplace_back(std::move(modelManager));
+	m_models.emplace_back(std::move(modelSet));
 }
 
 void BindInstanceGVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
@@ -99,6 +99,6 @@ void BindInstanceGVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const no
 
 	for (const auto& model : m_models) {
 		model->BindInputs(graphicsCmdBuffer);
-		model->BindInstances(graphicsCmdBuffer);
+		model->DrawInstances(graphicsCmdBuffer);
 	}
 }

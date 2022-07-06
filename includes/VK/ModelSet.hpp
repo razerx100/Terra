@@ -1,5 +1,5 @@
-#ifndef MODEL_MANAGER_HPP_
-#define MODEL_MANAGER_HPP
+#ifndef MODEL_SET_HPP_
+#define MODEL_SET_HPP
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <vector>
@@ -20,39 +20,38 @@ private:
 	VkPipelineLayout m_pPipelineLayout;
 };
 
-class ModelManagerVertex {
+class ModelSetVertex {
 public:
-	virtual ~ModelManagerVertex() = default;
+	virtual ~ModelSetVertex() = default;
 
 	void AddInstance(std::shared_ptr<IModel>&& model) noexcept;
 	void AddPipelineLayout(VkPipelineLayout pipelineLayout) noexcept;
+	void DrawInstances(VkCommandBuffer commandBuffer) const noexcept;
 
 	virtual void BindInputs(VkCommandBuffer commandBuffer) const noexcept = 0;
-
-	void BindInstances(VkCommandBuffer commandBuffer) const noexcept;
 
 private:
 	std::vector<ModelInstance> m_modelInstances;
 };
 
-class ModelManagerPerVertex : public ModelManagerVertex {
+class ModelSetPerVertex final : public ModelSetVertex {
 public:
-	ModelManagerPerVertex(
+	ModelSetPerVertex(
 		std::shared_ptr<GpuBuffer> vertexBuffer, std::shared_ptr<GpuBuffer> indexBuffer
 	) noexcept;
 
-	void BindInputs(VkCommandBuffer commandBuffer) const noexcept final;
+	void BindInputs(VkCommandBuffer commandBuffer) const noexcept override;
 
 private:
 	std::shared_ptr<GpuBuffer> m_vertexBuffer;
 	std::shared_ptr<GpuBuffer> m_indexBuffer;
 };
 
-class ModelManagerGVertex : public ModelManagerVertex {
+class ModelSetGVertex final : public ModelSetVertex {
 public:
-	ModelManagerGVertex(std::shared_ptr<GpuBuffer> indexBuffer) noexcept;
+	ModelSetGVertex(std::shared_ptr<GpuBuffer> indexBuffer) noexcept;
 
-	void BindInputs(VkCommandBuffer commandBuffer) const noexcept final;
+	void BindInputs(VkCommandBuffer commandBuffer) const noexcept override;
 
 private:
 	std::shared_ptr<GpuBuffer> m_indexBuffer;
