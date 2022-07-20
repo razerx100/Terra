@@ -39,25 +39,24 @@ void BindInstanceGFX::BindPipeline(
 
 // Bind Instance Per Model Vertex
 void BindInstancePerVertex::AddModels(
-	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-	std::unique_ptr<IModelInputs> modelInputs
+	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 ) noexcept {
-	std::shared_ptr<GpuBuffer> vertexBuffer = Terra::vertexBuffer->AddBuffer(
-		device, modelInputs->GetVertexData(), modelInputs->GetVertexBufferSize()
-	);
+	//std::shared_ptr<GpuBuffer> vertexBuffer = Terra::vertexBuffer->AddBuffer(
+	//	device, modelInputs->GetVertexData(), modelInputs->GetVertexBufferSize()
+	//);
 
-	std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
-		device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
-	);
+	//std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
+	//	device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
+	//);
 
-	auto modelSet = std::make_unique<ModelSetPerVertex>(
-		std::move(vertexBuffer), std::move(indexBuffer)
-		);
+	//auto modelSet = std::make_unique<ModelSetPerVertex>(
+	//	std::move(vertexBuffer), std::move(indexBuffer)
+	//	);
 
-	for (auto& model : models)
-		modelSet->AddInstance(std::move(model));
+	//for (auto& model : models)
+	//	modelSet->AddInstance(std::move(model));
 
-	m_models.emplace_back(std::move(modelSet));
+	//m_models.emplace_back(std::move(modelSet));
 }
 
 void BindInstancePerVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
@@ -70,23 +69,22 @@ void BindInstancePerVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const 
 // Bind Instance Global Vertex
 // This won't work. Placeholder for now
 void BindInstanceGVertex::AddModels(
-	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-	std::unique_ptr<IModelInputs> modelInputs
+	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 ) noexcept {
-	m_vertexBuffer = Terra::vertexBuffer->AddBuffer(
-		device, modelInputs->GetVertexData(), modelInputs->GetVertexBufferSize()
-	);
+	//m_vertexBuffer = Terra::vertexBuffer->AddBuffer(
+	//	device, modelInputs->GetVertexData(), modelInputs->GetVertexBufferSize()
+	//);
 
-	std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
-		device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
-	);
+	//std::shared_ptr<GpuBuffer> indexBuffer = Terra::indexBuffer->AddBuffer(
+	//	device, modelInputs->GetIndexData(), modelInputs->GetIndexBufferSize()
+	//);
 
-	auto modelSet = std::make_unique<ModelSetGVertex>(std::move(indexBuffer));
+	//auto modelSet = std::make_unique<ModelSetGVertex>(std::move(indexBuffer));
 
-	for (auto& model : models)
-		modelSet->AddInstance(std::move(model));
+	//for (auto& model : models)
+	//	modelSet->AddInstance(std::move(model));
 
-	m_models.emplace_back(std::move(modelSet));
+	//m_models.emplace_back(std::move(modelSet));
 }
 
 void BindInstanceGVertex::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {

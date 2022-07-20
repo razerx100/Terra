@@ -28,8 +28,7 @@ public:
 	) const noexcept;
 
 	virtual void AddModels(
-		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-		std::unique_ptr<IModelInputs> modelInputs
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 	) noexcept = 0;
 	virtual void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept = 0;
 
@@ -44,8 +43,7 @@ protected:
 class BindInstancePerVertex final : public BindInstanceGFX {
 public:
 	void AddModels(
-		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-		std::unique_ptr<IModelInputs> modelInputs
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 	) noexcept override;
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept override;
 };
@@ -53,8 +51,7 @@ public:
 class BindInstanceGVertex final : public BindInstanceGFX {
 public:
 	void AddModels(
-		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-		std::unique_ptr<IModelInputs> modelInputs
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 	) noexcept override;
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept override;
 

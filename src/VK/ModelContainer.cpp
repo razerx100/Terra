@@ -14,10 +14,9 @@ ModelContainer::ModelContainer(
 	m_shaderPath(std::move(shaderPath)) {}
 
 void ModelContainer::AddModels(
-	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-	std::unique_ptr<IModelInputs> modelInputs
+	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 ) {
-	m_bindInstance->AddModels(device, std::move(models), std::move(modelInputs));
+	//m_bindInstance->AddModels(device, std::move(models), std::move(modelInputs));
 }
 
 void ModelContainer::CopyData(std::atomic_size_t& workCount) {

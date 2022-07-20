@@ -151,11 +151,18 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 }
 
 void RendererVK::SubmitModels(
-	std::vector<std::shared_ptr<IModel>>&& models, std::unique_ptr<IModelInputs> modelInputs
+	std::vector<std::shared_ptr<IModel>>&& models
 ) {
-	Terra::modelContainer->AddModels(
-		Terra::device->GetLogicalDevice(), std::move(models), std::move(modelInputs)
-	);
+	//Terra::modelContainer->AddModels(
+	//	Terra::device->GetLogicalDevice(), std::move(models), std::move(modelInputs)
+	//);
+}
+
+void RendererVK::SubmitModelInputs(
+	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize, size_t strideSize,
+	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+) {
+
 }
 
 void RendererVK::Render() {
@@ -196,8 +203,9 @@ void RendererVK::Render() {
 	);
 	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(imageIndex));
 
+	++imageIndex;
 	const size_t nextFrame =
-		++imageIndex >= m_bufferCount ? imageIndex % m_bufferCount : imageIndex;
+		imageIndex >= m_bufferCount ? imageIndex % m_bufferCount : imageIndex;
 
 	Terra::swapChain->SetNextFrameIndex(nextFrame);
 	Terra::graphicsQueue->SetNextFrameIndex(nextFrame);
@@ -237,9 +245,11 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 }
 
 Renderer::Resolution RendererVK::GetDisplayCoordinates(std::uint32_t displayIndex) const {
-	return Terra::display->GetDisplayResolution(
+	auto [width, height] = Terra::display->GetDisplayResolution(
 		Terra::device->GetPhysicalDevice(), displayIndex
 	);
+
+	return { width, height };
 }
 
 void RendererVK::WaitForAsyncTasks() {

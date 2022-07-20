@@ -14,8 +14,7 @@ public:
 	ModelContainer(std::string shaderPath, VkDevice device) noexcept;
 
 	void AddModels(
-		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models,
-		std::unique_ptr<IModelInputs> modelInputs
+		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
 	);
 
 	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
