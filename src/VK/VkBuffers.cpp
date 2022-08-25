@@ -3,9 +3,8 @@
 #include <VkHelperFunctions.hpp>
 
 // Base Buffer
-BaseBuffer::BaseBuffer(
-	VkDevice device
-) noexcept : m_buffer(VK_NULL_HANDLE), m_deviceRef(device) {}
+BaseBuffer::BaseBuffer(VkDevice device) noexcept
+	: m_buffer(VK_NULL_HANDLE), m_deviceRef(device) {}
 
 BaseBuffer::~BaseBuffer() noexcept {
 	vkDestroyBuffer(m_deviceRef, m_buffer, nullptr);
@@ -32,13 +31,11 @@ void BaseBuffer::ConfigureBufferQueueAccess(
 
 // Upload Buffer
 
-UploadBuffer::UploadBuffer(
-	VkDevice device
-) noexcept : BaseBuffer(device), m_pCpuHandle(nullptr) {}
+UploadBuffer::UploadBuffer(VkDevice device) noexcept
+	: BaseBuffer(device), m_pCpuHandle(nullptr) {}
 
 void UploadBuffer::CreateBuffer(
-	VkDevice device, size_t bufferSize,
-	VkBufferUsageFlags bufferFlags
+	VkDevice device, size_t bufferSize, VkBufferUsageFlags bufferFlags
 ) {
 	VkBufferCreateInfo createInfo = {};
 
@@ -65,14 +62,11 @@ std::uint8_t* UploadBuffer::GetCpuHandle() const noexcept {
 
 // Gpu Buffer
 
-GpuBuffer::GpuBuffer(
-	VkDevice device
-) noexcept : BaseBuffer(device) {}
+GpuBuffer::GpuBuffer(VkDevice device) noexcept : BaseBuffer(device) {}
 
 void GpuBuffer::CreateBuffer(
 	VkDevice device, size_t bufferSize,
-	const std::vector<std::uint32_t>& queueFamilyIndices,
-	BufferType type
+	const std::vector<std::uint32_t>& queueFamilyIndices, BufferType type
 ) {
 	VkBufferCreateInfo createInfo = {};
 

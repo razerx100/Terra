@@ -16,8 +16,7 @@ public:
 
 	size_t AddTexture(
 		VkDevice device,
-		std::unique_ptr<std::uint8_t> textureDataHandle,
-		size_t width, size_t height, bool components16bits = false
+		std::unique_ptr<std::uint8_t> textureDataHandle, size_t width, size_t height
 	) noexcept;
 
 	void RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept;

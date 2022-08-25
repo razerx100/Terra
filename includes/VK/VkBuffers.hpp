@@ -1,5 +1,5 @@
-#ifndef VULKAN_BUFFERS_HPP_
-#define VULKAN_BUFFERS_HPP_
+#ifndef VK_BUFFERS_HPP_
+#define VK_BUFFERS_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
@@ -21,8 +21,7 @@ public:
 
 protected:
 	static void ConfigureBufferQueueAccess(
-		const std::vector<std::uint32_t>& queueFamilyIndices,
-		VkBufferCreateInfo& bufferInfo
+		const std::vector<std::uint32_t>& queueFamilyIndices, VkBufferCreateInfo& bufferInfo
 	) noexcept;
 
 protected:
@@ -34,27 +33,20 @@ private:
 
 class GpuBuffer final : public BaseBuffer {
 public:
-	GpuBuffer(
-		VkDevice device
-	) noexcept;
+	GpuBuffer(VkDevice device) noexcept;
 
 	void CreateBuffer(
-		VkDevice device,
-		size_t bufferSize,
-		const std::vector<std::uint32_t>& queueFamilyIndices,
-		BufferType type
+		VkDevice device, size_t bufferSize,
+		const std::vector<std::uint32_t>& queueFamilyIndices, BufferType type
 	);
 };
 
 class UploadBuffer final : public BaseBuffer{
 public:
-	UploadBuffer(
-		VkDevice device
-	) noexcept;
+	UploadBuffer(VkDevice device) noexcept;
 
 	void CreateBuffer(
-		VkDevice device, size_t bufferSize,
-		VkBufferUsageFlags bufferFlags = 0u
+		VkDevice device, size_t bufferSize, VkBufferUsageFlags bufferFlags = 0u
 	);
 
 	void SetCpuHandle(std::uint8_t* cpuHandle) noexcept;
@@ -68,15 +60,11 @@ private:
 
 class ImageBuffer {
 public:
-	ImageBuffer(
-		VkDevice device
-	) noexcept;
+	ImageBuffer(VkDevice device) noexcept;
 	~ImageBuffer() noexcept;
 
 	void CreateImage(
-		VkDevice device,
-		std::uint32_t width, std::uint32_t height,
-		VkFormat imageFormat,
+		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void CopyToImage(
@@ -84,15 +72,10 @@ public:
 		std::uint32_t width, std::uint32_t height
 	) noexcept;
 	void BindImageToMemory(
-		VkDevice device, VkDeviceMemory memory,
-		VkDeviceSize offset
+		VkDevice device, VkDeviceMemory memory, VkDeviceSize offset
 	);
-	void CreateImageView(
-		VkDevice device, VkFormat format
-	) noexcept;
-	void TransitionImageLayout(
-		VkCommandBuffer cmdBuffer, bool shaderStage
-	) noexcept;
+	void CreateImageView(VkDevice device, VkFormat format) noexcept;
+	void TransitionImageLayout(VkCommandBuffer cmdBuffer, bool shaderStage) noexcept;
 
 	[[nodiscard]]
 	VkImageView GetImageView() const noexcept;

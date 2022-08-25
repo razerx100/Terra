@@ -162,7 +162,10 @@ void RendererVK::SubmitModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize, size_t strideSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-
+	Terra::modelContainer->AddModelInputs(
+		Terra::device->GetLogicalDevice(),
+		std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
+	);
 }
 
 void RendererVK::Render() {
@@ -325,12 +328,10 @@ void RendererVK::ProcessData() {
 }
 
 size_t RendererVK::RegisterResource(
-	std::unique_ptr<std::uint8_t> textureData,
-	size_t width, size_t height, bool components16bits
+	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
 	return Terra::textureStorage->AddTexture(
-		Terra::device->GetLogicalDevice(),
-		std::move(textureData), width, height, components16bits
+		Terra::device->GetLogicalDevice(), std::move(textureData), width, height
 	);
 }
 

@@ -46,11 +46,10 @@ void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBu
 
 void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
 	m_bindInstance->BindPipeline(
-		commandBuffer,
-		Terra::descriptorSet->GetDescriptorSet()
+		commandBuffer, Terra::descriptorSet->GetDescriptorSet()
 	);
 
-	m_pPerFrameBuffers->UpdatePerFrameBuffers();
+	m_pPerFrameBuffers->BindPerFrameBuffers(commandBuffer);
 
 	m_bindInstance->DrawModels(commandBuffer);
 }
@@ -112,4 +111,14 @@ ModelContainer::Pipeline ModelContainer::CreatePipeline(
 		);
 
 	return { std::move(pso), std::move(pipelineLayout) };
+}
+
+void ModelContainer::AddModelInputs(
+	VkDevice device,
+	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
+	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+) {
+	m_pPerFrameBuffers->AddModelInputs(
+		device, std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
+	);
 }

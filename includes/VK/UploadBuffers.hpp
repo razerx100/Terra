@@ -52,10 +52,7 @@ class HostAccessibleBuffers : public _CpuBaseBuffers {
 public:
 	HostAccessibleBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 
-	std::shared_ptr<UploadBuffer> AddBuffer(
-		VkDevice device, size_t bufferSize,
-		VkBufferUsageFlags bufferStageFlag
-	);
+	std::shared_ptr<UploadBuffer> AddBuffer(VkDevice device, size_t bufferSize);
 
 	void ResetBufferData() noexcept;
 

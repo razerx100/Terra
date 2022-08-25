@@ -104,14 +104,11 @@ HostAccessibleBuffers::HostAccessibleBuffers(
 ) : _CpuBaseBuffers(logicalDevice, physicalDevice) {}
 
 std::shared_ptr<UploadBuffer> HostAccessibleBuffers::AddBuffer(
-	VkDevice device, size_t bufferSize,
-	VkBufferUsageFlags bufferStageFlag
+	VkDevice device, size_t bufferSize
 ) {
 	std::shared_ptr<UploadBuffer> hostBuffer = std::make_shared<UploadBuffer>(device);
 
-	bufferStageFlag |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-
-	hostBuffer->CreateBuffer(device, bufferSize, bufferStageFlag);
+	hostBuffer->CreateBuffer(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
 	m_pBuffers.emplace_back(hostBuffer);
 

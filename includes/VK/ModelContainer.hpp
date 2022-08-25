@@ -22,6 +22,11 @@ public:
 	void CopyData(std::atomic_size_t& workCount);
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer);
 	void ReleaseUploadBuffers();
+	void AddModelInputs(
+		VkDevice device,
+		std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
+		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+	);
 
 	void BindCommands(VkCommandBuffer commandBuffer) const noexcept;
 

@@ -9,13 +9,10 @@ PerFrameBuffers::PerFrameBuffers(VkDevice device) {
 void PerFrameBuffers::InitBuffers(VkDevice device) {
 	size_t bufferSize = sizeof(DirectX::XMMATRIX) * 2u;
 
-	m_pCameraBuffer = Terra::uniformBuffer->AddBuffer(
-		device, bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-	);
+	m_pCameraBuffer = Terra::uniformBuffer->AddBuffer(device, bufferSize);
 
 	AddDescriptorForBuffer(
-		m_pCameraBuffer->GetBuffer(), bufferSize, 0u,
-		VK_SHADER_STAGE_VERTEX_BIT
+		m_pCameraBuffer->GetBuffer(), bufferSize, 0u, VK_SHADER_STAGE_VERTEX_BIT
 	);
 }
 
@@ -42,8 +39,32 @@ void PerFrameBuffers::AddDescriptorForBuffer(
 	);
 }
 
-void PerFrameBuffers::UpdatePerFrameBuffers() const noexcept {
+void PerFrameBuffers::BindPerFrameBuffers(VkCommandBuffer commandBuffer) const noexcept {
 	std::uint8_t* cameraHandle = m_pCameraBuffer->GetCpuHandle();
 
 	Terra::cameraManager->CopyData(cameraHandle);
+
+	VkBuffer vertexBuffers[] = { m_gVertexBuffer->GetBuffer() };
+	static const VkDeviceSize vertexOffsets[] = { 0u };
+
+	vkCmdBindVertexBuffers(
+		commandBuffer, 0u, 1u, vertexBuffers, vertexOffsets
+	);
+	vkCmdBindIndexBuffer(
+		commandBuffer, m_gIndexBuffer->GetBuffer(), 0u, VK_INDEX_TYPE_UINT32
+	);
+}
+
+void PerFrameBuffers::AddModelInputs(
+	VkDevice device,
+	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
+	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+) {
+	m_gVertexBuffer = Terra::vertexBuffer->AddBuffer(
+		device, std::move(vertices), vertexBufferSize
+	);
+
+	m_gIndexBuffer = Terra::indexBuffer->AddBuffer(
+		device, std::move(indices), indexBufferSize
+	);
 }

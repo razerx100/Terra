@@ -18,15 +18,18 @@ else()
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/")
 endif()
 
-file(GLOB_RECURSE SRC src/*.cpp includes/*.hpp templates/*.hpp exports/*.hpp)
+file(GLOB_RECURSE SRC src/*.cpp src/*.ixx includes/*.hpp templates/*.hpp exports/*.hpp)
+file(GLOB_RECURSE MODULESZ interfaces/*.ixx)
 
 if(PLATFORM STREQUAL "WINDOWS")
     file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
 endif()
 
 add_library(${PROJECT_NAME} SHARED
-    ${SRC} ${SRCOPT} ${IMGUI}
+    ${SRC} ${SRCOPT} ${MODULESZ}
 )
+
+source_group("Interfaces" FILES ${MODULESZ})
 
 find_package(Vulkan REQUIRED)
 
