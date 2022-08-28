@@ -9,14 +9,10 @@
 ModelContainer::ModelContainer(
 	std::string shaderPath, VkDevice device
 ) noexcept
-	: m_bindInstance(std::make_unique<BindInstancePerVertex>()),
-	m_pPerFrameBuffers(std::make_unique<PerFrameBuffers>(device)),
-	m_shaderPath(std::move(shaderPath)) {}
+	: m_pPerFrameBuffers{ device }, m_shaderPath{ std::move(shaderPath) } {}
 
-void ModelContainer::AddModels(
-	VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
-) {
-	//m_bindInstance->AddModels(device, std::move(models), std::move(modelInputs));
+void ModelContainer::AddModels(std::vector<std::shared_ptr<IModel>>&& models) {
+	m_renderPipeline.AddOpaqueModels(std::move(models));
 }
 
 void ModelContainer::CopyData(std::atomic_size_t& workCount) {
@@ -45,13 +41,13 @@ void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBu
 }
 
 void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
-	m_bindInstance->BindPipeline(
+	m_renderPipeline.BindGraphicsPipeline(
 		commandBuffer, Terra::descriptorSet->GetDescriptorSet()
 	);
 
-	m_pPerFrameBuffers->BindPerFrameBuffers(commandBuffer);
+	m_pPerFrameBuffers.BindPerFrameBuffers(commandBuffer);
 
-	m_bindInstance->DrawModels(commandBuffer);
+	m_renderPipeline.DrawModels(commandBuffer);
 }
 
 void ModelContainer::ReleaseUploadBuffers() {
@@ -68,9 +64,8 @@ void ModelContainer::CreateBuffers(VkDevice device) {
 void ModelContainer::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {
 	auto [pso, pipelineLayout] = CreatePipeline(device, setLayout);
 
-	m_bindInstance->AddPipelineLayout(std::move(pipelineLayout));
-
-	m_bindInstance->AddPSO(std::move(pso));
+	m_renderPipeline.AddGraphicsPipelineLayout(std::move(pipelineLayout));
+	m_renderPipeline.AddGraphicsPipelineObject(std::move(pso));
 }
 
 ModelContainer::Pipeline ModelContainer::CreatePipeline(
@@ -118,7 +113,7 @@ void ModelContainer::AddModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-	m_pPerFrameBuffers->AddModelInputs(
+	m_pPerFrameBuffers.AddModelInputs(
 		device, std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
 }

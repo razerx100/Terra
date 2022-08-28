@@ -7,15 +7,14 @@
 #include <vector>
 #include <PerFrameBuffers.hpp>
 
-#include <BindInstanceGFX.hpp>
+#include <IModel.hpp>
+#include <RenderPipeline.hpp>
 
 class ModelContainer {
 public:
 	ModelContainer(std::string shaderPath, VkDevice device) noexcept;
 
-	void AddModels(
-		VkDevice device, std::vector<std::shared_ptr<IModel>>&& models
-	);
+	void AddModels(std::vector<std::shared_ptr<IModel>>&& models);
 
 	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
 	void CreateBuffers(VkDevice device);
@@ -37,8 +36,8 @@ private:
 	Pipeline CreatePipeline(VkDevice device, VkDescriptorSetLayout setLayout) const;
 
 private:
-	std::unique_ptr<BindInstanceGFX> m_bindInstance;
-	std::unique_ptr<PerFrameBuffers> m_pPerFrameBuffers;
+	RenderPipeline m_renderPipeline;
+	PerFrameBuffers m_pPerFrameBuffers;
 
 	std::string m_shaderPath;
 };
