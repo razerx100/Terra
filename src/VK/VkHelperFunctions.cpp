@@ -234,21 +234,3 @@ void ConfigureImageQueueAccess(
 	else
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 }
-
-size_t FindMemoryType(
-	VkPhysicalDevice physicalDevice,
-	const VkMemoryRequirements& memoryReq, VkMemoryPropertyFlags propertiesToCheck
-) noexcept {
-	VkPhysicalDeviceMemoryProperties memoryProp = {};
-	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProp);
-
-	for(size_t index = 0u; index < memoryProp.memoryTypeCount; ++index)
-		if ((memoryReq.memoryTypeBits & (1u << index))
-			&& (memoryProp.memoryTypes[index].propertyFlags & propertiesToCheck)
-			== propertiesToCheck) {
-
-			return index;
-		}
-
-	return 0u;
-}

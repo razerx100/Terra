@@ -7,26 +7,11 @@
 TextureStorage::TextureStorage(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	std::vector<std::uint32_t> queueFamilyIndices
-) : m_currentOffset(0u),
-m_queueFamilyIndices(std::move(queueFamilyIndices)),
-m_textureSampler(VK_NULL_HANDLE), m_deviceRef(logicalDevice) {
+) : m_queueFamilyIndices{std::move(queueFamilyIndices)},
+	m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ logicalDevice },
+	m_gpuMemoryTypeIndex{ 0u } {
 
-	m_uploadBuffers = std::make_unique<UploadBuffers>(logicalDevice, physicalDevice);
-
-	ImageBuffer image = ImageBuffer(logicalDevice);
-
-	image.CreateImage(
-		logicalDevice,
-		1u, 1u, VK_FORMAT_R8G8B8A8_SRGB,
-		m_queueFamilyIndices
-	);
-
-	VkMemoryRequirements memoryReq = {};
-	vkGetImageMemoryRequirements(logicalDevice, image.GetImage(), &memoryReq);
-
-	m_textureMemory = std::make_unique<DeviceMemory>(
-		logicalDevice, physicalDevice, memoryReq, false
-		);
+	m_uploadBuffers = std::make_unique<UploadBuffers>();
 
 	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
 }
@@ -59,13 +44,15 @@ size_t TextureStorage::AddTexture(
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetImageMemoryRequirements(device, imageBuffer->GetImage(), &memoryRequirements);
 
-	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+	auto [textureOffset, gpuMemoryTypeIndex] =
+		Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
+			device, memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		);
 
-	m_textureData.emplace_back(
-		width32, height32, m_currentOffset, imageFormat
-	);
+	if (m_gpuMemoryTypeIndex != gpuMemoryTypeIndex)
+		m_gpuMemoryTypeIndex = gpuMemoryTypeIndex;
 
-	m_currentOffset += memoryRequirements.size;
+	m_textureData.emplace_back(width32, height32, textureOffset, imageFormat);
 
 	m_textures.emplace_back(std::move(imageBuffer));
 
@@ -89,20 +76,17 @@ void TextureStorage::ReleaseUploadBuffers() noexcept {
 }
 
 void TextureStorage::CreateBuffers(VkDevice device) {
-	m_textureMemory->AllocateMemory(m_currentOffset);
-
 	m_uploadBuffers->CreateBuffers(device);
 
-	VkDeviceMemory textureMemory = m_textureMemory->GetMemoryHandle();
+	VkDeviceMemory textureMemory = Terra::Resources::memoryManager->GetMemoryHandle(
+		m_gpuMemoryTypeIndex
+	);
 
 	for (size_t index = 0u; index < std::size(m_textures); ++index) {
 		auto& texture = m_textures[index];
 		ImageData& imageData = m_textureData[index];
 
-		texture->BindImageToMemory(
-			device, textureMemory,
-			static_cast<VkDeviceSize>(imageData.offset)
-		);
+		texture->BindImageToMemory(device, textureMemory, imageData.offset);
 		texture->CreateImageView(device, imageData.format);
 	}
 }

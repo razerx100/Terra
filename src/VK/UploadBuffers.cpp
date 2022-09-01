@@ -3,73 +3,78 @@
 #include <VKThrowMacros.hpp>
 #include <VkHelperFunctions.hpp>
 
+#include <Terra.hpp>
+
 // Cpu Base Buffers
 
-_CpuBaseBuffers::_CpuBaseBuffers(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) : m_cpuHandle(nullptr), m_currentOffset(0u) {
-
-	UploadBuffer buffer = UploadBuffer(logicalDevice);
-	buffer.CreateBuffer(logicalDevice, 1u);
-
-	VkMemoryRequirements memoryReq = {};
-	vkGetBufferMemoryRequirements(logicalDevice, buffer.GetBuffer(), &memoryReq);
-
-	m_pBufferMemory = std::make_unique<DeviceMemory>(
-		logicalDevice, physicalDevice, memoryReq, true
-		);
-}
+_CpuBaseBuffers::_CpuBaseBuffers() noexcept : m_memoryTypeIndex{ 0u } {}
 
 void _CpuBaseBuffers::CreateBuffers(VkDevice device) {
-	m_pBufferMemory->AllocateMemory(m_currentOffset);
-
-	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
-
-	vkMapMemory(
-		device, uploadMemory,
-		0u, VK_WHOLE_SIZE, 0u,
-		reinterpret_cast<void**>(&m_cpuHandle)
+	VkDeviceMemory uploadMemory = Terra::Resources::memoryManager->GetMemoryHandle(
+		m_memoryTypeIndex
 	);
 
 	VkResult result;
-	for (size_t index = 0u; index < std::size(m_pBuffers); ++index)
+	for (size_t index = 0u; index < std::size(m_pBuffers); ++index) {
+		BufferData& bufferData = m_allocationData[index];
+
+		vkMapMemory(
+			device, uploadMemory,
+			bufferData.offset, bufferData.bufferSize, 0u,
+			reinterpret_cast<void**>(&bufferData.cpuWritePtr)
+		);
+
 		VK_THROW_FAILED(result,
 			vkBindBufferMemory(
-				device, m_pBuffers[index]->GetBuffer(),
-				uploadMemory, m_allocationData[index].offset
+				device, m_pBuffers[index]->GetBuffer(), uploadMemory, bufferData.offset
 			)
 		);
+	}
 
 	AfterCreationStuff();
 }
 
 void _CpuBaseBuffers::FlushMemory(VkDevice device) {
-	VkDeviceMemory uploadMemory = m_pBufferMemory->GetMemoryHandle();
+	VkDeviceMemory uploadMemory = Terra::Resources::memoryManager->GetMemoryHandle(
+		m_memoryTypeIndex
+	);
 
-	VkMappedMemoryRange memoryRange = {};
+	std::vector<VkMappedMemoryRange> memoryRanges;
+
+	VkMappedMemoryRange memoryRange{};
 	memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 	memoryRange.memory = uploadMemory;
-	memoryRange.offset = 0u;
-	memoryRange.size = VK_WHOLE_SIZE;
+
+	for (size_t index = 0u; index < std::size(m_allocationData); ++index) {
+		const BufferData& bufferData = m_allocationData[index];
+
+		memoryRange.offset = bufferData.offset;
+		memoryRange.size = bufferData.bufferSize;
+
+		memoryRanges.emplace_back(memoryRange);
+	}
 
 	VkResult result;
-	VK_THROW_FAILED(result, vkFlushMappedMemoryRanges(device, 1u, &memoryRange));
+	VK_THROW_FAILED(result,
+		vkFlushMappedMemoryRanges(
+			device, static_cast<std::uint32_t>(std::size(memoryRanges)),
+			std::data(memoryRanges)
+		)
+	);
 }
 
 void _CpuBaseBuffers::AfterCreationStuff() {}
 
 // Upload Buffers
 
-UploadBuffers::UploadBuffers(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) : _CpuBaseBuffers(logicalDevice, physicalDevice) {}
-
 void UploadBuffers::CopyData() noexcept {
-	for (size_t index = 0u; index < std::size(m_allocationData); ++index)
+	for (size_t index = 0u; index < std::size(m_allocationData); ++index) {
+		const BufferData& bufferData = m_allocationData[index];
+
 		memcpy(
-			m_cpuHandle + m_allocationData[index].offset, m_dataHandles[index].get(),
-			m_allocationData[index].bufferSize
+			bufferData.cpuWritePtr, m_dataHandles[index].get(), bufferData.bufferSize
 		);
+	}
 }
 
 void UploadBuffers::AddBuffer(
@@ -79,14 +84,18 @@ void UploadBuffers::AddBuffer(
 
 	uploadBuffer->CreateBuffer(device, bufferSize);
 
-	VkMemoryRequirements memoryRequirements = {};
+	VkMemoryRequirements memoryRequirements{};
 	vkGetBufferMemoryRequirements(device, uploadBuffer->GetBuffer(), &memoryRequirements);
 
-	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+	auto [memoryOffset, memoryTypeIndex] =
+		Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
+			device, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+		);
 
-	m_allocationData.emplace_back(bufferSize, m_currentOffset);
+	m_allocationData.emplace_back(bufferSize, memoryOffset, nullptr);
 
-	m_currentOffset += memoryRequirements.size;
+	if (m_memoryTypeIndex != memoryTypeIndex)
+		m_memoryTypeIndex = memoryTypeIndex;
 
 	m_pBuffers.emplace_back(std::move(uploadBuffer));
 
@@ -99,10 +108,6 @@ const std::vector<std::shared_ptr<UploadBuffer>>& UploadBuffers::GetUploadBuffer
 }
 
 // Host accessible Buffers
-HostAccessibleBuffers::HostAccessibleBuffers(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) : _CpuBaseBuffers(logicalDevice, physicalDevice) {}
-
 std::shared_ptr<UploadBuffer> HostAccessibleBuffers::AddBuffer(
 	VkDevice device, size_t bufferSize
 ) {
@@ -115,20 +120,22 @@ std::shared_ptr<UploadBuffer> HostAccessibleBuffers::AddBuffer(
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetBufferMemoryRequirements(device, hostBuffer->GetBuffer(), &memoryRequirements);
 
-	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+	auto [memoryOffset, memoryTypeIndex] =
+		Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
+			device, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+		);
 
-	bufferSize = memoryRequirements.size;
+	if (m_memoryTypeIndex != memoryTypeIndex)
+		m_memoryTypeIndex = memoryTypeIndex;
 
-	m_allocationData.emplace_back(bufferSize, m_currentOffset);
-
-	m_currentOffset += bufferSize;
+	m_allocationData.emplace_back(memoryRequirements.size, memoryOffset, nullptr);
 
 	return hostBuffer;
 }
 
 void HostAccessibleBuffers::AfterCreationStuff() {
 	for (size_t index = 0u; index < std::size(m_pBuffers); ++index)
-		m_pBuffers[index]->SetCpuHandle(m_cpuHandle + m_allocationData[index].offset);
+		m_pBuffers[index]->SetCpuHandle(m_allocationData[index].cpuWritePtr);
 }
 
 void HostAccessibleBuffers::ResetBufferData() noexcept {

@@ -3,34 +3,22 @@
 #include <VKThrowMacros.hpp>
 #include <VkHelperFunctions.hpp>
 
+#include <Terra.hpp>
+
 ResourceBuffer::ResourceBuffer(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	std::vector<std::uint32_t> queueFamilyIndices, BufferType type
-) : m_currentOffset(0u), m_queueFamilyIndices(std::move(queueFamilyIndices)), m_type(type) {
+) : m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_type{ type },
+	m_gpuMemoryTypeIndex{ 0u } {
 
-	m_uploadBuffers = std::make_unique<UploadBuffers>(logicalDevice, physicalDevice);
-
-	GpuBuffer buffer = GpuBuffer(logicalDevice);
-
-	buffer.CreateBuffer(
-		logicalDevice,
-		1u, m_queueFamilyIndices, type
-	);
-
-	VkMemoryRequirements memoryReq = {};
-	vkGetBufferMemoryRequirements(logicalDevice, buffer.GetBuffer(), &memoryReq);
-
-	m_gpuBufferMemory = std::make_unique<DeviceMemory>(
-		logicalDevice, physicalDevice, memoryReq, false
-		);
+	m_uploadBuffers = std::make_unique<UploadBuffers>();
 }
 
 void ResourceBuffer::CreateBuffers(VkDevice device) {
-	m_gpuBufferMemory->AllocateMemory(m_currentOffset);
-
 	m_uploadBuffers->CreateBuffers(device);
 
-	VkDeviceMemory gpuOnlyMemory = m_gpuBufferMemory->GetMemoryHandle();
+	VkDeviceMemory gpuOnlyMemory = Terra::Resources::memoryManager->GetMemoryHandle(
+		m_gpuMemoryTypeIndex
+	);
 
 	VkResult result;
 	for (size_t index = 0u; index < std::size(m_gpuBuffers); ++index) {
@@ -58,11 +46,15 @@ std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 	VkMemoryRequirements memoryRequirements = {};
 	vkGetBufferMemoryRequirements(device, gpuBuffer->GetBuffer(), &memoryRequirements);
 
-	m_currentOffset = Align(m_currentOffset, memoryRequirements.alignment);
+	auto [gpuBufferOffset, gpuMemoryTypeIndex] =
+		Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
+			device, memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		);
 
-	m_gpuBufferData.emplace_back(bufferSize, m_currentOffset);
+	m_gpuBufferData.emplace_back(bufferSize, gpuBufferOffset);
 
-	m_currentOffset += memoryRequirements.size;
+	if (m_gpuMemoryTypeIndex != gpuMemoryTypeIndex)
+		m_gpuMemoryTypeIndex = gpuMemoryTypeIndex;
 
 	m_gpuBuffers.emplace_back(gpuBuffer);
 

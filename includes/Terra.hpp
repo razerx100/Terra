@@ -17,6 +17,7 @@
 #include <TextureStorage.hpp>
 #include <DepthBuffer.hpp>
 #include <memory>
+#include <DeviceMemory.hpp>
 
 #include <ModelContainer.hpp>
 #include <ISharedDataContainer.hpp>
@@ -47,6 +48,10 @@ namespace Terra {
 	extern std::unique_ptr<DepthBuffer> depthBuffer;
 	extern std::shared_ptr<ISharedDataContainer> sharedData;
 
+	namespace Resources {
+		extern std::unique_ptr<DeviceMemoryManager> memoryManager;
+	}
+
 	// Initialization functions
 	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept;
 	void InitDebugLayer(VkInstance instance);
@@ -70,17 +75,9 @@ namespace Terra {
 	);
 	void InitDisplay();
 	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle);
-	void InitVertexBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
-	);
-	void InitIndexBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
-	);
-	void InitUniformBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-	);
+	void InitVertexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices);
+	void InitIndexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices);
+	void InitUniformBuffer();
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
 	void InitRenderPass(
 		VkDevice logicalDevice,
@@ -97,9 +94,10 @@ namespace Terra {
 	);
 	void InitCameraManager();
 	void InitDepthBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;
+	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) noexcept;
+	void CleanUpResources() noexcept;
 }
 #endif

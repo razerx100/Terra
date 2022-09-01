@@ -9,11 +9,7 @@
 
 class ResourceBuffer {
 public:
-	ResourceBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		std::vector<std::uint32_t> queueFamilyIndices,
-		BufferType type
-	);
+	ResourceBuffer(std::vector<std::uint32_t> queueFamilyIndices, BufferType type);
 
 	std::shared_ptr<GpuBuffer> AddBuffer(
 		VkDevice device, std::unique_ptr<std::uint8_t> sourceHandle, size_t bufferSize
@@ -26,16 +22,15 @@ public:
 private:
 	struct GpuBufferData {
 		size_t bufferSize;
-		size_t offset;
+		VkDeviceSize offset;
 	};
 
 private:
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
-	std::unique_ptr<DeviceMemory> m_gpuBufferMemory;
 	std::vector<std::shared_ptr<GpuBuffer>> m_gpuBuffers;
-	size_t m_currentOffset;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::vector<GpuBufferData> m_gpuBufferData;
 	BufferType m_type;
+	std::uint32_t m_gpuMemoryTypeIndex;
 };
 #endif

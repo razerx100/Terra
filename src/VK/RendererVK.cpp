@@ -43,6 +43,9 @@ RendererVK::RendererVK(
 	Terra::device->CreateLogicalDevice();
 
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
+
+	Terra::InitResources(physicalDevice, logicalDevice);
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
@@ -52,8 +55,6 @@ RendererVK::RendererVK(
 		graphicsQueueHandle,
 		bufferCount
 	);
-
-	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
 
 	SwapChainManagerCreateInfo swapCreateInfo = {};
 	swapCreateInfo.device = logicalDevice;
@@ -94,8 +95,9 @@ RendererVK::RendererVK(
 
 	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
 
-	Terra::InitDepthBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitDepthBuffer(logicalDevice, copyAndGfxFamilyIndices);
 	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, width, height);
+	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
 
 	Terra::InitRenderPass(
 		logicalDevice,
@@ -110,9 +112,9 @@ RendererVK::RendererVK(
 
 	Terra::InitDescriptorSet(logicalDevice);
 
-	Terra::InitVertexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	Terra::InitIndexBuffer(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	Terra::InitUniformBuffer(logicalDevice, physicalDevice);
+	Terra::InitVertexBuffer(copyAndGfxFamilyIndices);
+	Terra::InitIndexBuffer(copyAndGfxFamilyIndices);
+	Terra::InitUniformBuffer();
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 
 	Terra::InitCameraManager();
@@ -133,6 +135,7 @@ RendererVK::~RendererVK() noexcept {
 	Terra::renderPass.reset();
 	Terra::depthBuffer.reset();
 	Terra::swapChain.reset();
+	Terra::CleanUpResources();
 	Terra::graphicsQueue.reset();
 	Terra::graphicsCmdPool.reset();
 	Terra::display.reset();
@@ -273,6 +276,10 @@ void RendererVK::InitResourceBasedObjects() {
 void RendererVK::ProcessData() {
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
+	// Allocate Memory
+	Terra::Resources::memoryManager->AllocateMemory(logicalDevice);
+
+	// Bind Buffers to memory
 	Terra::modelContainer->CreateBuffers(logicalDevice);
 	Terra::textureStorage->CreateBuffers(logicalDevice);
 

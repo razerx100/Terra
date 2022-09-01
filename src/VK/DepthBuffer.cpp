@@ -2,27 +2,13 @@
 #include <VkHelperFunctions.hpp>
 #include <VKThrowMacros.hpp>
 
+#include <Terra.hpp>
+
 DepthBuffer::DepthBuffer(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-	std::vector<std::uint32_t> queueFamilyIndices
-) :	m_depthImage(VK_NULL_HANDLE), m_depthImageView(VK_NULL_HANDLE),
-	m_depthMemory(VK_NULL_HANDLE),
+	VkDevice logicalDevice, std::vector<std::uint32_t> queueFamilyIndices
+) : m_depthImage(VK_NULL_HANDLE), m_depthImageView(VK_NULL_HANDLE),
 	m_deviceRef(logicalDevice), m_queueFamilyIndices(std::move(queueFamilyIndices)),
-	m_memoryTypeIndex(0u) {
-
-	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-	VkImage tempImage = VK_NULL_HANDLE;
-
-	CreateDepthImage(logicalDevice, &tempImage, 1u, 1u, DEPTHFORMAT);
-
-	VkMemoryRequirements memoryReq = {};
-	vkGetImageMemoryRequirements(logicalDevice, tempImage, &memoryReq);
-
-	vkDestroyImage(logicalDevice, tempImage, nullptr);
-
-	m_memoryTypeIndex = FindMemoryType(physicalDevice, memoryReq, properties);
-}
+	m_memoryTypeIndex{ 0u }, m_memoryOffset{ 0u }, m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
 
 DepthBuffer::~DepthBuffer() noexcept {
 	CleanUp(m_deviceRef);
@@ -31,7 +17,33 @@ DepthBuffer::~DepthBuffer() noexcept {
 void DepthBuffer::CleanUp(VkDevice device) noexcept {
 	vkDestroyImageView(device, m_depthImageView, nullptr);
 	vkDestroyImage(device, m_depthImage, nullptr);
-	vkFreeMemory(device, m_depthMemory, nullptr);
+}
+
+DepthBuffer::DepthBuffer(DepthBuffer&& depthBuffer) noexcept
+	: m_depthImage{ depthBuffer.m_depthImage },
+	m_depthImageView{ depthBuffer.m_depthImageView }, m_deviceRef{ depthBuffer.m_deviceRef },
+	m_queueFamilyIndices{ std::move(depthBuffer.m_queueFamilyIndices) },
+	m_memoryTypeIndex{ depthBuffer.m_memoryTypeIndex },
+	m_memoryOffset{ depthBuffer.m_memoryOffset }, m_maxWidth{ depthBuffer.m_maxWidth },
+	m_maxHeight{ depthBuffer.m_maxHeight } {
+
+	depthBuffer.m_depthImage = VK_NULL_HANDLE;
+	depthBuffer.m_depthImageView = VK_NULL_HANDLE;
+}
+DepthBuffer& DepthBuffer::operator=(DepthBuffer&& depthBuffer) noexcept {
+	m_depthImage = depthBuffer.m_depthImage;
+	m_depthImageView = depthBuffer.m_depthImageView;
+	m_deviceRef = depthBuffer.m_deviceRef;
+	m_queueFamilyIndices = std::move(depthBuffer.m_queueFamilyIndices);
+	m_memoryTypeIndex = depthBuffer.m_memoryTypeIndex;
+	m_memoryOffset = depthBuffer.m_memoryOffset;
+	m_maxWidth = depthBuffer.m_maxWidth;
+	m_maxHeight = depthBuffer.m_maxHeight;
+
+	depthBuffer.m_depthImage = VK_NULL_HANDLE;
+	depthBuffer.m_depthImageView = VK_NULL_HANDLE;
+
+	return *this;
 }
 
 void DepthBuffer::CreateDepthImage(
@@ -62,41 +74,50 @@ void DepthBuffer::CreateDepthImage(
 	);
 }
 
-void DepthBuffer::CreateDepthBuffer(
-	VkDevice device,
-	std::uint32_t width, std::uint32_t height
+void DepthBuffer::AllocateForMaxResolution(
+	VkDevice device, std::uint32_t width, std::uint32_t height
 ) {
-	VkFormat depthFormat = DEPTHFORMAT;
+	VkImage maxResImage = VK_NULL_HANDLE;
+	CreateDepthImage(device, &maxResImage, width, height, DEPTHFORMAT);
 
-	CreateDepthImage(device, &m_depthImage, width, height, depthFormat);
+	VkMemoryRequirements memoryReq{};
+	vkGetImageMemoryRequirements(device, maxResImage, &memoryReq);
 
-	AllocateMemory(device);
+	vkDestroyImage(device, maxResImage, nullptr);
+
+	auto [offset, memoryIndex] = Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
+		device, memoryReq, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+
+	m_memoryOffset = offset;
+	m_memoryTypeIndex = memoryIndex;
+
+	m_maxWidth = width;
+	m_maxHeight = height;
+}
+
+void DepthBuffer::CreateDepthBuffer(
+	VkDevice device, std::uint32_t width, std::uint32_t height
+) {
+	if (width > m_maxWidth || height > m_maxHeight)
+		VK_GENERIC_THROW("Depth buffer resolution exceeds max resolution");
+
+	CreateDepthImage(device, &m_depthImage, width, height, DEPTHFORMAT);
+
+	VkDeviceMemory memoryStart = Terra::Resources::memoryManager->GetMemoryHandle(
+		m_memoryTypeIndex
+	);
 
 	VkResult result;
 	VK_THROW_FAILED(result,
 		vkBindImageMemory(
-			device, m_depthImage, m_depthMemory, 0u
+			device, m_depthImage, memoryStart, m_memoryOffset
 		)
 	);
 
 	CreateImageView(
 		device, m_depthImage, &m_depthImageView,
-		depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT
-	);
-}
-
-void DepthBuffer::AllocateMemory(VkDevice device) {
-	VkMemoryRequirements memoryReq = {};
-	vkGetImageMemoryRequirements(device, m_depthImage, &memoryReq);
-
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memoryReq.size;
-	allocInfo.memoryTypeIndex = static_cast<std::uint32_t>(m_memoryTypeIndex);
-
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkAllocateMemory(m_deviceRef, &allocInfo, nullptr, &m_depthMemory)
+		DEPTHFORMAT, VK_IMAGE_ASPECT_DEPTH_BIT
 	);
 }
 

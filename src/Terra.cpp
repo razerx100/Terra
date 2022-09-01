@@ -31,6 +31,10 @@ namespace Terra {
 	std::unique_ptr<DepthBuffer> depthBuffer;
 	std::shared_ptr<ISharedDataContainer> sharedData;
 
+	namespace Resources {
+		std::unique_ptr<DeviceMemoryManager> memoryManager;
+	}
+
 	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept {
 		threadPool = std::move(threadPoolArg);
 	}
@@ -102,29 +106,20 @@ namespace Terra {
 #endif
 	}
 
-	void InitVertexBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
-	) {
+	void InitVertexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices) {
 		vertexBuffer = std::make_unique<ResourceBuffer>(
-			logicalDevice, physicalDevice, queueFamilyIndices, BufferType::Vertex
+			queueFamilyIndices, BufferType::Vertex
 			);
 	}
 
-	void InitIndexBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
-	) {
+	void InitIndexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices) {
 		indexBuffer = std::make_unique<ResourceBuffer>(
-			logicalDevice, physicalDevice, queueFamilyIndices, BufferType::Index
+			queueFamilyIndices, BufferType::Index
 			);
 	}
 
-	void InitUniformBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-	) {
-		uniformBuffer =
-			std::make_unique<HostAccessibleBuffers>(logicalDevice, physicalDevice);
+	void InitUniformBuffer() {
+		uniformBuffer = std::make_unique<HostAccessibleBuffers>();
 	}
 
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height) {
@@ -168,15 +163,20 @@ namespace Terra {
 	}
 
 	void InitDepthBuffer(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
 	) {
-		depthBuffer = std::make_unique<DepthBuffer>(
-			logicalDevice, physicalDevice, queueFamilyIndices
-			);
+		depthBuffer = std::make_unique<DepthBuffer>(logicalDevice, queueFamilyIndices);
 	}
 
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept {
 		sharedData = std::move(sharedDataArg);
+	}
+
+	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) noexcept {
+		Resources::memoryManager = std::make_unique<DeviceMemoryManager>(physicalDevice);
+	}
+
+	void CleanUpResources() noexcept {
+		Resources::memoryManager.reset();
 	}
 }

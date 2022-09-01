@@ -2,6 +2,7 @@
 #define VK_HELPER_FUNCTIONS_
 #include <vulkan/vulkan.hpp>
 #include <optional>
+#include <concepts>
 #include <vector>
 
 enum QueueType {
@@ -39,12 +40,6 @@ void ConfigureImageQueueAccess(
 ) noexcept;
 
 [[nodiscard]]
-size_t FindMemoryType(
-	VkPhysicalDevice physicalDevice,
-	const VkMemoryRequirements& memoryReq, VkMemoryPropertyFlags propertiesToCheck
-) noexcept;
-
-[[nodiscard]]
 std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept;
@@ -59,9 +54,12 @@ SurfaceInfo QuerySurfaceCapabilities(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept;
 
+template<std::integral Integer>
 [[nodiscard]]
-constexpr size_t Align(size_t address, size_t alignment) noexcept {
-	return (address + (alignment - 1u)) & ~(alignment - 1u);
+constexpr Integer Align(Integer address, Integer alignment) noexcept {
+	size_t _address = static_cast<size_t>(address);
+	size_t _alignment = static_cast<size_t>(alignment);
+	return static_cast<Integer>((_address + (_alignment - 1u)) & ~(_alignment - 1u));
 }
 
 constexpr size_t operator"" _B(unsigned long long number) noexcept {
