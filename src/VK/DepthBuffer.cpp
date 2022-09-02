@@ -8,7 +8,7 @@ DepthBuffer::DepthBuffer(
 	VkDevice logicalDevice, std::vector<std::uint32_t> queueFamilyIndices
 ) : m_depthImage(VK_NULL_HANDLE), m_depthImageView(VK_NULL_HANDLE),
 	m_deviceRef(logicalDevice), m_queueFamilyIndices(std::move(queueFamilyIndices)),
-	m_memoryTypeIndex{ 0u }, m_memoryOffset{ 0u }, m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
+	m_memoryOffset{ 0u }, m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
 
 DepthBuffer::~DepthBuffer() noexcept {
 	CleanUp(m_deviceRef);
@@ -23,7 +23,6 @@ DepthBuffer::DepthBuffer(DepthBuffer&& depthBuffer) noexcept
 	: m_depthImage{ depthBuffer.m_depthImage },
 	m_depthImageView{ depthBuffer.m_depthImageView }, m_deviceRef{ depthBuffer.m_deviceRef },
 	m_queueFamilyIndices{ std::move(depthBuffer.m_queueFamilyIndices) },
-	m_memoryTypeIndex{ depthBuffer.m_memoryTypeIndex },
 	m_memoryOffset{ depthBuffer.m_memoryOffset }, m_maxWidth{ depthBuffer.m_maxWidth },
 	m_maxHeight{ depthBuffer.m_maxHeight } {
 
@@ -35,7 +34,6 @@ DepthBuffer& DepthBuffer::operator=(DepthBuffer&& depthBuffer) noexcept {
 	m_depthImageView = depthBuffer.m_depthImageView;
 	m_deviceRef = depthBuffer.m_deviceRef;
 	m_queueFamilyIndices = std::move(depthBuffer.m_queueFamilyIndices);
-	m_memoryTypeIndex = depthBuffer.m_memoryTypeIndex;
 	m_memoryOffset = depthBuffer.m_memoryOffset;
 	m_maxWidth = depthBuffer.m_maxWidth;
 	m_maxHeight = depthBuffer.m_maxHeight;
@@ -85,12 +83,10 @@ void DepthBuffer::AllocateForMaxResolution(
 
 	vkDestroyImage(device, maxResImage, nullptr);
 
-	auto [offset, memoryIndex] = Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
-		device, memoryReq, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	);
+	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryReq))
+		VK_GENERIC_THROW("Memory Type doesn't match with Depth buffer requirements.");
 
-	m_memoryOffset = offset;
-	m_memoryTypeIndex = memoryIndex;
+	m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
 
 	m_maxWidth = width;
 	m_maxHeight = height;
@@ -104,9 +100,7 @@ void DepthBuffer::CreateDepthBuffer(
 
 	CreateDepthImage(device, &m_depthImage, width, height, DEPTHFORMAT);
 
-	VkDeviceMemory memoryStart = Terra::Resources::memoryManager->GetMemoryHandle(
-		m_memoryTypeIndex
-	);
+	VkDeviceMemory memoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
 	VkResult result;
 	VK_THROW_FAILED(result,

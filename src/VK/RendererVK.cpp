@@ -96,18 +96,11 @@ RendererVK::RendererVK(
 	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
 
 	Terra::InitDepthBuffer(logicalDevice, copyAndGfxFamilyIndices);
-	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, width, height);
 	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
 
 	Terra::InitRenderPass(
 		logicalDevice,
 		Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
-	);
-
-	Terra::swapChain->CreateFramebuffers(
-		logicalDevice,
-		Terra::renderPass->GetRenderPass(), Terra::depthBuffer->GetDepthImageView(),
-		width, height
 	);
 
 	Terra::InitDescriptorSet(logicalDevice);
@@ -277,11 +270,24 @@ void RendererVK::ProcessData() {
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
 	// Allocate Memory
-	Terra::Resources::memoryManager->AllocateMemory(logicalDevice);
+	Terra::Resources::gpuOnlyMemory->AllocateMemory(logicalDevice);
+	Terra::Resources::uploadMemory->AllocateMemory(logicalDevice);
+	Terra::Resources::cpuWriteMemory->AllocateMemory(logicalDevice);
+
+	// Map cpu memories
+	Terra::Resources::uploadMemory->MapMemoryToCPU(logicalDevice);
+	Terra::Resources::cpuWriteMemory->MapMemoryToCPU(logicalDevice);
 
 	// Bind Buffers to memory
-	Terra::modelContainer->CreateBuffers(logicalDevice);
-	Terra::textureStorage->CreateBuffers(logicalDevice);
+	Terra::modelContainer->BindMemories(logicalDevice);
+	Terra::textureStorage->BindMemories(logicalDevice);
+
+	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, m_width, m_height);
+	Terra::swapChain->CreateFramebuffers(
+		logicalDevice,
+		Terra::renderPass->GetRenderPass(), Terra::depthBuffer->GetDepthImageView(),
+		m_width, m_height
+	);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;
@@ -330,6 +336,7 @@ void RendererVK::ProcessData() {
 	// Cleanup Upload Buffers
 	Terra::modelContainer->ReleaseUploadBuffers();
 	Terra::textureStorage->ReleaseUploadBuffers();
+	Terra::Resources::uploadMemory.reset();
 }
 
 size_t RendererVK::RegisterResource(

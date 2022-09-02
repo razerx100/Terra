@@ -32,7 +32,9 @@ namespace Terra {
 	std::shared_ptr<ISharedDataContainer> sharedData;
 
 	namespace Resources {
-		std::unique_ptr<DeviceMemoryManager> memoryManager;
+		std::unique_ptr<DeviceMemory> gpuOnlyMemory;
+		std::unique_ptr<DeviceMemory> uploadMemory;
+		std::unique_ptr<DeviceMemory> cpuWriteMemory;
 	}
 
 	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept {
@@ -173,10 +175,19 @@ namespace Terra {
 	}
 
 	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) noexcept {
-		Resources::memoryManager = std::make_unique<DeviceMemoryManager>(physicalDevice);
+		Resources::cpuWriteMemory = std::make_unique<DeviceMemory>(
+			logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+			);
+		Resources::uploadMemory = std::make_unique<DeviceMemory>(
+			logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+			);
+		Resources::gpuOnlyMemory = std::make_unique<DeviceMemory>(
+			logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+			);
 	}
 
 	void CleanUpResources() noexcept {
-		Resources::memoryManager.reset();
+		Resources::cpuWriteMemory.reset();
+		Resources::gpuOnlyMemory.reset();
 	}
 }

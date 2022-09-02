@@ -17,7 +17,7 @@ public:
 	void AddModels(std::vector<std::shared_ptr<IModel>>&& models);
 
 	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
-	void CreateBuffers(VkDevice device);
+	void BindMemories(VkDevice device);
 	void CopyData(std::atomic_size_t& workCount);
 	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer);
 	void ReleaseUploadBuffers();

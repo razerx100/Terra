@@ -14,14 +14,14 @@ public:
 	std::shared_ptr<GpuBuffer> AddBuffer(
 		VkDevice device, std::unique_ptr<std::uint8_t> sourceHandle, size_t bufferSize
 	);
-	void CreateBuffers(VkDevice device);
+	void BindMemories(VkDevice device);
 	void CopyData() noexcept;
 	void RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer);
 	void ReleaseUploadBuffer() noexcept;
 
 private:
 	struct GpuBufferData {
-		size_t bufferSize;
+		VkDeviceSize bufferSize;
 		VkDeviceSize offset;
 	};
 
@@ -31,6 +31,5 @@ private:
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::vector<GpuBufferData> m_gpuBufferData;
 	BufferType m_type;
-	std::uint32_t m_gpuMemoryTypeIndex;
 };
 #endif

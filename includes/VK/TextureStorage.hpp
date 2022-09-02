@@ -16,7 +16,7 @@ public:
 	size_t AddTexture(
 		VkDevice device,
 		std::unique_ptr<std::uint8_t> textureDataHandle, size_t width, size_t height
-	) noexcept;
+	);
 
 	void RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept;
 	void TransitionImages(VkCommandBuffer graphicsBuffer) noexcept;
@@ -24,7 +24,7 @@ public:
 
 	void CopyData(std::atomic_size_t& workCount) noexcept;
 	void ReleaseUploadBuffers() noexcept;
-	void CreateBuffers(VkDevice device);
+	void BindMemories(VkDevice device);
 
 private:
 	struct ImageData {
@@ -41,6 +41,5 @@ private:
 	std::vector<ImageData> m_textureData;
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;
-	std::uint32_t m_gpuMemoryTypeIndex;
 };
 #endif

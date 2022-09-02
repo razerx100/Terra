@@ -55,10 +55,10 @@ void ModelContainer::ReleaseUploadBuffers() {
 	Terra::indexBuffer->ReleaseUploadBuffer();
 }
 
-void ModelContainer::CreateBuffers(VkDevice device) {
-	Terra::vertexBuffer->CreateBuffers(device);
-	Terra::indexBuffer->CreateBuffers(device);
-	Terra::uniformBuffer->CreateBuffers(device);
+void ModelContainer::BindMemories(VkDevice device) {
+	Terra::vertexBuffer->BindMemories(device);
+	Terra::indexBuffer->BindMemories(device);
+	Terra::uniformBuffer->BindMemories(device);
 }
 
 void ModelContainer::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {

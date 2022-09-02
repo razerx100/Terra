@@ -49,7 +49,9 @@ namespace Terra {
 	extern std::shared_ptr<ISharedDataContainer> sharedData;
 
 	namespace Resources {
-		extern std::unique_ptr<DeviceMemoryManager> memoryManager;
+		extern std::unique_ptr<DeviceMemory> gpuOnlyMemory;
+		extern std::unique_ptr<DeviceMemory> uploadMemory;
+		extern std::unique_ptr<DeviceMemory> cpuWriteMemory;
 	}
 
 	// Initialization functions

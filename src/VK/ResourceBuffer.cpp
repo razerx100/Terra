@@ -7,18 +7,15 @@
 
 ResourceBuffer::ResourceBuffer(
 	std::vector<std::uint32_t> queueFamilyIndices, BufferType type
-) : m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_type{ type },
-	m_gpuMemoryTypeIndex{ 0u } {
+) : m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_type{ type } {
 
 	m_uploadBuffers = std::make_unique<UploadBuffers>();
 }
 
-void ResourceBuffer::CreateBuffers(VkDevice device) {
-	m_uploadBuffers->CreateBuffers(device);
+void ResourceBuffer::BindMemories(VkDevice device) {
+	m_uploadBuffers->BindMemories(device);
 
-	VkDeviceMemory gpuOnlyMemory = Terra::Resources::memoryManager->GetMemoryHandle(
-		m_gpuMemoryTypeIndex
-	);
+	VkDeviceMemory gpuOnlyMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
 	VkResult result;
 	for (size_t index = 0u; index < std::size(m_gpuBuffers); ++index) {
@@ -43,18 +40,16 @@ std::shared_ptr<GpuBuffer> ResourceBuffer::AddBuffer(
 		m_queueFamilyIndices, m_type
 	);
 
-	VkMemoryRequirements memoryRequirements = {};
+	VkMemoryRequirements memoryRequirements{};
 	vkGetBufferMemoryRequirements(device, gpuBuffer->GetBuffer(), &memoryRequirements);
 
-	auto [gpuBufferOffset, gpuMemoryTypeIndex] =
-		Terra::Resources::memoryManager->ReserveSizeAndGetMemoryData(
-			device, memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-		);
+	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryRequirements))
+		VK_GENERIC_THROW("Memory Type doesn't match with Buffer requirements.");
+
+	const VkDeviceSize gpuBufferOffset =
+		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryRequirements);
 
 	m_gpuBufferData.emplace_back(bufferSize, gpuBufferOffset);
-
-	if (m_gpuMemoryTypeIndex != gpuMemoryTypeIndex)
-		m_gpuMemoryTypeIndex = gpuMemoryTypeIndex;
 
 	m_gpuBuffers.emplace_back(gpuBuffer);
 
@@ -66,15 +61,13 @@ void ResourceBuffer::CopyData() noexcept {
 }
 
 void ResourceBuffer::RecordUpload(VkDevice device, VkCommandBuffer copyCmdBuffer) {
-	m_uploadBuffers->FlushMemory(device);
-
 	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
 	for (size_t index = 0u; index < std::size(m_gpuBufferData); ++index) {
 		VkBufferCopy copyRegion = {};
 		copyRegion.srcOffset = 0u;
 		copyRegion.dstOffset = 0u;
-		copyRegion.size = static_cast<VkDeviceSize>(m_gpuBufferData[index].bufferSize);
+		copyRegion.size = m_gpuBufferData[index].bufferSize;
 
 		vkCmdCopyBuffer(
 			copyCmdBuffer, uploadBuffers[index]->GetBuffer(),
