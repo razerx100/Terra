@@ -110,13 +110,13 @@ namespace Terra {
 
 	void InitVertexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices) {
 		vertexBuffer = std::make_unique<ResourceBuffer>(
-			queueFamilyIndices, BufferType::Vertex
+			queueFamilyIndices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 			);
 	}
 
 	void InitIndexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices) {
 		indexBuffer = std::make_unique<ResourceBuffer>(
-			queueFamilyIndices, BufferType::Index
+			queueFamilyIndices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT
 			);
 	}
 

@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <cstdint>
-#include <VkBuffers.hpp>
+#include <VkResourceViews.hpp>
 
 class PerFrameBuffers {
 public:
@@ -25,8 +25,8 @@ private:
 	);
 
 private:
-	std::shared_ptr<UploadBuffer> m_pCameraBuffer;
-	std::shared_ptr<GpuBuffer> m_gVertexBuffer;
-	std::shared_ptr<GpuBuffer> m_gIndexBuffer;
+	std::shared_ptr<VkResourceView> m_pCameraBuffer;
+	std::shared_ptr<VkResourceView> m_gVertexBuffer;
+	std::shared_ptr<VkResourceView> m_gIndexBuffer;
 };
 #endif

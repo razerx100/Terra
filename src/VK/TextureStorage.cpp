@@ -29,13 +29,13 @@ size_t TextureStorage::AddTexture(
 
 	imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
-	std::uint32_t width32 = static_cast<std::uint32_t>(width);
-	std::uint32_t height32 = static_cast<std::uint32_t>(height);
+	auto width32 = static_cast<std::uint32_t>(width);
+	auto height32 = static_cast<std::uint32_t>(height);
 
 	size_t bufferSize = width * height * bytesPerPixel;
 	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
 
-	std::unique_ptr<ImageBuffer> imageBuffer = std::make_unique<ImageBuffer>(device);
+	auto imageBuffer = std::make_unique<ImageBuffer>(device);
 	imageBuffer->CreateImage(
 		device, width32, height32, imageFormat, m_queueFamilyIndices
 	);
@@ -109,12 +109,12 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 	);
 }
 
-void TextureStorage::RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept {
+void TextureStorage::RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept {
 	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
 	for (size_t index = 0u; index < std::size(m_textureData); ++index)
 		m_textures[index]->CopyToImage(
-			copyCmdBuffer, uploadBuffers[index]->GetBuffer(),
+			copyCmdBuffer, uploadBuffers[index]->GetResource(),
 			m_textureData[index].width, m_textureData[index].height
 		);
 }

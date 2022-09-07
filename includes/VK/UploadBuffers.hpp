@@ -3,8 +3,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <DeviceMemory.hpp>
-#include <VkBuffers.hpp>
 #include <memory>
+#include <VkResourceViews.hpp>
 
 class _CpuBaseBuffers {
 public:
@@ -21,7 +21,7 @@ protected:
 
 protected:
 	std::vector<BufferData> m_allocationData;
-	std::vector<std::shared_ptr<UploadBuffer>> m_pBuffers;
+	std::vector<std::shared_ptr<VkResourceView>> m_pBuffers;
 };
 
 class UploadBuffers : public _CpuBaseBuffers {
@@ -35,7 +35,7 @@ public:
 	void CopyData() noexcept;
 
 	[[nodiscard]]
-	const std::vector<std::shared_ptr<UploadBuffer>>& GetUploadBuffers() const noexcept;
+	const std::vector<std::shared_ptr<VkResourceView>>& GetUploadBuffers() const noexcept;
 
 private:
 	std::vector<std::unique_ptr<std::uint8_t>> m_dataHandles;
@@ -45,7 +45,7 @@ class HostAccessibleBuffers : public _CpuBaseBuffers {
 public:
 	void BindMemories(VkDevice device);
 
-	std::shared_ptr<UploadBuffer> AddBuffer(VkDevice device, size_t bufferSize);
+	std::shared_ptr<VkResourceView> AddBuffer(VkDevice device, size_t bufferSize);
 
 	void ResetBufferData() noexcept;
 };

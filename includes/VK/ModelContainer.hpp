@@ -19,7 +19,7 @@ public:
 	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
 	void BindMemories(VkDevice device);
 	void CopyData(std::atomic_size_t& workCount);
-	void RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer);
+	void RecordUploadBuffers(VkCommandBuffer copyBuffer);
 	void ReleaseUploadBuffers();
 	void AddModelInputs(
 		VkDevice device,

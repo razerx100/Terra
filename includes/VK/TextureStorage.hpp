@@ -18,7 +18,7 @@ public:
 		std::unique_ptr<std::uint8_t> textureDataHandle, size_t width, size_t height
 	);
 
-	void RecordUploads(VkDevice device, VkCommandBuffer copyCmdBuffer) noexcept;
+	void RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept;
 	void TransitionImages(VkCommandBuffer graphicsBuffer) noexcept;
 	void SetDescriptorLayouts() const noexcept;
 

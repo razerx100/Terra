@@ -35,9 +35,9 @@ void ModelContainer::CopyData(std::atomic_size_t& workCount) {
 	);
 }
 
-void ModelContainer::RecordUploadBuffers(VkDevice device, VkCommandBuffer copyBuffer) {
-	Terra::vertexBuffer->RecordUpload(device, copyBuffer);
-	Terra::indexBuffer->RecordUpload(device, copyBuffer);
+void ModelContainer::RecordUploadBuffers(VkCommandBuffer copyBuffer) {
+	Terra::vertexBuffer->RecordUpload(copyBuffer);
+	Terra::indexBuffer->RecordUpload(copyBuffer);
 }
 
 void ModelContainer::BindCommands(VkCommandBuffer commandBuffer) const noexcept {

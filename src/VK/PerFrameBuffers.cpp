@@ -12,7 +12,7 @@ void PerFrameBuffers::InitBuffers(VkDevice device) {
 	m_pCameraBuffer = Terra::uniformBuffer->AddBuffer(device, bufferSize);
 
 	AddDescriptorForBuffer(
-		m_pCameraBuffer->GetBuffer(), bufferSize, 0u, VK_SHADER_STAGE_VERTEX_BIT
+		m_pCameraBuffer->GetResource(), bufferSize, 0u, VK_SHADER_STAGE_VERTEX_BIT
 	);
 }
 
@@ -40,18 +40,18 @@ void PerFrameBuffers::AddDescriptorForBuffer(
 }
 
 void PerFrameBuffers::BindPerFrameBuffers(VkCommandBuffer commandBuffer) const noexcept {
-	std::uint8_t* cameraHandle = m_pCameraBuffer->GetCpuHandle();
+	std::uint8_t* cameraHandle = m_pCameraBuffer->GetCPUWPtr();
 
 	Terra::cameraManager->CopyData(cameraHandle);
 
-	VkBuffer vertexBuffers[] = { m_gVertexBuffer->GetBuffer() };
+	VkBuffer vertexBuffers[] = { m_gVertexBuffer->GetResource() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
 
 	vkCmdBindVertexBuffers(
 		commandBuffer, 0u, 1u, vertexBuffers, vertexOffsets
 	);
 	vkCmdBindIndexBuffer(
-		commandBuffer, m_gIndexBuffer->GetBuffer(), 0u, VK_INDEX_TYPE_UINT32
+		commandBuffer, m_gIndexBuffer->GetResource(), 0u, VK_INDEX_TYPE_UINT32
 	);
 }
 

@@ -301,8 +301,8 @@ void RendererVK::ProcessData() {
 	Terra::copyCmdPool->Reset(0u);
 	VkCommandBuffer copyBuffer = Terra::copyCmdPool->GetCommandBuffer(0u);
 
-	Terra::modelContainer->RecordUploadBuffers(logicalDevice, copyBuffer);
-	Terra::textureStorage->RecordUploads(logicalDevice, copyBuffer);
+	Terra::modelContainer->RecordUploadBuffers(copyBuffer);
+	Terra::textureStorage->RecordUploads(copyBuffer);
 
 	Terra::copyCmdPool->Close(0u);
 
