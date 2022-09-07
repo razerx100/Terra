@@ -68,8 +68,9 @@ public:
 
 	void CreateResource(
 		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-		VkBufferUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+	void CleanUpResource() noexcept;
 
 private:
 	VkDevice m_deviceRef;

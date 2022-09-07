@@ -18,7 +18,7 @@ void ResourceBuffer::BindMemories(VkDevice device) {
 	VkDeviceMemory gpuOnlyMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
 	for (size_t index = 0u; index < std::size(m_gpuBuffers); ++index)
-		m_gpuBuffers[index]->BindBufferToMemory(
+		m_gpuBuffers[index]->BindResourceToMemory(
 			device, gpuOnlyMemory, m_gpuBufferData[index].offset
 		);
 }

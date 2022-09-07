@@ -43,7 +43,7 @@ void VkResource::CreateResource(
 VkImageResource::VkImageResource(VkDevice device) noexcept : m_deviceRef{ device } {}
 
 VkImageResource::~VkImageResource() noexcept {
-	vkDestroyImage(m_deviceRef, m_resource, nullptr);
+	CleanUpResource();
 }
 
 VkImageResource::VkImageResource(VkImageResource&& resource) noexcept
@@ -62,7 +62,7 @@ VkImageResource& VkImageResource::operator=(VkImageResource&& resource) noexcept
 
 void VkImageResource::CreateResource(
 	VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-	VkBufferUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+	VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 ) {
 	VkImageCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -85,4 +85,8 @@ void VkImageResource::CreateResource(
 	VK_THROW_FAILED(result,
 		vkCreateImage(device, &createInfo, nullptr, &m_resource)
 	);
+}
+
+void VkImageResource::CleanUpResource() noexcept {
+	vkDestroyImage(m_deviceRef, m_resource, nullptr);
 }

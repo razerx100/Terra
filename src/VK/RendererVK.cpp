@@ -178,7 +178,7 @@ void RendererVK::Render() {
 	clearValues[0].color = m_backgroundColour;
 	clearValues[1].depthStencil = { 1.f, 0 };
 
-	VkRenderPassBeginInfo renderPassInfo = {};
+	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
@@ -217,7 +217,7 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		vkDeviceWaitIdle(device);
 
-		Terra::depthBuffer->CleanUp(device);
+		Terra::depthBuffer->CleanUp();
 		Terra::depthBuffer->CreateDepthBuffer(device, width, height);
 
 		bool hasSwapFormatChanged = false;

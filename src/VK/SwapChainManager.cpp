@@ -1,4 +1,5 @@
 #include <SwapChainManager.hpp>
+#include <VkResourceViews.hpp>
 #include <VKThrowMacros.hpp>
 
 SwapChainManager::SwapChainManager(
@@ -66,7 +67,7 @@ void SwapChainManager::CreateImageViews(VkDevice device) {
 	m_swapchainImageViews.resize(std::size(m_swapchainImages));
 
 	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
-		CreateImageView(
+		VkImageResourceView::_createImageView(
 			device, m_swapchainImages[index],
 			&m_swapchainImageViews[index], m_swapchainFormat,
 			VK_IMAGE_ASPECT_COLOR_BIT

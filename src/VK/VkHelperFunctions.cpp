@@ -1,37 +1,12 @@
 #include <VkHelperFunctions.hpp>
 #include <VKThrowMacros.hpp>
 
-void CreateImageView(
-	VkDevice device, VkImage image, VkImageView* imageView,
-	VkFormat imageFormat, VkImageAspectFlags aspectFlags
-) {
-	VkImageViewCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	createInfo.image = image;
-	createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	createInfo.format = imageFormat;
-	createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	createInfo.subresourceRange.aspectMask = aspectFlags;
-	createInfo.subresourceRange.baseMipLevel = 0u;
-	createInfo.subresourceRange.levelCount = 1u;
-	createInfo.subresourceRange.baseArrayLayer = 0u;
-	createInfo.subresourceRange.layerCount = 1u;
-
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateImageView(device, &createInfo, nullptr, imageView)
-	);
-}
-
 void CreateSampler(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 	VkSampler* sampler,
 	bool anisotropy, float maxAnisotropy
 ) {
-	VkSamplerCreateInfo createInfo = {};
+	VkSamplerCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	createInfo.magFilter = VK_FILTER_LINEAR;
 	createInfo.minFilter = VK_FILTER_LINEAR;
@@ -48,7 +23,7 @@ void CreateSampler(
 	createInfo.maxLod = 0.f;
 
 	if (anisotropy) {
-		VkPhysicalDeviceProperties properties = {};
+		VkPhysicalDeviceProperties properties{};
 		vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 
 		const float deviceMaxAnisotrophy = properties.limits.maxSamplerAnisotropy;
@@ -218,19 +193,4 @@ SurfaceInfo QuerySurfaceCapabilities(
 	}
 
 	return surfaceInfo;
-}
-
-void ConfigureImageQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndices,
-	VkImageCreateInfo& imageInfo
-) noexcept {
-	if (std::size(queueFamilyIndices) > 1u) {
-		imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		imageInfo.queueFamilyIndexCount = static_cast<std::uint32_t>(
-			std::size(queueFamilyIndices)
-			);
-		imageInfo.pQueueFamilyIndices = std::data(queueFamilyIndices);
-	}
-	else
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 }

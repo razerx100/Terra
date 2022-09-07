@@ -35,13 +35,15 @@ size_t TextureStorage::AddTexture(
 	size_t bufferSize = width * height * bytesPerPixel;
 	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
 
-	auto imageBuffer = std::make_unique<ImageBuffer>(device);
-	imageBuffer->CreateImage(
-		device, width32, height32, imageFormat, m_queueFamilyIndices
+	VkImageResourceView imageBuffer{ device };
+	imageBuffer.CreateResource(
+		device, width32, height32, imageFormat,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		m_queueFamilyIndices
 	);
 
 	VkMemoryRequirements memoryRequirements{};
-	vkGetImageMemoryRequirements(device, imageBuffer->GetImage(), &memoryRequirements);
+	vkGetImageMemoryRequirements(device, imageBuffer.GetResource(), &memoryRequirements);
 
 	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryRequirements))
 		VK_GENERIC_THROW("Memory Type doesn't match with Image Buffer requirements.");
@@ -49,7 +51,7 @@ size_t TextureStorage::AddTexture(
 	const VkDeviceSize textureOffset =
 		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryRequirements);
 
-	m_textureData.emplace_back(width32, height32, textureOffset, imageFormat);
+	m_textureOffsets.emplace_back(textureOffset);
 
 	m_textures.emplace_back(std::move(imageBuffer));
 
@@ -79,10 +81,8 @@ void TextureStorage::BindMemories(VkDevice device) {
 
 	for (size_t index = 0u; index < std::size(m_textures); ++index) {
 		auto& texture = m_textures[index];
-		ImageData& imageData = m_textureData[index];
-
-		texture->BindImageToMemory(device, textureMemory, imageData.offset);
-		texture->CreateImageView(device, imageData.format);
+		texture.BindResourceToMemory(device, textureMemory, m_textureOffsets[index]);
+		texture.CreateImageView(device, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 }
 
@@ -99,7 +99,7 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 	imageInfo.sampler = m_textureSampler;
 
 	for (auto& texture : m_textures) {
-		imageInfo.imageView = texture->GetImageView();
+		imageInfo.imageView = texture.GetImageView();
 
 		imageInfos.emplace_back(imageInfo);
 	}
@@ -112,14 +112,11 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 void TextureStorage::RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept {
 	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
-	for (size_t index = 0u; index < std::size(m_textureData); ++index)
-		m_textures[index]->CopyToImage(
-			copyCmdBuffer, uploadBuffers[index]->GetResource(),
-			m_textureData[index].width, m_textureData[index].height
-		);
+	for (size_t index = 0u; index < std::size(m_textures); ++index)
+		m_textures[index].RecordImageCopy(copyCmdBuffer, uploadBuffers[index]->GetResource());
 }
 
 void TextureStorage::TransitionImages(VkCommandBuffer graphicsBuffer) noexcept {
 	for (auto& texture : m_textures)
-		texture->TransitionImageLayout(graphicsBuffer, true);
+		texture.TransitionImageLayout(graphicsBuffer, true);
 }

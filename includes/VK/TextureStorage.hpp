@@ -2,7 +2,7 @@
 #define TEXTURE_STORAGE_HPP_
 #include <vulkan/vulkan.hpp>
 #include <atomic>
-#include <VkBuffers.hpp>
+#include <VkResourceViews.hpp>
 #include <UploadBuffers.hpp>
 
 class TextureStorage {
@@ -27,18 +27,10 @@ public:
 	void BindMemories(VkDevice device);
 
 private:
-	struct ImageData {
-		std::uint32_t width;
-		std::uint32_t height;
-		VkDeviceSize offset;
-		VkFormat format;
-	};
-
-private:
-	std::vector<std::unique_ptr<ImageBuffer>> m_textures;
+	std::vector<VkImageResourceView> m_textures;
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
-	std::vector<ImageData> m_textureData;
+	std::vector<VkDeviceSize> m_textureOffsets;
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;
 };

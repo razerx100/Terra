@@ -11,7 +11,7 @@ void _CpuBaseBuffers::_bindMemories(VkDevice device, VkDeviceMemory memoryStart)
 	for (size_t index = 0u; index < std::size(m_pBuffers); ++index) {
 		BufferData& bufferData = m_allocationData[index];
 
-		m_pBuffers[index]->BindBufferToMemory(device, memoryStart, bufferData.offset);
+		m_pBuffers[index]->BindResourceToMemory(device, memoryStart, bufferData.offset);
 	}
 }
 

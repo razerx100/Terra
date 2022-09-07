@@ -24,20 +24,10 @@ struct SurfaceInfo {
 
 using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
 
-void CreateImageView(
-	VkDevice device, VkImage image, VkImageView* imageView,
-	VkFormat imageFormat, VkImageAspectFlags aspectFlags
-);
-
 void CreateSampler(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSampler* sampler,
 	bool anisotropy = false, float maxAnisotropy = 1.f
 );
-
-void ConfigureImageQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndices,
-	VkImageCreateInfo& imageInfo
-) noexcept;
 
 [[nodiscard]]
 std::optional<FamilyInfo> QueryQueueFamilyInfo(

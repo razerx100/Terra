@@ -1,11 +1,11 @@
 #ifndef DEPTH_BUFFER_HPP_
 #define DEPTH_BUFFER_HPP_
 #include <vulkan/vulkan.hpp>
+#include <VkResourceViews.hpp>
 
 class DepthBuffer {
 public:
 	DepthBuffer(VkDevice logicalDevice, std::vector<std::uint32_t> queueFamilyIndices);
-	~DepthBuffer() noexcept;
 
 	DepthBuffer(const DepthBuffer&) = delete;
 	DepthBuffer& operator=(const DepthBuffer&) = delete;
@@ -13,7 +13,7 @@ public:
 	DepthBuffer(DepthBuffer&& depthBuffer) noexcept;
 	DepthBuffer& operator=(DepthBuffer&& depthBuffer) noexcept;
 
-	void CleanUp(VkDevice device) noexcept;
+	void CleanUp() noexcept;
 
 	void CreateDepthBuffer(
 		VkDevice device, std::uint32_t width, std::uint32_t height
@@ -28,15 +28,7 @@ public:
 	VkImageView GetDepthImageView() const noexcept;
 
 private:
-	void CreateDepthImage(
-		VkDevice device, VkImage* image,
-		std::uint32_t width, std::uint32_t height,
-		VkFormat depthFormat
-	) const;
-
-private:
-	VkImage m_depthImage;
-	VkImageView m_depthImageView;
+	VkImageResourceView m_depthImage;
 
 	VkDevice m_deviceRef;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
