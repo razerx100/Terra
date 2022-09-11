@@ -17,19 +17,17 @@ public:
 		VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
 		std::vector<std::uint32_t> queueFamilyIndices = {}
 	);
-	void BindResourceToMemory(
-		VkDevice device, VkDeviceMemory memory, VkDeviceSize offset
-	);
-	void SetCPUWPtr(std::uint8_t* ptr) noexcept;
+	void BindResourceToMemory(VkDevice device, VkDeviceMemory memory);
+	void SetMemoryOffset(VkDeviceSize offset) noexcept;
 
 	[[nodiscard]]
 	VkBuffer GetResource() const noexcept;
 	[[nodiscard]]
-	std::uint8_t* GetCPUWPtr() const noexcept;
+	VkDeviceSize GetMemoryOffset() const noexcept;
 
 private:
 	VkResource m_resource;
-	std::uint8_t* m_cpuWPtr;
+	VkDeviceSize m_memoryOffset;
 };
 
 class VkImageResourceView {
@@ -47,9 +45,8 @@ public:
 		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
-	void BindResourceToMemory(
-		VkDevice device, VkDeviceMemory memory, VkDeviceSize offset
-	);
+	void BindResourceToMemory(VkDevice device, VkDeviceMemory memory);
+	void SetMemoryOffset(VkDeviceSize offset) noexcept;
 
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);
 	void RecordImageCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
@@ -73,5 +70,16 @@ private:
 	std::uint32_t m_imageWidth;
 	std::uint32_t m_imageHeight;
 	VkFormat m_imageFormat;
+	VkDeviceSize m_memoryOffset;
 };
+
+//class VkUploadableResourceView {
+//public:
+//	VkUploadableResourceView(VkDevice device) noexcept
+//		: m_uploadResource{ device }, m_gpuResource{ device } {}
+//
+//private:
+//	VkResourceView m_uploadResource;
+//	VkImageResourceView m_gpuResource;
+//};
 #endif

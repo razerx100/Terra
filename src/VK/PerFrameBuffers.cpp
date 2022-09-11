@@ -40,9 +40,9 @@ void PerFrameBuffers::AddDescriptorForBuffer(
 }
 
 void PerFrameBuffers::BindPerFrameBuffers(VkCommandBuffer commandBuffer) const noexcept {
-	std::uint8_t* cameraHandle = m_pCameraBuffer->GetCPUWPtr();
+	std::uint8_t* cpuMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
 
-	Terra::cameraManager->CopyData(cameraHandle);
+	Terra::cameraManager->CopyData(cpuMemoryStart + m_pCameraBuffer->GetMemoryOffset());
 
 	VkBuffer vertexBuffers[] = { m_gVertexBuffer->GetResource() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };

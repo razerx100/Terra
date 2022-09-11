@@ -6,25 +6,19 @@
 #include <Terra.hpp>
 
 // Cpu Base Buffers
-
 void _CpuBaseBuffers::_bindMemories(VkDevice device, VkDeviceMemory memoryStart) {
-	for (size_t index = 0u; index < std::size(m_pBuffers); ++index) {
-		BufferData& bufferData = m_allocationData[index];
-
-		m_pBuffers[index]->BindResourceToMemory(device, memoryStart, bufferData.offset);
-	}
+	for (size_t index = 0u; index < std::size(m_pBuffers); ++index)
+		m_pBuffers[index]->BindResourceToMemory(device, memoryStart);
 }
 
 // Upload Buffers
-
 void UploadBuffers::CopyData() noexcept {
 	std::uint8_t* cpuPtrStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 
-	for (size_t index = 0u; index < std::size(m_allocationData); ++index) {
-		const BufferData& bufferData = m_allocationData[index];
-
+	for (size_t index = 0u; index < std::size(m_dataHandles); ++index) {
 		memcpy(
-			cpuPtrStart + bufferData.offset, m_dataHandles[index].get(), bufferData.bufferSize
+			cpuPtrStart + m_pBuffers[index]->GetMemoryOffset(), m_dataHandles[index].get(),
+			m_bufferSizes[index]
 		);
 	}
 }
@@ -42,10 +36,9 @@ void UploadBuffers::AddBuffer(
 	const VkDeviceSize memoryOffset =
 		Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(memoryRequirements);
 
-	m_allocationData.emplace_back(bufferSize, memoryOffset);
-
+	uploadBuffer->SetMemoryOffset(memoryOffset);
+	m_bufferSizes.emplace_back(bufferSize);
 	m_pBuffers.emplace_back(std::move(uploadBuffer));
-
 	m_dataHandles.emplace_back(std::move(dataHandles));
 }
 
@@ -68,15 +61,15 @@ std::shared_ptr<VkResourceView> HostAccessibleBuffers::AddBuffer(
 
 	hostBuffer->CreateResource(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-	m_pBuffers.emplace_back(hostBuffer);
-
 	VkMemoryRequirements memoryRequirements{};
 	vkGetBufferMemoryRequirements(device, hostBuffer->GetResource(), &memoryRequirements);
 
 	const VkDeviceSize memoryOffset =
 		Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(memoryRequirements);
 
-	m_allocationData.emplace_back(memoryRequirements.size, memoryOffset);
+	hostBuffer->SetMemoryOffset(memoryOffset);
+	m_pBuffers.emplace_back(hostBuffer);
+	m_bufferSizes.emplace_back(memoryRequirements.size);
 
 	return hostBuffer;
 }
@@ -85,15 +78,9 @@ void HostAccessibleBuffers::BindMemories(VkDevice device) {
 	VkDeviceMemory cpuWriteMemory = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
 
 	_bindMemories(device, cpuWriteMemory);
-
-	std::uint8_t* cpuPtrStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
-
-	for (size_t index = 0u; index < std::size(m_pBuffers); ++index)
-		m_pBuffers[index]->SetCPUWPtr(cpuPtrStart + m_allocationData[index].offset);
 }
 
 void HostAccessibleBuffers::ResetBufferData() noexcept {
 	m_pBuffers = std::vector<std::shared_ptr<VkResourceView>>();
-
-	m_allocationData = std::vector<BufferData>();
+	m_bufferSizes = std::vector<size_t>();
 }

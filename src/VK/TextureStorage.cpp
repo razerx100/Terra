@@ -23,22 +23,12 @@ size_t TextureStorage::AddTexture(
 	VkDevice device,
 	std::unique_ptr<std::uint8_t> textureDataHandle, size_t width, size_t height
 ) {
-	VkFormat imageFormat = VK_FORMAT_UNDEFINED;
-
-	size_t bytesPerPixel = 4u;
-
-	imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
-
-	auto width32 = static_cast<std::uint32_t>(width);
-	auto height32 = static_cast<std::uint32_t>(height);
-
-	size_t bufferSize = width * height * bytesPerPixel;
-	m_uploadBuffers->AddBuffer(device, std::move(textureDataHandle), bufferSize);
+	static VkFormat imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
 	VkImageResourceView imageBuffer{ device };
 	imageBuffer.CreateResource(
-		device, width32, height32, imageFormat,
-		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		device, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height),
+		imageFormat, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
 		m_queueFamilyIndices
 	);
 
@@ -48,10 +38,14 @@ size_t TextureStorage::AddTexture(
 	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryRequirements))
 		VK_GENERIC_THROW("Memory Type doesn't match with Image Buffer requirements.");
 
+	m_uploadBuffers->AddBuffer(
+		device, std::move(textureDataHandle), memoryRequirements.size
+	);
+
 	const VkDeviceSize textureOffset =
 		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryRequirements);
 
-	m_textureOffsets.emplace_back(textureOffset);
+	imageBuffer.SetMemoryOffset(textureOffset);
 
 	m_textures.emplace_back(std::move(imageBuffer));
 
@@ -81,7 +75,7 @@ void TextureStorage::BindMemories(VkDevice device) {
 
 	for (size_t index = 0u; index < std::size(m_textures); ++index) {
 		auto& texture = m_textures[index];
-		texture.BindResourceToMemory(device, textureMemory, m_textureOffsets[index]);
+		texture.BindResourceToMemory(device, textureMemory);
 		texture.CreateImageView(device, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 }
@@ -94,7 +88,7 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
 
-	VkDescriptorImageInfo imageInfo = {};
+	VkDescriptorImageInfo imageInfo{};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.sampler = m_textureSampler;
 

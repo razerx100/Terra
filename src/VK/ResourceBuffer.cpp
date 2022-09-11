@@ -18,9 +18,7 @@ void ResourceBuffer::BindMemories(VkDevice device) {
 	VkDeviceMemory gpuOnlyMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
 	for (size_t index = 0u; index < std::size(m_gpuBuffers); ++index)
-		m_gpuBuffers[index]->BindResourceToMemory(
-			device, gpuOnlyMemory, m_gpuBufferData[index].offset
-		);
+		m_gpuBuffers[index]->BindResourceToMemory(device, gpuOnlyMemory);
 }
 
 std::shared_ptr<VkResourceView> ResourceBuffer::AddBuffer(
@@ -44,8 +42,8 @@ std::shared_ptr<VkResourceView> ResourceBuffer::AddBuffer(
 	const VkDeviceSize gpuBufferOffset =
 		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryRequirements);
 
-	m_gpuBufferData.emplace_back(bufferSize, gpuBufferOffset);
-
+	gpuBuffer->SetMemoryOffset(gpuBufferOffset);
+	m_gpuBufferSizes.emplace_back(bufferSize);
 	m_gpuBuffers.emplace_back(gpuBuffer);
 
 	return gpuBuffer;
@@ -58,11 +56,11 @@ void ResourceBuffer::CopyData() noexcept {
 void ResourceBuffer::RecordUpload(VkCommandBuffer copyCmdBuffer) {
 	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
 
-	for (size_t index = 0u; index < std::size(m_gpuBufferData); ++index) {
-		VkBufferCopy copyRegion = {};
+	for (size_t index = 0u; index < std::size(m_gpuBuffers); ++index) {
+		VkBufferCopy copyRegion{};
 		copyRegion.srcOffset = 0u;
 		copyRegion.dstOffset = 0u;
-		copyRegion.size = m_gpuBufferData[index].bufferSize;
+		copyRegion.size = m_gpuBufferSizes[index];
 
 		vkCmdCopyBuffer(
 			copyCmdBuffer, uploadBuffers[index]->GetResource(),

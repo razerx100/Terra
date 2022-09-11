@@ -11,16 +11,10 @@ public:
 	virtual ~_CpuBaseBuffers() = default;
 
 protected:
-	struct BufferData {
-		size_t bufferSize;
-		VkDeviceSize offset;
-	};
-
-protected:
 	void _bindMemories(VkDevice device, VkDeviceMemory memoryStart);
 
 protected:
-	std::vector<BufferData> m_allocationData;
+	std::vector<size_t> m_bufferSizes;
 	std::vector<std::shared_ptr<VkResourceView>> m_pBuffers;
 };
 

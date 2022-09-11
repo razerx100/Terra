@@ -7,8 +7,8 @@
 DepthBuffer::DepthBuffer(
 	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
 ) : m_depthImage{ device }, m_deviceRef{ device },
-	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_memoryOffset{ 0u },
-	m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
+	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_maxWidth{ 0u },
+	m_maxHeight{ 0u } {}
 
 void DepthBuffer::CleanUp() noexcept {
 	m_depthImage.CleanUpImageResourceView();
@@ -18,14 +18,12 @@ DepthBuffer::DepthBuffer(DepthBuffer&& depthBuffer) noexcept
 	: m_depthImage{ std::move(depthBuffer.m_depthImage) },
 	m_deviceRef{ depthBuffer.m_deviceRef },
 	m_queueFamilyIndices{ std::move(depthBuffer.m_queueFamilyIndices) },
-	m_memoryOffset{ depthBuffer.m_memoryOffset }, m_maxWidth{ depthBuffer.m_maxWidth },
-	m_maxHeight{ depthBuffer.m_maxHeight } {}
+	m_maxWidth{ depthBuffer.m_maxWidth }, m_maxHeight{ depthBuffer.m_maxHeight } {}
 
 DepthBuffer& DepthBuffer::operator=(DepthBuffer&& depthBuffer) noexcept {
 	m_depthImage = std::move(depthBuffer.m_depthImage);
 	m_deviceRef = depthBuffer.m_deviceRef;
 	m_queueFamilyIndices = std::move(depthBuffer.m_queueFamilyIndices);
-	m_memoryOffset = depthBuffer.m_memoryOffset;
 	m_maxWidth = depthBuffer.m_maxWidth;
 	m_maxHeight = depthBuffer.m_maxHeight;
 
@@ -52,7 +50,10 @@ void DepthBuffer::AllocateForMaxResolution(
 	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryReq))
 		VK_GENERIC_THROW("Memory Type doesn't match with Depth buffer requirements.");
 
-	m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
+	const VkDeviceSize depthBufferOffset =
+		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
+
+	m_depthImage.SetMemoryOffset(depthBufferOffset);
 
 	m_maxWidth = width;
 	m_maxHeight = height;
@@ -71,7 +72,7 @@ void DepthBuffer::CreateDepthBuffer(
 
 	VkDeviceMemory memoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
-	m_depthImage.BindResourceToMemory(device, memoryStart, m_memoryOffset);
+	m_depthImage.BindResourceToMemory(device, memoryStart);
 	m_depthImage.CreateImageView(device, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 

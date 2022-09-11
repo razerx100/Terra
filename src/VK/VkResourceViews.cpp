@@ -3,14 +3,15 @@
 
 // Vk Resource view
 VkResourceView::VkResourceView(VkDevice device) noexcept
-	: m_resource{ device }, m_cpuWPtr{ nullptr } {}
+	: m_resource{ device }, m_memoryOffset{ 0u } {}
 
 VkResourceView::VkResourceView(VkResourceView&& resourceView) noexcept
-	: m_resource{ std::move(resourceView.m_resource) }, m_cpuWPtr{ resourceView.m_cpuWPtr } {}
+	: m_resource{ std::move(resourceView.m_resource) },
+	m_memoryOffset { resourceView.m_memoryOffset } {}
 
 VkResourceView& VkResourceView::operator=(VkResourceView&& resourceView) noexcept {
 	m_resource = std::move(resourceView.m_resource);
-	m_cpuWPtr = resourceView.m_cpuWPtr;
+	m_memoryOffset = resourceView.m_memoryOffset;
 
 	return *this;
 }
@@ -22,34 +23,32 @@ void VkResourceView::CreateResource(
 	m_resource.CreateResource(device, bufferSize, usageFlags, queueFamilyIndices);
 }
 
-void VkResourceView::BindResourceToMemory(
-	VkDevice device, VkDeviceMemory memory, VkDeviceSize offset
-) {
+void VkResourceView::BindResourceToMemory(VkDevice device, VkDeviceMemory memory) {
 	VkResult result{};
 	VK_THROW_FAILED(result,
 		vkBindBufferMemory(
-			device, m_resource.GetResource(),
-			memory, offset
+			device, m_resource.GetResource(), memory, m_memoryOffset
 		)
 	);
 }
 
-void VkResourceView::SetCPUWPtr(std::uint8_t* ptr) noexcept {
-	m_cpuWPtr = ptr;
+void VkResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
+	m_memoryOffset = offset;
 }
 
 VkBuffer VkResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
 }
 
-std::uint8_t* VkResourceView::GetCPUWPtr() const noexcept {
-	return m_cpuWPtr;
+VkDeviceSize VkResourceView::GetMemoryOffset() const noexcept {
+	return m_memoryOffset;
 }
 
 // Vk Image Resource View
 VkImageResourceView::VkImageResourceView(VkDevice device) noexcept
 	: m_deviceRef{ device }, m_resource{ device }, m_imageView{ VK_NULL_HANDLE },
-	m_imageWidth{ 0u }, m_imageHeight{ 0u }, m_imageFormat{ VK_FORMAT_UNDEFINED } {}
+	m_imageWidth{ 0u }, m_imageHeight{ 0u }, m_imageFormat{ VK_FORMAT_UNDEFINED },
+	m_memoryOffset{ 0u } {}
 
 VkImageResourceView::~VkImageResourceView() noexcept {
 	vkDestroyImageView(m_deviceRef, m_imageView, nullptr);
@@ -60,7 +59,8 @@ VkImageResourceView::VkImageResourceView(VkImageResourceView&& imageResourceView
 	m_resource{ std::move(imageResourceView.m_resource) },
 	m_imageView{ imageResourceView.m_imageView }, m_imageWidth{ imageResourceView.m_imageWidth },
 	m_imageHeight{ imageResourceView.m_imageHeight },
-	m_imageFormat{ imageResourceView.m_imageFormat } {
+	m_imageFormat{ imageResourceView.m_imageFormat },
+	m_memoryOffset{ imageResourceView.m_memoryOffset } {
 
 	imageResourceView.m_imageView = VK_NULL_HANDLE;
 }
@@ -74,6 +74,7 @@ VkImageResourceView& VkImageResourceView::operator=(
 	m_imageWidth = imageResourceView.m_imageWidth;
 	m_imageHeight = imageResourceView.m_imageHeight;
 	m_imageFormat = imageResourceView.m_imageFormat;
+	m_memoryOffset = imageResourceView.m_memoryOffset;
 
 	imageResourceView.m_imageView = VK_NULL_HANDLE;
 
@@ -93,12 +94,14 @@ void VkImageResourceView::CreateResource(
 	m_imageFormat = imageFormat;
 }
 
-void VkImageResourceView::BindResourceToMemory(
-	VkDevice device, VkDeviceMemory memory, VkDeviceSize offset
-) {
+void VkImageResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
+	m_memoryOffset = offset;
+}
+
+void VkImageResourceView::BindResourceToMemory(VkDevice device, VkDeviceMemory memory) {
 	VkResult result{};
 	VK_THROW_FAILED(result,
-		vkBindImageMemory(device, m_resource.GetResource(), memory, offset)
+		vkBindImageMemory(device, m_resource.GetResource(), memory, m_memoryOffset)
 	);
 }
 

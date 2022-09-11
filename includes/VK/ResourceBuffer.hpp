@@ -20,16 +20,10 @@ public:
 	void ReleaseUploadBuffer() noexcept;
 
 private:
-	struct GpuBufferData {
-		VkDeviceSize bufferSize;
-		VkDeviceSize offset;
-	};
-
-private:
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
 	std::vector<std::shared_ptr<VkResourceView>> m_gpuBuffers;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
-	std::vector<GpuBufferData> m_gpuBufferData;
+	std::vector<VkDeviceSize> m_gpuBufferSizes;
 	VkBufferUsageFlagBits m_resourceType;
 };
 #endif

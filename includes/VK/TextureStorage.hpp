@@ -30,7 +30,6 @@ private:
 	std::vector<VkImageResourceView> m_textures;
 	std::unique_ptr<UploadBuffers> m_uploadBuffers;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
-	std::vector<VkDeviceSize> m_textureOffsets;
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;
 };

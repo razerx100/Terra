@@ -32,7 +32,6 @@ private:
 
 	VkDevice m_deviceRef;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
-	VkDeviceSize m_memoryOffset;
 
 	std::uint32_t m_maxWidth;
 	std::uint32_t m_maxHeight;
