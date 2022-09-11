@@ -23,6 +23,12 @@ size_t TextureStorage::AddTexture(
 	VkDevice device,
 	std::unique_ptr<std::uint8_t> textureDataHandle, size_t width, size_t height
 ) {
+	// Upload Buffer requires the size of Data to be copied because it's going to memcpy
+	// with that size
+	m_uploadBuffers->AddBuffer(
+		device, std::move(textureDataHandle), width * height * 4u
+	);
+
 	static VkFormat imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
 	VkImageResourceView imageBuffer{ device };
@@ -37,10 +43,6 @@ size_t TextureStorage::AddTexture(
 
 	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryRequirements))
 		VK_GENERIC_THROW("Memory Type doesn't match with Image Buffer requirements.");
-
-	m_uploadBuffers->AddBuffer(
-		device, std::move(textureDataHandle), memoryRequirements.size
-	);
 
 	const VkDeviceSize textureOffset =
 		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryRequirements);
