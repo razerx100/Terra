@@ -3,15 +3,16 @@
 
 // Vk Resource view
 VkResourceView::VkResourceView(VkDevice device) noexcept
-	: m_resource{ device }, m_memoryOffset{ 0u } {}
+	: m_resource{ device }, m_memoryOffset{ 0u }, m_bufferSize{ 0u } {}
 
 VkResourceView::VkResourceView(VkResourceView&& resourceView) noexcept
 	: m_resource{ std::move(resourceView.m_resource) },
-	m_memoryOffset { resourceView.m_memoryOffset } {}
+	m_memoryOffset{ resourceView.m_memoryOffset }, m_bufferSize{ resourceView.m_bufferSize } {}
 
 VkResourceView& VkResourceView::operator=(VkResourceView&& resourceView) noexcept {
 	m_resource = std::move(resourceView.m_resource);
 	m_memoryOffset = resourceView.m_memoryOffset;
+	m_bufferSize = resourceView.m_bufferSize;
 
 	return *this;
 }
@@ -21,6 +22,7 @@ void VkResourceView::CreateResource(
 	std::vector<std::uint32_t> queueFamilyIndices
 ) {
 	m_resource.CreateResource(device, bufferSize, usageFlags, queueFamilyIndices);
+	m_bufferSize = bufferSize;
 }
 
 void VkResourceView::BindResourceToMemory(VkDevice device, VkDeviceMemory memory) {
@@ -36,12 +38,33 @@ void VkResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
 	m_memoryOffset = offset;
 }
 
+void VkResourceView::CleanUpResource() noexcept {
+	m_resource.CleanUpResource();
+}
+
+void VkResourceView::RecordCopy(
+	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer
+) noexcept {
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0u;
+	copyRegion.dstOffset = 0u;
+	copyRegion.size = m_bufferSize;
+
+	vkCmdCopyBuffer(
+		copyCmdBuffer, uploadBuffer, m_resource.GetResource(), 1u, &copyRegion
+	);
+}
+
 VkBuffer VkResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
 }
 
 VkDeviceSize VkResourceView::GetMemoryOffset() const noexcept {
 	return m_memoryOffset;
+}
+
+VkMemoryRequirements VkResourceView::GetMemoryRequirements(VkDevice device) const noexcept {
+	return m_resource.GetMemoryRequirements(device);
 }
 
 // Vk Image Resource View
@@ -141,7 +164,7 @@ void VkImageResourceView::CleanUpImageResourceView() noexcept {
 	m_resource.CleanUpResource();
 }
 
-void VkImageResourceView::RecordImageCopy(
+void VkImageResourceView::RecordCopy(
 	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer
 ) noexcept {
 	VkImageSubresourceLayers imageLayer{};
@@ -232,4 +255,84 @@ VkImageView VkImageResourceView::GetImageView() const noexcept {
 
 VkImage VkImageResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
+}
+
+VkMemoryRequirements VkImageResourceView::GetMemoryRequirements(VkDevice device) const noexcept {
+	return m_resource.GetMemoryRequirements(device);
+}
+
+// VK Uploadable Buffer ResourceView
+VkUploadableBufferResourceView::VkUploadableBufferResourceView(VkDevice device) noexcept
+	: VkUploadableResourceView<VkResourceView>{ device } {}
+
+VkUploadableBufferResourceView::VkUploadableBufferResourceView(
+	VkUploadableBufferResourceView&& resourceView
+) noexcept : VkUploadableResourceView<VkResourceView>{ std::move(resourceView) } {}
+
+VkUploadableBufferResourceView& VkUploadableBufferResourceView::operator=(
+	VkUploadableBufferResourceView&& resourceView
+	) noexcept {
+	m_uploadResource = std::move(resourceView.m_uploadResource);
+	m_gpuResource = std::move(resourceView.m_gpuResource);
+
+	return *this;
+}
+
+void VkUploadableBufferResourceView::CreateResources(
+	VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlagBits gpuBufferType,
+	std::vector<std::uint32_t> queueFamilyIndices
+) {
+	m_uploadResource.CreateResource(device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+	m_gpuResource.CreateResource(
+		device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | gpuBufferType,
+		queueFamilyIndices
+	);
+}
+
+// VK Uploadable Image ResourceView
+VkUploadableImageResourceView::VkUploadableImageResourceView(VkDevice device) noexcept
+	: VkUploadableResourceView<VkImageResourceView>{ device } {}
+
+VkUploadableImageResourceView::VkUploadableImageResourceView(
+	VkUploadableImageResourceView&& resourceView
+) noexcept : VkUploadableResourceView<VkImageResourceView>{ std::move(resourceView) } {}
+
+VkUploadableImageResourceView& VkUploadableImageResourceView::operator=(
+	VkUploadableImageResourceView&& resourceView
+	) noexcept {
+	m_uploadResource = std::move(resourceView.m_uploadResource);
+	m_gpuResource = std::move(resourceView.m_gpuResource);
+
+	return *this;
+}
+
+void VkUploadableImageResourceView::CreateResources(
+	VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+	std::vector<std::uint32_t> queueFamilyIndices
+) {
+	// Upload Buffer requires the size of Data to be copied because it's going to memcpy
+	// with that size
+	m_uploadResource.CreateResource(
+		device, static_cast<VkDeviceSize>(width * height * 4u),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+	);
+	m_gpuResource.CreateResource(
+		device, width, height, imageFormat,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		queueFamilyIndices
+	);
+}
+
+void VkUploadableImageResourceView::CreateImageView(
+	VkDevice device, VkImageAspectFlagBits aspectBit
+) {
+	m_gpuResource.CreateImageView(device, aspectBit);
+}
+
+void VkUploadableImageResourceView::TransitionImageLayout(VkCommandBuffer cmdBuffer) noexcept {
+	m_gpuResource.TransitionImageLayout(cmdBuffer, true);
+}
+
+VkImageView VkUploadableImageResourceView::GetImageView() const noexcept {
+	return m_gpuResource.GetImageView();
 }

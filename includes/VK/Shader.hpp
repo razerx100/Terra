@@ -9,13 +9,13 @@ public:
 	Shader(VkDevice device);
 	~Shader() noexcept;
 
-	void CreateShader(VkDevice device, const std::string& fileName);
+	void CreateShader(VkDevice device, const std::wstring& fileName);
 
 	[[nodiscard]]
 	VkShaderModule GetByteCode() const noexcept;
 
 private:
-	std::vector<char> LoadBinary(const std::string& fileName);
+	std::vector<char> LoadBinary(const std::wstring& fileName);
 
 private:
 	VkDevice m_deviceRef;

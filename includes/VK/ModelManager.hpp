@@ -1,5 +1,5 @@
-#ifndef MODEL_CONTAINER_HPP_
-#define MODEL_CONTAINER_HPP_
+#ifndef MODEL_MANAGER_HPP_
+#define MODEL_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <atomic>
 #include <string>
@@ -10,15 +10,17 @@
 #include <IModel.hpp>
 #include <RenderPipeline.hpp>
 
-class ModelContainer {
+class ModelManager {
 public:
-	ModelContainer(std::string shaderPath, VkDevice device) noexcept;
+	ModelManager(
+		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
+	) noexcept;
 
+	void SetShaderPath(std::wstring path) noexcept;
 	void AddModels(std::vector<std::shared_ptr<IModel>>&& models);
 
 	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
 	void BindMemories(VkDevice device);
-	void CopyData(std::atomic_size_t& workCount);
 	void RecordUploadBuffers(VkCommandBuffer copyBuffer);
 	void ReleaseUploadBuffers();
 	void AddModelInputs(
@@ -39,6 +41,6 @@ private:
 	RenderPipeline m_renderPipeline;
 	PerFrameBuffers m_pPerFrameBuffers;
 
-	std::string m_shaderPath;
+	std::wstring m_shaderPath;
 };
 #endif

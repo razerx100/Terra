@@ -9,10 +9,10 @@ Shader::~Shader() noexcept {
 	vkDestroyShaderModule(m_deviceRef, m_pBinary, nullptr);
 }
 
-void Shader::CreateShader(VkDevice device, const std::string& fileName) {
+void Shader::CreateShader(VkDevice device, const std::wstring& fileName) {
 	std::vector<char> byteCode = LoadBinary(fileName);
 
-	VkShaderModuleCreateInfo createInfo = {};
+	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = std::size(byteCode);
 	createInfo.pCode = reinterpret_cast<std::uint32_t*>(std::data(byteCode));
@@ -27,7 +27,7 @@ VkShaderModule Shader::GetByteCode() const noexcept {
 	return m_pBinary;
 }
 
-std::vector<char> Shader::LoadBinary(const std::string& fileName) {
+std::vector<char> Shader::LoadBinary(const std::wstring& fileName) {
 	std::ifstream shader(fileName.c_str(), std::ios_base::binary | std::ios_base::ate);
 
 	const size_t shaderSize = static_cast<size_t>(shader.tellg());

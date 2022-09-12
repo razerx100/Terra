@@ -10,7 +10,6 @@
 #include <SwapChainManager.hpp>
 #include <IDisplayManager.hpp>
 #include <CopyQueueManager.hpp>
-#include <ResourceBuffer.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <RenderPassManager.hpp>
 #include <DescriptorSetManager.hpp>
@@ -18,8 +17,10 @@
 #include <DepthBuffer.hpp>
 #include <memory>
 #include <DeviceMemory.hpp>
+#include <UploadContainer.hpp>
+#include <UploadBuffers.hpp>
 
-#include <ModelContainer.hpp>
+#include <ModelManager.hpp>
 #include <ISharedDataContainer.hpp>
 #include <CameraManager.hpp>
 
@@ -36,12 +37,10 @@ namespace Terra {
 	extern std::unique_ptr<SwapChainManager> swapChain;
 	extern std::unique_ptr<IDisplayManager> display;
 	extern std::unique_ptr<ISurfaceManager> surface;
-	extern std::unique_ptr<ResourceBuffer> vertexBuffer;
-	extern std::unique_ptr<ResourceBuffer> indexBuffer;
 	extern std::unique_ptr<HostAccessibleBuffers> uniformBuffer;
 	extern std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	extern std::unique_ptr<RenderPassManager> renderPass;
-	extern std::unique_ptr<ModelContainer> modelContainer;
+	extern std::unique_ptr<ModelManager> modelManager;
 	extern std::unique_ptr<DescriptorSetManager> descriptorSet;
 	extern std::unique_ptr<TextureStorage> textureStorage;
 	extern std::unique_ptr<CameraManager> cameraManager;
@@ -52,6 +51,7 @@ namespace Terra {
 		extern std::unique_ptr<DeviceMemory> gpuOnlyMemory;
 		extern std::unique_ptr<DeviceMemory> uploadMemory;
 		extern std::unique_ptr<DeviceMemory> cpuWriteMemory;
+		extern std::unique_ptr<UploadContainer> uploadContainer;
 	}
 
 	// Initialization functions
@@ -77,17 +77,14 @@ namespace Terra {
 	);
 	void InitDisplay();
 	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle);
-	void InitVertexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices);
-	void InitIndexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices);
 	void InitUniformBuffer();
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
 	void InitRenderPass(
 		VkDevice logicalDevice,
 		VkFormat swapChainFormat, VkFormat depthFormat
 	);
-	void InitModelContainer(
-		const std::string& shaderPath,
-		VkDevice logicalDevice
+	void InitModelManager(
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void InitDescriptorSet(VkDevice logicalDevice);
 	void InitTextureStorage(

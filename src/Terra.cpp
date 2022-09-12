@@ -19,12 +19,10 @@ namespace Terra {
 	std::unique_ptr<SwapChainManager> swapChain;
 	std::unique_ptr<IDisplayManager> display;
 	std::unique_ptr<ISurfaceManager> surface;
-	std::unique_ptr<ResourceBuffer> vertexBuffer;
-	std::unique_ptr<ResourceBuffer> indexBuffer;
 	std::unique_ptr<HostAccessibleBuffers> uniformBuffer;
 	std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	std::unique_ptr<RenderPassManager> renderPass;
-	std::unique_ptr<ModelContainer> modelContainer;
+	std::unique_ptr<ModelManager> modelManager;
 	std::unique_ptr<DescriptorSetManager> descriptorSet;
 	std::unique_ptr<TextureStorage> textureStorage;
 	std::unique_ptr<CameraManager> cameraManager;
@@ -35,6 +33,7 @@ namespace Terra {
 		std::unique_ptr<DeviceMemory> gpuOnlyMemory;
 		std::unique_ptr<DeviceMemory> uploadMemory;
 		std::unique_ptr<DeviceMemory> cpuWriteMemory;
+		std::unique_ptr<UploadContainer> uploadContainer;
 	}
 
 	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept {
@@ -108,18 +107,6 @@ namespace Terra {
 #endif
 	}
 
-	void InitVertexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices) {
-		vertexBuffer = std::make_unique<ResourceBuffer>(
-			queueFamilyIndices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-			);
-	}
-
-	void InitIndexBuffer(const std::vector<std::uint32_t>& queueFamilyIndices) {
-		indexBuffer = std::make_unique<ResourceBuffer>(
-			queueFamilyIndices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-			);
-	}
-
 	void InitUniformBuffer() {
 		uniformBuffer = std::make_unique<HostAccessibleBuffers>();
 	}
@@ -139,11 +126,10 @@ namespace Terra {
 			);
 	}
 
-	void InitModelContainer(
-		const std::string& shaderPath,
-		VkDevice logicalDevice
+	void InitModelManager(
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
 	) {
-		modelContainer = std::make_unique<ModelContainer>(shaderPath, logicalDevice);
+		modelManager = std::make_unique<ModelManager>(logicalDevice, queueFamilyIndices);
 	}
 
 	void InitDescriptorSet(VkDevice logicalDevice) {
@@ -184,6 +170,8 @@ namespace Terra {
 		Resources::gpuOnlyMemory = std::make_unique<DeviceMemory>(
 			logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 			);
+
+		Resources::uploadContainer = std::make_unique<UploadContainer>();
 	}
 
 	void CleanUpResources() noexcept {

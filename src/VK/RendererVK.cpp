@@ -105,10 +105,9 @@ RendererVK::RendererVK(
 
 	Terra::InitDescriptorSet(logicalDevice);
 
-	Terra::InitVertexBuffer(copyAndGfxFamilyIndices);
-	Terra::InitIndexBuffer(copyAndGfxFamilyIndices);
 	Terra::InitUniformBuffer();
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitModelManager(logicalDevice, copyAndGfxFamilyIndices);
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetSceneResolution(width, height);
@@ -117,11 +116,9 @@ RendererVK::RendererVK(
 RendererVK::~RendererVK() noexcept {
 	Terra::cameraManager.reset();
 	Terra::viewportAndScissor.reset();
-	Terra::modelContainer.reset();
+	Terra::modelManager.reset();
 	Terra::descriptorSet.reset();
 	Terra::uniformBuffer.reset();
-	Terra::vertexBuffer.reset();
-	Terra::indexBuffer.reset();
 	Terra::textureStorage.reset();
 	Terra::copyQueue.reset();
 	Terra::copyCmdPool.reset();
@@ -149,14 +146,14 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 void RendererVK::SubmitModels(
 	std::vector<std::shared_ptr<IModel>>&& models
 ) {
-	Terra::modelContainer->AddModels(std::move(models));
+	Terra::modelManager->AddModels(std::move(models));
 }
 
 void RendererVK::SubmitModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize, size_t strideSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-	Terra::modelContainer->AddModelInputs(
+	Terra::modelManager->AddModelInputs(
 		Terra::device->GetLogicalDevice(),
 		std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
@@ -189,7 +186,7 @@ void RendererVK::Render() {
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	Terra::modelContainer->BindCommands(commandBuffer);
+	Terra::modelManager->BindCommands(commandBuffer);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -255,15 +252,8 @@ void RendererVK::WaitForAsyncTasks() {
 	);
 }
 
-void RendererVK::SetShaderPath(const char* path) noexcept {
-	m_shaderPath = path;
-}
-
-void RendererVK::InitResourceBasedObjects() {
-	Terra::InitModelContainer(
-		m_shaderPath,
-		Terra::device->GetLogicalDevice()
-	);
+void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
+	Terra::modelManager->SetShaderPath(path);
 }
 
 void RendererVK::ProcessData() {
@@ -278,8 +268,13 @@ void RendererVK::ProcessData() {
 	Terra::Resources::uploadMemory->MapMemoryToCPU(logicalDevice);
 	Terra::Resources::cpuWriteMemory->MapMemoryToCPU(logicalDevice);
 
+	// Set Upload Memory Start
+	Terra::Resources::uploadContainer->SetMemoryStart(
+		Terra::Resources::uploadMemory->GetMappedCPUPtr()
+	);
+
 	// Bind Buffers to memory
-	Terra::modelContainer->BindMemories(logicalDevice);
+	Terra::modelManager->BindMemories(logicalDevice);
 	Terra::textureStorage->BindMemories(logicalDevice);
 
 	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, m_width, m_height);
@@ -292,8 +287,7 @@ void RendererVK::ProcessData() {
 	// Async Copy
 	std::atomic_size_t works = 0u;
 
-	Terra::modelContainer->CopyData(works);
-	Terra::textureStorage->CopyData(works);
+	Terra::Resources::uploadContainer->CopyData(works);
 
 	while (works != 0u);
 
@@ -301,7 +295,7 @@ void RendererVK::ProcessData() {
 	Terra::copyCmdPool->Reset(0u);
 	VkCommandBuffer copyBuffer = Terra::copyCmdPool->GetCommandBuffer(0u);
 
-	Terra::modelContainer->RecordUploadBuffers(copyBuffer);
+	Terra::modelManager->RecordUploadBuffers(copyBuffer);
 	Terra::textureStorage->RecordUploads(copyBuffer);
 
 	Terra::copyCmdPool->Close(0u);
@@ -328,13 +322,14 @@ void RendererVK::ProcessData() {
 
 	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
 
-	Terra::modelContainer->InitPipelines(
+	Terra::modelManager->InitPipelines(
 		logicalDevice,
 		Terra::descriptorSet->GetDescriptorSetLayout()
 	);
 
 	// Cleanup Upload Buffers
-	Terra::modelContainer->ReleaseUploadBuffers();
+	Terra::Resources::uploadContainer.reset();
+	Terra::modelManager->ReleaseUploadBuffers();
 	Terra::textureStorage->ReleaseUploadBuffers();
 	Terra::Resources::uploadMemory.reset();
 }

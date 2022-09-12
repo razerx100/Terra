@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.hpp>
 #include <atomic>
 #include <VkResourceViews.hpp>
-#include <UploadBuffers.hpp>
 
 class TextureStorage {
 public:
@@ -22,13 +21,11 @@ public:
 	void TransitionImages(VkCommandBuffer graphicsBuffer) noexcept;
 	void SetDescriptorLayouts() const noexcept;
 
-	void CopyData(std::atomic_size_t& workCount) noexcept;
 	void ReleaseUploadBuffers() noexcept;
 	void BindMemories(VkDevice device);
 
 private:
-	std::vector<VkImageResourceView> m_textures;
-	std::unique_ptr<UploadBuffers> m_uploadBuffers;
+	std::vector<VkUploadableImageResourceView> m_textures;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;

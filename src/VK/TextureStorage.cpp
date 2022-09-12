@@ -10,8 +10,6 @@ TextureStorage::TextureStorage(
 ) : m_queueFamilyIndices{std::move(queueFamilyIndices)},
 	m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ logicalDevice } {
 
-	m_uploadBuffers = std::make_unique<UploadBuffers>();
-
 	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
 }
 
@@ -23,61 +21,44 @@ size_t TextureStorage::AddTexture(
 	VkDevice device,
 	std::unique_ptr<std::uint8_t> textureDataHandle, size_t width, size_t height
 ) {
-	// Upload Buffer requires the size of Data to be copied because it's going to memcpy
-	// with that size
-	m_uploadBuffers->AddBuffer(
-		device, std::move(textureDataHandle), width * height * 4u
-	);
-
 	static VkFormat imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
-	VkImageResourceView imageBuffer{ device };
-	imageBuffer.CreateResource(
+	VkUploadableImageResourceView texture{ device };
+	texture.CreateResources(
 		device, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height),
-		imageFormat, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-		m_queueFamilyIndices
+		imageFormat, m_queueFamilyIndices
 	);
 
-	VkMemoryRequirements memoryRequirements{};
-	vkGetImageMemoryRequirements(device, imageBuffer.GetResource(), &memoryRequirements);
+	VkMemoryRequirements uploadRequirements = texture.GetUploadMemoryRequirements(device);
+	VkMemoryRequirements gpuRequirements = texture.GetGPUMemoryRequirements(device);
 
-	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryRequirements))
+	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(gpuRequirements))
 		VK_GENERIC_THROW("Memory Type doesn't match with Image Buffer requirements.");
 
+	const VkDeviceSize uploadOffset =
+		Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(uploadRequirements);
 	const VkDeviceSize textureOffset =
-		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryRequirements);
+		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(gpuRequirements);
 
-	imageBuffer.SetMemoryOffset(textureOffset);
+	texture.SetMemoryOffset(uploadOffset, textureOffset);
 
-	m_textures.emplace_back(std::move(imageBuffer));
+	m_textures.emplace_back(std::move(texture));
 
 	return std::size(m_textures) - 1u;
 }
 
-void TextureStorage::CopyData(std::atomic_size_t& workCount) noexcept {
-	workCount += 1;
-
-	Terra::threadPool->SubmitWork(
-		[&workCount, &uploadBuffers = m_uploadBuffers] {
-			uploadBuffers->CopyData();
-
-			--workCount;
-		}
-	);
-}
-
 void TextureStorage::ReleaseUploadBuffers() noexcept {
-	m_uploadBuffers.reset();
+	for (auto& texture : m_textures)
+		texture.CleanUpUploadResource();
 }
 
 void TextureStorage::BindMemories(VkDevice device) {
-	m_uploadBuffers->BindMemories(device);
-
+	VkDeviceMemory uploadMemory = Terra::Resources::uploadMemory->GetMemoryHandle();
 	VkDeviceMemory textureMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
 	for (size_t index = 0u; index < std::size(m_textures); ++index) {
 		auto& texture = m_textures[index];
-		texture.BindResourceToMemory(device, textureMemory);
+		texture.BindResourceToMemory(device, uploadMemory, textureMemory);
 		texture.CreateImageView(device, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 }
@@ -106,13 +87,11 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 }
 
 void TextureStorage::RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept {
-	const auto& uploadBuffers = m_uploadBuffers->GetUploadBuffers();
-
 	for (size_t index = 0u; index < std::size(m_textures); ++index)
-		m_textures[index].RecordImageCopy(copyCmdBuffer, uploadBuffers[index]->GetResource());
+		m_textures[index].RecordCopy(copyCmdBuffer);
 }
 
 void TextureStorage::TransitionImages(VkCommandBuffer graphicsBuffer) noexcept {
 	for (auto& texture : m_textures)
-		texture.TransitionImageLayout(graphicsBuffer, true);
+		texture.TransitionImageLayout(graphicsBuffer);
 }

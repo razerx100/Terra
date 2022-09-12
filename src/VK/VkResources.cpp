@@ -5,7 +5,7 @@
 VkResource::VkResource(VkDevice device) noexcept : m_deviceRef{ device } {}
 
 VkResource::~VkResource() noexcept {
-	vkDestroyBuffer(m_deviceRef, m_resource, nullptr);
+	CleanUpResource();
 }
 
 VkResource::VkResource(VkResource&& resource) noexcept
@@ -37,6 +37,10 @@ void VkResource::CreateResource(
 	VK_THROW_FAILED(result,
 		vkCreateBuffer(device, &createInfo, nullptr, &m_resource)
 	);
+}
+
+void VkResource::CleanUpResource() noexcept {
+	vkDestroyBuffer(m_deviceRef, m_resource, nullptr);
 }
 
 // Vk Image Resource

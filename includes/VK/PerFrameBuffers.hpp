@@ -7,7 +7,9 @@
 
 class PerFrameBuffers {
 public:
-	PerFrameBuffers(VkDevice device);
+	PerFrameBuffers(
+		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
+	) noexcept;
 
 	void BindPerFrameBuffers(VkCommandBuffer commandBuffer) const noexcept;
 
@@ -16,17 +18,23 @@ public:
 		std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 	);
+	void BindResourceToMemory(
+		VkDevice device, VkDeviceMemory uploadmemory, VkDeviceMemory gpuMemory
+	);
+	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept;
+	void ReleaseUploadResources() noexcept;
 
 private:
-	void InitBuffers(VkDevice device);
+	void InitBuffers(VkDevice device) noexcept;
 	void AddDescriptorForBuffer(
 		VkBuffer buffer, size_t bufferSize,
 		std::uint32_t bindingSlot, VkShaderStageFlagBits shaderStage
-	);
+	) noexcept;
 
 private:
 	std::shared_ptr<VkResourceView> m_pCameraBuffer;
-	std::shared_ptr<VkResourceView> m_gVertexBuffer;
-	std::shared_ptr<VkResourceView> m_gIndexBuffer;
+	VkUploadableBufferResourceView m_gVertexBuffer;
+	VkUploadableBufferResourceView m_gIndexBuffer;
+	std::vector<std::uint32_t> m_queueFamilyIndices;
 };
 #endif

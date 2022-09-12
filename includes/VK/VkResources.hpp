@@ -50,6 +50,15 @@ public:
 		VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+	void CleanUpResource() noexcept;
+
+	[[nodiscard]]
+	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept {
+		VkMemoryRequirements memReq{};
+		vkGetBufferMemoryRequirements(device, m_resource, &memReq);
+
+		return memReq;
+	}
 
 private:
 	VkDevice m_deviceRef;
@@ -71,6 +80,14 @@ public:
 		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void CleanUpResource() noexcept;
+
+	[[nodiscard]]
+	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept {
+		VkMemoryRequirements memReq{};
+		vkGetImageMemoryRequirements(device, m_resource, &memReq);
+
+		return memReq;
+	}
 
 private:
 	VkDevice m_deviceRef;
