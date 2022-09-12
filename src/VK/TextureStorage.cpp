@@ -40,6 +40,9 @@ size_t TextureStorage::AddTexture(
 	const VkDeviceSize textureOffset =
 		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(gpuRequirements);
 
+	Terra::Resources::uploadContainer->AddMemory(
+		std::move(textureDataHandle), width * height * 4u, uploadOffset
+	);
 	texture.SetMemoryOffset(uploadOffset, textureOffset);
 
 	m_textures.emplace_back(std::move(texture));

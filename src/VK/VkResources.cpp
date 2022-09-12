@@ -41,6 +41,7 @@ void VkResource::CreateResource(
 
 void VkResource::CleanUpResource() noexcept {
 	vkDestroyBuffer(m_deviceRef, m_resource, nullptr);
+	m_resource = VK_NULL_HANDLE;
 }
 
 // Vk Image Resource
@@ -93,4 +94,5 @@ void VkImageResource::CreateResource(
 
 void VkImageResource::CleanUpResource() noexcept {
 	vkDestroyImage(m_deviceRef, m_resource, nullptr);
+	m_resource = VK_NULL_HANDLE;
 }
