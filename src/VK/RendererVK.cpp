@@ -105,7 +105,6 @@ RendererVK::RendererVK(
 
 	Terra::InitDescriptorSet(logicalDevice);
 
-	Terra::InitUniformBuffer();
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	Terra::InitModelManager(logicalDevice, copyAndGfxFamilyIndices);
 
@@ -118,7 +117,6 @@ RendererVK::~RendererVK() noexcept {
 	Terra::viewportAndScissor.reset();
 	Terra::modelManager.reset();
 	Terra::descriptorSet.reset();
-	Terra::uniformBuffer.reset();
 	Terra::textureStorage.reset();
 	Terra::copyQueue.reset();
 	Terra::copyCmdPool.reset();

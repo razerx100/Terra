@@ -38,10 +38,10 @@ void ModelManager::ReleaseUploadBuffers() {
 
 void ModelManager::BindMemories(VkDevice device) {
 	VkDeviceMemory uploadMemory = Terra::Resources::uploadMemory->GetMemoryHandle();
+	VkDeviceMemory cpuWriteMemory = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
 	VkDeviceMemory gpuMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
-	m_pPerFrameBuffers.BindResourceToMemory(device, uploadMemory, gpuMemory);
-	Terra::uniformBuffer->BindMemories(device);
+	m_pPerFrameBuffers.BindResourceToMemory(device, uploadMemory, cpuWriteMemory, gpuMemory);
 }
 
 void ModelManager::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {

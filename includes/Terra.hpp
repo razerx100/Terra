@@ -18,7 +18,6 @@
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <UploadContainer.hpp>
-#include <UploadBuffers.hpp>
 
 #include <ModelManager.hpp>
 #include <ISharedDataContainer.hpp>
@@ -37,7 +36,6 @@ namespace Terra {
 	extern std::unique_ptr<SwapChainManager> swapChain;
 	extern std::unique_ptr<IDisplayManager> display;
 	extern std::unique_ptr<ISurfaceManager> surface;
-	extern std::unique_ptr<HostAccessibleBuffers> uniformBuffer;
 	extern std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	extern std::unique_ptr<RenderPassManager> renderPass;
 	extern std::unique_ptr<ModelManager> modelManager;
@@ -77,7 +75,6 @@ namespace Terra {
 	);
 	void InitDisplay();
 	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle);
-	void InitUniformBuffer();
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
 	void InitRenderPass(
 		VkDevice logicalDevice,

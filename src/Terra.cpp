@@ -19,7 +19,6 @@ namespace Terra {
 	std::unique_ptr<SwapChainManager> swapChain;
 	std::unique_ptr<IDisplayManager> display;
 	std::unique_ptr<ISurfaceManager> surface;
-	std::unique_ptr<HostAccessibleBuffers> uniformBuffer;
 	std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	std::unique_ptr<RenderPassManager> renderPass;
 	std::unique_ptr<ModelManager> modelManager;
@@ -105,10 +104,6 @@ namespace Terra {
 			instance, windowHandle, moduleHandle
 			);
 #endif
-	}
-
-	void InitUniformBuffer() {
-		uniformBuffer = std::make_unique<HostAccessibleBuffers>();
 	}
 
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height) {

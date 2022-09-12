@@ -19,7 +19,8 @@ public:
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 	);
 	void BindResourceToMemory(
-		VkDevice device, VkDeviceMemory uploadmemory, VkDeviceMemory gpuMemory
+		VkDevice device,
+		VkDeviceMemory uploadmemory, VkDeviceMemory cpuWriteMemory, VkDeviceMemory gpuMemory
 	);
 	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept;
 	void ReleaseUploadResources() noexcept;
@@ -32,7 +33,7 @@ private:
 	) noexcept;
 
 private:
-	std::shared_ptr<VkResourceView> m_pCameraBuffer;
+	VkResourceView m_cameraBuffer;
 	VkUploadableBufferResourceView m_gVertexBuffer;
 	VkUploadableBufferResourceView m_gIndexBuffer;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
