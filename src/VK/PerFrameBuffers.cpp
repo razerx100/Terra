@@ -15,12 +15,7 @@ void PerFrameBuffers::InitBuffers(VkDevice device) noexcept {
 
 	m_cameraBuffer.CreateResource(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-	const VkDeviceSize cameraBufferOffset =
-		Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(
-			m_cameraBuffer.GetMemoryRequirements(device)
-		);
-
-	m_cameraBuffer.SetMemoryOffset(cameraBufferOffset);
+	m_cameraBuffer.SetMemoryOffset(device, MemoryType::cpuWrite);
 
 	AddDescriptorForBuffer(
 		m_cameraBuffer.GetResource(), bufferSize, 0u, VK_SHADER_STAGE_VERTEX_BIT
@@ -77,19 +72,10 @@ void PerFrameBuffers::AddModelInputs(
 		m_queueFamilyIndices
 	);
 
-	const VkDeviceSize vertexUploadOffset =
-		Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
-			m_gVertexBuffer.GetUploadMemoryRequirements(device)
-		);
-	const VkDeviceSize vertexGpuOffset =
-		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(
-			m_gVertexBuffer.GetGPUMemoryRequirements(device)
-		);
-
-	m_gVertexBuffer.SetMemoryOffset(vertexUploadOffset, vertexGpuOffset);
+	m_gVertexBuffer.SetMemoryOffset(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(vertices), vertexBufferSize, vertexUploadOffset
+		std::move(vertices), vertexBufferSize, m_gVertexBuffer.GetUploadMemoryOffset()
 	);
 
 	// Index Buffer
@@ -98,19 +84,10 @@ void PerFrameBuffers::AddModelInputs(
 		m_queueFamilyIndices
 	);
 
-	const VkDeviceSize indexUploadOffset =
-		Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
-			m_gIndexBuffer.GetUploadMemoryRequirements(device)
-		);
-	const VkDeviceSize indexGpuOffset =
-		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(
-			m_gIndexBuffer.GetGPUMemoryRequirements(device)
-		);
-
-	m_gIndexBuffer.SetMemoryOffset(indexUploadOffset, indexGpuOffset);
+	m_gIndexBuffer.SetMemoryOffset(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(indices), indexBufferSize, indexUploadOffset
+		std::move(indices), indexBufferSize, m_gIndexBuffer.GetUploadMemoryOffset()
 	);
 }
 

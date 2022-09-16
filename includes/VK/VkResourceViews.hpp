@@ -3,6 +3,12 @@
 #include <VkResources.hpp>
 #include <cstdint>
 
+enum class MemoryType {
+	upload,
+	cpuWrite,
+	gpuOnly
+};
+
 class VkResourceView {
 public:
 	VkResourceView(VkDevice device) noexcept;
@@ -18,6 +24,7 @@ public:
 		std::vector<std::uint32_t> queueFamilyIndices = {}
 	);
 	void BindResourceToMemory(VkDevice device, VkDeviceMemory memory);
+	void SetMemoryOffset(VkDevice device, MemoryType type) noexcept;
 	void SetMemoryOffset(VkDeviceSize offset) noexcept;
 	void CleanUpResource() noexcept;
 	void RecordCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
@@ -26,6 +33,8 @@ public:
 	VkBuffer GetResource() const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetMemoryOffset() const noexcept;
+
+private:
 	[[nodiscard]]
 	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept;
 
@@ -51,6 +60,7 @@ public:
 		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void BindResourceToMemory(VkDevice device, VkDeviceMemory memory);
+	void SetMemoryOffset(VkDevice device, MemoryType type = MemoryType::gpuOnly) noexcept;
 	void SetMemoryOffset(VkDeviceSize offset) noexcept;
 
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);
@@ -67,6 +77,10 @@ public:
 	VkImageView GetImageView() const noexcept;
 	[[nodiscard]]
 	VkImage GetResource() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetMemoryOffset() const noexcept;
+
+private:
 	[[nodiscard]]
 	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept;
 
@@ -107,9 +121,9 @@ public:
 		m_gpuResource.BindResourceToMemory(device, gpuMemory);
 	}
 
-	void SetMemoryOffset(VkDeviceSize uploadOffset, VkDeviceSize gpuOffset) noexcept {
-		m_uploadResource.SetMemoryOffset(uploadOffset);
-		m_gpuResource.SetMemoryOffset(gpuOffset);
+	void SetMemoryOffset(VkDevice device, MemoryType type = MemoryType::gpuOnly) noexcept {
+		m_uploadResource.SetMemoryOffset(device, MemoryType::upload);
+		m_gpuResource.SetMemoryOffset(device, type);
 	}
 
 	void CleanUpUploadResource() noexcept {
@@ -128,16 +142,6 @@ public:
 	[[nodiscard]]
 	VkDeviceSize GetUploadMemoryOffset() const noexcept {
 		return m_uploadResource.GetMemoryOffset();
-	}
-
-	[[nodiscard]]
-	VkMemoryRequirements GetUploadMemoryRequirements(VkDevice device) const noexcept {
-		return m_uploadResource.GetMemoryRequirements(device);
-	}
-
-	[[nodiscard]]
-	VkMemoryRequirements GetGPUMemoryRequirements(VkDevice device) const noexcept {
-		return m_gpuResource.GetMemoryRequirements(device);
 	}
 
 protected:
@@ -185,4 +189,28 @@ public:
 	[[nodiscard]]
 	VkImageView GetImageView() const noexcept;
 };
+
+//class VkMultiResourceView {
+//public:
+//	VkMultiResourceView(VkDevice device) noexcept;
+//
+//	VkMultiResourceView(const VkMultiResourceView&) = delete;
+//	VkMultiResourceView& operator=(const VkMultiResourceView&) = delete;
+//
+//	VkMultiResourceView(VkMultiResourceView&& resourceView) noexcept;
+//	VkMultiResourceView& operator=(VkMultiResourceView&& resourceView) noexcept;
+//
+//	void CreateResource(
+//		VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
+//		std::vector<std::uint32_t> queueFamilyIndices = {}
+//	);
+//	void BindResourceToMemory(VkDevice device, VkDeviceMemory memory);
+//	void SetMemoryOffset(VkDeviceSize offset) noexcept;
+//	void CleanUpResource() noexcept;
+//
+//	[[nodiscard]]
+//	VkBuffer GetResource() const noexcept;
+//	[[nodiscard]]
+//	VkDeviceSize GetMemoryOffset() const noexcept;
+//};
 #endif

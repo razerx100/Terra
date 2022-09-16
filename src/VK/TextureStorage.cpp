@@ -29,22 +29,12 @@ size_t TextureStorage::AddTexture(
 		imageFormat, m_queueFamilyIndices
 	);
 
-	VkMemoryRequirements gpuRequirements = texture.GetGPUMemoryRequirements(device);
-
-	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(gpuRequirements))
-		VK_GENERIC_THROW("Memory Type doesn't match with Image Buffer requirements.");
-
-	const VkDeviceSize uploadOffset =
-		Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
-			texture.GetUploadMemoryRequirements(device)
-		);
-	const VkDeviceSize textureOffset =
-		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(gpuRequirements);
+	texture.SetMemoryOffset(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(textureDataHandle), width * height * 4u, uploadOffset
+		std::move(textureDataHandle), width * height * 4u,
+		texture.GetUploadMemoryOffset()
 	);
-	texture.SetMemoryOffset(uploadOffset, textureOffset);
 
 	m_textures.emplace_back(std::move(texture));
 

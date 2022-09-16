@@ -33,10 +33,10 @@ DepthBuffer& DepthBuffer::operator=(DepthBuffer&& depthBuffer) noexcept {
 void DepthBuffer::AllocateForMaxResolution(
 	VkDevice device, std::uint32_t width, std::uint32_t height
 ) {
-	VkMemoryRequirements memoryReq{};
+	VkDeviceSize depthOffset = 0u;
 
 	{
-		VkImageResource maxResImage{ device };
+		VkImageResourceView maxResImage{ device };
 		std::vector<std::uint32_t> queueIndices;
 
 		maxResImage.CreateResource(
@@ -44,16 +44,11 @@ void DepthBuffer::AllocateForMaxResolution(
 			queueIndices
 		);
 
-		vkGetImageMemoryRequirements(device, maxResImage.GetResource(), &memoryReq);
+		maxResImage.SetMemoryOffset(device);
+		depthOffset = maxResImage.GetMemoryOffset();
 	}
 
-	if (!Terra::Resources::gpuOnlyMemory->CheckMemoryType(memoryReq))
-		VK_GENERIC_THROW("Memory Type doesn't match with Depth buffer requirements.");
-
-	const VkDeviceSize depthBufferOffset =
-		Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
-
-	m_depthImage.SetMemoryOffset(depthBufferOffset);
+	m_depthImage.SetMemoryOffset(depthOffset);
 
 	m_maxWidth = width;
 	m_maxHeight = height;

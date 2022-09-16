@@ -1,6 +1,8 @@
 #include <VkResourceViews.hpp>
 #include <VKThrowMacros.hpp>
 
+#include <Terra.hpp>
+
 // Vk Resource view
 VkResourceView::VkResourceView(VkDevice device) noexcept
 	: m_resource{ device }, m_memoryOffset{ 0u }, m_bufferSize{ 0u } {}
@@ -32,6 +34,17 @@ void VkResourceView::BindResourceToMemory(VkDevice device, VkDeviceMemory memory
 			device, m_resource.GetResource(), memory, m_memoryOffset
 		)
 	);
+}
+
+void VkResourceView::SetMemoryOffset(VkDevice device, MemoryType type) noexcept {
+	const auto memoryReq = GetMemoryRequirements(device);
+
+	if (type == MemoryType::upload)
+		m_memoryOffset = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(memoryReq);
+	else if (type == MemoryType::cpuWrite)
+		m_memoryOffset = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(memoryReq);
+	else if (type == MemoryType::gpuOnly)
+		m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
 }
 
 void VkResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
@@ -115,6 +128,17 @@ void VkImageResourceView::CreateResource(
 	m_imageWidth = width;
 	m_imageHeight = height;
 	m_imageFormat = imageFormat;
+}
+
+void VkImageResourceView::SetMemoryOffset(VkDevice device, MemoryType type) noexcept {
+	const auto memoryReq = GetMemoryRequirements(device);
+
+	if (type == MemoryType::upload)
+		m_memoryOffset = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(memoryReq);
+	else if (type == MemoryType::cpuWrite)
+		m_memoryOffset = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(memoryReq);
+	else if (type == MemoryType::gpuOnly)
+		m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
 }
 
 void VkImageResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
@@ -259,6 +283,10 @@ VkImage VkImageResourceView::GetResource() const noexcept {
 
 VkMemoryRequirements VkImageResourceView::GetMemoryRequirements(VkDevice device) const noexcept {
 	return m_resource.GetMemoryRequirements(device);
+}
+
+VkDeviceSize VkImageResourceView::GetMemoryOffset() const noexcept {
+	return m_memoryOffset;
 }
 
 // VK Uploadable Buffer ResourceView
