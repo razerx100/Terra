@@ -13,7 +13,8 @@
 class ModelManager {
 public:
 	ModelManager(
-		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
+		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
+		std::uint32_t bufferCount
 	) noexcept;
 
 	void SetShaderPath(std::wstring path) noexcept;
@@ -29,7 +30,7 @@ public:
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 	);
 
-	void BindCommands(VkCommandBuffer commandBuffer) const noexcept;
+	void BindCommands(VkCommandBuffer commandBuffer, size_t frameIndex) const noexcept;
 
 private:
 	using Pipeline =

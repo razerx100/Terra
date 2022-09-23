@@ -5,50 +5,73 @@
 
 // Vk Resource view
 VkResourceView::VkResourceView(VkDevice device) noexcept
-	: m_resource{ device }, m_memoryOffset{ 0u }, m_bufferSize{ 0u } {}
+	: m_resource{ device }, m_memoryOffsetStart{ 0u }, m_bufferSize{ 0u },
+	m_resourceType{ MemoryType::none }, m_subAllocationSize{ 0u } {}
 
 VkResourceView::VkResourceView(VkResourceView&& resourceView) noexcept
 	: m_resource{ std::move(resourceView.m_resource) },
-	m_memoryOffset{ resourceView.m_memoryOffset }, m_bufferSize{ resourceView.m_bufferSize } {}
+	m_memoryOffsetStart{ resourceView.m_memoryOffsetStart },
+	m_bufferSize{ resourceView.m_bufferSize }, m_resourceType{ resourceView.m_resourceType },
+	m_subAllocationSize{ resourceView.m_subAllocationSize } {}
 
 VkResourceView& VkResourceView::operator=(VkResourceView&& resourceView) noexcept {
 	m_resource = std::move(resourceView.m_resource);
-	m_memoryOffset = resourceView.m_memoryOffset;
+	m_memoryOffsetStart = resourceView.m_memoryOffsetStart;
 	m_bufferSize = resourceView.m_bufferSize;
+	m_resourceType = resourceView.m_resourceType;
+	m_subAllocationSize = resourceView.m_subAllocationSize;
 
 	return *this;
 }
 
 void VkResourceView::CreateResource(
-	VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
-	std::vector<std::uint32_t> queueFamilyIndices
+	VkDevice device, VkDeviceSize bufferSize, std::uint32_t subAllocationCount,
+	VkBufferUsageFlags usageFlags, std::vector<std::uint32_t> queueFamilyIndices
 ) {
-	m_resource.CreateResource(device, bufferSize, usageFlags, queueFamilyIndices);
-	m_bufferSize = bufferSize;
+	m_subAllocationSize = bufferSize;
+	m_bufferSize = bufferSize * subAllocationCount;
+	m_resource.CreateResource(device, m_bufferSize, usageFlags, queueFamilyIndices);
 }
 
-void VkResourceView::BindResourceToMemory(VkDevice device, VkDeviceMemory memory) {
+void VkResourceView::BindResourceToMemory(VkDevice device) {
+	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
+
+	if (m_resourceType == MemoryType::upload)
+		resourceMemoryStart = Terra::Resources::uploadMemory->GetMemoryHandle();
+	else if (m_resourceType == MemoryType::cpuWrite)
+		resourceMemoryStart = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
+	else if (m_resourceType == MemoryType::gpuOnly)
+		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
+
 	VkResult result{};
 	VK_THROW_FAILED(result,
 		vkBindBufferMemory(
-			device, m_resource.GetResource(), memory, m_memoryOffset
+			device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffsetStart
 		)
 	);
 }
 
-void VkResourceView::SetMemoryOffset(VkDevice device, MemoryType type) noexcept {
+void VkResourceView::SetMemoryOffsetAndType(VkDevice device, MemoryType type) noexcept {
 	const auto memoryReq = GetMemoryRequirements(device);
+	m_resourceType = type;
 
 	if (type == MemoryType::upload)
-		m_memoryOffset = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(memoryReq);
+		m_memoryOffsetStart = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
+			memoryReq
+		);
 	else if (type == MemoryType::cpuWrite)
-		m_memoryOffset = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(memoryReq);
+		m_memoryOffsetStart = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(
+			memoryReq
+		);
 	else if (type == MemoryType::gpuOnly)
-		m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
+		m_memoryOffsetStart = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(
+			memoryReq
+		);
 }
 
-void VkResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
-	m_memoryOffset = offset;
+void VkResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept {
+	m_memoryOffsetStart = offset;
+	m_resourceType = type;
 }
 
 void VkResourceView::CleanUpResource() noexcept {
@@ -72,19 +95,23 @@ VkBuffer VkResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
 }
 
-VkDeviceSize VkResourceView::GetMemoryOffset() const noexcept {
-	return m_memoryOffset;
+VkDeviceSize VkResourceView::GetMemoryOffset(VkDeviceSize index) const noexcept {
+	return m_memoryOffsetStart + m_subAllocationSize * index;
 }
 
 VkMemoryRequirements VkResourceView::GetMemoryRequirements(VkDevice device) const noexcept {
 	return m_resource.GetMemoryRequirements(device);
 }
 
+VkDeviceSize VkResourceView::GetSubAllocationSize() const noexcept {
+	return m_subAllocationSize;
+}
+
 // Vk Image Resource View
 VkImageResourceView::VkImageResourceView(VkDevice device) noexcept
 	: m_deviceRef{ device }, m_resource{ device }, m_imageView{ VK_NULL_HANDLE },
 	m_imageWidth{ 0u }, m_imageHeight{ 0u }, m_imageFormat{ VK_FORMAT_UNDEFINED },
-	m_memoryOffset{ 0u } {}
+	m_memoryOffset{ 0u }, m_resourceType{ MemoryType::none } {}
 
 VkImageResourceView::~VkImageResourceView() noexcept {
 	vkDestroyImageView(m_deviceRef, m_imageView, nullptr);
@@ -96,7 +123,8 @@ VkImageResourceView::VkImageResourceView(VkImageResourceView&& imageResourceView
 	m_imageView{ imageResourceView.m_imageView }, m_imageWidth{ imageResourceView.m_imageWidth },
 	m_imageHeight{ imageResourceView.m_imageHeight },
 	m_imageFormat{ imageResourceView.m_imageFormat },
-	m_memoryOffset{ imageResourceView.m_memoryOffset } {
+	m_memoryOffset{ imageResourceView.m_memoryOffset },
+	m_resourceType{ imageResourceView.m_resourceType } {
 
 	imageResourceView.m_imageView = VK_NULL_HANDLE;
 }
@@ -111,6 +139,7 @@ VkImageResourceView& VkImageResourceView::operator=(
 	m_imageHeight = imageResourceView.m_imageHeight;
 	m_imageFormat = imageResourceView.m_imageFormat;
 	m_memoryOffset = imageResourceView.m_memoryOffset;
+	m_resourceType = imageResourceView.m_resourceType;
 
 	imageResourceView.m_imageView = VK_NULL_HANDLE;
 
@@ -130,8 +159,9 @@ void VkImageResourceView::CreateResource(
 	m_imageFormat = imageFormat;
 }
 
-void VkImageResourceView::SetMemoryOffset(VkDevice device, MemoryType type) noexcept {
+void VkImageResourceView::SetMemoryOffsetAndType(VkDevice device, MemoryType type) noexcept {
 	const auto memoryReq = GetMemoryRequirements(device);
+	m_resourceType = type;
 
 	if (type == MemoryType::upload)
 		m_memoryOffset = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(memoryReq);
@@ -141,14 +171,26 @@ void VkImageResourceView::SetMemoryOffset(VkDevice device, MemoryType type) noex
 		m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
 }
 
-void VkImageResourceView::SetMemoryOffset(VkDeviceSize offset) noexcept {
+void VkImageResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept {
 	m_memoryOffset = offset;
+	m_resourceType = type;
 }
 
-void VkImageResourceView::BindResourceToMemory(VkDevice device, VkDeviceMemory memory) {
+void VkImageResourceView::BindResourceToMemory(VkDevice device) {
+	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
+
+	if (m_resourceType == MemoryType::upload)
+		resourceMemoryStart = Terra::Resources::uploadMemory->GetMemoryHandle();
+	else if (m_resourceType == MemoryType::cpuWrite)
+		resourceMemoryStart = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
+	else if (m_resourceType == MemoryType::gpuOnly)
+		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
+
 	VkResult result{};
 	VK_THROW_FAILED(result,
-		vkBindImageMemory(device, m_resource.GetResource(), memory, m_memoryOffset)
+		vkBindImageMemory(
+			device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffset
+		)
 	);
 }
 
@@ -306,15 +348,21 @@ VkUploadableBufferResourceView& VkUploadableBufferResourceView::operator=(
 	return *this;
 }
 
-void VkUploadableBufferResourceView::CreateResources(
-	VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlagBits gpuBufferType,
-	std::vector<std::uint32_t> queueFamilyIndices
+void VkUploadableBufferResourceView::CreateResource(
+	VkDevice device, VkDeviceSize bufferSize, std::uint32_t subAllocationCount,
+	VkBufferUsageFlagBits gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices
 ) {
-	m_uploadResource.CreateResource(device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-	m_gpuResource.CreateResource(
-		device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | gpuBufferType,
-		queueFamilyIndices
+	m_uploadResource.CreateResource(
+		device, bufferSize, subAllocationCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 	);
+	m_gpuResource.CreateResource(
+		device, bufferSize, subAllocationCount,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | gpuBufferType, queueFamilyIndices
+	);
+}
+
+VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationSize() const noexcept {
+	return m_gpuResource.GetSubAllocationSize();
 }
 
 // VK Uploadable Image ResourceView
@@ -334,14 +382,14 @@ VkUploadableImageResourceView& VkUploadableImageResourceView::operator=(
 	return *this;
 }
 
-void VkUploadableImageResourceView::CreateResources(
+void VkUploadableImageResourceView::CreateResource(
 	VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 	std::vector<std::uint32_t> queueFamilyIndices
 ) {
 	// Upload Buffer requires the size of Data to be copied because it's going to memcpy
 	// with that size
 	m_uploadResource.CreateResource(
-		device, static_cast<VkDeviceSize>(width * height * 4u),
+		device, static_cast<VkDeviceSize>(width * height * 4u), 1u,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT
 	);
 	m_gpuResource.CreateResource(

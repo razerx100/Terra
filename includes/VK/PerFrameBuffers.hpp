@@ -8,28 +8,26 @@
 class PerFrameBuffers {
 public:
 	PerFrameBuffers(
-		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
+		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
+		std::uint32_t bufferCount
 	) noexcept;
 
-	void BindPerFrameBuffers(VkCommandBuffer commandBuffer) const noexcept;
+	void BindPerFrameBuffers(VkCommandBuffer commandBuffer, size_t frameIndex) const noexcept;
 
 	void AddModelInputs(
 		VkDevice device,
 		std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 	);
-	void BindResourceToMemory(
-		VkDevice device,
-		VkDeviceMemory uploadmemory, VkDeviceMemory cpuWriteMemory, VkDeviceMemory gpuMemory
-	);
+	void BindResourceToMemory(VkDevice device);
 	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept;
 	void ReleaseUploadResources() noexcept;
 
 private:
 	void InitBuffers(VkDevice device) noexcept;
 	void AddDescriptorForBuffer(
-		VkBuffer buffer, size_t bufferSize,
-		std::uint32_t bindingSlot, VkShaderStageFlagBits shaderStage
+		const VkResourceView& buffer, std::uint32_t bindingSlot,
+		VkShaderStageFlagBits shaderStage
 	) noexcept;
 
 private:
@@ -37,5 +35,6 @@ private:
 	VkUploadableBufferResourceView m_gVertexBuffer;
 	VkUploadableBufferResourceView m_gIndexBuffer;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
+	std::uint32_t m_bufferCount;
 };
 #endif

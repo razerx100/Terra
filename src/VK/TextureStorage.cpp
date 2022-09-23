@@ -24,12 +24,12 @@ size_t TextureStorage::AddTexture(
 	static VkFormat imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
 	VkUploadableImageResourceView texture{ device };
-	texture.CreateResources(
+	texture.CreateResource(
 		device, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height),
 		imageFormat, m_queueFamilyIndices
 	);
 
-	texture.SetMemoryOffset(device);
+	texture.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
 		std::move(textureDataHandle), width * height * 4u,
@@ -47,12 +47,9 @@ void TextureStorage::ReleaseUploadBuffers() noexcept {
 }
 
 void TextureStorage::BindMemories(VkDevice device) {
-	VkDeviceMemory uploadMemory = Terra::Resources::uploadMemory->GetMemoryHandle();
-	VkDeviceMemory textureMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
-
 	for (size_t index = 0u; index < std::size(m_textures); ++index) {
 		auto& texture = m_textures[index];
-		texture.BindResourceToMemory(device, uploadMemory, textureMemory);
+		texture.BindResourceToMemory(device);
 		texture.CreateImageView(device, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 }
@@ -75,7 +72,7 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 		imageInfos.emplace_back(imageInfo);
 	}
 
-	Terra::descriptorSet->AddSetLayoutAndQueueForBinding(
+	Terra::descriptorSet->AddSetLayout(
 		descInfo, VK_SHADER_STAGE_FRAGMENT_BIT, std::move(imageInfos)
 	);
 }

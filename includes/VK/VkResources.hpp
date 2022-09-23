@@ -53,12 +53,7 @@ public:
 	void CleanUpResource() noexcept;
 
 	[[nodiscard]]
-	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept {
-		VkMemoryRequirements memReq{};
-		vkGetBufferMemoryRequirements(device, m_resource, &memReq);
-
-		return memReq;
-	}
+	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept;
 
 private:
 	VkDevice m_deviceRef;
@@ -82,12 +77,7 @@ public:
 	void CleanUpResource() noexcept;
 
 	[[nodiscard]]
-	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept {
-		VkMemoryRequirements memReq{};
-		vkGetImageMemoryRequirements(device, m_resource, &memReq);
-
-		return memReq;
-	}
+	VkMemoryRequirements GetMemoryRequirements(VkDevice device) const noexcept;
 
 private:
 	VkDevice m_deviceRef;

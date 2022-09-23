@@ -7,8 +7,9 @@
 #include <Terra.hpp>
 
 ModelManager::ModelManager(
-	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
-) noexcept : m_pPerFrameBuffers{ device, std::move(queueFamilyIndices) } {}
+	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
+	std::uint32_t bufferCount
+) noexcept : m_pPerFrameBuffers{ device, std::move(queueFamilyIndices), bufferCount } {}
 
 void ModelManager::SetShaderPath(std::wstring path) noexcept {
 	m_shaderPath = std::move(path);
@@ -22,12 +23,14 @@ void ModelManager::RecordUploadBuffers(VkCommandBuffer copyBuffer) {
 	m_pPerFrameBuffers.RecordCopy(copyBuffer);
 }
 
-void ModelManager::BindCommands(VkCommandBuffer commandBuffer) const noexcept {
+void ModelManager::BindCommands(
+	VkCommandBuffer commandBuffer, size_t frameIndex
+) const noexcept {
 	m_renderPipeline.BindGraphicsPipeline(
-		commandBuffer, Terra::descriptorSet->GetDescriptorSet()
+		commandBuffer, Terra::descriptorSet->GetDescriptorSet(frameIndex)
 	);
 
-	m_pPerFrameBuffers.BindPerFrameBuffers(commandBuffer);
+	m_pPerFrameBuffers.BindPerFrameBuffers(commandBuffer, frameIndex);
 
 	m_renderPipeline.DrawModels(commandBuffer);
 }
@@ -37,11 +40,7 @@ void ModelManager::ReleaseUploadBuffers() {
 }
 
 void ModelManager::BindMemories(VkDevice device) {
-	VkDeviceMemory uploadMemory = Terra::Resources::uploadMemory->GetMemoryHandle();
-	VkDeviceMemory cpuWriteMemory = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
-	VkDeviceMemory gpuMemory = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
-
-	m_pPerFrameBuffers.BindResourceToMemory(device, uploadMemory, cpuWriteMemory, gpuMemory);
+	m_pPerFrameBuffers.BindResourceToMemory(device);
 }
 
 void ModelManager::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {

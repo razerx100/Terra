@@ -44,6 +44,13 @@ void VkResource::CleanUpResource() noexcept {
 	m_resource = VK_NULL_HANDLE;
 }
 
+VkMemoryRequirements VkResource::GetMemoryRequirements(VkDevice device) const noexcept {
+	VkMemoryRequirements memReq{};
+	vkGetBufferMemoryRequirements(device, m_resource, &memReq);
+
+	return memReq;
+}
+
 // Vk Image Resource
 VkImageResource::VkImageResource(VkDevice device) noexcept : m_deviceRef{ device } {}
 
@@ -95,4 +102,11 @@ void VkImageResource::CreateResource(
 void VkImageResource::CleanUpResource() noexcept {
 	vkDestroyImage(m_deviceRef, m_resource, nullptr);
 	m_resource = VK_NULL_HANDLE;
+}
+
+VkMemoryRequirements VkImageResource::GetMemoryRequirements(VkDevice device) const noexcept {
+	VkMemoryRequirements memReq{};
+	vkGetImageMemoryRequirements(device, m_resource, &memReq);
+
+	return memReq;
 }

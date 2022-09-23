@@ -50,13 +50,9 @@ RendererVK::RendererVK(
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
 	);
-	Terra::InitGraphicsQueue(
-		logicalDevice,
-		graphicsQueueHandle,
-		bufferCount
-	);
+	Terra::InitGraphicsQueue(logicalDevice, graphicsQueueHandle, bufferCount);
 
-	SwapChainManagerCreateInfo swapCreateInfo = {};
+	SwapChainManagerCreateInfo swapCreateInfo{};
 	swapCreateInfo.device = logicalDevice;
 	swapCreateInfo.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface);
 	swapCreateInfo.surface = vkSurface;
@@ -67,11 +63,7 @@ RendererVK::RendererVK(
 	// Graphics and Present queues should be the same
 	Terra::InitSwapChain(swapCreateInfo, graphicsQueueHandle, graphicsQueueFamilyIndex);
 
-	Terra::InitGraphicsCmdPool(
-		logicalDevice,
-		graphicsQueueFamilyIndex,
-		bufferCount
-	);
+	Terra::InitGraphicsCmdPool(logicalDevice, graphicsQueueFamilyIndex, bufferCount);
 
 	auto [copyQueueHandle, copyQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::TransferQueue
@@ -103,10 +95,10 @@ RendererVK::RendererVK(
 		Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
 	);
 
-	Terra::InitDescriptorSet(logicalDevice);
+	Terra::InitDescriptorSet(logicalDevice, bufferCount);
 
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	Terra::InitModelManager(logicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitModelManager(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetSceneResolution(width, height);
@@ -184,7 +176,7 @@ void RendererVK::Render() {
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	Terra::modelManager->BindCommands(commandBuffer);
+	Terra::modelManager->BindCommands(commandBuffer, imageIndex);
 
 	vkCmdEndRenderPass(commandBuffer);
 

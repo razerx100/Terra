@@ -21,50 +21,46 @@ struct DescImageInfo {
 	std::vector<VkDescriptorImageInfo> images;
 };
 
-void BindBuffer(
-	VkDevice device, VkDescriptorSet descSet,
-	const DescBufferInfo& bufferInfo
-) noexcept;
-
-void BindImageView(
-	VkDevice device, VkDescriptorSet descSet,
-	const DescImageInfo& imageInfo
-) noexcept;
-
 class DescriptorSetManager {
 public:
-	DescriptorSetManager(VkDevice device);
+	DescriptorSetManager(VkDevice device, size_t bufferCount);
 	~DescriptorSetManager() noexcept;
 
 	[[nodiscard]]
 	VkDescriptorSetLayout GetDescriptorSetLayout() const noexcept;
 	[[nodiscard]]
-	VkDescriptorSet GetDescriptorSet() const noexcept;
-
-	void AddSetLayoutAndQueueForBinding(
-		DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-		std::vector<VkDescriptorBufferInfo>&& bufferInfo
-	);
-
-	void AddSetLayoutAndQueueForBinding(
-		DescriptorInfo descInfo, VkShaderStageFlags shaderFlag,
-		std::vector<VkDescriptorImageInfo>&& imageInfo
-	);
+	VkDescriptorSet GetDescriptorSet(size_t index) const noexcept;
 
 	void AddSetLayout(
-		const DescriptorInfo& descInfo, VkShaderStageFlags shaderFlag
-	);
+		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
+		std::vector<VkDescriptorBufferInfo>&& bufferInfo
+	) noexcept;
+
+	void AddSetLayout(
+		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
+		std::vector<VkDescriptorImageInfo>&& imageInfo
+	) noexcept;
 
 	void CreateDescriptorSets(VkDevice device);
 
 private:
 	void CreateSetLayout(VkDevice device);
+	void _addSetLayout(const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag);
+
+	static void BindBuffer(
+		VkDevice device, VkDescriptorSet descSet,
+		const DescriptorInfo& descriptorInfo, const VkDescriptorBufferInfo& bufferInfo
+	) noexcept;
+	static void BindImageView(
+		VkDevice device, VkDescriptorSet descSet,
+		const DescImageInfo& imageInfo
+	) noexcept;
 
 private:
 	VkDevice m_deviceRef;
-	VkDescriptorSet m_descriptorSet;
+	std::vector<VkDescriptorSet> m_descriptorSets;
 	VkDescriptorSetLayout m_descriptorSetLayout;
-	std::unique_ptr<DescriptorPool> m_descriptorPool;
+	DescriptorPool m_descriptorPool;
 	std::vector<DescBufferInfo> m_bufferInfos;
 	std::vector<DescImageInfo> m_imageInfos;
 	std::vector<VkDescriptorSetLayoutBinding> m_layoutBindings;

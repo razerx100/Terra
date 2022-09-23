@@ -8,13 +8,11 @@ public:
 	DescriptorPool(VkDevice device) noexcept;
 	~DescriptorPool() noexcept;
 
-	void AddDescriptorTypeLimit(
-		VkDescriptorType type, std::uint32_t descriptorCount
-	) noexcept;
-	void CreatePool(VkDevice device);
+	void AddDescriptorTypeLimit(VkDescriptorType type, std::uint32_t descriptorCount) noexcept;
+	void CreatePool(VkDevice device, std::uint32_t maxSets);
 	void AllocateDescriptors(
 		VkDevice device, VkDescriptorSetLayout setLayout,
-		VkDescriptorSet* descriptorSets
+		std::uint32_t descriptorSetCount, VkDescriptorSet* descriptorSets
 	) const;
 
 private:

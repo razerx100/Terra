@@ -44,11 +44,11 @@ void DepthBuffer::AllocateForMaxResolution(
 			queueIndices
 		);
 
-		maxResImage.SetMemoryOffset(device);
+		maxResImage.SetMemoryOffsetAndType(device);
 		depthOffset = maxResImage.GetMemoryOffset();
 	}
 
-	m_depthImage.SetMemoryOffset(depthOffset);
+	m_depthImage.SetMemoryOffsetAndType(depthOffset, MemoryType::gpuOnly);
 
 	m_maxWidth = width;
 	m_maxHeight = height;
@@ -65,9 +65,7 @@ void DepthBuffer::CreateDepthBuffer(
 		m_queueFamilyIndices
 	);
 
-	VkDeviceMemory memoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
-
-	m_depthImage.BindResourceToMemory(device, memoryStart);
+	m_depthImage.BindResourceToMemory(device);
 	m_depthImage.CreateImageView(device, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 

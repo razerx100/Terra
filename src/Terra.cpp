@@ -122,13 +122,16 @@ namespace Terra {
 	}
 
 	void InitModelManager(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
+		std::uint32_t bufferCount
 	) {
-		modelManager = std::make_unique<ModelManager>(logicalDevice, queueFamilyIndices);
+		modelManager = std::make_unique<ModelManager>(
+			logicalDevice, queueFamilyIndices, bufferCount
+			);
 	}
 
-	void InitDescriptorSet(VkDevice logicalDevice) {
-		descriptorSet = std::make_unique<DescriptorSetManager>(logicalDevice);
+	void InitDescriptorSet(VkDevice logicalDevice, std::uint32_t bufferCount) {
+		descriptorSet = std::make_unique<DescriptorSetManager>(logicalDevice, bufferCount);
 	}
 
 	void InitTextureStorage(

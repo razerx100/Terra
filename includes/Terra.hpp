@@ -81,9 +81,10 @@ namespace Terra {
 		VkFormat swapChainFormat, VkFormat depthFormat
 	);
 	void InitModelManager(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
+		std::uint32_t bufferCount
 	);
-	void InitDescriptorSet(VkDevice logicalDevice);
+	void InitDescriptorSet(VkDevice logicalDevice, std::uint32_t bufferCount);
 	void InitTextureStorage(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 		const std::vector<std::uint32_t>& queueFamilyIndices
