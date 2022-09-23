@@ -2,7 +2,7 @@
 #include <VKThrowMacros.hpp>
 
 PipelineLayout::PipelineLayout(VkDevice device)
-	: m_deviceRef(device), m_pipelineLayout(VK_NULL_HANDLE), m_pushConstantOffset(0u) {}
+	: m_deviceRef{ device }, m_pipelineLayout{ VK_NULL_HANDLE }, m_pushConstantOffset{ 0u } {}
 
 PipelineLayout::~PipelineLayout() noexcept {
 	vkDestroyPipelineLayout(m_deviceRef, m_pipelineLayout, nullptr);
@@ -11,7 +11,7 @@ PipelineLayout::~PipelineLayout() noexcept {
 void PipelineLayout::AddPushConstantRange(
 	VkShaderStageFlags shaderFlag, std::uint32_t rangeSize
 ) noexcept {
-	VkPushConstantRange range = {};
+	VkPushConstantRange range{};
 	range.stageFlags = shaderFlag;
 	range.size = rangeSize;
 	range.offset = m_pushConstantOffset;
@@ -22,19 +22,16 @@ void PipelineLayout::AddPushConstantRange(
 }
 
 void PipelineLayout::CreateLayout(
-	VkDescriptorSetLayout setLayout
+	VkDescriptorSetLayout const* setLayouts, std::uint32_t layoutCount
 ) {
-	VkPipelineLayoutCreateInfo createInfo = {};
+	VkPipelineLayoutCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.setLayoutCount = 1u;
-
-	VkDescriptorSetLayout setLayouts[] = { setLayout };
-
+	createInfo.setLayoutCount = layoutCount;
 	createInfo.pSetLayouts = setLayouts;
 	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(std::size(m_pushRanges));
 	createInfo.pPushConstantRanges = std::data(m_pushRanges);
 
-	VkResult result;
+	VkResult result{};
 	VK_THROW_FAILED(result,
 		vkCreatePipelineLayout(m_deviceRef, &createInfo, nullptr, &m_pipelineLayout)
 	);

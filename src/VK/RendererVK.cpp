@@ -313,8 +313,7 @@ void RendererVK::ProcessData() {
 	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
 
 	Terra::modelManager->InitPipelines(
-		logicalDevice,
-		Terra::descriptorSet->GetDescriptorSetLayout()
+		logicalDevice, m_bufferCount, Terra::descriptorSet->GetDescriptorSetLayouts()
 	);
 
 	// Cleanup Upload Buffers

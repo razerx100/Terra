@@ -43,15 +43,17 @@ void ModelManager::BindMemories(VkDevice device) {
 	m_pPerFrameBuffers.BindResourceToMemory(device);
 }
 
-void ModelManager::InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout) {
-	auto [pso, pipelineLayout] = CreatePipeline(device, setLayout);
+void ModelManager::InitPipelines(
+	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+) {
+	auto [pso, pipelineLayout] = CreatePipeline(device, layoutCount, setLayouts);
 
 	m_renderPipeline.AddGraphicsPipelineLayout(std::move(pipelineLayout));
 	m_renderPipeline.AddGraphicsPipelineObject(std::move(pso));
 }
 
 ModelManager::Pipeline ModelManager::CreatePipeline(
-	VkDevice device, VkDescriptorSetLayout setLayout
+	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
 ) const {
 	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
 
@@ -59,7 +61,7 @@ ModelManager::Pipeline ModelManager::CreatePipeline(
 	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 80u);
 	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 4u);
 
-	pipelineLayout->CreateLayout(setLayout);
+	pipelineLayout->CreateLayout(setLayouts, layoutCount);
 
 	auto vs = std::make_unique<Shader>(device);
 	vs->CreateShader(device, m_shaderPath + L"VertexShader.spv");

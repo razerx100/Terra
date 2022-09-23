@@ -11,7 +11,7 @@ public:
 	void AddDescriptorTypeLimit(VkDescriptorType type, std::uint32_t descriptorCount) noexcept;
 	void CreatePool(VkDevice device, std::uint32_t maxSets);
 	void AllocateDescriptors(
-		VkDevice device, VkDescriptorSetLayout setLayout,
+		VkDevice device, VkDescriptorSetLayout* setLayouts,
 		std::uint32_t descriptorSetCount, VkDescriptorSet* descriptorSets
 	) const;
 

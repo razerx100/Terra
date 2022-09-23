@@ -4,14 +4,15 @@
 // DescriptorSet Manager
 DescriptorSetManager::DescriptorSetManager(VkDevice device, size_t bufferCount)
 	: m_deviceRef{ device }, m_descriptorSets{ bufferCount, VK_NULL_HANDLE },
-	m_descriptorSetLayout{ VK_NULL_HANDLE }, m_descriptorPool{ device } {}
+	m_descriptorSetLayouts{ bufferCount, VK_NULL_HANDLE }, m_descriptorPool{ device } {}
 
 DescriptorSetManager::~DescriptorSetManager() noexcept {
-	vkDestroyDescriptorSetLayout(m_deviceRef, m_descriptorSetLayout, nullptr);
+	for(auto descriptorSetLayout : m_descriptorSetLayouts)
+	vkDestroyDescriptorSetLayout(m_deviceRef, descriptorSetLayout, nullptr);
 }
 
-VkDescriptorSetLayout DescriptorSetManager::GetDescriptorSetLayout() const noexcept {
-	return m_descriptorSetLayout;
+VkDescriptorSetLayout const* DescriptorSetManager::GetDescriptorSetLayouts() const noexcept {
+	return std::data(m_descriptorSetLayouts);
 }
 
 VkDescriptorSet DescriptorSetManager::GetDescriptorSet(size_t index) const noexcept {
@@ -24,10 +25,11 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 
 	m_descriptorPool.CreatePool(device, descriptorSetCount);
 
-	CreateSetLayout(device);
+	CreateSetLayouts(device);
 
 	m_descriptorPool.AllocateDescriptors(
-		device, m_descriptorSetLayout, descriptorSetCount, std::data(m_descriptorSets)
+		device, std::data(m_descriptorSetLayouts), descriptorSetCount,
+		std::data(m_descriptorSets)
 	);
 
 	for (const DescBufferInfo& bufferInfo : m_bufferInfos)
@@ -86,7 +88,7 @@ void DescriptorSetManager::AddSetLayout(
 	m_imageInfos.emplace_back(descInfo, std::move(imageInfo));
 }
 
-void DescriptorSetManager::CreateSetLayout(VkDevice device) {
+void DescriptorSetManager::CreateSetLayouts(VkDevice device) {
 	VkDescriptorSetLayoutCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	createInfo.bindingCount = static_cast<std::uint32_t>(std::size(m_layoutBindings));
@@ -100,10 +102,11 @@ void DescriptorSetManager::CreateSetLayout(VkDevice device) {
 
 	createInfo.pNext = &flagsCreateInfo;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &m_descriptorSetLayout)
-	);
+	VkResult result{};
+	for (auto& descriptorSetLayout : m_descriptorSetLayouts)
+		VK_THROW_FAILED(result,
+			vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout)
+		);
 }
 
 void DescriptorSetManager::BindBuffer(

@@ -34,16 +34,14 @@ void DescriptorPool::CreatePool(VkDevice device, std::uint32_t maxSets) {
 }
 
 void DescriptorPool::AllocateDescriptors(
-	VkDevice device, VkDescriptorSetLayout setLayout,
+	VkDevice device, VkDescriptorSetLayout* setLayouts,
 	std::uint32_t descriptorSetCount, VkDescriptorSet* descriptorSets
 ) const {
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = m_descriptorPool;
 	allocInfo.descriptorSetCount = descriptorSetCount;
-
-	VkDescriptorSetLayout layouts[] = { setLayout };
-	allocInfo.pSetLayouts = layouts;
+	allocInfo.pSetLayouts = setLayouts;
 
 	VkResult result;
 	VK_THROW_FAILED(result,

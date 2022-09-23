@@ -20,7 +20,9 @@ public:
 	void SetShaderPath(std::wstring path) noexcept;
 	void AddModels(std::vector<std::shared_ptr<IModel>>&& models);
 
-	void InitPipelines(VkDevice device, VkDescriptorSetLayout setLayout);
+	void InitPipelines(
+		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+	);
 	void BindMemories(VkDevice device);
 	void RecordUploadBuffers(VkCommandBuffer copyBuffer);
 	void ReleaseUploadBuffers();
@@ -36,7 +38,9 @@ private:
 	using Pipeline =
 		std::pair<std::unique_ptr<PipelineObjectGFX>, std::unique_ptr<PipelineLayout>>;
 
-	Pipeline CreatePipeline(VkDevice device, VkDescriptorSetLayout setLayout) const;
+	Pipeline CreatePipeline(
+		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+	) const;
 
 private:
 	RenderPipeline m_renderPipeline;

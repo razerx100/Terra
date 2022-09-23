@@ -27,7 +27,7 @@ public:
 	~DescriptorSetManager() noexcept;
 
 	[[nodiscard]]
-	VkDescriptorSetLayout GetDescriptorSetLayout() const noexcept;
+	VkDescriptorSetLayout const* GetDescriptorSetLayouts() const noexcept;
 	[[nodiscard]]
 	VkDescriptorSet GetDescriptorSet(size_t index) const noexcept;
 
@@ -44,7 +44,7 @@ public:
 	void CreateDescriptorSets(VkDevice device);
 
 private:
-	void CreateSetLayout(VkDevice device);
+	void CreateSetLayouts(VkDevice device);
 	void _addSetLayout(const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag);
 
 	static void BindBuffer(
@@ -59,7 +59,7 @@ private:
 private:
 	VkDevice m_deviceRef;
 	std::vector<VkDescriptorSet> m_descriptorSets;
-	VkDescriptorSetLayout m_descriptorSetLayout;
+	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 	DescriptorPool m_descriptorPool;
 	std::vector<DescBufferInfo> m_bufferInfos;
 	std::vector<DescImageInfo> m_imageInfos;

@@ -8,13 +8,9 @@ public:
 	PipelineLayout(VkDevice device);
 	~PipelineLayout() noexcept;
 
-	void AddPushConstantRange(
-		VkShaderStageFlags shaderFlag, std::uint32_t rangeSize
-	) noexcept;
+	void AddPushConstantRange(VkShaderStageFlags shaderFlag, std::uint32_t rangeSize) noexcept;
 
-	void CreateLayout(
-		VkDescriptorSetLayout setLayout
-	);
+	void CreateLayout(VkDescriptorSetLayout const* setLayouts, std::uint32_t layoutCount);
 
 	[[nodiscard]]
 	VkPipelineLayout GetLayout() const noexcept;
