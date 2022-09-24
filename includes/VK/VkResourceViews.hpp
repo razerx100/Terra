@@ -35,6 +35,8 @@ public:
 	[[nodiscard]]
 	VkDeviceSize GetMemoryOffset(VkDeviceSize index = 0u) const noexcept;
 	[[nodiscard]]
+	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
+	[[nodiscard]]
 	VkDeviceSize GetSubAllocationSize() const noexcept;
 
 private:

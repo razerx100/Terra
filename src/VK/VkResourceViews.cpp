@@ -95,8 +95,12 @@ VkBuffer VkResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
 }
 
+VkDeviceSize VkResourceView::GetSubAllocationOffset(VkDeviceSize index) const noexcept {
+	return m_subAllocationSize * index;
+}
+
 VkDeviceSize VkResourceView::GetMemoryOffset(VkDeviceSize index) const noexcept {
-	return m_memoryOffsetStart + m_subAllocationSize * index;
+	return m_memoryOffsetStart + GetSubAllocationOffset(index);
 }
 
 VkMemoryRequirements VkResourceView::GetMemoryRequirements(VkDevice device) const noexcept {

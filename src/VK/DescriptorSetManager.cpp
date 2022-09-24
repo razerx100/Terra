@@ -156,7 +156,7 @@ void DescriptorSetManager::AddDescriptorForBuffer(
 	for (VkDeviceSize index = 0u; index < bufferCount; ++index) {
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = buffer.GetResource();
-		bufferInfo.offset = buffer.GetMemoryOffset(index);
+		bufferInfo.offset = buffer.GetSubAllocationOffset(index);
 		bufferInfo.range = buffer.GetSubAllocationSize();
 
 		bufferInfos.emplace_back(std::move(bufferInfo));
