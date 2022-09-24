@@ -7,45 +7,23 @@ PerFrameBuffers::PerFrameBuffers(
 	std::uint32_t bufferCount
 ) noexcept
 	: m_cameraBuffer{ device }, m_gVertexBuffer{ device }, m_gIndexBuffer{ device },
-	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_bufferCount{ bufferCount } {
-	InitBuffers(device);
+	m_queueFamilyIndices{ std::move(queueFamilyIndices) } {
+	InitBuffers(device, bufferCount);
 }
 
-void PerFrameBuffers::InitBuffers(VkDevice device) noexcept {
+void PerFrameBuffers::InitBuffers(VkDevice device, std::uint32_t bufferCount) noexcept {
 	size_t bufferSize = sizeof(DirectX::XMMATRIX) * 2u;
 
 	m_cameraBuffer.CreateResource(
-		device, bufferSize, m_bufferCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+		device, bufferSize, bufferCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
 	);
 
 	m_cameraBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
-	AddDescriptorForBuffer(
-		m_cameraBuffer, 0u, VK_SHADER_STAGE_VERTEX_BIT
+	DescriptorSetManager::AddDescriptorForBuffer(
+		m_cameraBuffer, bufferCount, 0u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_SHADER_STAGE_VERTEX_BIT
 	);
-}
-
-void PerFrameBuffers::AddDescriptorForBuffer(
-	const VkResourceView& buffer,
-	std::uint32_t bindingSlot, VkShaderStageFlagBits shaderStage
-) noexcept {
-	DescriptorInfo descInfo{};
-	descInfo.bindingSlot = bindingSlot;
-	descInfo.descriptorCount = 1u;
-	descInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-
-	for (VkDeviceSize index = 0u; index < m_bufferCount; ++index) {
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = buffer.GetResource();
-		bufferInfo.offset = buffer.GetMemoryOffset(index);
-		bufferInfo.range = buffer.GetSubAllocationSize();
-
-		bufferInfos.emplace_back(std::move(bufferInfo));
-	}
-
-	Terra::descriptorSet->AddSetLayout(descInfo, shaderStage, std::move(bufferInfos));
 }
 
 void PerFrameBuffers::BindPerFrameBuffers(

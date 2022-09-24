@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <DescriptorPool.hpp>
+#include <VkResourceViews.hpp>
 #include <memory>
 
 struct DescriptorInfo {
@@ -35,13 +36,16 @@ public:
 		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
 		std::vector<VkDescriptorBufferInfo>&& bufferInfo
 	) noexcept;
-
 	void AddSetLayout(
 		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
 		std::vector<VkDescriptorImageInfo>&& imageInfo
 	) noexcept;
-
 	void CreateDescriptorSets(VkDevice device);
+
+	static void AddDescriptorForBuffer(
+		const VkResourceView& buffer, std::uint32_t bufferCount, std::uint32_t bindingSlot,
+		VkDescriptorType descriptorType, VkShaderStageFlagBits shaderStage
+	) noexcept;
 
 private:
 	void CreateSetLayouts(VkDevice device);

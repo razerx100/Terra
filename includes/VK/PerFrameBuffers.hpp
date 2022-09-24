@@ -24,17 +24,12 @@ public:
 	void ReleaseUploadResources() noexcept;
 
 private:
-	void InitBuffers(VkDevice device) noexcept;
-	void AddDescriptorForBuffer(
-		const VkResourceView& buffer, std::uint32_t bindingSlot,
-		VkShaderStageFlagBits shaderStage
-	) noexcept;
+	void InitBuffers(VkDevice device, std::uint32_t bufferCount) noexcept;
 
 private:
 	VkResourceView m_cameraBuffer;
 	VkUploadableBufferResourceView m_gVertexBuffer;
 	VkUploadableBufferResourceView m_gIndexBuffer;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
-	std::uint32_t m_bufferCount;
 };
 #endif

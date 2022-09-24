@@ -249,6 +249,9 @@ void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
 void RendererVK::ProcessData() {
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
+	// Create Buffers
+	Terra::modelManager->CreateBuffers(logicalDevice, m_bufferCount);
+
 	// Allocate Memory
 	Terra::Resources::gpuOnlyMemory->AllocateMemory(logicalDevice);
 	Terra::Resources::uploadMemory->AllocateMemory(logicalDevice);

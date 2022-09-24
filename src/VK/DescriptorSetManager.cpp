@@ -1,6 +1,8 @@
 #include <DescriptorSetManager.hpp>
 #include <VKThrowMacros.hpp>
 
+#include <Terra.hpp>
+
 // DescriptorSet Manager
 DescriptorSetManager::DescriptorSetManager(VkDevice device, size_t bufferCount)
 	: m_deviceRef{ device }, m_descriptorSets{ bufferCount, VK_NULL_HANDLE },
@@ -138,4 +140,27 @@ void DescriptorSetManager::BindImageView(
 	setWrite.pImageInfo = std::data(imageInfo.images);
 
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
+}
+
+void DescriptorSetManager::AddDescriptorForBuffer(
+	const VkResourceView& buffer, std::uint32_t bufferCount, std::uint32_t bindingSlot,
+	VkDescriptorType descriptorType, VkShaderStageFlagBits shaderStage
+) noexcept {
+	DescriptorInfo descInfo{};
+	descInfo.bindingSlot = bindingSlot;
+	descInfo.descriptorCount = 1u;
+	descInfo.type = descriptorType;
+
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+
+	for (VkDeviceSize index = 0u; index < bufferCount; ++index) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = buffer.GetResource();
+		bufferInfo.offset = buffer.GetMemoryOffset(index);
+		bufferInfo.range = buffer.GetSubAllocationSize();
+
+		bufferInfos.emplace_back(std::move(bufferInfo));
+	}
+
+	Terra::descriptorSet->AddSetLayout(descInfo, shaderStage, std::move(bufferInfos));
 }

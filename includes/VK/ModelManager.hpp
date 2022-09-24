@@ -31,6 +31,7 @@ public:
 		std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 	);
+	void CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept;
 
 	void BindCommands(VkCommandBuffer commandBuffer, size_t frameIndex) const noexcept;
 

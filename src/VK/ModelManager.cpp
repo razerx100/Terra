@@ -9,7 +9,9 @@
 ModelManager::ModelManager(
 	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
 	std::uint32_t bufferCount
-) noexcept : m_pPerFrameBuffers{ device, std::move(queueFamilyIndices), bufferCount } {}
+) noexcept
+	: m_renderPipeline{ device },
+	m_pPerFrameBuffers{ device, std::move(queueFamilyIndices), bufferCount } {}
 
 void ModelManager::SetShaderPath(std::wstring path) noexcept {
 	m_shaderPath = std::move(path);
@@ -31,7 +33,7 @@ void ModelManager::BindCommands(
 	);
 
 	m_pPerFrameBuffers.BindPerFrameBuffers(commandBuffer, frameIndex);
-
+	m_renderPipeline.UpdateModelData(frameIndex);
 	m_renderPipeline.DrawModels(commandBuffer);
 }
 
@@ -41,6 +43,7 @@ void ModelManager::ReleaseUploadBuffers() {
 
 void ModelManager::BindMemories(VkDevice device) {
 	m_pPerFrameBuffers.BindResourceToMemory(device);
+	m_renderPipeline.BindResourceToMemory(device);
 }
 
 void ModelManager::InitPipelines(
@@ -58,8 +61,7 @@ ModelManager::Pipeline ModelManager::CreatePipeline(
 	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
 
 	// Push constants needs to be serialised according to the shader stages
-	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 80u);
-	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 4u);
+	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 4u);
 
 	pipelineLayout->CreateLayout(setLayouts, layoutCount);
 
@@ -94,4 +96,8 @@ void ModelManager::AddModelInputs(
 	m_pPerFrameBuffers.AddModelInputs(
 		device, std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
+}
+
+void ModelManager::CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept {
+	m_renderPipeline.CreateBuffers(device, bufferCount);
 }
