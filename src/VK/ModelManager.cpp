@@ -10,8 +10,8 @@ ModelManager::ModelManager(
 	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
 	std::uint32_t bufferCount
 ) noexcept
-	: m_renderPipeline{ device },
-	m_pPerFrameBuffers{ device, std::move(queueFamilyIndices), bufferCount } {}
+	: m_renderPipeline{ device, queueFamilyIndices },
+	m_perFrameBuffers{ device, std::move(queueFamilyIndices), bufferCount } {}
 
 void ModelManager::SetShaderPath(std::wstring path) noexcept {
 	m_shaderPath = std::move(path);
@@ -21,8 +21,9 @@ void ModelManager::AddModels(std::vector<std::shared_ptr<IModel>>&& models) {
 	m_renderPipeline.AddOpaqueModels(std::move(models));
 }
 
-void ModelManager::RecordUploadBuffers(VkCommandBuffer copyBuffer) {
-	m_pPerFrameBuffers.RecordCopy(copyBuffer);
+void ModelManager::RecordUploadBuffers(VkCommandBuffer copyBuffer) noexcept {
+	m_perFrameBuffers.RecordCopy(copyBuffer);
+	m_renderPipeline.RecordCopy(copyBuffer);
 }
 
 void ModelManager::BindCommands(
@@ -32,17 +33,20 @@ void ModelManager::BindCommands(
 		commandBuffer, Terra::descriptorSet->GetDescriptorSet(frameIndex)
 	);
 
-	m_pPerFrameBuffers.BindPerFrameBuffers(commandBuffer, frameIndex);
-	m_renderPipeline.UpdateModelData(frameIndex);
-	m_renderPipeline.DrawModels(commandBuffer);
+	const auto vkFrameIndex = static_cast<VkDeviceSize>(frameIndex);
+
+	m_perFrameBuffers.BindPerFrameBuffers(commandBuffer, vkFrameIndex);
+	m_renderPipeline.UpdateModelData(vkFrameIndex);
+	m_renderPipeline.DrawModels(commandBuffer, vkFrameIndex);
 }
 
 void ModelManager::ReleaseUploadBuffers() {
-	m_pPerFrameBuffers.ReleaseUploadResources();
+	m_perFrameBuffers.ReleaseUploadResources();
+	m_renderPipeline.ReleaseUploadResources();
 }
 
 void ModelManager::BindMemories(VkDevice device) {
-	m_pPerFrameBuffers.BindResourceToMemory(device);
+	m_perFrameBuffers.BindResourceToMemory(device);
 	m_renderPipeline.BindResourceToMemory(device);
 }
 
@@ -61,7 +65,6 @@ ModelManager::Pipeline ModelManager::CreatePipeline(
 	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
 
 	// Push constants needs to be serialised according to the shader stages
-	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, 4u);
 
 	pipelineLayout->CreateLayout(setLayouts, layoutCount);
 
@@ -93,11 +96,15 @@ void ModelManager::AddModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-	m_pPerFrameBuffers.AddModelInputs(
+	m_perFrameBuffers.AddModelInputs(
 		device, std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
 }
 
 void ModelManager::CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept {
 	m_renderPipeline.CreateBuffers(device, bufferCount);
+}
+
+void ModelManager::CopyData() noexcept {
+	m_renderPipeline.CopyData();
 }

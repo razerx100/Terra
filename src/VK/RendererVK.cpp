@@ -281,6 +281,7 @@ void RendererVK::ProcessData() {
 	std::atomic_size_t works = 0u;
 
 	Terra::Resources::uploadContainer->CopyData(works);
+	Terra::modelManager->CopyData();
 
 	while (works != 0u);
 

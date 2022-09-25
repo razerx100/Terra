@@ -12,7 +12,9 @@ public:
 		std::uint32_t bufferCount
 	) noexcept;
 
-	void BindPerFrameBuffers(VkCommandBuffer commandBuffer, size_t frameIndex) const noexcept;
+	void BindPerFrameBuffers(
+		VkCommandBuffer commandBuffer, VkDeviceSize frameIndex
+	) const noexcept;
 
 	void AddModelInputs(
 		VkDevice device,

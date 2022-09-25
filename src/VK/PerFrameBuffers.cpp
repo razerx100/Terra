@@ -27,12 +27,12 @@ void PerFrameBuffers::InitBuffers(VkDevice device, std::uint32_t bufferCount) no
 }
 
 void PerFrameBuffers::BindPerFrameBuffers(
-	VkCommandBuffer commandBuffer, size_t frameIndex
+	VkCommandBuffer commandBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	std::uint8_t* cpuMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
 
 	Terra::cameraManager->CopyData(
-		cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(static_cast<VkDeviceSize>(frameIndex))
+		cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(frameIndex)
 	);
 
 	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetGPUResource() };

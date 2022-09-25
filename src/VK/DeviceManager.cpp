@@ -68,6 +68,8 @@ void DeviceManager::CreateLogicalDevice() {
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.multiDrawIndirect = VK_TRUE;
+	deviceFeatures.drawIndirectFirstInstance = VK_TRUE;
 
 	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
 	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;

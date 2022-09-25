@@ -175,11 +175,13 @@ public:
 
 	void CreateResource(
 		VkDevice device, VkDeviceSize bufferSize, std::uint32_t subAllocationCount,
-		VkBufferUsageFlagBits gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices
+		VkBufferUsageFlags gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices
 	);
 
 	[[nodiscard]]
 	VkDeviceSize GetSubAllocationSize() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
 };
 
 class VkUploadableImageResourceView : public VkUploadableResourceView<VkImageResourceView> {

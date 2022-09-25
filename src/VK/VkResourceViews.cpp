@@ -354,7 +354,7 @@ VkUploadableBufferResourceView& VkUploadableBufferResourceView::operator=(
 
 void VkUploadableBufferResourceView::CreateResource(
 	VkDevice device, VkDeviceSize bufferSize, std::uint32_t subAllocationCount,
-	VkBufferUsageFlagBits gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices
+	VkBufferUsageFlags gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices
 ) {
 	m_uploadResource.CreateResource(
 		device, bufferSize, subAllocationCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
@@ -367,6 +367,12 @@ void VkUploadableBufferResourceView::CreateResource(
 
 VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationSize() const noexcept {
 	return m_gpuResource.GetSubAllocationSize();
+}
+
+VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationOffset(
+	VkDeviceSize index
+) const noexcept {
+	return m_gpuResource.GetSubAllocationOffset(index);
 }
 
 // VK Uploadable Image ResourceView

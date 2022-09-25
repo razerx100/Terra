@@ -17,25 +17,31 @@ struct ModelConstantBuffer {
 
 class RenderPipeline {
 public:
-	RenderPipeline(VkDevice device) noexcept;
+	RenderPipeline(VkDevice device, std::vector<std::uint32_t> queueFamilyIndices) noexcept;
 
 	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
 	void AddGraphicsPipelineObject(std::unique_ptr<PipelineObjectGFX> pso) noexcept;
 	void AddGraphicsPipelineLayout(std::unique_ptr<PipelineLayout> layout) noexcept;
 
 	void CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept;
-	void UpdateModelData(size_t frameIndex) const noexcept;
+	void UpdateModelData(VkDeviceSize frameIndex) const noexcept;
 	void BindResourceToMemory(VkDevice device);
 	void BindGraphicsPipeline(
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 	) const noexcept;
+	void CopyData() noexcept;
+	void RecordCopy(VkCommandBuffer copyBuffer) noexcept;
+	void ReleaseUploadResources() noexcept;
 
-	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept;
+	void DrawModels(VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex) const noexcept;
 
 private:
 	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
 	std::unique_ptr<PipelineObjectGFX> m_graphicsPSO;
 	std::vector<std::shared_ptr<IModel>> m_opaqueModels;
 	VkResourceView m_modelBuffers;
+	VkUploadableBufferResourceView m_commandBuffers;
+	std::vector<std::uint32_t> m_queueFamilyIndices;
+	std::uint32_t m_bufferCount;
 };
 #endif

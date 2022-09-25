@@ -24,7 +24,7 @@ public:
 		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
 	);
 	void BindMemories(VkDevice device);
-	void RecordUploadBuffers(VkCommandBuffer copyBuffer);
+	void RecordUploadBuffers(VkCommandBuffer copyBuffer) noexcept;
 	void ReleaseUploadBuffers();
 	void AddModelInputs(
 		VkDevice device,
@@ -32,6 +32,7 @@ public:
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 	);
 	void CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept;
+	void CopyData() noexcept;
 
 	void BindCommands(VkCommandBuffer commandBuffer, size_t frameIndex) const noexcept;
 
@@ -45,7 +46,7 @@ private:
 
 private:
 	RenderPipeline m_renderPipeline;
-	PerFrameBuffers m_pPerFrameBuffers;
+	PerFrameBuffers m_perFrameBuffers;
 
 	std::wstring m_shaderPath;
 };
