@@ -2,7 +2,6 @@
 #define SWAPCHAIN_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <DeviceManager.hpp>
-#include <SemaphoreWrapper.hpp>
 #include <memory>
 #include <VkHelperFunctions.hpp>
 
@@ -18,8 +17,7 @@ struct SwapChainManagerCreateInfo {
 class SwapChainManager {
 public:
 	SwapChainManager(
-		const SwapChainManagerCreateInfo& swapCreateInfo,
-		VkQueue presentQueue, size_t queueFamilyIndex
+		const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
 	);
 	~SwapChainManager() noexcept;
 
@@ -30,23 +28,17 @@ public:
 	[[nodiscard]]
 	VkFormat GetSwapFormat() const noexcept;
 	[[nodiscard]]
-	size_t GetAvailableImageIndex() const noexcept;
+	size_t GetAvailableImageIndex(VkSemaphore semaphore) const noexcept;
 	[[nodiscard]]
 	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept;
-	[[nodiscard]]
-	VkSemaphore GetImageSemaphore() const noexcept;
 
-	void SetNextFrameIndex(size_t index) noexcept;
-	void PresentImage(std::uint32_t imageIndex);
+	void PresentImage(std::uint32_t imageIndex) const noexcept;
 	void ResizeSwapchain(
-		VkDevice device, VkSurfaceKHR surface,
-		std::uint32_t width, std::uint32_t height,
-		VkRenderPass renderPass, VkImageView depthImageView,
-		bool& formatChanged
+		VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
+		VkRenderPass renderPass, VkImageView depthImageView, bool& formatChanged
 	);
 	void CreateFramebuffers(
-		VkDevice device,
-		VkRenderPass renderPass, VkImageView depthImageView,
+		VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,
 		std::uint32_t width, std::uint32_t height
 	);
 
@@ -63,8 +55,7 @@ private:
 	void QueryImages();
 	void CreateImageViews(VkDevice device);
 	void CreateSwapchain(
-		const SwapChainManagerCreateInfo& swapCreateInfo,
-		bool& formatChanged
+		const SwapChainManagerCreateInfo& swapCreateInfo, bool& formatChanged
 	);
 	void CleanUpSwapchain() noexcept;
 
@@ -77,9 +68,6 @@ private:
 	std::vector<VkImageView> m_swapchainImageViews;
 	std::vector<VkFramebuffer> m_frameBuffers;
 	VkQueue m_presentQueue;
-	size_t m_presentFamilyIndex;
-	std::unique_ptr<SemaphoreWrapper> m_imageSemaphore;
-	size_t m_currentFrameIndex;
 	SurfaceInfo m_surfaceInfo;
 };
 #endif

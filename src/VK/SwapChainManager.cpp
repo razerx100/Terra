@@ -3,21 +3,15 @@
 #include <VKThrowMacros.hpp>
 
 SwapChainManager::SwapChainManager(
-	const SwapChainManagerCreateInfo& swapCreateInfo,
-	VkQueue presentQueue, size_t queueFamilyIndex
+	const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
 ) : m_swapchain(VK_NULL_HANDLE), m_deviceRef(swapCreateInfo.device),
-	m_swapchainFormat{}, m_swapchainExtent{},
-	m_presentQueue(presentQueue), m_presentFamilyIndex(queueFamilyIndex),
-	m_currentFrameIndex(0u), m_surfaceInfo(swapCreateInfo.surfaceInfo) {
+	m_swapchainFormat{}, m_swapchainExtent{}, m_presentQueue(presentQueue),
+	m_surfaceInfo(swapCreateInfo.surfaceInfo) {
 
 	bool useless;
 	CreateSwapchain(swapCreateInfo, useless);
 	QueryImages();
 	CreateImageViews(swapCreateInfo.device);
-
-	m_imageSemaphore = std::make_unique<SemaphoreWrapper>(
-			swapCreateInfo.device, swapCreateInfo.bufferCount
-		);
 }
 
 SwapChainManager::~SwapChainManager() noexcept {
@@ -74,22 +68,17 @@ void SwapChainManager::CreateImageViews(VkDevice device) {
 		);
 }
 
-size_t SwapChainManager::GetAvailableImageIndex() const noexcept {
-	std::uint32_t imageIndex;
+size_t SwapChainManager::GetAvailableImageIndex(VkSemaphore semaphore) const noexcept {
+	std::uint32_t imageIndex{};
 	vkAcquireNextImageKHR(
-		m_deviceRef,
-		m_swapchain,
-		UINT64_MAX,
-		m_imageSemaphore->GetSemaphore(m_currentFrameIndex),
-		VK_NULL_HANDLE,
-		&imageIndex
+		m_deviceRef, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex
 	);
 
-	return static_cast<size_t>(imageIndex);
+	return imageIndex;
 }
 
-void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
-	VkPresentInfoKHR presentInfo = {};
+void SwapChainManager::PresentImage(std::uint32_t imageIndex) const noexcept {
+	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	const VkSwapchainKHR swapchains[] = { m_swapchain };
@@ -98,10 +87,7 @@ void SwapChainManager::PresentImage(std::uint32_t imageIndex) {
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkQueuePresentKHR(m_presentQueue, &presentInfo)
-	);
+	vkQueuePresentKHR(m_presentQueue, &presentInfo);
 }
 
 VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept {
@@ -109,10 +95,8 @@ VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept
 }
 
 void SwapChainManager::ResizeSwapchain(
-	VkDevice device, VkSurfaceKHR surface,
-	std::uint32_t width, std::uint32_t height,
-	VkRenderPass renderPass, VkImageView depthImageView,
-	bool& formatChanged
+	VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
+	VkRenderPass renderPass, VkImageView depthImageView, bool& formatChanged
 ) {
 	CleanUpSwapchain();
 
@@ -195,18 +179,9 @@ void SwapChainManager::CleanUpSwapchain() noexcept {
 	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
 }
 
-VkSemaphore SwapChainManager::GetImageSemaphore() const noexcept {
-	return m_imageSemaphore->GetSemaphore(m_currentFrameIndex);
-}
-
-void SwapChainManager::SetNextFrameIndex(size_t index) noexcept {
-	m_currentFrameIndex = index;
-}
-
 void SwapChainManager::CreateFramebuffers(
-	VkDevice device,
-	VkRenderPass renderPass, VkImageView depthImageView,
-	std::uint32_t width, std::uint32_t height
+	VkDevice device, VkRenderPass renderPass, VkImageView depthImageView, std::uint32_t width,
+	std::uint32_t height
 ) {
 	m_frameBuffers.resize(std::size(m_swapchainImageViews));
 

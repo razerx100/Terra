@@ -10,12 +10,17 @@
 namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;
 	std::unique_ptr<DebugLayerManager> debugLayer;
-	std::unique_ptr<CommandPoolManager> graphicsCmdPool;
-	std::unique_ptr<CommandPoolManager> copyCmdPool;
+	std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
+	std::unique_ptr<VKCommandBuffer> copyCmdBuffer;
+	std::unique_ptr<VKCommandBuffer> computeCmdBuffer;
+	std::unique_ptr<VkSyncObjects> graphicsSyncObjects;
+	std::unique_ptr<VkSyncObjects> copySyncObjects;
+	std::unique_ptr<VkSyncObjects> computeSyncObjects;
+	std::unique_ptr<VkCommandQueue> graphicsQueue;
+	std::unique_ptr<VkCommandQueue> copyQueue;
+	std::unique_ptr<VkCommandQueue> computeQueue;
 	std::unique_ptr<DeviceManager> device;
 	std::unique_ptr<InstanceManager> vkInstance;
-	std::unique_ptr<GraphicsQueueManager> graphicsQueue;
-	std::unique_ptr<CopyQueueManager> copyQueue;
 	std::unique_ptr<SwapChainManager> swapChain;
 	std::unique_ptr<IDisplayManager> display;
 	std::unique_ptr<ISurfaceManager> surface;
@@ -43,22 +48,6 @@ namespace Terra {
 		debugLayer = std::make_unique<DebugLayerManager>(instance);
 	}
 
-	void InitGraphicsCmdPool(
-		VkDevice logicalDevice, size_t queueIndex, std::uint32_t bufferCount
-	) {
-		graphicsCmdPool = std::make_unique<CommandPoolManager>(
-			logicalDevice, queueIndex, bufferCount
-			);
-	}
-
-	void InitCopyCmdPool(
-		VkDevice logicalDevice, size_t queueIndex
-	) {
-		copyCmdPool = std::make_unique<CommandPoolManager>(
-			logicalDevice, queueIndex, 1u
-			);
-	}
-
 	void InitDevice() {
 		device = std::make_unique<DeviceManager>();
 	}
@@ -68,26 +57,36 @@ namespace Terra {
 	}
 
 	void InitGraphicsQueue(
-		VkDevice logicalDevice, VkQueue queue, std::uint32_t bufferCount
+		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		std::uint32_t bufferCount
 	) {
-		graphicsQueue = std::make_unique<GraphicsQueueManager>(
-			logicalDevice, queue, bufferCount
+		graphicsQueue = std::make_unique<VkCommandQueue>(queue);
+		graphicsCmdBuffer = std::make_unique<VKCommandBuffer>(
+			logicalDevice, queueIndex, bufferCount
 			);
+		graphicsSyncObjects = std::make_unique<VkSyncObjects>(logicalDevice, bufferCount);
 	}
 
 	void InitCopyQueue(
-		VkDevice logicalDevice, VkQueue queue
+		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
 	) {
-		copyQueue = std::make_unique<CopyQueueManager>(logicalDevice, queue);
+		copyQueue = std::make_unique<VkCommandQueue>(queue);
+		copyCmdBuffer = std::make_unique<VKCommandBuffer>(logicalDevice, queueIndex);
+		copySyncObjects = std::make_unique<VkSyncObjects>(logicalDevice);
+	}
+
+	void InitComputeQueue(
+		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
+	) {
+		computeQueue = std::make_unique<VkCommandQueue>(queue);
+		computeCmdBuffer = std::make_unique<VKCommandBuffer>(logicalDevice, queueIndex);
+		computeSyncObjects = std::make_unique<VkSyncObjects>(logicalDevice);
 	}
 
 	void InitSwapChain(
-		const SwapChainManagerCreateInfo& swapCreateInfo,
-		VkQueue presentQueue, size_t queueFamilyIndex
+		const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
 	) {
-		swapChain = std::make_unique<SwapChainManager>(
-			swapCreateInfo, presentQueue, queueFamilyIndex
-			);
+		swapChain = std::make_unique<SwapChainManager>(swapCreateInfo, presentQueue);
 	}
 
 	void InitDisplay() {
@@ -100,21 +99,16 @@ namespace Terra {
 
 	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle) {
 #ifdef TERRA_WIN32
-		surface = std::make_unique<SurfaceManagerWin32>(
-			instance, windowHandle, moduleHandle
-			);
+		surface = std::make_unique<SurfaceManagerWin32>(instance, windowHandle, moduleHandle);
 #endif
 	}
 
 	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height) {
-		viewportAndScissor = std::make_unique<ViewportAndScissorManager>(
-			width, height
-			);
+		viewportAndScissor = std::make_unique<ViewportAndScissorManager>(width, height);
 	}
 
 	void InitRenderPass(
-		VkDevice logicalDevice,
-		VkFormat swapChainFormat, VkFormat depthFormat
+		VkDevice logicalDevice, VkFormat swapChainFormat, VkFormat depthFormat
 	) {
 		renderPass = std::make_unique<RenderPassManager>(
 			logicalDevice, swapChainFormat, depthFormat
@@ -139,8 +133,7 @@ namespace Terra {
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	) {
 		textureStorage = std::make_unique<TextureStorage>(
-			logicalDevice, physicalDevice,
-			queueFamilyIndices
+			logicalDevice, physicalDevice, queueFamilyIndices
 			);
 	}
 

@@ -50,7 +50,6 @@ RendererVK::RendererVK(
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
 	);
-	Terra::InitGraphicsQueue(logicalDevice, graphicsQueueHandle, bufferCount);
 
 	SwapChainManagerCreateInfo swapCreateInfo{};
 	swapCreateInfo.device = logicalDevice;
@@ -61,38 +60,33 @@ RendererVK::RendererVK(
 	swapCreateInfo.bufferCount = bufferCount;
 
 	// Graphics and Present queues should be the same
-	Terra::InitSwapChain(swapCreateInfo, graphicsQueueHandle, graphicsQueueFamilyIndex);
+	Terra::InitSwapChain(swapCreateInfo, graphicsQueueHandle);
 
-	Terra::InitGraphicsCmdPool(logicalDevice, graphicsQueueFamilyIndex, bufferCount);
+	Terra::InitGraphicsQueue(
+		graphicsQueueHandle, logicalDevice, graphicsQueueFamilyIndex, bufferCount
+	);
 
 	auto [copyQueueHandle, copyQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::TransferQueue
 	);
 
-	std::vector<std::uint32_t> copyAndGfxFamilyIndices;
-	if (copyQueueFamilyIndex == graphicsQueueFamilyIndex)
-		copyAndGfxFamilyIndices.emplace_back(
-			static_cast<std::uint32_t>(graphicsQueueFamilyIndex)
-		);
-	else {
-		copyAndGfxFamilyIndices.emplace_back(
-			static_cast<std::uint32_t>(copyQueueFamilyIndex)
-		);
-		copyAndGfxFamilyIndices.emplace_back(
-			static_cast<std::uint32_t>(graphicsQueueFamilyIndex)
-		);
-	}
+	Terra::InitCopyQueue(copyQueueHandle, logicalDevice, copyQueueFamilyIndex);
 
-	Terra::InitCopyQueue(logicalDevice, copyQueueHandle);
+	// Need to handle compute queue for Resource Sharing
+	auto [computeQueueHandle, computeQueueFamilyIndex] = Terra::device->GetQueue(
+		QueueType::ComputeQueue
+	);
 
-	Terra::InitCopyCmdPool(logicalDevice, copyQueueFamilyIndex);
+	Terra::InitComputeQueue(computeQueueHandle, logicalDevice, computeQueueFamilyIndex);
+
+	std::vector<std::uint32_t> copyAndGfxFamilyIndices =
+		DeviceManager::ResolveQueueIndices(copyQueueFamilyIndex, graphicsQueueFamilyIndex);
 
 	Terra::InitDepthBuffer(logicalDevice, copyAndGfxFamilyIndices);
 	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
 
 	Terra::InitRenderPass(
-		logicalDevice,
-		Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
+		logicalDevice, Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
 	);
 
 	Terra::InitDescriptorSet(logicalDevice, bufferCount);
@@ -111,13 +105,18 @@ RendererVK::~RendererVK() noexcept {
 	Terra::descriptorSet.reset();
 	Terra::textureStorage.reset();
 	Terra::copyQueue.reset();
-	Terra::copyCmdPool.reset();
+	Terra::copyCmdBuffer.reset();
+	Terra::copySyncObjects.reset();
 	Terra::renderPass.reset();
 	Terra::depthBuffer.reset();
 	Terra::swapChain.reset();
 	Terra::CleanUpResources();
+	Terra::computeCmdBuffer.reset();
+	Terra::computeQueue.reset();
+	Terra::computeSyncObjects.reset();
 	Terra::graphicsQueue.reset();
-	Terra::graphicsCmdPool.reset();
+	Terra::graphicsCmdBuffer.reset();
+	Terra::graphicsSyncObjects.reset();
 	Terra::display.reset();
 	Terra::device.reset();
 	Terra::surface.reset();
@@ -150,18 +149,27 @@ void RendererVK::SubmitModelInputs(
 }
 
 void RendererVK::Render() {
-	Terra::graphicsQueue->WaitForGPU();
-	Terra::graphicsQueue->ResetFence();
+	Terra::graphicsSyncObjects->WaitForFrontFence();
+	Terra::graphicsSyncObjects->ResetFrontFence();
 
-	size_t imageIndex = Terra::swapChain->GetAvailableImageIndex();
-	Terra::graphicsCmdPool->Reset(imageIndex);
+	const size_t imageIndex = Terra::swapChain->GetAvailableImageIndex(
+		Terra::graphicsSyncObjects->GetFrontSemaphore()
+	);
 
-	VkCommandBuffer commandBuffer = Terra::graphicsCmdPool->GetCommandBuffer(imageIndex);
+	Terra::graphicsCmdBuffer->ResetBuffer(imageIndex);
 
-	vkCmdSetViewport(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef());
-	vkCmdSetScissor(commandBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef());
+	const VkCommandBuffer graphicsCommandBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer(
+		imageIndex
+	);
 
-	std::array<VkClearValue, 2> clearValues = {};
+	vkCmdSetViewport(
+		graphicsCommandBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef()
+	);
+	vkCmdSetScissor(
+		graphicsCommandBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef()
+	);
+
+	std::array<VkClearValue, 2> clearValues{};
 	clearValues[0].color = m_backgroundColour;
 	clearValues[1].depthStencil = { 1.f, 0 };
 
@@ -174,25 +182,21 @@ void RendererVK::Render() {
 	renderPassInfo.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues));
 	renderPassInfo.pClearValues = std::data(clearValues);
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(graphicsCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	Terra::modelManager->BindCommands(commandBuffer, imageIndex);
+	Terra::modelManager->BindCommands(graphicsCommandBuffer, imageIndex);
 
-	vkCmdEndRenderPass(commandBuffer);
+	vkCmdEndRenderPass(graphicsCommandBuffer);
 
-	Terra::graphicsCmdPool->Close(imageIndex);
+	Terra::graphicsCmdBuffer->CloseBuffer(imageIndex);
 
-	Terra::graphicsQueue->SubmitCommandBuffer(
-		commandBuffer, Terra::swapChain->GetImageSemaphore()
+	Terra::graphicsQueue->SubmitCommandBufferForRendering(
+		graphicsCommandBuffer, Terra::graphicsSyncObjects->GetFrontFence(),
+		Terra::graphicsSyncObjects->GetFrontSemaphore()
 	);
 	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(imageIndex));
 
-	++imageIndex;
-	const size_t nextFrame =
-		imageIndex >= m_bufferCount ? imageIndex % m_bufferCount : imageIndex;
-
-	Terra::swapChain->SetNextFrameIndex(nextFrame);
-	Terra::graphicsQueue->SetNextFrameIndex(nextFrame);
+	Terra::graphicsSyncObjects->AdvanceSyncObjectsInQueue();
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
@@ -286,30 +290,33 @@ void RendererVK::ProcessData() {
 	while (works != 0u);
 
 	// Upload to GPU
-	Terra::copyCmdPool->Reset(0u);
-	VkCommandBuffer copyBuffer = Terra::copyCmdPool->GetCommandBuffer(0u);
+	Terra::copyCmdBuffer->ResetBuffer();
+	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetCommandBuffer();
 
-	Terra::modelManager->RecordUploadBuffers(copyBuffer);
-	Terra::textureStorage->RecordUploads(copyBuffer);
+	Terra::modelManager->RecordUploadBuffers(copyCmdBuffer);
+	Terra::textureStorage->RecordUploads(copyCmdBuffer);
 
-	Terra::copyCmdPool->Close(0u);
+	Terra::copyCmdBuffer->CloseBuffer();
 
-	Terra::copyQueue->SubmitCommandBuffer(copyBuffer);
-	Terra::copyQueue->WaitForGPU();
-	Terra::copyQueue->ResetFence();
+	Terra::copyQueue->SubmitCommandBuffer(
+		copyCmdBuffer, Terra::copySyncObjects->GetFrontFence()
+	);
+	Terra::copySyncObjects->WaitForFrontFence();
+	Terra::copySyncObjects->ResetFrontFence();
 
 	// Transition Images to Fragment Optimal
-	Terra::graphicsCmdPool->Reset(0u);
+	Terra::graphicsCmdBuffer->ResetBuffer();
 
-	VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdPool->GetCommandBuffer(0u);
+	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer();
 
 	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
 
-	Terra::graphicsCmdPool->Close(0u);
+	Terra::graphicsCmdBuffer->CloseBuffer();
 
-	Terra::graphicsQueue->ResetFence();
-	Terra::graphicsQueue->SubmitCommandBuffer(graphicsCmdBuffer);
-	Terra::graphicsQueue->WaitForGPU();
+	Terra::graphicsQueue->SubmitCommandBuffer(
+		graphicsCmdBuffer, Terra::graphicsSyncObjects->GetFrontFence()
+	);
+	Terra::graphicsSyncObjects->WaitForFrontFence();
 	// Leaving the fence in signaled state
 
 	Terra::textureStorage->SetDescriptorLayouts();

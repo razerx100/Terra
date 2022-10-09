@@ -4,19 +4,19 @@
 #include <vector>
 #include <VkHelperFunctions.hpp>
 
-using QueueData = std::pair<VkQueue, size_t>;
-
 class DeviceManager {
 public:
 	~DeviceManager() noexcept;
 
-	void FindPhysicalDevice(
-		VkInstance instance, VkSurfaceKHR surface
-	);
+	void FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 	void CreateLogicalDevice();
 
-	QueueData GetQueue(QueueType type) noexcept;
+	static std::vector<std::uint32_t> ResolveQueueIndices(
+		std::uint32_t index0, std::uint32_t index1, std::uint32_t index2 = -1
+	) noexcept;
 
+	[[nodiscard]]
+	std::pair<VkQueue, std::uint32_t> GetQueue(QueueType type) noexcept;
 	[[nodiscard]]
 	VkPhysicalDevice GetPhysicalDevice() const noexcept;
 	[[nodiscard]]

@@ -115,12 +115,12 @@ VkDevice DeviceManager::GetLogicalDevice() const noexcept {
 	return m_logicalDevice;
 }
 
-QueueData DeviceManager::GetQueue(QueueType type) noexcept {
-	VkQueue queue;
-	size_t familyIndex = 0u;
+std::pair<VkQueue, std::uint32_t> DeviceManager::GetQueue(QueueType type) noexcept {
+	VkQueue queue = VK_NULL_HANDLE;
+	std::uint32_t familyIndex = 0u;
 	for (size_t index = 0u; index < std::size(m_usableQueueFamilies); ++index)
 		if (m_usableQueueFamilies[index].typeFlags & type) {
-			familyIndex = index;
+			familyIndex = static_cast<std::uint32_t>(index);
 
 			break;
 		}
@@ -234,4 +234,19 @@ bool DeviceManager::IsDeviceSuitable(
 		return true;
 	else
 		return false;
+}
+
+std::vector<std::uint32_t> DeviceManager::ResolveQueueIndices(
+	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
+) noexcept {
+	if (index2 == -1)
+		index2 = index0;
+
+	std::vector<uint32_t> distinctQueueIndices{ index0, index1, index2 };
+	std::ranges::sort(distinctQueueIndices);
+
+	auto ret = std::ranges::unique(distinctQueueIndices);
+	distinctQueueIndices.erase(std::begin(ret), std::end(ret));
+
+	return distinctQueueIndices;
 }
