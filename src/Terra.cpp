@@ -64,7 +64,9 @@ namespace Terra {
 		graphicsCmdBuffer = std::make_unique<VKCommandBuffer>(
 			logicalDevice, queueIndex, bufferCount
 			);
-		graphicsSyncObjects = std::make_unique<VkSyncObjects>(logicalDevice, bufferCount);
+		graphicsSyncObjects = std::make_unique<VkSyncObjects>(
+			logicalDevice, bufferCount, true
+			);
 	}
 
 	void InitCopyQueue(

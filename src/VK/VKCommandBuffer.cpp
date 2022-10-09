@@ -26,6 +26,10 @@ VKCommandBuffer::VKCommandBuffer(
 	);
 }
 
+VKCommandBuffer::~VKCommandBuffer() noexcept {
+	vkDestroyCommandPool(m_deviceRef, m_commandPool, nullptr);
+}
+
 void VKCommandBuffer::ResetBuffer(size_t index) const noexcept {
 	static constexpr VkCommandBufferBeginInfo  beginInfo{
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

@@ -306,6 +306,7 @@ void RendererVK::ProcessData() {
 
 	// Transition Images to Fragment Optimal
 	Terra::graphicsCmdBuffer->ResetBuffer();
+	Terra::graphicsSyncObjects->ResetFrontFence();
 
 	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer();
 

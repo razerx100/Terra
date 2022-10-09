@@ -8,6 +8,7 @@ public:
 	VKCommandBuffer(
 		VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount = 1u
 	);
+	~VKCommandBuffer() noexcept;
 
 	void ResetBuffer(size_t index = 0u) const noexcept;
 	void CloseBuffer(size_t index = 0u) const noexcept;
