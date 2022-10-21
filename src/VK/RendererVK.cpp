@@ -350,3 +350,7 @@ void RendererVK::SetSharedDataContainer(
 ) noexcept {
 	Terra::SetSharedData(std::move(sharedData));
 }
+
+void RendererVK::WaitForAsyncTasks() {
+	vkDeviceWaitIdle(Terra::device->GetLogicalDevice());
+}
