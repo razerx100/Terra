@@ -148,6 +148,10 @@ void RendererVK::SubmitModelInputs(
 	);
 }
 
+void RendererVK::Update() {
+
+}
+
 void RendererVK::Render() {
 	Terra::graphicsSyncObjects->WaitForFrontFence();
 	Terra::graphicsSyncObjects->ResetFrontFence();
@@ -238,12 +242,6 @@ Renderer::Resolution RendererVK::GetDisplayCoordinates(std::uint32_t displayInde
 	);
 
 	return { width, height };
-}
-
-void RendererVK::WaitForAsyncTasks() {
-	vkDeviceWaitIdle(
-		Terra::device->GetLogicalDevice()
-	);
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
