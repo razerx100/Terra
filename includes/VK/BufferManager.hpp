@@ -1,21 +1,31 @@
-#ifndef PER_FRAME_BUFFERS_HPP_
-#define PER_FRAME_BUFFERS_HPP_
+#ifndef BUFFER_MANAGER_HPP_
+#define BUFFER_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <cstdint>
 #include <VkResourceViews.hpp>
 
-class PerFrameBuffers {
+#include <IModel.hpp>
+
+struct ModelConstantBuffer {
+	UVInfo uvInfo;
+	DirectX::XMMATRIX modelMatrix;
+	std::uint32_t textureIndex;
+	float padding[3];
+};
+
+class BufferManager {
 public:
-	PerFrameBuffers(
+	BufferManager(
 		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
 		std::uint32_t bufferCount
 	) noexcept;
 
-	void BindPerFrameBuffers(
-		VkCommandBuffer commandBuffer, VkDeviceSize frameIndex
-	) const noexcept;
+	void Update(VkDeviceSize index) const noexcept;
+	void BindVertexBuffer(VkCommandBuffer commandBuffer) const noexcept;
 
+	void CreateBuffers(VkDevice device) noexcept;
+	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
 	void AddModelInputs(
 		VkDevice device,
 		std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
@@ -26,12 +36,15 @@ public:
 	void ReleaseUploadResources() noexcept;
 
 private:
-	void InitBuffers(VkDevice device, std::uint32_t bufferCount) noexcept;
+	void UpdateModelData(VkDeviceSize index) const noexcept;
 
 private:
 	VkResourceView m_cameraBuffer;
 	VkUploadableBufferResourceView m_gVertexBuffer;
 	VkUploadableBufferResourceView m_gIndexBuffer;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
+	VkResourceView m_modelBuffers;
+	std::uint32_t m_bufferCount;
+	std::vector<std::shared_ptr<IModel>> m_opaqueModels;
 };
 #endif

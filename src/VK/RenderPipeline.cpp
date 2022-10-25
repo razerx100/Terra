@@ -1,19 +1,15 @@
-#include <RenderPipeline.hpp>
-#include <ranges>
-#include <algorithm>
 #include <cstring>
 
+#include <RenderPipeline.hpp>
 #include <Terra.hpp>
 
 RenderPipeline::RenderPipeline(
-	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
+	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
+	std::uint32_t bufferCount
 ) noexcept
-	: m_modelBuffers{ device }, m_commandBuffers{ device },
-	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_bufferCount{ 0u } {}
-
-void RenderPipeline::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept {
-	std::ranges::move(models, std::back_inserter(m_opaqueModels));
-}
+	: m_commandBuffers{ device },
+	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_bufferCount{ bufferCount },
+	m_modelCount{ 0u } {}
 
 void RenderPipeline::AddGraphicsPipelineObject(
 	std::unique_ptr<VkPipelineObject> graphicsPSO
@@ -46,71 +42,36 @@ void RenderPipeline::BindGraphicsPipeline(
 void RenderPipeline::DrawModels(
 	VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex
 ) const noexcept {
-	static auto strideSize = static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
+	static constexpr auto strideSize =
+		static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
 	vkCmdDrawIndexedIndirect(
 		graphicsCmdBuffer, m_commandBuffers.GetGPUResource(),
-		m_commandBuffers.GetSubAllocationOffset(frameIndex),
-		static_cast<std::uint32_t>(std::size(m_opaqueModels)), strideSize
+		m_commandBuffers.GetSubAllocationOffset(frameIndex), m_modelCount, strideSize
 	);
 }
 
 void RenderPipeline::BindResourceToMemory(VkDevice device) {
-	m_modelBuffers.BindResourceToMemory(device);
 	m_commandBuffers.BindResourceToMemory(device);
 }
 
-void RenderPipeline::UpdateModelData(VkDeviceSize frameIndex) const noexcept {
-	size_t offset = 0u;
-	constexpr size_t bufferStride = sizeof(ModelConstantBuffer);
-
-	std::uint8_t* cpuWriteStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
-	const VkDeviceSize modelBuffersOffset = m_modelBuffers.GetMemoryOffset(frameIndex);
-
-	for (auto& model : m_opaqueModels) {
-		ModelConstantBuffer modelBuffer{};
-		modelBuffer.textureIndex = model->GetTextureIndex();
-		modelBuffer.uvInfo = model->GetUVInfo();
-		modelBuffer.modelMatrix = model->GetModelMatrix();
-
-		memcpy(cpuWriteStart + modelBuffersOffset + offset, &modelBuffer, bufferStride);
-
-		offset += bufferStride;
-	}
-}
-
-void RenderPipeline::CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept {
-	const size_t modelCount = std::size(m_opaqueModels);
-	const size_t modelBufferSize = sizeof(ModelConstantBuffer) * modelCount;
-
-	m_modelBuffers.CreateResource(
-		device, static_cast<VkDeviceSize>(modelBufferSize), bufferCount,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-	);
-	m_modelBuffers.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
-
-	DescriptorSetManager::AddDescriptorForBuffer(
-		m_modelBuffers, bufferCount, 2u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-		VK_SHADER_STAGE_VERTEX_BIT
-	);
-
-	const size_t commandBufferSize = sizeof(VkDrawIndexedIndirectCommand) * modelCount;
+void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
+	const size_t commandBufferSize = sizeof(VkDrawIndexedIndirectCommand) * m_modelCount;
 
 	m_commandBuffers.CreateResource(
-		device, static_cast<VkDeviceSize>(commandBufferSize), bufferCount,
+		device, static_cast<VkDeviceSize>(commandBufferSize), m_bufferCount,
 		VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		m_queueFamilyIndices
 	);
 	m_commandBuffers.SetMemoryOffsetAndType(device);
-
-	m_bufferCount = bufferCount;
 }
 
-void RenderPipeline::CopyData() noexcept {
-	std::vector<VkDrawIndexedIndirectCommand> commandBuffer;
-	for (size_t index = 0u; index < std::size(m_opaqueModels); ++index) {
-		const auto& model = m_opaqueModels[index];
-		const auto u32Index = static_cast<std::uint32_t>(index);
+void RenderPipeline::RecordIndirectArguments(
+	const std::vector<std::shared_ptr<IModel>>& models
+) noexcept {
+	for (size_t index = 0u; index < std::size(models); ++index) {
+		const auto& model = models[index];
+		const auto u32Index = static_cast<std::uint32_t>(std::size(m_indirectCommands));
 
 		const std::uint32_t indexCount = model->GetIndexCount();
 		const std::uint32_t indexOffset = model->GetIndexOffset();
@@ -122,16 +83,22 @@ void RenderPipeline::CopyData() noexcept {
 		command.instanceCount = 1u;
 		command.vertexOffset = 0u;
 
-		commandBuffer.emplace_back(command);
+		m_indirectCommands.emplace_back(command);
 	}
 
+	m_modelCount += static_cast<std::uint32_t>(std::size(models));
+}
+
+void RenderPipeline::CopyData() noexcept {
 	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 	for (std::uint32_t bufferIndex = 0u; bufferIndex < m_bufferCount; ++bufferIndex)
 		memcpy(
 			uploadMemoryStart + m_commandBuffers.GetUploadMemoryOffset(bufferIndex),
-			std::data(commandBuffer),
-			sizeof(VkDrawIndexedIndirectCommand) * std::size(commandBuffer)
+			std::data(m_indirectCommands),
+			sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands)
 		);
+
+	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
 void RenderPipeline::RecordCopy(VkCommandBuffer copyBuffer) noexcept {

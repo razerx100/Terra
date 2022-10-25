@@ -28,10 +28,11 @@ public:
 	[[nodiscard]]
 	VkFormat GetSwapFormat() const noexcept;
 	[[nodiscard]]
-	size_t GetAvailableImageIndex(VkSemaphore signalSemaphore) const noexcept;
+	size_t GetNextImageIndex() const noexcept;
 	[[nodiscard]]
 	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept;
 
+	void AcquireNextImageIndex(VkSemaphore signalSemaphore) noexcept;
 	void PresentImage(std::uint32_t imageIndex) const noexcept;
 	void ResizeSwapchain(
 		VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
@@ -69,5 +70,6 @@ private:
 	std::vector<VkFramebuffer> m_frameBuffers;
 	VkQueue m_presentQueue;
 	SurfaceInfo m_surfaceInfo;
+	size_t m_nextImageIndex;
 };
 #endif

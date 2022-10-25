@@ -8,23 +8,18 @@
 
 #include <IModel.hpp>
 
-struct ModelConstantBuffer {
-	UVInfo uvInfo;
-	DirectX::XMMATRIX modelMatrix;
-	std::uint32_t textureIndex;
-	float padding[3];
-};
-
 class RenderPipeline {
 public:
-	RenderPipeline(VkDevice device, std::vector<std::uint32_t> queueFamilyIndices) noexcept;
+	RenderPipeline(
+		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
+		std::uint32_t bufferCount
+	) noexcept;
 
-	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
 	void AddGraphicsPipelineObject(std::unique_ptr<VkPipelineObject> graphicsPSO) noexcept;
 	void AddGraphicsPipelineLayout(std::unique_ptr<PipelineLayout> graphicsLayout) noexcept;
+	void RecordIndirectArguments(const std::vector<std::shared_ptr<IModel>>& models) noexcept;
 
-	void CreateBuffers(VkDevice device, std::uint32_t bufferCount) noexcept;
-	void UpdateModelData(VkDeviceSize frameIndex) const noexcept;
+	void CreateBuffers(VkDevice device) noexcept;
 	void BindResourceToMemory(VkDevice device);
 	void BindGraphicsPipeline(
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
@@ -38,10 +33,10 @@ public:
 private:
 	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
 	std::unique_ptr<VkPipelineObject> m_graphicsPSO;
-	std::vector<std::shared_ptr<IModel>> m_opaqueModels;
-	VkResourceView m_modelBuffers;
 	VkUploadableBufferResourceView m_commandBuffers;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::uint32_t m_bufferCount;
+	std::uint32_t m_modelCount;
+	std::vector<VkDrawIndexedIndirectCommand> m_indirectCommands;
 };
 #endif

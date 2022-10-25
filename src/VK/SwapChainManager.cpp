@@ -4,9 +4,9 @@
 
 SwapChainManager::SwapChainManager(
 	const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
-) : m_swapchain(VK_NULL_HANDLE), m_deviceRef(swapCreateInfo.device),
-	m_swapchainFormat{}, m_swapchainExtent{}, m_presentQueue(presentQueue),
-	m_surfaceInfo(swapCreateInfo.surfaceInfo) {
+) : m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ swapCreateInfo.device },
+	m_swapchainFormat{}, m_swapchainExtent{}, m_presentQueue{ presentQueue },
+	m_surfaceInfo{ swapCreateInfo.surfaceInfo }, m_nextImageIndex{ 0u } {
 
 	bool useless;
 	CreateSwapchain(swapCreateInfo, useless);
@@ -57,6 +57,10 @@ VkPresentModeKHR SwapChainManager::ChoosePresentMode(
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
+size_t SwapChainManager::GetNextImageIndex() const noexcept {
+	return m_nextImageIndex;
+}
+
 void SwapChainManager::CreateImageViews(VkDevice device) {
 	m_swapchainImageViews.resize(std::size(m_swapchainImages));
 
@@ -68,13 +72,13 @@ void SwapChainManager::CreateImageViews(VkDevice device) {
 		);
 }
 
-size_t SwapChainManager::GetAvailableImageIndex(VkSemaphore signalSemaphore) const noexcept {
-	std::uint32_t imageIndex{};
+void SwapChainManager::AcquireNextImageIndex(VkSemaphore signalSemaphore) noexcept {
+	std::uint32_t imageIndex;
 	vkAcquireNextImageKHR(
 		m_deviceRef, m_swapchain, UINT64_MAX, signalSemaphore, VK_NULL_HANDLE, &imageIndex
 	);
 
-	return imageIndex;
+	m_nextImageIndex = imageIndex;
 }
 
 void SwapChainManager::PresentImage(std::uint32_t imageIndex) const noexcept {

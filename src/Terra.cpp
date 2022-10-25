@@ -26,7 +26,8 @@ namespace Terra {
 	std::unique_ptr<ISurfaceManager> surface;
 	std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	std::unique_ptr<RenderPassManager> renderPass;
-	std::unique_ptr<ModelManager> modelManager;
+	std::unique_ptr<BufferManager> bufferManager;
+	std::unique_ptr<RenderPipeline> renderPipeline;
 	std::unique_ptr<DescriptorSetManager> descriptorSet;
 	std::unique_ptr<TextureStorage> textureStorage;
 	std::unique_ptr<CameraManager> cameraManager;
@@ -117,11 +118,20 @@ namespace Terra {
 			);
 	}
 
-	void InitModelManager(
+	void InitBufferManager(
 		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
 		std::uint32_t bufferCount
 	) {
-		modelManager = std::make_unique<ModelManager>(
+		bufferManager = std::make_unique<BufferManager>(
+			logicalDevice, queueFamilyIndices, bufferCount
+			);
+	}
+
+	void InitRenderPipeline(
+		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
+		std::uint32_t bufferCount
+	) {
+		renderPipeline = std::make_unique<RenderPipeline>(
 			logicalDevice, queueFamilyIndices, bufferCount
 			);
 	}

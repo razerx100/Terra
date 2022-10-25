@@ -1,4 +1,5 @@
 #include <array>
+#include <PipelineConstructor.hpp>
 
 #include <RendererVK.hpp>
 #include <Terra.hpp>
@@ -92,7 +93,8 @@ RendererVK::RendererVK(
 	Terra::InitDescriptorSet(logicalDevice, bufferCount);
 
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	Terra::InitModelManager(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
+	Terra::InitBufferManager(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
+	Terra::InitRenderPipeline(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetSceneResolution(width, height);
@@ -101,7 +103,8 @@ RendererVK::RendererVK(
 RendererVK::~RendererVK() noexcept {
 	Terra::cameraManager.reset();
 	Terra::viewportAndScissor.reset();
-	Terra::modelManager.reset();
+	Terra::bufferManager.reset();
+	Terra::renderPipeline.reset();
 	Terra::descriptorSet.reset();
 	Terra::textureStorage.reset();
 	Terra::copyQueue.reset();
@@ -132,33 +135,33 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 	};
 }
 
-void RendererVK::SubmitModels(
-	std::vector<std::shared_ptr<IModel>>&& models
-) {
-	Terra::modelManager->AddModels(std::move(models));
+void RendererVK::SubmitModels(std::vector<std::shared_ptr<IModel>>&& models) {
+	Terra::renderPipeline->RecordIndirectArguments(models);
+	Terra::bufferManager->AddOpaqueModels(std::move(models));
 }
 
 void RendererVK::SubmitModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize, size_t strideSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-	Terra::modelManager->AddModelInputs(
+	Terra::bufferManager->AddModelInputs(
 		Terra::device->GetLogicalDevice(),
 		std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
 }
 
 void RendererVK::Update() {
-
-}
-
-void RendererVK::Render() {
 	Terra::graphicsSyncObjects->WaitForFrontFence();
 	Terra::graphicsSyncObjects->ResetFrontFence();
 
-	const size_t imageIndex = Terra::swapChain->GetAvailableImageIndex(
-		Terra::graphicsSyncObjects->GetFrontSemaphore()
-	);
+	Terra::swapChain->AcquireNextImageIndex(Terra::graphicsSyncObjects->GetFrontSemaphore());
+	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
+
+	Terra::bufferManager->Update(static_cast<VkDeviceSize>(imageIndex));
+}
+
+void RendererVK::Render() {
+	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
 
 	Terra::graphicsCmdBuffer->ResetBuffer(imageIndex);
 
@@ -188,7 +191,11 @@ void RendererVK::Render() {
 
 	vkCmdBeginRenderPass(graphicsCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	Terra::modelManager->BindCommands(graphicsCommandBuffer, imageIndex);
+	Terra::renderPipeline->BindGraphicsPipeline(
+		graphicsCommandBuffer, Terra::descriptorSet->GetDescriptorSet(imageIndex)
+	);
+	Terra::bufferManager->BindVertexBuffer(graphicsCommandBuffer);
+	Terra::renderPipeline->DrawModels(graphicsCommandBuffer, imageIndex);
 
 	vkCmdEndRenderPass(graphicsCommandBuffer);
 
@@ -245,14 +252,15 @@ Renderer::Resolution RendererVK::GetDisplayCoordinates(std::uint32_t displayInde
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
-	Terra::modelManager->SetShaderPath(path);
+	m_shaderPath = path;
 }
 
 void RendererVK::ProcessData() {
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 
 	// Create Buffers
-	Terra::modelManager->CreateBuffers(logicalDevice, m_bufferCount);
+	Terra::bufferManager->CreateBuffers(logicalDevice);
+	Terra::renderPipeline->CreateBuffers(logicalDevice);
 
 	// Allocate Memory
 	Terra::Resources::gpuOnlyMemory->AllocateMemory(logicalDevice);
@@ -269,7 +277,8 @@ void RendererVK::ProcessData() {
 	);
 
 	// Bind Buffers to memory
-	Terra::modelManager->BindMemories(logicalDevice);
+	Terra::bufferManager->BindResourceToMemory(logicalDevice);
+	Terra::renderPipeline->BindResourceToMemory(logicalDevice);
 	Terra::textureStorage->BindMemories(logicalDevice);
 
 	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, m_width, m_height);
@@ -283,7 +292,7 @@ void RendererVK::ProcessData() {
 	std::atomic_size_t works = 0u;
 
 	Terra::Resources::uploadContainer->CopyData(works);
-	Terra::modelManager->CopyData();
+	Terra::renderPipeline->CopyData();
 
 	while (works != 0u);
 
@@ -291,7 +300,8 @@ void RendererVK::ProcessData() {
 	Terra::copyCmdBuffer->ResetBuffer();
 	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetCommandBuffer();
 
-	Terra::modelManager->RecordUploadBuffers(copyCmdBuffer);
+	Terra::bufferManager->RecordCopy(copyCmdBuffer);
+	Terra::renderPipeline->RecordCopy(copyCmdBuffer);
 	Terra::textureStorage->RecordUploads(copyCmdBuffer);
 
 	Terra::copyCmdBuffer->CloseBuffer();
@@ -322,13 +332,12 @@ void RendererVK::ProcessData() {
 
 	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
 
-	Terra::modelManager->InitPipelines(
-		logicalDevice, m_bufferCount, Terra::descriptorSet->GetDescriptorSetLayouts()
-	);
+	ConstructPipelines();
 
 	// Cleanup Upload Buffers
 	Terra::Resources::uploadContainer.reset();
-	Terra::modelManager->ReleaseUploadBuffers();
+	Terra::bufferManager->ReleaseUploadResources();
+	Terra::renderPipeline->ReleaseUploadResources();
 	Terra::textureStorage->ReleaseUploadBuffers();
 	Terra::Resources::uploadMemory.reset();
 }
@@ -353,4 +362,19 @@ void RendererVK::SetSharedDataContainer(
 
 void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(Terra::device->GetLogicalDevice());
+}
+
+void RendererVK::ConstructPipelines() {
+	VkDevice device = Terra::device->GetLogicalDevice();
+
+	auto graphicsLayout = CreateGraphicsPipelineLayout(
+		device, m_bufferCount, Terra::descriptorSet->GetDescriptorSetLayouts()
+	);
+	auto graphicsPipeline = CreateGraphicsPipeline(
+		device, graphicsLayout->GetLayout(), Terra::renderPass->GetRenderPass(),
+		m_shaderPath
+	);
+
+	Terra::renderPipeline->AddGraphicsPipelineLayout(std::move(graphicsLayout));
+	Terra::renderPipeline->AddGraphicsPipelineObject(std::move(graphicsPipeline));
 }
