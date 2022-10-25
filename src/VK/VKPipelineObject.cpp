@@ -1,28 +1,26 @@
-#include <PipelineObjectGFX.hpp>
-#include <VKThrowMacros.hpp>
+#include <VKPipelineObject.hpp>
 
-PipelineObjectGFX::PipelineObjectGFX(
-	VkDevice device,
-	VkPipelineLayout layout,
-	VkRenderPass renderPass,
-	const VkPipelineVertexInputStateCreateInfo* vertexInput,
-	VkShaderModule vertexShader,
+VkPipelineObject::VkPipelineObject(VkDevice device) noexcept
+	: m_deviceRef{ device }, m_pipeline{ VK_NULL_HANDLE } {}
+
+void VkPipelineObject::CreateGraphicsPipeline(
+	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	const VertexLayout& vertexInput, VkShaderModule vertexShader,
 	VkShaderModule fragmentShader
-) : m_deviceRef(device), m_graphicsPipeline(VK_NULL_HANDLE) {
-
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+) noexcept {
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-	VkPipelineViewportStateCreateInfo viewportState = {};
+	VkPipelineViewportStateCreateInfo viewportState{};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.pViewports = nullptr;
 	viewportState.viewportCount = 1u;
 	viewportState.scissorCount = 1u;
 	viewportState.pScissors = nullptr;
 
-	VkPipelineRasterizationStateCreateInfo rasterizer = {};
+	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
@@ -35,7 +33,7 @@ PipelineObjectGFX::PipelineObjectGFX(
 	rasterizer.depthBiasClamp = 0.0f;
 	rasterizer.depthBiasSlopeFactor = 0.0f;
 
-	VkPipelineMultisampleStateCreateInfo multisampling = {};
+	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -44,7 +42,7 @@ PipelineObjectGFX::PipelineObjectGFX(
 	multisampling.alphaToCoverageEnable = VK_FALSE;
 	multisampling.alphaToOneEnable = VK_FALSE;
 
-	VkPipelineColorBlendAttachmentState colourBlendAttachment = {};
+	VkPipelineColorBlendAttachmentState colourBlendAttachment{};
 	colourBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
 		| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colourBlendAttachment.blendEnable = VK_FALSE;
@@ -55,7 +53,7 @@ PipelineObjectGFX::PipelineObjectGFX(
 	colourBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	colourBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-	VkPipelineColorBlendStateCreateInfo colourBlending = {};
+	VkPipelineColorBlendStateCreateInfo colourBlending{};
 	colourBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colourBlending.logicOpEnable = VK_FALSE;
 	colourBlending.logicOp = VK_LOGIC_OP_COPY;
@@ -66,29 +64,18 @@ PipelineObjectGFX::PipelineObjectGFX(
 	colourBlending.blendConstants[2u] = 0.0f;
 	colourBlending.blendConstants[3u] = 0.0f;
 
-	VkDynamicState dynamicStates[] = {
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-	};
+	VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
-	VkPipelineDynamicStateCreateInfo dynamicState = {};
+	VkPipelineDynamicStateCreateInfo dynamicState{};
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	dynamicState.dynamicStateCount = 2u;
 	dynamicState.pDynamicStates = dynamicStates;
 
-	VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+	VkPipelineShaderStageCreateInfo shaderStages[2]{};
+	shaderStages[0] = GetShaderStageInfo(vertexShader, VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = GetShaderStageInfo(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	shaderStages[0u].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStages[0u].stage = VK_SHADER_STAGE_VERTEX_BIT;
-	shaderStages[0u].module = vertexShader;
-	shaderStages[0u].pName = "main";
-
-	shaderStages[1u].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStages[1u].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	shaderStages[1u].module = fragmentShader;
-	shaderStages[1u].pName = "main";
-
-	VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthTestEnable = VK_TRUE;
 	depthStencil.depthWriteEnable = VK_TRUE;
@@ -100,11 +87,11 @@ PipelineObjectGFX::PipelineObjectGFX(
 	depthStencil.front = {};
 	depthStencil.back = {};
 
-	VkGraphicsPipelineCreateInfo pipelineInfo = {};
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2u;
 	pipelineInfo.pStages = shaderStages;
-	pipelineInfo.pVertexInputState = vertexInput;
+	pipelineInfo.pVertexInputState = vertexInput.GetInputInfo();
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
@@ -113,24 +100,48 @@ PipelineObjectGFX::PipelineObjectGFX(
 	pipelineInfo.pColorBlendState = &colourBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
 	pipelineInfo.pDepthStencilState = &depthStencil;
-	pipelineInfo.layout = layout;
+	pipelineInfo.layout = graphicsLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0u;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateGraphicsPipelines(
-			device, VK_NULL_HANDLE, 1u, &pipelineInfo, nullptr, &m_graphicsPipeline
-		)
+	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1u, &pipelineInfo, nullptr, &m_pipeline);
+}
+
+void VkPipelineObject::CreateComputePipeline(
+	VkDevice device, VkPipelineLayout computeLayout, VkShaderModule computeShader
+) noexcept {
+	VkPipelineShaderStageCreateInfo shaderStage = GetShaderStageInfo(
+		computeShader, VK_SHADER_STAGE_COMPUTE_BIT
 	);
+
+	VkComputePipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	pipelineInfo.layout = computeLayout;
+	pipelineInfo.stage = shaderStage;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.basePipelineIndex = -1;
+
+	vkCreateComputePipelines(device, VK_NULL_HANDLE, 1u, &pipelineInfo, nullptr, &m_pipeline);
 }
 
-PipelineObjectGFX::~PipelineObjectGFX() noexcept {
-	vkDestroyPipeline(m_deviceRef, m_graphicsPipeline, nullptr);
+VkPipelineObject::~VkPipelineObject() noexcept {
+	vkDestroyPipeline(m_deviceRef, m_pipeline, nullptr);
 }
 
-VkPipeline PipelineObjectGFX::GetPipelineObject() const noexcept {
-	return m_graphicsPipeline;
+VkPipelineShaderStageCreateInfo VkPipelineObject::GetShaderStageInfo(
+	VkShaderModule shader, VkShaderStageFlagBits shaderType
+) const noexcept {
+	VkPipelineShaderStageCreateInfo shaderStage{};
+	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStage.stage = shaderType;
+	shaderStage.module = shader;
+	shaderStage.pName = "main";
+
+	return shaderStage;
+}
+
+VkPipeline VkPipelineObject::GetPipeline() const noexcept {
+	return m_pipeline;
 }

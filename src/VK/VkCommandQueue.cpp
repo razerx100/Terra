@@ -14,12 +14,12 @@ void VkCommandQueue::SubmitCommandBuffer(
 }
 
 void VkCommandQueue::SubmitCommandBufferForRendering(
-	VkCommandBuffer commandBuffer, VkFence fence, VkSemaphore semaphore
+	VkCommandBuffer commandBuffer, VkFence fence, VkSemaphore waitSemaphore
 ) const noexcept {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.waitSemaphoreCount = 1u;
-	submitInfo.pWaitSemaphores = &semaphore;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
 
 	static constexpr VkPipelineStageFlags waitStages[]{
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT

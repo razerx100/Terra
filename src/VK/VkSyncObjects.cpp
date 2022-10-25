@@ -12,9 +12,17 @@ void VkSyncObjects::WaitForFrontFence() const noexcept {
 	m_fences.WaitForFrontFence();
 }
 
-void VkSyncObjects::AdvanceSyncObjectsInQueue() noexcept {
+void VkSyncObjects::AdvanceFenceInQueue() noexcept {
 	m_fences.AdvanceInQueue();
+}
+
+void VkSyncObjects::AdvanceSemaphoreInQueue() noexcept {
 	m_semaphores.AdvanceInQueue();
+}
+
+void VkSyncObjects::AdvanceSyncObjectsInQueue() noexcept {
+	AdvanceFenceInQueue();
+	AdvanceSemaphoreInQueue();
 }
 
 VkFence VkSyncObjects::GetFrontFence() const noexcept {

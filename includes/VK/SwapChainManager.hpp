@@ -28,7 +28,7 @@ public:
 	[[nodiscard]]
 	VkFormat GetSwapFormat() const noexcept;
 	[[nodiscard]]
-	size_t GetAvailableImageIndex(VkSemaphore semaphore) const noexcept;
+	size_t GetAvailableImageIndex(VkSemaphore signalSemaphore) const noexcept;
 	[[nodiscard]]
 	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept;
 

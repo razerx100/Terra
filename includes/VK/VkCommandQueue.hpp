@@ -9,7 +9,7 @@ public:
 
 	void SubmitCommandBuffer(VkCommandBuffer commandBuffer, VkFence fence) const noexcept;
 	void SubmitCommandBufferForRendering(
-		VkCommandBuffer commandBuffer, VkFence fence, VkSemaphore semaphore
+		VkCommandBuffer commandBuffer, VkFence fence, VkSemaphore waitSemaphore
 	) const noexcept;
 
 private:

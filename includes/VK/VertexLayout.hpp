@@ -7,8 +7,10 @@ class VertexLayout {
 public:
 	VertexLayout() noexcept;
 
-	void AddInput(VkFormat format, std::uint32_t sizeInBytes) noexcept;
-	void InitLayout() noexcept;
+	[[nodiscard]]
+	VertexLayout& AddInput(VkFormat format, std::uint32_t sizeInBytes) noexcept;
+	[[nodiscard]]
+	VertexLayout& InitLayout() noexcept;
 
 	[[nodiscard]]
 	const VkPipelineVertexInputStateCreateInfo* GetInputInfo() const noexcept;

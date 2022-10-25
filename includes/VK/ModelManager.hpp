@@ -38,7 +38,7 @@ public:
 
 private:
 	using Pipeline =
-		std::pair<std::unique_ptr<PipelineObjectGFX>, std::unique_ptr<PipelineLayout>>;
+		std::pair<std::unique_ptr<VkPipelineObject>, std::unique_ptr<PipelineLayout>>;
 
 	Pipeline CreatePipeline(
 		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts

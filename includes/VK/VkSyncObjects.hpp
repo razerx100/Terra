@@ -12,6 +12,8 @@ public:
 
 	void ResetFrontFence() const noexcept;
 	void WaitForFrontFence() const noexcept;
+	void AdvanceFenceInQueue() noexcept;
+	void AdvanceSemaphoreInQueue() noexcept;
 	void AdvanceSyncObjectsInQueue() noexcept;
 
 	[[nodiscard]]

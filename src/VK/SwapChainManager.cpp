@@ -68,10 +68,10 @@ void SwapChainManager::CreateImageViews(VkDevice device) {
 		);
 }
 
-size_t SwapChainManager::GetAvailableImageIndex(VkSemaphore semaphore) const noexcept {
+size_t SwapChainManager::GetAvailableImageIndex(VkSemaphore signalSemaphore) const noexcept {
 	std::uint32_t imageIndex{};
 	vkAcquireNextImageKHR(
-		m_deviceRef, m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex
+		m_deviceRef, m_swapchain, UINT64_MAX, signalSemaphore, VK_NULL_HANDLE, &imageIndex
 	);
 
 	return imageIndex;

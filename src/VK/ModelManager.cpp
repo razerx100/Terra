@@ -3,7 +3,6 @@
 #include <VertexLayout.hpp>
 
 #include <ModelManager.hpp>
-#include <PipelineObjectGFX.hpp>
 #include <Terra.hpp>
 
 ModelManager::ModelManager(
@@ -74,19 +73,15 @@ ModelManager::Pipeline ModelManager::CreatePipeline(
 	auto fs = std::make_unique<Shader>(device);
 	fs->CreateShader(device, m_shaderPath + L"FragmentShader.spv");
 
-	VertexLayout vertexLayout{};
-	vertexLayout.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u);
-	vertexLayout.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u);
-	vertexLayout.InitLayout();
-
-	auto pso = std::make_unique<PipelineObjectGFX>(
-		device,
-		pipelineLayout->GetLayout(),
-		Terra::renderPass->GetRenderPass(),
-		vertexLayout.GetInputInfo(),
-		vs->GetByteCode(),
-		fs->GetByteCode()
-		);
+	auto pso = std::make_unique<VkPipelineObject>(device);
+	pso->CreateGraphicsPipeline(
+		device, pipelineLayout->GetLayout(), Terra::renderPass->GetRenderPass(),
+		VertexLayout()
+		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
+		.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u)
+		.InitLayout(),
+		vs->GetByteCode(), fs->GetByteCode()
+	);
 
 	return { std::move(pso), std::move(pipelineLayout) };
 }

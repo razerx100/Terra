@@ -16,9 +16,9 @@ void RenderPipeline::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& mode
 }
 
 void RenderPipeline::AddGraphicsPipelineObject(
-	std::unique_ptr<PipelineObjectGFX> pso
+	std::unique_ptr<VkPipelineObject> graphicsPSO
 ) noexcept {
-	m_graphicsPSO = std::move(pso);
+	m_graphicsPSO = std::move(graphicsPSO);
 }
 
 void RenderPipeline::AddGraphicsPipelineLayout(
@@ -31,7 +31,7 @@ void RenderPipeline::BindGraphicsPipeline(
 	VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
 ) const noexcept {
 	vkCmdBindPipeline(
-		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPSO->GetPipelineObject()
+		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPSO->GetPipeline()
 	);
 
 	VkDescriptorSet descSets[] = { descriptorSet };
