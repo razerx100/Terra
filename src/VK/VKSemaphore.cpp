@@ -2,23 +2,12 @@
 #include <VKThrowMacros.hpp>
 
 VKSemaphore::VKSemaphore(VkDevice device, size_t semaphoreCount)
-	: m_deviceRef{ device },
-	m_semaphores{ std::deque<VkSemaphore>{semaphoreCount, VK_NULL_HANDLE} } {
-
+	: m_deviceRef{ device } {
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	VkResult result{};
-	for (size_t _ = 0u; _ < semaphoreCount; ++_) {
-		VkSemaphore semaphore = m_semaphores.front();
-		m_semaphores.pop();
-
-		VK_THROW_FAILED(result,
-			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphore)
-		);
-
-		m_semaphores.push(semaphore);
-	}
+	for (size_t _ = 0u; _ < semaphoreCount; ++_)
+		m_semaphores.push(CreateSemaphore(device, semaphoreInfo));
 }
 
 VKSemaphore::~VKSemaphore() noexcept {
@@ -28,6 +17,15 @@ VKSemaphore::~VKSemaphore() noexcept {
 
 		vkDestroySemaphore(m_deviceRef, semaphore, nullptr);
 	}
+}
+
+VkSemaphore VKSemaphore::CreateSemaphore(
+	VkDevice device, const VkSemaphoreCreateInfo& createInfo
+) const noexcept {
+	VkSemaphore semaphore = VK_NULL_HANDLE;
+	vkCreateSemaphore(device, &createInfo, nullptr, &semaphore);
+
+	return semaphore;
 }
 
 void VKSemaphore::AdvanceInQueue() noexcept {

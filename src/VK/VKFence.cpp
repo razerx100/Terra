@@ -1,24 +1,21 @@
 #include <VKFence.hpp>
-#include <VKThrowMacros.hpp>
 
 VKFence::VKFence(VkDevice device, size_t fenceCount, bool signaled)
-	: m_deviceRef{ device }, m_fences{ std::deque<VkFence>{fenceCount, VK_NULL_HANDLE} } {
+	: m_deviceRef{ device } {
 
 	VkFenceCreateInfo fenceInfo{};
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = 0u;
+
+	assert(fenceCount != 0u && "Fence Count can't be zero");
+
+	m_fences.push(CreateFence(device, fenceInfo));
+	--fenceCount;
+
 	fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0u;
 
-	VkResult result{};
-	for (size_t _ = 0u; _ < fenceCount; ++_) {
-		VkFence fence = m_fences.front();
-		m_fences.pop();
-
-		VK_THROW_FAILED(result,
-			vkCreateFence(device, &fenceInfo, nullptr, &fence)
-		);
-
-		m_fences.push(fence);
-	}
+	for (size_t _ = 0u; _ < fenceCount; ++_)
+		m_fences.push(CreateFence(device, fenceInfo));
 }
 
 VKFence::~VKFence() noexcept {
@@ -46,4 +43,13 @@ void VKFence::AdvanceInQueue() noexcept {
 
 VkFence VKFence::GetFrontFence() const noexcept {
 	return m_fences.front();
+}
+
+VkFence VKFence::CreateFence(
+	VkDevice device, const VkFenceCreateInfo& createInfo
+) const noexcept {
+	VkFence fence = VK_NULL_HANDLE;
+	vkCreateFence(device, &createInfo, nullptr, &fence);
+
+	return fence;
 }

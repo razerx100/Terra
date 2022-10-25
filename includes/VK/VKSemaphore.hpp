@@ -14,6 +14,12 @@ public:
 	VkSemaphore GetFrontSemaphore() const noexcept;
 
 private:
+	[[nodiscard]]
+	VkSemaphore CreateSemaphore(
+		VkDevice device, const VkSemaphoreCreateInfo& createInfo
+	) const noexcept;
+
+private:
 	VkDevice m_deviceRef;
 	std::queue<VkSemaphore> m_semaphores;
 };

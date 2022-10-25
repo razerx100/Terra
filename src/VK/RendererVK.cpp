@@ -78,7 +78,9 @@ RendererVK::RendererVK(
 		QueueType::ComputeQueue
 	);
 
-	Terra::InitComputeQueue(computeQueueHandle, logicalDevice, computeQueueFamilyIndex);
+	Terra::InitComputeQueue(
+		computeQueueHandle, logicalDevice, computeQueueFamilyIndex, bufferCount
+	);
 
 	std::vector<std::uint32_t> copyAndGfxFamilyIndices =
 		DeviceManager::ResolveQueueIndices(copyQueueFamilyIndex, graphicsQueueFamilyIndex);
@@ -151,9 +153,6 @@ void RendererVK::SubmitModelInputs(
 }
 
 void RendererVK::Update() {
-	Terra::graphicsSyncObjects->WaitForFrontFence();
-	Terra::graphicsSyncObjects->ResetFrontFence();
-
 	Terra::swapChain->AcquireNextImageIndex(Terra::graphicsSyncObjects->GetFrontSemaphore());
 	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
 
@@ -208,6 +207,8 @@ void RendererVK::Render() {
 	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(imageIndex));
 
 	Terra::graphicsSyncObjects->AdvanceSyncObjectsInQueue();
+	Terra::graphicsSyncObjects->WaitForFrontFence();
+	Terra::graphicsSyncObjects->ResetFrontFence();
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
@@ -314,7 +315,6 @@ void RendererVK::ProcessData() {
 
 	// Transition Images to Fragment Optimal
 	Terra::graphicsCmdBuffer->ResetBuffer();
-	Terra::graphicsSyncObjects->ResetFrontFence();
 
 	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer();
 
@@ -326,7 +326,7 @@ void RendererVK::ProcessData() {
 		graphicsCmdBuffer, Terra::graphicsSyncObjects->GetFrontFence()
 	);
 	Terra::graphicsSyncObjects->WaitForFrontFence();
-	// Leaving the fence in signaled state
+	Terra::graphicsSyncObjects->ResetFrontFence();
 
 	Terra::textureStorage->SetDescriptorLayouts();
 

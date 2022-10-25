@@ -71,7 +71,8 @@ namespace Terra {
 		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
 	);
 	void InitComputeQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
+		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		std::uint32_t bufferCount
 	);
 	void InitSwapChain(
 		const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue

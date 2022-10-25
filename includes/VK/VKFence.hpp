@@ -16,6 +16,12 @@ public:
 	VkFence GetFrontFence() const noexcept;
 
 private:
+	[[nodiscard]]
+	VkFence CreateFence(
+		VkDevice device, const VkFenceCreateInfo& createInfo
+	) const noexcept;
+
+private:
 	VkDevice m_deviceRef;
 	std::queue<VkFence> m_fences;
 };

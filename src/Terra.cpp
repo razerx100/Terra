@@ -79,11 +79,16 @@ namespace Terra {
 	}
 
 	void InitComputeQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
+		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		std::uint32_t bufferCount
 	) {
 		computeQueue = std::make_unique<VkCommandQueue>(queue);
-		computeCmdBuffer = std::make_unique<VKCommandBuffer>(logicalDevice, queueIndex);
-		computeSyncObjects = std::make_unique<VkSyncObjects>(logicalDevice);
+		computeCmdBuffer = std::make_unique<VKCommandBuffer>(
+			logicalDevice, queueIndex, bufferCount
+			);
+		computeSyncObjects = std::make_unique<VkSyncObjects>(
+			logicalDevice, bufferCount, true
+			);
 	}
 
 	void InitSwapChain(
