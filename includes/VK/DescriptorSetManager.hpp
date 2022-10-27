@@ -42,11 +42,6 @@ public:
 	) noexcept;
 	void CreateDescriptorSets(VkDevice device);
 
-	static void AddDescriptorForBuffer(
-		const VkResourceView& buffer, std::uint32_t bufferCount, std::uint32_t bindingSlot,
-		VkDescriptorType descriptorType, VkShaderStageFlagBits shaderStage
-	) noexcept;
-
 private:
 	void CreateSetLayouts(VkDevice device);
 	void _addSetLayout(const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag);
@@ -56,8 +51,7 @@ private:
 		const DescriptorInfo& descriptorInfo, const VkDescriptorBufferInfo& bufferInfo
 	) noexcept;
 	static void BindImageView(
-		VkDevice device, VkDescriptorSet descSet,
-		const DescImageInfo& imageInfo
+		VkDevice device, VkDescriptorSet descSet, const DescImageInfo& imageInfo
 	) noexcept;
 
 private:

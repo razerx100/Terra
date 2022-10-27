@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cmath>
 
 #include <RenderPipeline.hpp>
 #include <Terra.hpp>
@@ -23,19 +24,54 @@ void RenderPipeline::AddGraphicsPipelineLayout(
 	m_graphicsPipelineLayout = std::move(layout);
 }
 
+void RenderPipeline::AddComputePipelineObject(
+	std::unique_ptr<VkPipelineObject> computePSO
+) noexcept {
+	m_computePSO = std::move(computePSO);
+}
+
+void RenderPipeline::AddComputePipelineLayout(
+	std::unique_ptr<PipelineLayout> computeLayout
+) noexcept {
+	m_computePipelineLayout = std::move(computeLayout);
+}
+
 void RenderPipeline::BindGraphicsPipeline(
-	VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet descriptorSet
+	VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet graphicsDescriptorSet
 ) const noexcept {
 	vkCmdBindPipeline(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPSO->GetPipeline()
 	);
 
-	VkDescriptorSet descSets[] = { descriptorSet };
+	VkDescriptorSet descSets[] = { graphicsDescriptorSet };
 
 	vkCmdBindDescriptorSets(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_graphicsPipelineLayout->GetLayout(), 0u, 1u,
 		descSets, 0u, nullptr
+	);
+}
+
+void RenderPipeline::BindComputePipeline(
+	VkCommandBuffer computeCmdBuffer, VkDescriptorSet computeDescriptorSet
+) const noexcept {
+	vkCmdBindPipeline(
+		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePSO->GetPipeline()
+	);
+
+	VkDescriptorSet descSets[] = { computeDescriptorSet };
+
+	vkCmdBindDescriptorSets(
+		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_computePipelineLayout->GetLayout(), 0u, 1u,
+		descSets, 0u, nullptr
+	);
+}
+
+void RenderPipeline::DispatchCompute(VkCommandBuffer computeCmdBuffer) const noexcept {
+	vkCmdDispatch(
+		computeCmdBuffer,
+		static_cast<std::uint32_t>(std::ceil(m_modelCount / THREADBLOCKSIZE)), 1u, 1u
 	);
 }
 

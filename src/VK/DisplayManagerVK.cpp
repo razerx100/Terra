@@ -1,5 +1,5 @@
 #include <DisplayManagerVK.hpp>
-#include <VKThrowMacros.hpp>
+#include <cassert>
 
 IDisplayManager::Resolution DisplayManagerVK::GetDisplayResolution(
 	VkPhysicalDevice gpu, std::uint32_t displayIndex
@@ -10,8 +10,7 @@ IDisplayManager::Resolution DisplayManagerVK::GetDisplayResolution(
 	std::vector<VkDisplayPropertiesKHR> displayProperties(displayCount);
 	vkGetPhysicalDeviceDisplayPropertiesKHR(gpu, &displayCount, displayProperties.data());
 
-	if (displayCount <= displayIndex)
-		VK_GENERIC_THROW("Searched GPU couldn't be found.");
+	assert(displayCount > displayIndex && "Invalid display index.");
 
 	auto [width, height] =
 		displayProperties[static_cast<size_t>(displayIndex)].physicalResolution;

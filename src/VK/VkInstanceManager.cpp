@@ -1,6 +1,7 @@
 #include <VkInstanceManager.hpp>
-#include <VKThrowMacros.hpp>
 #include <DebugLayerManager.hpp>
+#include <stdexcept>
+#include <cassert>
 
 InstanceManager::InstanceManager(const char* appName) noexcept
 	: m_vkInstance(VK_NULL_HANDLE), m_appName(appName) {}
@@ -31,7 +32,7 @@ void InstanceManager::CheckExtensionSupport() const {
 			}
 
 		if (!found)
-			VK_GENERIC_THROW(
+			throw std::runtime_error(
 				std::string("The extension ") + requiredExtension + " isn't supported."
 			);
 	}
@@ -54,10 +55,9 @@ void InstanceManager::CheckLayerSupport() const {
 				break;
 			}
 
-		if (!found)
-			VK_GENERIC_THROW(
-				std::string("The layer ") + requiredLayer + " isn't supported."
-			);
+		assert(
+			found && (std::string("The layer ") + requiredLayer + " isn't supported.").c_str()
+		);
 	}
 }
 
@@ -119,6 +119,5 @@ void InstanceManager::CreateInstance() {
 		);
 	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
 
-	VkResult result;
-	VK_THROW_FAILED(result, vkCreateInstance(&createInfo, nullptr, &m_vkInstance));
+	vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
 }

@@ -1,5 +1,4 @@
 #include <VkResourceViews.hpp>
-#include <VKThrowMacros.hpp>
 
 #include <Terra.hpp>
 
@@ -43,11 +42,8 @@ void VkResourceView::BindResourceToMemory(VkDevice device) {
 	else if (m_resourceType == MemoryType::gpuOnly)
 		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkBindBufferMemory(
-			device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffsetStart
-		)
+	vkBindBufferMemory(
+		device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffsetStart
 	);
 }
 
@@ -190,11 +186,8 @@ void VkImageResourceView::BindResourceToMemory(VkDevice device) {
 	else if (m_resourceType == MemoryType::gpuOnly)
 		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkBindImageMemory(
-			device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffset
-		)
+	vkBindImageMemory(
+		device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffset
 	);
 }
 
@@ -217,10 +210,7 @@ void VkImageResourceView::_createImageView(
 	createInfo.subresourceRange.baseArrayLayer = 0u;
 	createInfo.subresourceRange.layerCount = 1u;
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkCreateImageView(device, &createInfo, nullptr, imageView)
-	);
+	vkCreateImageView(device, &createInfo, nullptr, imageView);
 }
 
 void VkImageResourceView::CreateImageView(

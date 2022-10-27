@@ -1,7 +1,7 @@
 #include <DeviceManager.hpp>
-#include <VKThrowMacros.hpp>
 #include <ranges>
 #include <algorithm>
+#include <stdexcept>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -14,7 +14,7 @@ void DeviceManager::FindPhysicalDevice(
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
 	if (!deviceCount)
-		VK_GENERIC_THROW("No GPU with Vulkan support.");
+		throw std::runtime_error("No GPU with Vulkan support.");
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
@@ -29,7 +29,7 @@ void DeviceManager::FindPhysicalDevice(
 		);
 
 	if (suitableDevice == VK_NULL_HANDLE)
-		VK_GENERIC_THROW("No GPU with all Queue Family support found.");
+		throw std::runtime_error("No GPU with all Queue Family support found.");
 	else {
 		SetQueueFamilyInfo(suitableDevice, surface);
 		m_physicalDevice = suitableDevice;
@@ -92,10 +92,7 @@ void DeviceManager::CreateLogicalDevice() {
 	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
 	createInfo.pNext = &deviceFeatures2;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice)
-	);
+	vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice);
 }
 
 bool DeviceManager::CheckDeviceType(

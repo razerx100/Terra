@@ -35,3 +35,28 @@ std::unique_ptr<VkPipelineObject> CreateGraphicsPipeline(
 
 	return pso;
 }
+
+std::unique_ptr<PipelineLayout> CreateComputePipelineLayout(
+	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+) noexcept {
+	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
+
+	// Push constants needs to be serialised according to the shader stages
+	// Doesn't do anything different now but may in the future idk
+
+	pipelineLayout->CreateLayout(setLayouts, layoutCount);
+
+	return pipelineLayout;
+}
+
+std::unique_ptr<VkPipelineObject> CreateComputePipeline(
+	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
+) noexcept {
+	auto cs = std::make_unique<Shader>(device);
+	cs->CreateShader(device, shaderPath + L"ComputeShader.spv");
+
+	auto pso = std::make_unique<VkPipelineObject>(device);
+	pso->CreateComputePipeline(device, computeLayout, cs->GetByteCode());
+
+	return pso;
+}

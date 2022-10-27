@@ -1,5 +1,4 @@
 #include <DescriptorPool.hpp>
-#include <VKThrowMacros.hpp>
 #include <vector>
 
 DescriptorPool::DescriptorPool(VkDevice device) noexcept
@@ -27,10 +26,7 @@ void DescriptorPool::CreatePool(VkDevice device, std::uint32_t maxSets) {
 	poolInfo.poolSizeCount = static_cast<std::uint32_t>(std::size(descriptorTypeCounts));
 	poolInfo.pPoolSizes = std::data(descriptorTypeCounts);
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descriptorPool)
-	);
+	vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descriptorPool);
 }
 
 void DescriptorPool::AllocateDescriptors(
@@ -43,8 +39,5 @@ void DescriptorPool::AllocateDescriptors(
 	allocInfo.descriptorSetCount = descriptorSetCount;
 	allocInfo.pSetLayouts = setLayouts;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkAllocateDescriptorSets(device, &allocInfo, descriptorSets)
-	);
+	vkAllocateDescriptorSets(device, &allocInfo, descriptorSets);
 }

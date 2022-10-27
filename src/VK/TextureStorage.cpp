@@ -1,5 +1,4 @@
 #include <TextureStorage.hpp>
-#include <VKThrowMacros.hpp>
 #include <VkHelperFunctions.hpp>
 
 #include <Terra.hpp>
@@ -72,7 +71,7 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 		imageInfos.emplace_back(imageInfo);
 	}
 
-	Terra::descriptorSet->AddSetLayout(
+	Terra::graphicsDescriptorSet->AddSetLayout(
 		descInfo, VK_SHADER_STAGE_FRAGMENT_BIT, std::move(imageInfos)
 	);
 }

@@ -1,5 +1,4 @@
 #include <VKSemaphore.hpp>
-#include <VKThrowMacros.hpp>
 
 VKSemaphore::VKSemaphore(VkDevice device, size_t semaphoreCount)
 	: m_deviceRef{ device } {

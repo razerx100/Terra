@@ -1,5 +1,4 @@
 #include <DescriptorSetManager.hpp>
-#include <VKThrowMacros.hpp>
 
 #include <Terra.hpp>
 
@@ -9,8 +8,8 @@ DescriptorSetManager::DescriptorSetManager(VkDevice device, size_t bufferCount)
 	m_descriptorSetLayouts{ bufferCount, VK_NULL_HANDLE }, m_descriptorPool{ device } {}
 
 DescriptorSetManager::~DescriptorSetManager() noexcept {
-	for(auto descriptorSetLayout : m_descriptorSetLayouts)
-	vkDestroyDescriptorSetLayout(m_deviceRef, descriptorSetLayout, nullptr);
+	for (auto descriptorSetLayout : m_descriptorSetLayouts)
+		vkDestroyDescriptorSetLayout(m_deviceRef, descriptorSetLayout, nullptr);
 }
 
 VkDescriptorSetLayout const* DescriptorSetManager::GetDescriptorSetLayouts() const noexcept {
@@ -104,11 +103,8 @@ void DescriptorSetManager::CreateSetLayouts(VkDevice device) {
 
 	createInfo.pNext = &flagsCreateInfo;
 
-	VkResult result{};
 	for (auto& descriptorSetLayout : m_descriptorSetLayouts)
-		VK_THROW_FAILED(result,
-			vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout)
-		);
+		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout);
 }
 
 void DescriptorSetManager::BindBuffer(
@@ -140,27 +136,4 @@ void DescriptorSetManager::BindImageView(
 	setWrite.pImageInfo = std::data(imageInfo.images);
 
 	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
-}
-
-void DescriptorSetManager::AddDescriptorForBuffer(
-	const VkResourceView& buffer, std::uint32_t bufferCount, std::uint32_t bindingSlot,
-	VkDescriptorType descriptorType, VkShaderStageFlagBits shaderStage
-) noexcept {
-	DescriptorInfo descInfo{};
-	descInfo.bindingSlot = bindingSlot;
-	descInfo.descriptorCount = 1u;
-	descInfo.type = descriptorType;
-
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-
-	for (VkDeviceSize index = 0u; index < bufferCount; ++index) {
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = buffer.GetResource();
-		bufferInfo.offset = buffer.GetSubAllocationOffset(index);
-		bufferInfo.range = buffer.GetSubAllocationSize();
-
-		bufferInfos.emplace_back(std::move(bufferInfo));
-	}
-
-	Terra::descriptorSet->AddSetLayout(descInfo, shaderStage, std::move(bufferInfos));
 }

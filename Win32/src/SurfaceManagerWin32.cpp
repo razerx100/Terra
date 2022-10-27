@@ -1,7 +1,6 @@
 #include <SurfaceManagerWin32.hpp>
 #include <CleanWin.hpp>
 #include <vulkan/vulkan_win32.h>
-#include <VKThrowMacros.hpp>
 
 SurfaceManagerWin32::SurfaceManagerWin32(
 	VkInstance instance, void* windowHandle, void* moduleHandle
@@ -12,11 +11,7 @@ SurfaceManagerWin32::SurfaceManagerWin32(
 	createInfo.hwnd = static_cast<HWND>(windowHandle);
 	createInfo.hinstance = static_cast<HINSTANCE>(moduleHandle);
 
-	VkResult result;
-	VK_THROW_FAILED(
-		result,
-		vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &m_surface)
-	);
+	vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &m_surface);
 }
 
 SurfaceManagerWin32::~SurfaceManagerWin32() noexcept {

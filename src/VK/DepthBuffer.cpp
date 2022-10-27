@@ -1,6 +1,6 @@
 #include <DepthBuffer.hpp>
 #include <VkHelperFunctions.hpp>
-#include <VKThrowMacros.hpp>
+#include <stdexcept>
 
 #include <Terra.hpp>
 
@@ -58,7 +58,7 @@ void DepthBuffer::CreateDepthBuffer(
 	VkDevice device, std::uint32_t width, std::uint32_t height
 ) {
 	if (width > m_maxWidth || height > m_maxHeight)
-		VK_GENERIC_THROW("Depth buffer resolution exceeds max resolution");
+		throw std::runtime_error("Depth buffer resolution exceeds max resolution");
 
 	m_depthImage.CreateResource(
 		device, width, height, DEPTHFORMAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

@@ -1,6 +1,5 @@
 #include <Shader.hpp>
 #include <fstream>
-#include <VKThrowMacros.hpp>
 
 Shader::Shader(VkDevice device)
 	: m_deviceRef(device), m_pBinary(VK_NULL_HANDLE) {}
@@ -17,10 +16,7 @@ void Shader::CreateShader(VkDevice device, const std::wstring& fileName) {
 	createInfo.codeSize = std::size(byteCode);
 	createInfo.pCode = reinterpret_cast<std::uint32_t*>(std::data(byteCode));
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateShaderModule(device, &createInfo, nullptr, &m_pBinary)
-	);
+	vkCreateShaderModule(device, &createInfo, nullptr, &m_pBinary);
 }
 
 VkShaderModule Shader::GetByteCode() const noexcept {

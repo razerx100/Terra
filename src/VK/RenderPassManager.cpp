@@ -1,5 +1,4 @@
 #include <RenderPassManager.hpp>
-#include <VKThrowMacros.hpp>
 
 RenderPassManager::RenderPassManager(
 	VkDevice device,
@@ -62,10 +61,7 @@ void RenderPassManager::CreateRenderPass(
 	createInfo.dependencyCount = 1u;
 	createInfo.pDependencies = &subpassDependency;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateRenderPass(device, &createInfo, nullptr, &m_renderPass)
-	);
+	vkCreateRenderPass(device, &createInfo, nullptr, &m_renderPass);
 }
 
 VkAttachmentDescription RenderPassManager::GetColourAttachment(

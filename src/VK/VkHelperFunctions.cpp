@@ -1,5 +1,4 @@
 #include <VkHelperFunctions.hpp>
-#include <VKThrowMacros.hpp>
 
 void CreateSampler(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
@@ -38,10 +37,7 @@ void CreateSampler(
 		createInfo.maxAnisotropy = maxAnisotropy;
 	}
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateSampler(logicalDevice, &createInfo, nullptr, sampler)
-	);
+	vkCreateSampler(logicalDevice, &createInfo, nullptr, sampler);
 }
 
 std::optional<FamilyInfo> QueryQueueFamilyInfo(

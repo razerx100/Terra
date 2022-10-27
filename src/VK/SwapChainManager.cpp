@@ -1,6 +1,5 @@
 #include <SwapChainManager.hpp>
 #include <VkResourceViews.hpp>
-#include <VKThrowMacros.hpp>
 
 SwapChainManager::SwapChainManager(
 	const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
@@ -158,10 +157,7 @@ void SwapChainManager::CreateSwapchain(
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkCreateSwapchainKHR(swapCreateInfo.device, &createInfo, nullptr, &m_swapchain)
-	);
+	vkCreateSwapchainKHR(swapCreateInfo.device, &createInfo, nullptr, &m_swapchain);
 }
 
 void SwapChainManager::QueryImages() {
@@ -189,7 +185,6 @@ void SwapChainManager::CreateFramebuffers(
 ) {
 	m_frameBuffers.resize(std::size(m_swapchainImageViews));
 
-	VkResult result;
 	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index) {
 		VkImageView attachments[] = { m_swapchainImageViews[index], depthImageView };
 
@@ -202,8 +197,6 @@ void SwapChainManager::CreateFramebuffers(
 		frameBufferInfo.height = height;
 		frameBufferInfo.layers = 1u;
 
-		VK_THROW_FAILED(result,
-			vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &m_frameBuffers[index])
-		);
+		vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &m_frameBuffers[index]);
 	}
 }

@@ -1,5 +1,5 @@
 #include <DisplayManagerWin32.hpp>
-#include <VKThrowMacros.hpp>
+#include <cassert>
 
 DisplayManagerWin32::DisplayManagerWin32() {
 	CreateDXGIFactory2(0u, __uuidof(IDXGIFactory1), &m_pFactory);
@@ -18,14 +18,14 @@ IDisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
 
 	ComPtr<IDXGIAdapter1> d3dGpu = GetAdapter(gpuLUid);
 
-	if (!d3dGpu)
-		VK_GENERIC_THROW("GPU ID doesn't match.");
+	assert(d3dGpu && "GPU ID doesn't match.");
 
 	d3dGpu->GetDesc(&gpuDesc);
 
 	ComPtr<IDXGIOutput> pDisplayOutput;
-	if (FAILED(d3dGpu->EnumOutputs(displayIndex, &pDisplayOutput)))
-		VK_GENERIC_THROW("Searched GPU couldn't be found.");
+	assert(
+		SUCCEEDED(d3dGpu->EnumOutputs(displayIndex, &pDisplayOutput)) && "Invalid display index."
+	);
 
 	DXGI_OUTPUT_DESC displayData = {};
 	pDisplayOutput->GetDesc(&displayData);
@@ -66,9 +66,8 @@ void DisplayManagerWin32::GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) 
 
 	vkGetPhysicalDeviceProperties2(gpu, &gpuProperties);
 
+	assert(gpuIDS.deviceLUIDValid == VK_TRUE && "Couldn't retrieve LUID.");
+
 	lUid = {};
-	if (gpuIDS.deviceLUIDValid == VK_TRUE)
-		lUid = *reinterpret_cast<LUID*>(gpuIDS.deviceLUID);
-	else
-		VK_GENERIC_THROW("Couldn't retrieve LUID.");
+	lUid = *reinterpret_cast<LUID*>(gpuIDS.deviceLUID);
 }

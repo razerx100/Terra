@@ -1,5 +1,4 @@
 #include <PipelineLayout.hpp>
-#include <VKThrowMacros.hpp>
 
 PipelineLayout::PipelineLayout(VkDevice device)
 	: m_deviceRef{ device }, m_pipelineLayout{ VK_NULL_HANDLE }, m_pushConstantOffset{ 0u } {}
@@ -31,10 +30,7 @@ void PipelineLayout::CreateLayout(
 	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(std::size(m_pushRanges));
 	createInfo.pPushConstantRanges = std::data(m_pushRanges);
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkCreatePipelineLayout(m_deviceRef, &createInfo, nullptr, &m_pipelineLayout)
-	);
+	vkCreatePipelineLayout(m_deviceRef, &createInfo, nullptr, &m_pipelineLayout);
 }
 
 VkPipelineLayout PipelineLayout::GetLayout() const noexcept {

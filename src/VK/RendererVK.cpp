@@ -92,7 +92,7 @@ RendererVK::RendererVK(
 		logicalDevice, Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
 	);
 
-	Terra::InitDescriptorSet(logicalDevice, bufferCount);
+	Terra::InitDescriptorSets(logicalDevice, bufferCount);
 
 	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
 	Terra::InitBufferManager(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
@@ -107,7 +107,8 @@ RendererVK::~RendererVK() noexcept {
 	Terra::viewportAndScissor.reset();
 	Terra::bufferManager.reset();
 	Terra::renderPipeline.reset();
-	Terra::descriptorSet.reset();
+	Terra::computeDescriptorSet.reset();
+	Terra::graphicsDescriptorSet.reset();
 	Terra::textureStorage.reset();
 	Terra::copyQueue.reset();
 	Terra::copyCmdBuffer.reset();
@@ -191,7 +192,7 @@ void RendererVK::Render() {
 	vkCmdBeginRenderPass(graphicsCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	Terra::renderPipeline->BindGraphicsPipeline(
-		graphicsCommandBuffer, Terra::descriptorSet->GetDescriptorSet(imageIndex)
+		graphicsCommandBuffer, Terra::graphicsDescriptorSet->GetDescriptorSet(imageIndex)
 	);
 	Terra::bufferManager->BindVertexBuffer(graphicsCommandBuffer);
 	Terra::renderPipeline->DrawModels(graphicsCommandBuffer, imageIndex);
@@ -330,7 +331,7 @@ void RendererVK::ProcessData() {
 
 	Terra::textureStorage->SetDescriptorLayouts();
 
-	Terra::descriptorSet->CreateDescriptorSets(logicalDevice);
+	Terra::graphicsDescriptorSet->CreateDescriptorSets(logicalDevice);
 
 	ConstructPipelines();
 
@@ -368,7 +369,7 @@ void RendererVK::ConstructPipelines() {
 	VkDevice device = Terra::device->GetLogicalDevice();
 
 	auto graphicsLayout = CreateGraphicsPipelineLayout(
-		device, m_bufferCount, Terra::descriptorSet->GetDescriptorSetLayouts()
+		device, m_bufferCount, Terra::graphicsDescriptorSet->GetDescriptorSetLayouts()
 	);
 	auto graphicsPipeline = CreateGraphicsPipeline(
 		device, graphicsLayout->GetLayout(), Terra::renderPass->GetRenderPass(),

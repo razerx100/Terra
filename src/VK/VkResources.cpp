@@ -1,5 +1,4 @@
 #include <VkResources.hpp>
-#include <VKThrowMacros.hpp>
 
 // Vk Resource
 VkResource::VkResource(VkDevice device) noexcept : m_deviceRef{ device } {}
@@ -33,10 +32,7 @@ void VkResource::CreateResource(
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkCreateBuffer(device, &createInfo, nullptr, &m_resource)
-	);
+	vkCreateBuffer(device, &createInfo, nullptr, &m_resource);
 }
 
 void VkResource::CleanUpResource() noexcept {
@@ -93,10 +89,7 @@ void VkImageResource::CreateResource(
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkCreateImage(device, &createInfo, nullptr, &m_resource)
-	);
+	vkCreateImage(device, &createInfo, nullptr, &m_resource);
 }
 
 void VkImageResource::CleanUpResource() noexcept {

@@ -1,6 +1,5 @@
 #include <DebugLayerManager.hpp>
 #include <fstream>
-#include <VKThrowMacros.hpp>
 
 DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
 	: m_debugMessenger(VK_NULL_HANDLE), m_pInstanceRef(instanceRef) {
@@ -8,11 +7,8 @@ DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
 	PopulateDebugMessengerCreateInfo(createInfo);
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		CreateDebugUtilsMessengerEXT(
-			m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger
-		)
+	CreateDebugUtilsMessengerEXT(
+		m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger
 	);
 }
 

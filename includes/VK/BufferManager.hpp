@@ -4,6 +4,7 @@
 #include <memory>
 #include <cstdint>
 #include <VkResourceViews.hpp>
+#include <DescriptorSetManager.hpp>
 
 #include <IModel.hpp>
 
@@ -37,6 +38,12 @@ public:
 
 private:
 	void UpdateModelData(VkDeviceSize index) const noexcept;
+
+	static void AddDescriptorForBuffer(
+		const VkResourceView& buffer, std::uint32_t bufferCount, std::uint32_t bindingSlot,
+		VkDescriptorType descriptorType, VkShaderStageFlagBits shaderStage,
+		DescriptorSetManager* const descriptorSetManager
+	) noexcept;
 
 private:
 	VkResourceView m_cameraBuffer;

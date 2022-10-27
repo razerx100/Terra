@@ -45,7 +45,8 @@ namespace Terra {
 	extern std::unique_ptr<RenderPassManager> renderPass;
 	extern std::unique_ptr<BufferManager> bufferManager;
 	extern std::unique_ptr<RenderPipeline> renderPipeline;
-	extern std::unique_ptr<DescriptorSetManager> descriptorSet;
+	extern std::unique_ptr<DescriptorSetManager> graphicsDescriptorSet;
+	extern std::unique_ptr<DescriptorSetManager> computeDescriptorSet;
 	extern std::unique_ptr<TextureStorage> textureStorage;
 	extern std::unique_ptr<CameraManager> cameraManager;
 	extern std::unique_ptr<DepthBuffer> depthBuffer;
@@ -92,7 +93,7 @@ namespace Terra {
 		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
 		std::uint32_t bufferCount
 	);
-	void InitDescriptorSet(VkDevice logicalDevice, std::uint32_t bufferCount);
+	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount);
 	void InitTextureStorage(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
 		const std::vector<std::uint32_t>& queueFamilyIndices

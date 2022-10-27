@@ -1,5 +1,4 @@
 #include <VKCommandBuffer.hpp>
-#include <VKThrowMacros.hpp>
 
 VKCommandBuffer::VKCommandBuffer(
 	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
@@ -10,10 +9,7 @@ VKCommandBuffer::VKCommandBuffer(
 	poolInfo.queueFamilyIndex = queueIndex;
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkCreateCommandPool(device, &poolInfo, nullptr, &m_commandPool)
-	);
+	vkCreateCommandPool(device, &poolInfo, nullptr, &m_commandPool);
 
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -21,9 +17,7 @@ VKCommandBuffer::VKCommandBuffer(
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocateInfo.commandBufferCount = bufferCount;
 
-	VK_THROW_FAILED(result,
-		vkAllocateCommandBuffers(device, &allocateInfo, std::data(m_commandBuffers))
-	);
+	vkAllocateCommandBuffers(device, &allocateInfo, std::data(m_commandBuffers));
 }
 
 VKCommandBuffer::~VKCommandBuffer() noexcept {

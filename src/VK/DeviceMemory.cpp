@@ -1,7 +1,6 @@
 #include <DeviceMemory.hpp>
 #include <cstdint>
 #include <ranges>
-#include <VKThrowMacros.hpp>
 #include <VkHelperFunctions.hpp>
 
 // Device memory
@@ -46,10 +45,7 @@ void DeviceMemory::AllocateMemory(VkDevice device) {
 	allocInfo.allocationSize = m_totalSize;
 	allocInfo.memoryTypeIndex = m_memoryTypeIndex;
 
-	VkResult result;
-	VK_THROW_FAILED(result,
-		vkAllocateMemory(device, &allocInfo, nullptr, &m_bufferMemory)
-	);
+	vkAllocateMemory(device, &allocInfo, nullptr, &m_bufferMemory);
 }
 
 VkDeviceMemory DeviceMemory::GetMemoryHandle() const noexcept {
@@ -90,15 +86,13 @@ VkDeviceSize DeviceMemory::ReserveSizeAndGetOffset(
 }
 
 void DeviceMemory::MapMemoryToCPU(VkDevice device) {
-	if (m_memoryType != VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-		VK_GENERIC_THROW("Memory isn't CPU accessable.");
+	assert(
+		m_memoryType == VK_MEMORY_PROPERTY_HOST_COHERENT_BIT && "Memory isn't CPU accessable."
+	);
 
-	VkResult result{};
-	VK_THROW_FAILED(result,
-		vkMapMemory(
-			device, m_bufferMemory, 0u, VK_WHOLE_SIZE, 0u,
-			reinterpret_cast<void**>(&m_mappedCPUPtr)
-		)
+	vkMapMemory(
+		device, m_bufferMemory, 0u, VK_WHOLE_SIZE, 0u,
+		reinterpret_cast<void**>(&m_mappedCPUPtr)
 	);
 }
 
