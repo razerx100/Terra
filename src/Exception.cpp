@@ -1,5 +1,4 @@
 #include <Exception.hpp>
-#include <sstream>
 
 Exception::Exception(const std::string& errorType, const std::string& errorMessage) noexcept
 	: m_exceptionType{ errorType }, m_errorMessage{ errorMessage } {}

@@ -1,6 +1,7 @@
 #ifndef DEBUG_LAYER_MANAGER_HPP_
 #define DEBUG_LAYER_MANAGER_HPP_
 #include <vulkan/vulkan.h>
+#include <string>
 
 void PopulateDebugMessengerCreateInfo(
 	VkDebugUtilsMessengerCreateInfoEXT& createInfo
@@ -28,6 +29,9 @@ public:
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData
 	);
+
+private:
+	static std::string GenerateMessageType(std::uint32_t typeFlag) noexcept;
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger;

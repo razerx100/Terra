@@ -1,5 +1,21 @@
 #include <DebugLayerManager.hpp>
 #include <fstream>
+#include <unordered_map>
+
+static std::unordered_map<VkDebugUtilsMessageSeverityFlagBitsEXT, const char*> messageSeverities{
+	{VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT, "MESSAGE_SEVERITY_VERBOSE" },
+	{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT, "MESSAGE_SEVERITY_INFO"},
+	{VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT, "MESSAGE_SEVERITY_WARNING"},
+	{VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, "MESSAGE_SEVERITY_ERROR"},
+	{VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT, "NOTHING"}
+};
+
+static std::unordered_map<std::uint32_t, const char*> messageTypes{
+	{VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, "MESSAGE_TYPE_GENERAL"},
+	{VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT, "MESSAGE_TYPE_VALIDATION"},
+	{VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT, "MESSAGE_TYPE_PERFORMANCE"},
+	{VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT, "NOTHING"}
+};
 
 DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
 	: m_debugMessenger(VK_NULL_HANDLE), m_pInstanceRef(instanceRef) {
@@ -7,9 +23,7 @@ DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
 	PopulateDebugMessengerCreateInfo(createInfo);
 
-	CreateDebugUtilsMessengerEXT(
-		m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger
-	);
+	CreateDebugUtilsMessengerEXT(m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger);
 }
 
 DebugLayerManager::~DebugLayerManager() noexcept {
@@ -51,9 +65,26 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 	void* pUserData
 ) {
 	std::ofstream log("ErrorLog.txt", std::ios_base::app | std::ios_base::out);
-	log << pCallbackData->pMessage << std::endl;
+	log << "Type : " << GenerateMessageType(messageType) << "    "
+		<< "Severity : " << messageSeverities[messageSeverity] << "    "
+		<< "ID : " << pCallbackData->pMessageIdName << "    "
+		<< "Description : " << pCallbackData->pMessage << "    "
+		<< std::endl;
 
 	return VK_FALSE;
+}
+
+std::string DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept {
+	std::string messageTypeDescription;
+	for (std::uint32_t index = 0u; index < 3u; ++index) {
+		const std::uint32_t flagIndex = 1u << index;
+		if (typeFlag & flagIndex)
+			messageTypeDescription
+			.append(messageTypes[static_cast<size_t>(flagIndex)])
+			.append(" ");
+	}
+
+	return messageTypeDescription;
 }
 
 void PopulateDebugMessengerCreateInfo(

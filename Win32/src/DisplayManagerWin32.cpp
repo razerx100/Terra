@@ -18,7 +18,7 @@ IDisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
 
 	ComPtr<IDXGIAdapter1> d3dGpu = GetAdapter(gpuLUid);
 
-	assert(d3dGpu && "GPU ID doesn't match.");
+	assert(d3dGpu && "GPU IDs don't match.");
 
 	d3dGpu->GetDesc(&gpuDesc);
 
