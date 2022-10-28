@@ -1,7 +1,7 @@
 #include <VkInstanceManager.hpp>
 #include <DebugLayerManager.hpp>
-#include <stdexcept>
 #include <cassert>
+#include <Exception.hpp>
 
 InstanceManager::InstanceManager(const char* appName) noexcept
 	: m_vkInstance(VK_NULL_HANDLE), m_appName(appName) {}
@@ -32,7 +32,7 @@ void InstanceManager::CheckExtensionSupport() const {
 			}
 
 		if (!found)
-			throw std::runtime_error(
+			throw Exception("Vulkan Extension Error",
 				std::string("The extension ") + requiredExtension + " isn't supported."
 			);
 	}

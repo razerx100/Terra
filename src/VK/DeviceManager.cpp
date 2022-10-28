@@ -1,20 +1,18 @@
 #include <DeviceManager.hpp>
 #include <ranges>
 #include <algorithm>
-#include <stdexcept>
+#include <Exception.hpp>
 
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-void DeviceManager::FindPhysicalDevice(
-	VkInstance instance, VkSurfaceKHR surface
-) {
+void DeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
 	std::uint32_t deviceCount = 0u;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
 	if (!deviceCount)
-		throw std::runtime_error("No GPU with Vulkan support.");
+		throw Exception("Vulkan Error", "No GPU with Vulkan support.");
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
@@ -29,7 +27,7 @@ void DeviceManager::FindPhysicalDevice(
 		);
 
 	if (suitableDevice == VK_NULL_HANDLE)
-		throw std::runtime_error("No GPU with all Queue Family support found.");
+		throw Exception("QueueFamily Error", "No GPU with all Queue Family support found.");
 	else {
 		SetQueueFamilyInfo(suitableDevice, surface);
 		m_physicalDevice = suitableDevice;
@@ -37,8 +35,8 @@ void DeviceManager::FindPhysicalDevice(
 }
 
 VkPhysicalDevice DeviceManager::QueryPhysicalDevices(
-	const std::vector<VkPhysicalDevice>& devices,
-	VkSurfaceKHR surface, VkPhysicalDeviceType deviceType
+	const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface,
+	VkPhysicalDeviceType deviceType
 ) const noexcept {
 	for (VkPhysicalDevice device : devices)
 		if (CheckDeviceType(device, deviceType))
@@ -134,9 +132,7 @@ std::pair<VkQueue, std::uint32_t> DeviceManager::GetQueue(QueueType type) noexce
 	return { queue, familyIndex };
 }
 
-bool DeviceManager::CheckDeviceExtensionSupport(
-	VkPhysicalDevice device
-) const noexcept {
+bool DeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const noexcept {
 	std::uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 

@@ -31,26 +31,17 @@ private:
 	};
 
 private:
-	bool CheckDeviceType(
-		VkPhysicalDevice device,
-		VkPhysicalDeviceType deviceType
-	) const noexcept;
-	bool CheckDeviceExtensionSupport(
-		VkPhysicalDevice device
-	) const noexcept;
-	bool IsDeviceSuitable(
-		VkPhysicalDevice device, VkSurfaceKHR surface
-	) const noexcept;
+	bool CheckDeviceType(VkPhysicalDevice device,VkPhysicalDeviceType deviceType) const noexcept;
+	bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const noexcept;
+	bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) const noexcept;
 
 	[[nodiscard]]
 	VkPhysicalDevice QueryPhysicalDevices(
-		const std::vector<VkPhysicalDevice>& devices,
-		VkSurfaceKHR surface, VkPhysicalDeviceType deviceType
+		const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface,
+		VkPhysicalDeviceType deviceType
 	) const noexcept;
 
-	void SetQueueFamilyInfo(
-		VkPhysicalDevice device, VkSurfaceKHR surface
-	);
+	void SetQueueFamilyInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 private:
 	VkPhysicalDevice m_physicalDevice;

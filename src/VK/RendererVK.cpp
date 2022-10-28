@@ -12,6 +12,9 @@ RendererVK::RendererVK(
 ) : m_backgroundColour{}, m_appName(appName),
 	m_bufferCount(bufferCount), m_width(width), m_height(height) {
 
+	assert(bufferCount >= 1u && "BufferCount must not be zero.");
+	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
+
 	m_backgroundColour = {
 		{0.0001f, 0.0001f, 0.0001f, 0.0001f }
 	};
@@ -38,9 +41,7 @@ RendererVK::RendererVK(
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
 
-	Terra::device->FindPhysicalDevice(
-		vkInstance, vkSurface
-	);
+	Terra::device->FindPhysicalDevice(vkInstance, vkSurface);
 	Terra::device->CreateLogicalDevice();
 
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();

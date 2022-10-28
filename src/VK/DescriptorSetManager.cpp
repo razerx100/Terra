@@ -24,6 +24,8 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 	const std::uint32_t descriptorSetCount =
 		static_cast<std::uint32_t>(std::size(m_descriptorSets));
 
+	assert(descriptorSetCount && "DescriptorSetCount is zero.");
+
 	m_descriptorPool.CreatePool(device, descriptorSetCount);
 
 	CreateSetLayouts(device);
