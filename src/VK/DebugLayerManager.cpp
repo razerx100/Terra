@@ -67,7 +67,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 	std::ofstream log("ErrorLog.txt", std::ios_base::app | std::ios_base::out);
 	log << "Type : " << GenerateMessageType(messageType) << "    "
 		<< "Severity : " << messageSeverities[messageSeverity] << "    "
-		<< "ID : " << pCallbackData->pMessageIdName << "    "
+		<< "ID : " << pCallbackData->pMessageIdName << "\n"
 		<< "Description : " << pCallbackData->pMessage << "    "
 		<< std::endl;
 

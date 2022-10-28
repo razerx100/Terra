@@ -187,6 +187,8 @@ namespace Terra {
 	}
 
 	void CleanUpResources() noexcept {
+		Terra::Resources::uploadContainer.reset();
+		Terra::Resources::uploadMemory.reset();
 		Resources::cpuWriteMemory.reset();
 		Resources::gpuOnlyMemory.reset();
 	}
