@@ -176,7 +176,7 @@ void RendererVK::Render() {
 	);
 	Terra::renderPipeline->DispatchCompute(computeCommandBuffer);
 
-	Terra::computeCmdBuffer->CloseBuffer();
+	Terra::computeCmdBuffer->CloseBuffer(imageIndex);
 	Terra::computeQueue->SubmitCommandBuffer(
 		computeCommandBuffer, Terra::computeSyncObjects->GetFrontSemaphore()
 	);
