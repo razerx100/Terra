@@ -8,8 +8,13 @@ public:
 	VkCommandQueue(VkQueue queue) noexcept;
 
 	void SubmitCommandBuffer(VkCommandBuffer commandBuffer, VkFence fence) const noexcept;
-	void SubmitCommandBufferForRendering(
-		VkCommandBuffer commandBuffer, VkFence fence, VkSemaphore waitSemaphore
+	void SubmitCommandBuffer(
+		VkCommandBuffer commandBuffer, VkFence fence,
+		std::uint32_t waitSemaphoreCount, VkSemaphore* waitSemaphores,
+		VkPipelineStageFlags* waitStages
+	) const noexcept;
+	void SubmitCommandBuffer(
+		VkCommandBuffer commandBuffer, VkSemaphore signalSemaphore
 	) const noexcept;
 
 private:

@@ -164,6 +164,24 @@ void RendererVK::Update() {
 void RendererVK::Render() {
 	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
 
+	// Compute Stage
+	Terra::computeCmdBuffer->ResetBuffer(imageIndex);
+
+	const VkCommandBuffer computeCommandBuffer = Terra::computeCmdBuffer->GetCommandBuffer(
+		imageIndex
+	);
+
+	Terra::renderPipeline->BindComputePipeline(
+		computeCommandBuffer, Terra::computeDescriptorSet->GetDescriptorSet(imageIndex)
+	);
+	Terra::renderPipeline->DispatchCompute(computeCommandBuffer);
+
+	Terra::computeCmdBuffer->CloseBuffer();
+	Terra::computeQueue->SubmitCommandBuffer(
+		computeCommandBuffer, Terra::computeSyncObjects->GetFrontSemaphore()
+	);
+
+	// Garphics Stage
 	Terra::graphicsCmdBuffer->ResetBuffer(imageIndex);
 
 	const VkCommandBuffer graphicsCommandBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer(
@@ -202,13 +220,24 @@ void RendererVK::Render() {
 
 	Terra::graphicsCmdBuffer->CloseBuffer(imageIndex);
 
-	Terra::graphicsQueue->SubmitCommandBufferForRendering(
-		graphicsCommandBuffer, Terra::graphicsSyncObjects->GetFrontFence(),
+	VkSemaphore waitSemaphores[] = {
+		Terra::computeSyncObjects->GetFrontSemaphore(),
 		Terra::graphicsSyncObjects->GetFrontSemaphore()
+	};
+	VkPipelineStageFlags waitStages[] = {
+		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	};
+
+	Terra::graphicsQueue->SubmitCommandBuffer(
+		graphicsCommandBuffer, Terra::graphicsSyncObjects->GetFrontFence(),
+		2u, waitSemaphores, waitStages
 	);
 	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(imageIndex));
 
 	Terra::graphicsSyncObjects->AdvanceSyncObjectsInQueue();
+	Terra::computeSyncObjects->AdvanceSemaphoreInQueue();
+
 	Terra::graphicsSyncObjects->WaitForFrontFence();
 	Terra::graphicsSyncObjects->ResetFrontFence();
 }
@@ -333,6 +362,7 @@ void RendererVK::ProcessData() {
 	Terra::textureStorage->SetDescriptorLayouts();
 
 	Terra::graphicsDescriptorSet->CreateDescriptorSets(logicalDevice);
+	Terra::computeDescriptorSet->CreateDescriptorSets(logicalDevice);
 
 	ConstructPipelines();
 
@@ -379,4 +409,14 @@ void RendererVK::ConstructPipelines() {
 
 	Terra::renderPipeline->AddGraphicsPipelineLayout(std::move(graphicsLayout));
 	Terra::renderPipeline->AddGraphicsPipelineObject(std::move(graphicsPipeline));
+
+	auto computeLayout = CreateComputePipelineLayout(
+		device, m_bufferCount, Terra::computeDescriptorSet->GetDescriptorSetLayouts()
+	);
+	auto computePipeline = CreateComputePipeline(
+		device, computeLayout->GetLayout(), m_shaderPath
+	);
+
+	Terra::renderPipeline->AddComputePipelineLayout(std::move(computeLayout));
+	Terra::renderPipeline->AddComputePipelineObject(std::move(computePipeline));
 }

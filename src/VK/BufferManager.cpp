@@ -22,10 +22,15 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	m_cameraBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
 	DescriptorSetManager* const graphicsDescriptorSet = Terra::graphicsDescriptorSet.get();
+	DescriptorSetManager* const computeDescriptorSet = Terra::computeDescriptorSet.get();
 
 	AddDescriptorForBuffer(
 		m_cameraBuffer, m_bufferCount, 0u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		VK_SHADER_STAGE_VERTEX_BIT, graphicsDescriptorSet
+	);
+	AddDescriptorForBuffer(
+		m_cameraBuffer, m_bufferCount, 0u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_SHADER_STAGE_COMPUTE_BIT, computeDescriptorSet
 	);
 
 	const size_t modelCount = std::size(m_opaqueModels);
@@ -40,6 +45,10 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	AddDescriptorForBuffer(
 		m_modelBuffers, m_bufferCount, 2u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 		VK_SHADER_STAGE_VERTEX_BIT, graphicsDescriptorSet
+	);
+	AddDescriptorForBuffer(
+		m_modelBuffers, m_bufferCount, 1u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+		VK_SHADER_STAGE_COMPUTE_BIT, computeDescriptorSet
 	);
 }
 
