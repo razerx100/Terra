@@ -116,6 +116,7 @@ void BufferManager::UpdateModelData(VkDeviceSize index) const noexcept {
 		modelBuffer.textureIndex = model->GetTextureIndex();
 		modelBuffer.uvInfo = model->GetUVInfo();
 		modelBuffer.modelMatrix = model->GetModelMatrix();
+		modelBuffer.modelOffset = model->GetModelOffset();
 
 		memcpy(cpuWriteStart + modelBuffersOffset + offset, &modelBuffer, bufferStride);
 
