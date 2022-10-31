@@ -12,7 +12,9 @@ struct ModelConstantBuffer {
 	UVInfo uvInfo;
 	DirectX::XMMATRIX modelMatrix;
 	std::uint32_t textureIndex;
+	float padding0[3];
 	DirectX::XMFLOAT3 modelOffset;
+	float padding1;
 };
 
 class BufferManager {
