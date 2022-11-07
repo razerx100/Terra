@@ -15,6 +15,7 @@ struct ModelConstantBuffer {
 	float padding0[3];
 	DirectX::XMFLOAT3 modelOffset;
 	float padding1;
+	DirectX::XMFLOAT3 boundingBox[8];
 };
 
 class BufferManager {
