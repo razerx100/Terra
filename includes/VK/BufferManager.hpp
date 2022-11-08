@@ -14,8 +14,7 @@ struct ModelConstantBuffer {
 	std::uint32_t textureIndex;
 	float padding0[3];
 	DirectX::XMFLOAT3 modelOffset;
-	float padding1;
-	DirectX::XMFLOAT3 boundingBox[8];
+	DirectX::XMFLOAT4 boundingBox[8]; // GLSL's vec3 is actually vec4
 };
 
 class BufferManager {

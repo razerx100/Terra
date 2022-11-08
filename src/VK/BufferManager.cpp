@@ -119,7 +119,11 @@ void BufferManager::UpdateModelData(VkDeviceSize index) const noexcept {
 		modelBuffer.modelOffset = model->GetModelOffset();
 
 		const auto& boundingBox = model->GetBoundingBox();
-		memcpy(modelBuffer.boundingBox, std::data(boundingBox), sizeof(DirectX::XMFLOAT3) * 8u);
+		for (size_t index1 = 0u; index1 < std::size(boundingBox); ++index1)
+			memcpy(
+				modelBuffer.boundingBox + index1,
+				&boundingBox[index1], sizeof(DirectX::XMFLOAT3)
+			);
 
 		memcpy(cpuWriteStart + modelBuffersOffset + offset, &modelBuffer, bufferStride);
 
