@@ -275,9 +275,9 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 	}
 }
 
-Renderer::Resolution RendererVK::GetDisplayCoordinates(std::uint32_t displayIndex) const {
+Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
 	auto [width, height] = Terra::display->GetDisplayResolution(
-		Terra::device->GetPhysicalDevice(), displayIndex
+		Terra::device->GetPhysicalDevice(), 0u
 	);
 
 	return { width, height };
