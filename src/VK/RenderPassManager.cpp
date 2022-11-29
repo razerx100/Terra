@@ -1,8 +1,7 @@
 #include <RenderPassManager.hpp>
 
 RenderPassManager::RenderPassManager(
-	VkDevice device,
-	VkFormat swapchainFormat, VkFormat depthFormat
+	VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat
 ) : m_deviceRef(device), m_renderPass(VK_NULL_HANDLE) {
 	CreateRenderPass(device, swapchainFormat, depthFormat);
 }
@@ -16,8 +15,7 @@ VkRenderPass RenderPassManager::GetRenderPass() const noexcept {
 }
 
 void RenderPassManager::CreateRenderPass(
-	VkDevice device,
-	VkFormat swapchainFormat, VkFormat depthFormat
+	VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat
 ) {
 	VkAttachmentReference colourAttachmentRef = {};
 	colourAttachmentRef.attachment = 0u;

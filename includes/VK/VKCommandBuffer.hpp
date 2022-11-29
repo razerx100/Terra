@@ -10,11 +10,16 @@ public:
 	);
 	~VKCommandBuffer() noexcept;
 
-	void ResetBuffer(size_t index = 0u) const noexcept;
-	void CloseBuffer(size_t index = 0u) const noexcept;
+	void ResetBuffer(size_t index) const noexcept;
+	void CloseBuffer(size_t index) const noexcept;
+
+	void ResetFirstBuffer() const noexcept;
+	void CloseFirstBuffer() const noexcept;
 
 	[[nodiscard]]
-	VkCommandBuffer GetCommandBuffer(size_t index = 0u) const noexcept;
+	VkCommandBuffer GetCommandBuffer(size_t index) const noexcept;
+	[[nodiscard]]
+	VkCommandBuffer GetFirstCommandBuffer() const noexcept;
 
 private:
 	VkDevice m_deviceRef;

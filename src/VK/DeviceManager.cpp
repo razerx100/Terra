@@ -229,12 +229,9 @@ bool DeviceManager::IsDeviceSuitable(
 		return false;
 }
 
-std::vector<std::uint32_t> DeviceManager::ResolveQueueIndices(
+DeviceManager::QueueIndicesType DeviceManager::_resolveQueueIndices(
 	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
 ) noexcept {
-	if (index2 == -1)
-		index2 = index0;
-
 	std::vector<uint32_t> distinctQueueIndices{ index0, index1, index2 };
 	std::ranges::sort(distinctQueueIndices);
 
@@ -242,4 +239,16 @@ std::vector<std::uint32_t> DeviceManager::ResolveQueueIndices(
 	distinctQueueIndices.erase(std::begin(ret), std::end(ret));
 
 	return distinctQueueIndices;
+}
+
+DeviceManager::QueueIndicesType DeviceManager::ResolveQueueIndices(
+	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
+) noexcept {
+	return _resolveQueueIndices(index0, index1, index2);
+}
+
+DeviceManager::QueueIndicesType DeviceManager::ResolveQueueIndices(
+	std::uint32_t index0, std::uint32_t index1
+) noexcept {
+	return _resolveQueueIndices(index0, index1, index0);
 }

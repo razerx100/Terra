@@ -88,7 +88,7 @@ void BufferManager::AddModelInputs(
 	m_gVertexBuffer.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(vertices), vertexBufferSize, m_gVertexBuffer.GetUploadMemoryOffset()
+		std::move(vertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
 	);
 
 	// Index Buffer
@@ -100,7 +100,7 @@ void BufferManager::AddModelInputs(
 	m_gIndexBuffer.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(indices), indexBufferSize, m_gIndexBuffer.GetUploadMemoryOffset()
+		std::move(indices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
 	);
 }
 

@@ -103,6 +103,14 @@ VkMemoryRequirements VkResourceView::GetMemoryRequirements(VkDevice device) cons
 	return m_resource.GetMemoryRequirements(device);
 }
 
+VkDeviceSize VkResourceView::GetFirstMemoryOffset() const noexcept {
+	return GetMemoryOffset(0u);
+}
+
+VkDeviceSize VkResourceView::GetFirstSubAllocationOffset() const noexcept {
+	return GetSubAllocationOffset(0u);
+}
+
 VkDeviceSize VkResourceView::GetSubAllocationSize() const noexcept {
 	return m_subAllocationSize;
 }

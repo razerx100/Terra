@@ -5,8 +5,7 @@
 class RenderPassManager {
 public:
 	RenderPassManager(
-		VkDevice device,
-		VkFormat swapchainFormat, VkFormat depthFormat
+		VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat
 	);
 	~RenderPassManager() noexcept;
 
@@ -14,8 +13,7 @@ public:
 	VkRenderPass GetRenderPass() const noexcept;
 
 	void CreateRenderPass(
-		VkDevice device,
-		VkFormat swapchainFormat, VkFormat depthFormat
+		VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat
 	);
 
 private:

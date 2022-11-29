@@ -39,6 +39,18 @@ void VKCommandBuffer::CloseBuffer(size_t index) const noexcept {
 	vkEndCommandBuffer(m_commandBuffers[index]);
 }
 
+void VKCommandBuffer::ResetFirstBuffer() const noexcept {
+	ResetBuffer(0u);
+}
+
+void VKCommandBuffer::CloseFirstBuffer() const noexcept {
+	CloseBuffer(0u);
+}
+
 VkCommandBuffer VKCommandBuffer::GetCommandBuffer(size_t index) const noexcept {
 	return m_commandBuffers[index];
+}
+
+VkCommandBuffer VKCommandBuffer::GetFirstCommandBuffer() const noexcept {
+	return GetCommandBuffer(0u);
 }

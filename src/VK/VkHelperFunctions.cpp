@@ -1,8 +1,7 @@
 #include <VkHelperFunctions.hpp>
 
 void CreateSampler(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-	VkSampler* sampler,
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSampler* sampler,
 	bool anisotropy, float maxAnisotropy
 ) {
 	VkSamplerCreateInfo createInfo{};

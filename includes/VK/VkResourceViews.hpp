@@ -33,11 +33,15 @@ public:
 	[[nodiscard]]
 	VkBuffer GetResource() const noexcept;
 	[[nodiscard]]
-	VkDeviceSize GetMemoryOffset(VkDeviceSize index = 0u) const noexcept;
+	VkDeviceSize GetMemoryOffset(VkDeviceSize index) const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetSubAllocationSize() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetFirstMemoryOffset() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetFirstSubAllocationOffset() const noexcept;
 
 private:
 	[[nodiscard]]
@@ -152,9 +156,14 @@ public:
 	}
 
 	[[nodiscard]]
-	VkDeviceSize GetUploadMemoryOffset(VkDeviceSize index = 0u) const noexcept {
+	VkDeviceSize GetUploadMemoryOffset(VkDeviceSize index) const noexcept {
 		return m_uploadResource.GetMemoryOffset(index);
 	}
+	[[nodiscard]]
+	VkDeviceSize GetFirstUploadMemoryOffset() const noexcept {
+		return m_uploadResource.GetFirstMemoryOffset();
+	}
+
 
 protected:
 	VkResourceView m_uploadResource;

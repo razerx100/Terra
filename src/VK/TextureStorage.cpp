@@ -31,8 +31,7 @@ size_t TextureStorage::AddTexture(
 	texture.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(textureDataHandle), width * height * 4u,
-		texture.GetUploadMemoryOffset()
+		std::move(textureDataHandle), width * height * 4u, texture.GetFirstUploadMemoryOffset()
 	);
 
 	m_textures.emplace_back(std::move(texture));

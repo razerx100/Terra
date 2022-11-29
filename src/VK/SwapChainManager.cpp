@@ -118,8 +118,7 @@ void SwapChainManager::ResizeSwapchain(
 }
 
 void SwapChainManager::CreateSwapchain(
-	const SwapChainManagerCreateInfo& swapCreateInfo,
-	bool& formatChanged
+	const SwapChainManagerCreateInfo& swapCreateInfo, bool& formatChanged
 ) {
 	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(
 		swapCreateInfo.surfaceInfo.formats

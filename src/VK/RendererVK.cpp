@@ -329,14 +329,14 @@ void RendererVK::ProcessData() {
 	while (works != 0u);
 
 	// Upload to GPU
-	Terra::copyCmdBuffer->ResetBuffer();
-	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetCommandBuffer();
+	Terra::copyCmdBuffer->ResetFirstBuffer();
+	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetFirstCommandBuffer();
 
 	Terra::bufferManager->RecordCopy(copyCmdBuffer);
 	Terra::renderPipeline->RecordCopy(copyCmdBuffer);
 	Terra::textureStorage->RecordUploads(copyCmdBuffer);
 
-	Terra::copyCmdBuffer->CloseBuffer();
+	Terra::copyCmdBuffer->CloseFirstBuffer();
 
 	Terra::copyQueue->SubmitCommandBuffer(
 		copyCmdBuffer, Terra::copySyncObjects->GetFrontFence()
@@ -345,13 +345,13 @@ void RendererVK::ProcessData() {
 	Terra::copySyncObjects->ResetFrontFence();
 
 	// Transition Images to Fragment Optimal
-	Terra::graphicsCmdBuffer->ResetBuffer();
+	Terra::graphicsCmdBuffer->ResetFirstBuffer();
 
-	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer();
+	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetFirstCommandBuffer();
 
 	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
 
-	Terra::graphicsCmdBuffer->CloseBuffer();
+	Terra::graphicsCmdBuffer->CloseFirstBuffer();
 
 	Terra::graphicsQueue->SubmitCommandBuffer(
 		graphicsCmdBuffer, Terra::graphicsSyncObjects->GetFrontFence()

@@ -5,8 +5,7 @@
 #include <Terra.hpp>
 
 RenderPipeline::RenderPipeline(
-	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
-	std::uint32_t bufferCount
+	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices, std::uint32_t bufferCount
 ) noexcept
 	: m_commandBuffers{ device },
 	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_bufferCount{ bufferCount },
