@@ -99,9 +99,7 @@ namespace Terra {
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 	void InitCameraManager();
-	void InitDepthBuffer(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
-	);
+	void InitDepthBuffer(VkDevice logicalDevice);
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;
 	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) noexcept;
 	void CleanUpResources() noexcept;

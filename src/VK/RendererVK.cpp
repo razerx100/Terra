@@ -86,7 +86,7 @@ RendererVK::RendererVK(
 	std::vector<std::uint32_t> copyAndGfxFamilyIndices =
 		DeviceManager::ResolveQueueIndices(copyQueueFamilyIndex, graphicsQueueFamilyIndex);
 
-	Terra::InitDepthBuffer(logicalDevice, copyAndGfxFamilyIndices);
+	Terra::InitDepthBuffer(logicalDevice);
 	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
 
 	Terra::InitRenderPass(

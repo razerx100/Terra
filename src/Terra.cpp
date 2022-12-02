@@ -162,10 +162,8 @@ namespace Terra {
 		cameraManager = std::make_unique<CameraManager>();
 	}
 
-	void InitDepthBuffer(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices
-	) {
-		depthBuffer = std::make_unique<DepthBuffer>(logicalDevice, queueFamilyIndices);
+	void InitDepthBuffer(VkDevice logicalDevice) {
+		depthBuffer = std::make_unique<DepthBuffer>(logicalDevice);
 	}
 
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept {

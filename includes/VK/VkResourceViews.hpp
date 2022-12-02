@@ -68,7 +68,7 @@ public:
 
 	void CreateResource(
 		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+		VkImageUsageFlags usageFlags, std::vector<std::uint32_t> queueFamilyIndices = {}
 	);
 	void BindResourceToMemory(VkDevice device);
 	void SetMemoryOffsetAndType(
@@ -80,7 +80,6 @@ public:
 
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);
 	void RecordCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
-	void TransitionImageLayout(VkCommandBuffer cmdBuffer, bool shaderStage) noexcept;
 	void CleanUpImageResourceView() noexcept;
 
 	static void _createImageView(

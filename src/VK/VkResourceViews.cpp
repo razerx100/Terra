@@ -1,4 +1,5 @@
 #include <VkResourceViews.hpp>
+#include <VkResourceBarriers.hpp>
 
 #include <Terra.hpp>
 
@@ -156,10 +157,10 @@ VkImageResourceView& VkImageResourceView::operator=(
 
 void VkImageResourceView::CreateResource(
 	VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-	VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+	VkImageUsageFlags usageFlags, std::vector<std::uint32_t> queueFamilyIndices
 ) {
 	m_resource.CreateResource(
-		device, width, height, imageFormat, usageFlags, queueFamilyIndices
+		device, width, height, imageFormat, usageFlags, std::move(queueFamilyIndices)
 	);
 
 	m_imageWidth = width;
@@ -259,61 +260,18 @@ void VkImageResourceView::RecordCopy(
 	copyRegion.imageOffset = imageOffset;
 	copyRegion.imageExtent = imageExtent;
 
-	TransitionImageLayout(copyCmdBuffer, false);
+	VkImageBarrier().AddLayoutBarrier(
+		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
 
 	vkCmdCopyBufferToImage(
 		copyCmdBuffer, uploadBuffer,
 		m_resource.GetResource(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1u, &copyRegion
-	);
-}
-
-void VkImageResourceView::TransitionImageLayout(
-	VkCommandBuffer cmdBuffer, bool shaderStage
-) noexcept {
-	VkImageSubresourceRange subresourceRange{};
-	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subresourceRange.baseMipLevel = 0u;
-	subresourceRange.levelCount = 1u;
-	subresourceRange.baseArrayLayer = 0u;
-	subresourceRange.layerCount = 1u;
-
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = m_resource.GetResource();
-	barrier.subresourceRange = subresourceRange;
-
-	VkPipelineStageFlags sourceStage = 0u;
-	VkPipelineStageFlags destinationStage = 0u;
-
-	if (shaderStage) {
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	}
-	else {
-		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.srcAccessMask = 0u;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
-
-	vkCmdPipelineBarrier(
-		cmdBuffer,
-		sourceStage, destinationStage,
-		0u,
-		0u, nullptr,
-		0u, nullptr,
-		1u, &barrier
 	);
 }
 
@@ -414,7 +372,13 @@ void VkUploadableImageResourceView::CreateImageView(
 }
 
 void VkUploadableImageResourceView::TransitionImageLayout(VkCommandBuffer cmdBuffer) noexcept {
-	m_gpuResource.TransitionImageLayout(cmdBuffer, true);
+	VkImageBarrier().AddLayoutBarrier(
+		m_gpuResource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+	);
 }
 
 VkImageView VkUploadableImageResourceView::GetImageView() const noexcept {

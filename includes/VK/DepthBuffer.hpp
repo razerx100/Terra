@@ -5,7 +5,7 @@
 
 class DepthBuffer {
 public:
-	DepthBuffer(VkDevice logicalDevice, std::vector<std::uint32_t> queueFamilyIndices);
+	DepthBuffer(VkDevice logicalDevice);
 
 	DepthBuffer(const DepthBuffer&) = delete;
 	DepthBuffer& operator=(const DepthBuffer&) = delete;
@@ -31,7 +31,6 @@ private:
 	VkImageResourceView m_depthImage;
 
 	VkDevice m_deviceRef;
-	std::vector<std::uint32_t> m_queueFamilyIndices;
 
 	std::uint32_t m_maxWidth;
 	std::uint32_t m_maxHeight;

@@ -4,11 +4,8 @@
 
 #include <Terra.hpp>
 
-DepthBuffer::DepthBuffer(
-	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices
-) : m_depthImage{ device }, m_deviceRef{ device },
-	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_maxWidth{ 0u },
-	m_maxHeight{ 0u } {}
+DepthBuffer::DepthBuffer(VkDevice device) : m_depthImage{ device }, m_deviceRef{ device },
+	m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
 
 void DepthBuffer::CleanUp() noexcept {
 	m_depthImage.CleanUpImageResourceView();
@@ -17,13 +14,11 @@ void DepthBuffer::CleanUp() noexcept {
 DepthBuffer::DepthBuffer(DepthBuffer&& depthBuffer) noexcept
 	: m_depthImage{ std::move(depthBuffer.m_depthImage) },
 	m_deviceRef{ depthBuffer.m_deviceRef },
-	m_queueFamilyIndices{ std::move(depthBuffer.m_queueFamilyIndices) },
 	m_maxWidth{ depthBuffer.m_maxWidth }, m_maxHeight{ depthBuffer.m_maxHeight } {}
 
 DepthBuffer& DepthBuffer::operator=(DepthBuffer&& depthBuffer) noexcept {
 	m_depthImage = std::move(depthBuffer.m_depthImage);
 	m_deviceRef = depthBuffer.m_deviceRef;
-	m_queueFamilyIndices = std::move(depthBuffer.m_queueFamilyIndices);
 	m_maxWidth = depthBuffer.m_maxWidth;
 	m_maxHeight = depthBuffer.m_maxHeight;
 
@@ -61,8 +56,7 @@ void DepthBuffer::CreateDepthBuffer(
 		throw Exception("DepthBuffer Error", "Resolution exceeds max supported resolution");
 
 	m_depthImage.CreateResource(
-		device, width, height, DEPTHFORMAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		m_queueFamilyIndices
+		device, width, height, DEPTHFORMAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
 	);
 
 	m_depthImage.BindResourceToMemory(device);
