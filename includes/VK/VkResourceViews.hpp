@@ -35,8 +35,8 @@ public:
 	) noexcept;
 	void AcquireOwnership(
 		VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
-		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
-		VkPipelineStageFlagBits destinationFlag
+		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits2 destinationAccess,
+		VkPipelineStageFlagBits2 destinationStage
 	) noexcept;
 
 	[[nodiscard]]
@@ -96,8 +96,8 @@ public:
 	) noexcept;
 	void AcquireOwnership(
 		VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
-		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
-		VkPipelineStageFlagBits destinationFlag
+		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits2 destinationAccess,
+		VkPipelineStageFlagBits2 destinationStage
 	) noexcept;
 
 	static void _createImageView(
@@ -176,12 +176,12 @@ public:
 
 	void AcquireOwnership(
 		VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
-		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
-		VkPipelineStageFlagBits destinationFlag
+		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits2 destinationAccess,
+		VkPipelineStageFlagBits2 destinationStage
 	) noexcept {
 		m_gpuResource.AcquireOwnership(
 			cmdBuffer, oldOwnerQueueIndex, newOwnerQueueIndex, destinationAccess,
-			destinationFlag
+			destinationStage
 		);
 	}
 

@@ -62,7 +62,8 @@ private:
 	const std::vector<const char*> m_extensionNames = {
 		"VK_KHR_swapchain",
 		"VK_EXT_descriptor_indexing",
-		"VK_KHR_shader_draw_parameters"
+		"VK_KHR_shader_draw_parameters",
+		"VK_KHR_synchronization2"
 	};
 };
 #endif

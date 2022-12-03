@@ -143,8 +143,8 @@ void RenderPipeline::AcquireOwnerShip(
 	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_commandBuffers.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
-		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+		VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
 	);
 }
 

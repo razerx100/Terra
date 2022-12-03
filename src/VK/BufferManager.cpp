@@ -145,12 +145,12 @@ void BufferManager::AcquireOwnerShips(
 	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept{
 	m_gVertexBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
+		VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT
 	);
 	m_gIndexBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDEX_READ_BIT,
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_2_INDEX_READ_BIT,
+		VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT
 	);
 }
 

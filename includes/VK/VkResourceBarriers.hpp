@@ -9,14 +9,13 @@ class VkBufferBarrier{
 public:
 	VkBufferBarrier() noexcept : m_currentIndex{ 0u } {}
 
-	void RecordBarriers(
-		VkCommandBuffer commandBuffer, VkPipelineStageFlagBits sourceStage,
-		VkPipelineStageFlagBits destinationStage
-	) noexcept {
-		vkCmdPipelineBarrier(
-			commandBuffer, sourceStage, destinationStage, 0u,
-			0u, nullptr, barrierCount, std::data(m_barriers), 0u, nullptr
-		);
+	void RecordBarriers(VkCommandBuffer commandBuffer) noexcept {
+		VkDependencyInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		info.bufferMemoryBarrierCount = barrierCount;
+		info.pBufferMemoryBarriers = std::data(m_barriers);
+
+		vkCmdPipelineBarrier2(commandBuffer, &info);
 	}
 
 	[[nodiscard]]
@@ -24,16 +23,19 @@ public:
 		VkBuffer buffer,
 		VkDeviceSize bufferSize, VkDeviceSize bufferOffset,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
-		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess
+		VkAccessFlagBits2 srcAccess, VkAccessFlagBits2 dstAccess,
+		VkPipelineStageFlagBits2 srcStage, VkPipelineStageFlagBits2 dstStage
 	) noexcept {
 		assert(m_currentIndex < barrierCount && "Barrier Count exceeded.");
 
-		VkBufferMemoryBarrier barrier{};
+		VkBufferMemoryBarrier2 barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 		barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
 		barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
 		barrier.srcAccessMask = srcAccess;
 		barrier.dstAccessMask = dstAccess;
+		barrier.srcStageMask = srcStage;
+		barrier.dstStageMask = dstStage;
 		barrier.buffer = buffer;
 		barrier.size = bufferSize;
 		barrier.offset = bufferOffset;
@@ -46,7 +48,7 @@ public:
 
 private:
 	size_t m_currentIndex;
-	std::array<VkBufferMemoryBarrier, barrierCount> m_barriers;
+	std::array<VkBufferMemoryBarrier2, barrierCount> m_barriers;
 };
 
 template<std::uint32_t barrierCount = 1u>
@@ -58,11 +60,13 @@ public:
 	VkImageBarrier& AddOwnershipBarrier(
 		VkImage image, VkImageAspectFlagBits imageAspect,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
-		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess
+		VkAccessFlagBits2 srcAccess, VkAccessFlagBits2 dstAccess,
+		VkPipelineStageFlagBits2 srcStage, VkPipelineStageFlagBits2 dstStage,
+		VkImageLayout currentLayout
 	) noexcept {
 		return AddBarrier(
 			image, imageAspect, srcQueueFamilyIndex, dstQueueFamilyIndex,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_UNDEFINED, srcAccess, dstAccess
+			currentLayout, currentLayout, srcAccess, dstAccess, srcStage, dstStage
 		);
 	}
 
@@ -70,22 +74,22 @@ public:
 	VkImageBarrier& AddLayoutBarrier(
 		VkImage image, VkImageAspectFlagBits imageAspect,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
-		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess
+		VkAccessFlagBits2 srcAccess, VkAccessFlagBits2 dstAccess,
+		VkPipelineStageFlagBits2 srcStage, VkPipelineStageFlagBits2 dstStage
 	) noexcept {
 		return AddBarrier(
 			image, imageAspect, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			oldLayout, newLayout, srcAccess, dstAccess
+			oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage
 		);
 	}
 
-	void RecordBarriers(
-		VkCommandBuffer commandBuffer, VkPipelineStageFlagBits sourceStage,
-		VkPipelineStageFlagBits destinationStage
-	) noexcept {
-		vkCmdPipelineBarrier(
-			commandBuffer, sourceStage, destinationStage, 0u,
-			0u, nullptr, 0u, nullptr, barrierCount, std::data(m_barriers)
-		);
+	void RecordBarriers(VkCommandBuffer commandBuffer) noexcept {
+		VkDependencyInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		info.imageMemoryBarrierCount = barrierCount;
+		info.pImageMemoryBarriers = std::data(m_barriers);
+
+		vkCmdPipelineBarrier2(commandBuffer, &info);
 	}
 
 protected:
@@ -94,7 +98,8 @@ protected:
 		VkImage image, VkImageAspectFlagBits imageAspect,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
-		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess
+		VkAccessFlagBits2 srcAccess, VkAccessFlagBits2 dstAccess,
+		VkPipelineStageFlagBits2 srcStage, VkPipelineStageFlagBits2 dstStage
 	) noexcept {
 		assert(m_currentIndex < barrierCount && "Barrier Count exceeded.");
 
@@ -105,7 +110,7 @@ protected:
 		subresourceRange.baseArrayLayer = 0u;
 		subresourceRange.layerCount = 1u;
 
-		VkImageMemoryBarrier barrier{};
+		VkImageMemoryBarrier2 barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
 		barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
@@ -113,6 +118,8 @@ protected:
 		barrier.newLayout = newLayout;
 		barrier.srcAccessMask = srcAccess;
 		barrier.dstAccessMask = dstAccess;
+		barrier.srcStageMask = srcStage;
+		barrier.dstStageMask = dstStage;
 		barrier.image = image;
 		barrier.subresourceRange = subresourceRange;
 
@@ -124,6 +131,6 @@ protected:
 
 private:
 	size_t m_currentIndex;
-	std::array<VkImageMemoryBarrier, barrierCount> m_barriers;
+	std::array<VkImageMemoryBarrier2, barrierCount> m_barriers;
 };
 #endif
