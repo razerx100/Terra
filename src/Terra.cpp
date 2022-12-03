@@ -124,22 +124,12 @@ namespace Terra {
 			);
 	}
 
-	void InitBufferManager(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
-		std::uint32_t bufferCount
-	) {
-		bufferManager = std::make_unique<BufferManager>(
-			logicalDevice, queueFamilyIndices, bufferCount
-			);
+	void InitBufferManager(VkDevice logicalDevice, std::uint32_t bufferCount) {
+		bufferManager = std::make_unique<BufferManager>(logicalDevice, bufferCount);
 	}
 
-	void InitRenderPipeline(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
-		std::uint32_t bufferCount
-	) {
-		renderPipeline = std::make_unique<RenderPipeline>(
-			logicalDevice, queueFamilyIndices, bufferCount
-			);
+	void InitRenderPipeline(VkDevice logicalDevice, std::uint32_t bufferCount) {
+		renderPipeline = std::make_unique<RenderPipeline>(logicalDevice, bufferCount);
 	}
 
 	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount) {
@@ -150,12 +140,9 @@ namespace Terra {
 	}
 
 	void InitTextureStorage(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice
 	) {
-		textureStorage = std::make_unique<TextureStorage>(
-			logicalDevice, physicalDevice, queueFamilyIndices
-			);
+		textureStorage = std::make_unique<TextureStorage>(logicalDevice, physicalDevice);
 	}
 
 	void InitCameraManager() {

@@ -10,10 +10,7 @@
 
 class RenderPipeline {
 public:
-	RenderPipeline(
-		VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
-		std::uint32_t bufferCount
-	) noexcept;
+	RenderPipeline(VkDevice device, std::uint32_t bufferCount) noexcept;
 
 	void AddGraphicsPipelineObject(std::unique_ptr<VkPipelineObject> graphicsPSO) noexcept;
 	void AddGraphicsPipelineLayout(std::unique_ptr<PipelineLayout> graphicsLayout) noexcept;
@@ -27,6 +24,12 @@ public:
 	void CopyData() noexcept;
 	void RecordCopy(VkCommandBuffer copyBuffer) noexcept;
 	void ReleaseUploadResources() noexcept;
+	void AcquireOwnerShip(
+		VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	) noexcept;
+	void ReleaseOwnership(
+		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	) noexcept;
 
 	void BindGraphicsPipeline(
 		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet graphicsDescriptorSet
@@ -44,7 +47,6 @@ private:
 	std::unique_ptr<PipelineLayout> m_computePipelineLayout;
 	std::unique_ptr<VkPipelineObject> m_computePSO;
 	VkUploadableBufferResourceView m_commandBuffers;
-	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_modelCount;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectCommands;

@@ -29,6 +29,15 @@ public:
 	void SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept;
 	void CleanUpResource() noexcept;
 	void RecordCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
+	void ReleaseOwnerShip(
+		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		std::uint32_t newOwnerQueueIndex
+	) noexcept;
+	void AcquireOwnership(
+		VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+		VkPipelineStageFlagBits destinationFlag
+	) noexcept;
 
 	[[nodiscard]]
 	VkBuffer GetResource() const noexcept;
@@ -81,6 +90,15 @@ public:
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);
 	void RecordCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
 	void CleanUpImageResourceView() noexcept;
+	void ReleaseOwnerShip(
+		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		std::uint32_t newOwnerQueueIndex
+	) noexcept;
+	void AcquireOwnership(
+		VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+		VkPipelineStageFlagBits destinationFlag
+	) noexcept;
 
 	static void _createImageView(
 		VkDevice device, VkImage image, VkImageView* imageView,
@@ -149,6 +167,24 @@ public:
 		m_gpuResource.RecordCopy(copyCmdBuffer, m_uploadResource.GetResource());
 	}
 
+	void ReleaseOwnerShip(
+		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		std::uint32_t newOwnerQueueIndex
+	) noexcept {
+		m_gpuResource.ReleaseOwnerShip(copyCmdBuffer, oldOwnerQueueIndex, newOwnerQueueIndex);
+	}
+
+	void AcquireOwnership(
+		VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+		VkPipelineStageFlagBits destinationFlag
+	) noexcept {
+		m_gpuResource.AcquireOwnership(
+			cmdBuffer, oldOwnerQueueIndex, newOwnerQueueIndex, destinationAccess,
+			destinationFlag
+		);
+	}
+
 	[[nodiscard]]
 	auto GetGPUResource() const noexcept {
 		return m_gpuResource.GetResource();
@@ -162,7 +198,6 @@ public:
 	VkDeviceSize GetFirstUploadMemoryOffset() const noexcept {
 		return m_uploadResource.GetFirstMemoryOffset();
 	}
-
 
 protected:
 	VkResourceView m_uploadResource;
@@ -183,7 +218,7 @@ public:
 
 	void CreateResource(
 		VkDevice device, VkDeviceSize bufferSize, std::uint32_t subAllocationCount,
-		VkBufferUsageFlags gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices
+		VkBufferUsageFlags gpuBufferType, std::vector<std::uint32_t> queueFamilyIndices = {}
 	);
 
 	[[nodiscard]]
@@ -206,7 +241,7 @@ public:
 
 	void CreateResource(
 		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-		std::vector<std::uint32_t> queueFamilyIndices
+		std::vector<std::uint32_t> queueFamilyIndices =  {}
 	);
 	void TransitionImageLayout(VkCommandBuffer cmdBuffer) noexcept;
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);

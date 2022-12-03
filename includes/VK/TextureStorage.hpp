@@ -6,10 +6,7 @@
 
 class TextureStorage {
 public:
-	TextureStorage(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		std::vector<std::uint32_t> queueFamilyIndices
-	);
+	TextureStorage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 	~TextureStorage() noexcept;
 
 	size_t AddTexture(
@@ -18,6 +15,12 @@ public:
 	);
 
 	void RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept;
+	void AcquireOwnerShips(
+		VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	) noexcept;
+	void ReleaseOwnerships(
+		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	) noexcept;
 	void TransitionImages(VkCommandBuffer graphicsBuffer) noexcept;
 	void SetDescriptorLayouts() const noexcept;
 
@@ -26,7 +29,6 @@ public:
 
 private:
 	std::vector<VkUploadableImageResourceView> m_textures;
-	std::vector<std::uint32_t> m_queueFamilyIndices;
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;
 };

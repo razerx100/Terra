@@ -4,12 +4,8 @@
 #include <RenderPipeline.hpp>
 #include <Terra.hpp>
 
-RenderPipeline::RenderPipeline(
-	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices, std::uint32_t bufferCount
-) noexcept
-	: m_commandBuffers{ device },
-	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_bufferCount{ bufferCount },
-	m_modelCount{ 0u } {}
+RenderPipeline::RenderPipeline(VkDevice device, std::uint32_t bufferCount) noexcept
+	: m_commandBuffers{ device }, m_bufferCount{ bufferCount }, m_modelCount{ 0u } {}
 
 void RenderPipeline::AddGraphicsPipelineObject(
 	std::unique_ptr<VkPipelineObject> graphicsPSO
@@ -95,8 +91,7 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 
 	m_commandBuffers.CreateResource(
 		device, static_cast<VkDeviceSize>(commandBufferSize), m_bufferCount,
-		VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		m_queueFamilyIndices
+		VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 	);
 	m_commandBuffers.SetMemoryOffsetAndType(device);
 }
@@ -142,4 +137,19 @@ void RenderPipeline::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
 
 void RenderPipeline::ReleaseUploadResources() noexcept {
 	m_commandBuffers.CleanUpUploadResource();
+}
+
+void RenderPipeline::AcquireOwnerShip(
+	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+) noexcept {
+	m_commandBuffers.AcquireOwnership(
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+	);
+}
+
+void RenderPipeline::ReleaseOwnership(
+	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+) noexcept {
+	m_commandBuffers.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }

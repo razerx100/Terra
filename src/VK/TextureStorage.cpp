@@ -4,10 +4,8 @@
 #include <Terra.hpp>
 
 TextureStorage::TextureStorage(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-	std::vector<std::uint32_t> queueFamilyIndices
-) : m_queueFamilyIndices{std::move(queueFamilyIndices)},
-	m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ logicalDevice } {
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
+) : m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ logicalDevice } {
 
 	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
 }
@@ -25,7 +23,7 @@ size_t TextureStorage::AddTexture(
 	VkUploadableImageResourceView texture{ device };
 	texture.CreateResource(
 		device, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height),
-		imageFormat, m_queueFamilyIndices
+		imageFormat
 	);
 
 	texture.SetMemoryOffsetAndType(device);
@@ -76,11 +74,28 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 }
 
 void TextureStorage::RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept {
-	for (size_t index = 0u; index < std::size(m_textures); ++index)
-		m_textures[index].RecordCopy(copyCmdBuffer);
+	for (auto& texture : m_textures)
+		texture.RecordCopy(copyCmdBuffer);
 }
 
 void TextureStorage::TransitionImages(VkCommandBuffer graphicsBuffer) noexcept {
 	for (auto& texture : m_textures)
 		texture.TransitionImageLayout(graphicsBuffer);
+}
+
+void TextureStorage::AcquireOwnerShips(
+	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+) noexcept {
+	for (auto& texture : m_textures)
+		texture.AcquireOwnership(
+			cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
+			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+		);
+}
+
+void TextureStorage::ReleaseOwnerships(
+	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+) noexcept {
+	for (auto& texture : m_textures)
+		texture.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }

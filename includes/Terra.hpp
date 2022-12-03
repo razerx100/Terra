@@ -85,19 +85,10 @@ namespace Terra {
 		VkDevice logicalDevice,
 		VkFormat swapChainFormat, VkFormat depthFormat
 	);
-	void InitBufferManager(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
-		std::uint32_t bufferCount
-	);
-	void InitRenderPipeline(
-		VkDevice logicalDevice, const std::vector<std::uint32_t>& queueFamilyIndices,
-		std::uint32_t bufferCount
-	);
+	void InitBufferManager(VkDevice logicalDevice, std::uint32_t bufferCount);
+	void InitRenderPipeline(VkDevice logicalDevice, std::uint32_t bufferCount);
 	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount);
-	void InitTextureStorage(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		const std::vector<std::uint32_t>& queueFamilyIndices
-	);
+	void InitTextureStorage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 	void InitCameraManager();
 	void InitDepthBuffer(VkDevice logicalDevice);
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;

@@ -9,8 +9,9 @@ RendererVK::RendererVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount
-) : m_backgroundColour{}, m_appName(appName),
-	m_bufferCount(bufferCount), m_width(width), m_height(height) {
+) : m_backgroundColour{}, m_appName{appName},
+	m_bufferCount{ bufferCount }, m_width{ width }, m_height{ height },
+	m_graphicsQueueIndex{ 0u }, m_computeQueueIndex{ 0u }, m_copyQueueIndex{ 0u } {
 
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
@@ -52,6 +53,7 @@ RendererVK::RendererVK(
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
 	);
+	m_graphicsQueueIndex = graphicsQueueFamilyIndex;
 
 	SwapChainManagerCreateInfo swapCreateInfo{};
 	swapCreateInfo.device = logicalDevice;
@@ -71,20 +73,18 @@ RendererVK::RendererVK(
 	auto [copyQueueHandle, copyQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::TransferQueue
 	);
+	m_copyQueueIndex = copyQueueFamilyIndex;
 
 	Terra::InitCopyQueue(copyQueueHandle, logicalDevice, copyQueueFamilyIndex);
 
-	// Need to handle compute queue for Resource Sharing
 	auto [computeQueueHandle, computeQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::ComputeQueue
 	);
+	m_computeQueueIndex = computeQueueFamilyIndex;
 
 	Terra::InitComputeQueue(
 		computeQueueHandle, logicalDevice, computeQueueFamilyIndex, bufferCount
 	);
-
-	std::vector<std::uint32_t> copyAndGfxFamilyIndices =
-		DeviceManager::ResolveQueueIndices(copyQueueFamilyIndex, graphicsQueueFamilyIndex);
 
 	Terra::InitDepthBuffer(logicalDevice);
 	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
@@ -95,9 +95,9 @@ RendererVK::RendererVK(
 
 	Terra::InitDescriptorSets(logicalDevice, bufferCount);
 
-	Terra::InitTextureStorage(logicalDevice, physicalDevice, copyAndGfxFamilyIndices);
-	Terra::InitBufferManager(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
-	Terra::InitRenderPipeline(logicalDevice, copyAndGfxFamilyIndices, bufferCount);
+	Terra::InitTextureStorage(logicalDevice, physicalDevice);
+	Terra::InitBufferManager(logicalDevice,  bufferCount);
+	Terra::InitRenderPipeline(logicalDevice,  bufferCount);
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetSceneResolution(width, height);
@@ -328,6 +328,10 @@ void RendererVK::ProcessData() {
 
 	while (works != 0u);
 
+	// Check if queue families are the same
+	bool copyAndGraphics = m_copyQueueIndex == m_graphicsQueueIndex ? true : false;
+	//bool copyAndCompute = m_copyQueueIndex == m_computeQueueIndex ? true : false;
+
 	// Upload to GPU
 	Terra::copyCmdBuffer->ResetFirstBuffer();
 	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetFirstCommandBuffer();
@@ -335,6 +339,19 @@ void RendererVK::ProcessData() {
 	Terra::bufferManager->RecordCopy(copyCmdBuffer);
 	Terra::renderPipeline->RecordCopy(copyCmdBuffer);
 	Terra::textureStorage->RecordUploads(copyCmdBuffer);
+
+	// If copy and graphics queues are different release ownership from copy
+	if (!copyAndGraphics) {
+		Terra::bufferManager->ReleaseOwnerships(
+			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
+		);
+		Terra::textureStorage->ReleaseOwnerships(
+			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
+		);
+		Terra::renderPipeline->ReleaseOwnership(
+			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
+		);
+	}
 
 	Terra::copyCmdBuffer->CloseFirstBuffer();
 
@@ -350,6 +367,19 @@ void RendererVK::ProcessData() {
 	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetFirstCommandBuffer();
 
 	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
+
+	// If copy and graphics queues are different release ownership from copy
+	if (!copyAndGraphics) {
+		Terra::bufferManager->AcquireOwnerShips(
+			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
+		);
+		Terra::textureStorage->AcquireOwnerShips(
+			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
+		);
+		Terra::renderPipeline->AcquireOwnerShip(
+			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
+		);
+	}
 
 	Terra::graphicsCmdBuffer->CloseFirstBuffer();
 

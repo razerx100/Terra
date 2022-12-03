@@ -4,13 +4,9 @@
 #include <BufferManager.hpp>
 #include <Terra.hpp>
 
-BufferManager::BufferManager(
-	VkDevice device, std::vector<std::uint32_t> queueFamilyIndices,
-	std::uint32_t bufferCount
-) noexcept
+BufferManager::BufferManager(VkDevice device, std::uint32_t bufferCount) noexcept
 	: m_cameraBuffer{ device }, m_gVertexBuffer{ device }, m_gIndexBuffer{ device },
-	m_queueFamilyIndices{ std::move(queueFamilyIndices) }, m_modelBuffers{ device },
-	m_bufferCount { bufferCount } {}
+	m_modelBuffers{ device }, m_bufferCount { bufferCount } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	static constexpr size_t cameraBufferSize = sizeof(DirectX::XMMATRIX) * 2u;
@@ -81,8 +77,8 @@ void BufferManager::AddModelInputs(
 ) {
 	// Vertex Buffer
 	m_gVertexBuffer.CreateResource(
-		device, static_cast<VkDeviceSize>(vertexBufferSize),
-		1u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, m_queueFamilyIndices
+		device, static_cast<VkDeviceSize>(vertexBufferSize), 1u,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 	);
 
 	m_gVertexBuffer.SetMemoryOffsetAndType(device);
@@ -93,8 +89,8 @@ void BufferManager::AddModelInputs(
 
 	// Index Buffer
 	m_gIndexBuffer.CreateResource(
-		device, static_cast<VkDeviceSize>(indexBufferSize),
-		1u, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, m_queueFamilyIndices
+		device, static_cast<VkDeviceSize>(indexBufferSize), 1u,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT
 	);
 
 	m_gIndexBuffer.SetMemoryOffsetAndType(device);
@@ -143,6 +139,26 @@ void BufferManager::BindResourceToMemory(VkDevice device) {
 void BufferManager::RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept {
 	m_gVertexBuffer.RecordCopy(copyCmdBuffer);
 	m_gIndexBuffer.RecordCopy(copyCmdBuffer);
+}
+
+void BufferManager::AcquireOwnerShips(
+	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+) noexcept{
+	m_gVertexBuffer.AcquireOwnership(
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+	);
+	m_gIndexBuffer.AcquireOwnership(
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDEX_READ_BIT,
+		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+	);
+}
+
+void BufferManager::ReleaseOwnerships(
+	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+) noexcept {
+	m_gVertexBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_gIndexBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
 void BufferManager::ReleaseUploadResources() noexcept {

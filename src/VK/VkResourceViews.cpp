@@ -88,6 +88,32 @@ void VkResourceView::RecordCopy(
 	);
 }
 
+void VkResourceView::ReleaseOwnerShip(
+	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	std::uint32_t newOwnerQueueIndex
+) noexcept {
+	VkBufferBarrier().AddBarrier(
+		m_resource.GetResource(), m_bufferSize, 0u,
+		oldOwnerQueueIndex, newOwnerQueueIndex,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE
+	);
+}
+
+void VkResourceView::AcquireOwnership(
+	VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+	VkPipelineStageFlagBits destinationFlag
+) noexcept {
+	VkBufferBarrier().AddBarrier(
+		m_resource.GetResource(), m_bufferSize, 0u,
+		oldOwnerQueueIndex, newOwnerQueueIndex, VK_ACCESS_NONE, destinationAccess
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_NONE, destinationFlag
+	);
+}
+
 VkBuffer VkResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
 }
@@ -272,6 +298,32 @@ void VkImageResourceView::RecordCopy(
 		copyCmdBuffer, uploadBuffer,
 		m_resource.GetResource(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1u, &copyRegion
+	);
+}
+
+void VkImageResourceView::ReleaseOwnerShip(
+	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	std::uint32_t newOwnerQueueIndex
+) noexcept {
+	VkImageBarrier().AddOwnershipBarrier(
+		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
+		oldOwnerQueueIndex, newOwnerQueueIndex,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE
+	);
+}
+
+void VkImageResourceView::AcquireOwnership(
+	VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+	VkPipelineStageFlagBits destinationFlag
+) noexcept {
+	VkImageBarrier().AddOwnershipBarrier(
+		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
+		oldOwnerQueueIndex, newOwnerQueueIndex, VK_ACCESS_NONE, destinationAccess
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_NONE, destinationFlag
 	);
 }
 
