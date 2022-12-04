@@ -92,25 +92,29 @@ void VkResourceView::ReleaseOwnerShip(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 	std::uint32_t newOwnerQueueIndex
 ) noexcept {
+	// Destination doesn't matter in release but needs to be there because of limitation
 	VkBufferBarrier().AddBarrier(
 		m_resource.GetResource(), m_bufferSize, 0u,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_NONE,
-		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_NONE
-	).RecordBarriers(copyCmdBuffer);
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
 }
 
 void VkResourceView::AcquireOwnership(
 	VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
-	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits2 destinationAccess,
-	VkPipelineStageFlagBits2 destinationStage
+	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+	VkPipelineStageFlagBits destinationStage
 ) noexcept {
+	// Source doesn't matter in release but needs to be there because of limitation
 	VkBufferBarrier().AddBarrier(
 		m_resource.GetResource(), m_bufferSize, 0u,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_2_NONE, destinationAccess,
-		VK_PIPELINE_STAGE_2_NONE, destinationStage
-	).RecordBarriers(cmdBuffer);
+		VK_ACCESS_TRANSFER_WRITE_BIT, destinationAccess
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, destinationStage
+	);
 }
 
 VkBuffer VkResourceView::GetResource() const noexcept {
@@ -288,9 +292,10 @@ void VkImageResourceView::RecordCopy(
 	VkImageBarrier().AddLayoutBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_ACCESS_2_NONE, VK_ACCESS_2_TRANSFER_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_NONE, VK_PIPELINE_STAGE_2_TRANSFER_BIT
-	).RecordBarriers(copyCmdBuffer);
+		VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
 
 	vkCmdCopyBufferToImage(
 		copyCmdBuffer, uploadBuffer,
@@ -303,27 +308,31 @@ void VkImageResourceView::ReleaseOwnerShip(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 	std::uint32_t newOwnerQueueIndex
 ) noexcept {
+	// Destination doesn't matter in release but needs to be there because of limitation
 	VkImageBarrier().AddOwnershipBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_NONE,
-		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_NONE,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-	).RecordBarriers(copyCmdBuffer);
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
 }
 
 void VkImageResourceView::AcquireOwnership(
 	VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
-	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits2 destinationAccess,
-	VkPipelineStageFlagBits2 destinationStage
+	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+	VkPipelineStageFlagBits destinationStage
 ) noexcept {
+	// Source doesn't matter in release but needs to be there because of limitation
 	VkImageBarrier().AddOwnershipBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_2_NONE, destinationAccess,
-		VK_PIPELINE_STAGE_2_NONE, destinationStage,
+		VK_ACCESS_TRANSFER_WRITE_BIT, destinationAccess,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-	).RecordBarriers(cmdBuffer);
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, destinationStage
+	);
 }
 
 VkImageView VkImageResourceView::GetImageView() const noexcept {
@@ -426,9 +435,10 @@ void VkUploadableImageResourceView::TransitionImageLayout(VkCommandBuffer cmdBuf
 	VkImageBarrier().AddLayoutBarrier(
 		m_gpuResource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-		VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
-	).RecordBarriers(cmdBuffer);
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+	);
 }
 
 VkImageView VkUploadableImageResourceView::GetImageView() const noexcept {

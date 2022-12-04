@@ -96,7 +96,7 @@ void DeviceManager::CreateLogicalDevice() {
 bool DeviceManager::CheckDeviceType(
 	VkPhysicalDevice device, VkPhysicalDeviceType deviceType
 ) const noexcept {
-	VkPhysicalDeviceProperties deviceProperty;
+	VkPhysicalDeviceProperties deviceProperty{};
 	vkGetPhysicalDeviceProperties(device, &deviceProperty);
 
 	return deviceProperty.deviceType == deviceType;

@@ -88,8 +88,8 @@ void TextureStorage::AcquireOwnerShips(
 ) noexcept {
 	for (auto& texture : m_textures)
 		texture.AcquireOwnership(
-			cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-			VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+			cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
+			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
 		);
 }
 
