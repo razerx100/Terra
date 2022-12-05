@@ -4,15 +4,20 @@
 #include <BufferManager.hpp>
 #include <Terra.hpp>
 
-BufferManager::BufferManager(VkDevice device, std::uint32_t bufferCount) noexcept
+BufferManager::BufferManager(
+	VkDevice device, std::uint32_t bufferCount,
+	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+) noexcept
 	: m_cameraBuffer{ device }, m_gVertexBuffer{ device }, m_gIndexBuffer{ device },
-	m_modelBuffers{ device }, m_bufferCount { bufferCount } {}
+	m_modelBuffers{ device }, m_bufferCount{ bufferCount },
+	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	static constexpr size_t cameraBufferSize = sizeof(DirectX::XMMATRIX) * 2u;
 
 	m_cameraBuffer.CreateResource(
-		device, cameraBufferSize, m_bufferCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+		device, cameraBufferSize, m_bufferCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		m_computeAndGraphicsQueueIndices
 	);
 
 	m_cameraBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
@@ -34,7 +39,7 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 
 	m_modelBuffers.CreateResource(
 		device, static_cast<VkDeviceSize>(modelBufferSize), m_bufferCount,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, m_computeAndGraphicsQueueIndices
 	);
 	m_modelBuffers.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 

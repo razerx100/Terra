@@ -82,6 +82,9 @@ RendererVK::RendererVK(
 	);
 	m_computeQueueIndex = computeQueueFamilyIndex;
 
+	std::vector<std::uint32_t> computeAndGraphicsQueueIndices =
+		DeviceManager::ResolveQueueIndices(computeQueueFamilyIndex, graphicsQueueFamilyIndex);
+
 	Terra::InitComputeQueue(
 		computeQueueHandle, logicalDevice, computeQueueFamilyIndex, bufferCount
 	);
@@ -96,7 +99,7 @@ RendererVK::RendererVK(
 	Terra::InitDescriptorSets(logicalDevice, bufferCount);
 
 	Terra::InitTextureStorage(logicalDevice, physicalDevice);
-	Terra::InitBufferManager(logicalDevice,  bufferCount);
+	Terra::InitBufferManager(logicalDevice,  bufferCount, computeAndGraphicsQueueIndices);
 	Terra::InitRenderPipeline(logicalDevice,  bufferCount);
 
 	Terra::InitCameraManager();

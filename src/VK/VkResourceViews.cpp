@@ -107,7 +107,7 @@ void VkResourceView::AcquireOwnership(
 	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
 	VkPipelineStageFlagBits destinationStage
 ) noexcept {
-	// Source doesn't matter in release but needs to be there because of limitation
+	// Source doesn't matter in acquire but needs to be there because of limitation
 	VkBufferBarrier().AddBarrier(
 		m_resource.GetResource(), m_bufferSize, 0u,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
@@ -324,7 +324,7 @@ void VkImageResourceView::AcquireOwnership(
 	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
 	VkPipelineStageFlagBits destinationStage
 ) noexcept {
-	// Source doesn't matter in release but needs to be there because of limitation
+	// Source doesn't matter in acquire but needs to be there because of limitation
 	VkImageBarrier().AddOwnershipBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		oldOwnerQueueIndex, newOwnerQueueIndex,

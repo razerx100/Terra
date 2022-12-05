@@ -21,7 +21,10 @@ struct ModelConstantBuffer {
 
 class BufferManager {
 public:
-	BufferManager(VkDevice device, std::uint32_t bufferCount) noexcept;
+	BufferManager(
+		VkDevice device, std::uint32_t bufferCount,
+		std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+	) noexcept;
 
 	void Update(VkDeviceSize index) const noexcept;
 	void BindVertexBuffer(VkCommandBuffer commandBuffer) const noexcept;
@@ -59,5 +62,6 @@ private:
 	VkResourceView m_modelBuffers;
 	std::uint32_t m_bufferCount;
 	std::vector<std::shared_ptr<IModel>> m_opaqueModels;
+	std::vector<std::uint32_t> m_computeAndGraphicsQueueIndices;
 };
 #endif

@@ -85,7 +85,10 @@ namespace Terra {
 		VkDevice logicalDevice,
 		VkFormat swapChainFormat, VkFormat depthFormat
 	);
-	void InitBufferManager(VkDevice logicalDevice, std::uint32_t bufferCount);
+	void InitBufferManager(
+		VkDevice logicalDevice, std::uint32_t bufferCount,
+		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
+	);
 	void InitRenderPipeline(VkDevice logicalDevice, std::uint32_t bufferCount);
 	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount);
 	void InitTextureStorage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
