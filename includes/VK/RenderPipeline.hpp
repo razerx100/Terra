@@ -8,6 +8,14 @@
 
 #include <IModel.hpp>
 
+struct CullingData {
+	std::uint32_t commandCount;
+	DirectX::XMFLOAT2 xBounds;
+	float padding;
+	DirectX::XMFLOAT2 yBounds;
+	DirectX::XMFLOAT2 zBounds;
+};
+
 class RenderPipeline {
 public:
 	RenderPipeline(
@@ -40,6 +48,7 @@ public:
 	void BindComputePipeline(
 		VkCommandBuffer computeCmdBuffer, VkDescriptorSet computeDescriptorSet
 	) const noexcept;
+	void ResetCounterBuffer(VkCommandBuffer computeBuffer, VkDeviceSize frameIndex) noexcept;
 
 	void DispatchCompute(VkCommandBuffer computeCmdBuffer) const noexcept;
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex) const noexcept;
@@ -50,12 +59,17 @@ private:
 	std::unique_ptr<PipelineLayout> m_computePipelineLayout;
 	std::unique_ptr<VkPipelineObject> m_computePSO;
 	VkUploadableBufferResourceView m_commandBuffer;
+	VkUploadableBufferResourceView m_culldataBuffer;
+	VkResourceView m_counterBuffer;
 	std::vector<VkArgumentResourceView> m_argumentBuffers;
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_modelCount;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectCommands;
 	std::vector<std::uint32_t> m_computeAndGraphicsQueueIndices;
 
-	static constexpr float THREADBLOCKSIZE = 128.f;
+	static constexpr float THREADBLOCKSIZE = 64.f;
+	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
+	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
+	static constexpr DirectX::XMFLOAT2 ZBOUNDS = { 1.f, -1.f };
 };
 #endif

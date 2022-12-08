@@ -174,6 +174,7 @@ void RendererVK::Render() {
 		imageIndex
 	);
 
+	Terra::renderPipeline->ResetCounterBuffer(computeCommandBuffer, imageIndex);
 	Terra::renderPipeline->BindComputePipeline(
 		computeCommandBuffer, Terra::computeDescriptorSet->GetDescriptorSet(imageIndex)
 	);

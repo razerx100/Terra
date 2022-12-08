@@ -9,7 +9,7 @@ RenderPipeline::RenderPipeline(
 	VkDevice device, std::uint32_t bufferCount,
 	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
 ) noexcept
-	: m_commandBuffer{ device },
+	: m_commandBuffer{ device }, m_culldataBuffer{ device }, m_counterBuffer{ device },
 	m_bufferCount{ bufferCount }, m_modelCount{ 0u },
 	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {
 	for (size_t _ = 0u; _ < bufferCount; ++_)
@@ -124,6 +124,37 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 		argumentBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
 	}
 
+	m_culldataBuffer.CreateResource(
+		device, static_cast<VkDeviceSize>(sizeof(CullingData)), 1u,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+	);
+	m_culldataBuffer.SetMemoryOffsetAndType(device);
+
+	m_counterBuffer.CreateResource(device, 4u, 1u, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	m_counterBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
+
+	// Culling Buffer
+	DescriptorInfo cullingDescInfo{
+		.bindingSlot = 5u,
+		.descriptorCount = 1u,
+		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+	};
+
+	std::vector<VkDescriptorBufferInfo> cullingBufferInfos;
+
+	for (size_t _ = 0u; _ < m_bufferCount; ++_) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_culldataBuffer.GetGPUResource();
+		bufferInfo.offset = m_culldataBuffer.GetFirstSubAllocationOffset();
+		bufferInfo.range = m_culldataBuffer.GetSubAllocationSize();
+
+		cullingBufferInfos.emplace_back(std::move(bufferInfo));
+	}
+
+	Terra::computeDescriptorSet->AddSetLayout(
+		cullingDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(cullingBufferInfos)
+	);
+
 	// Input Buffer
 	DescriptorInfo inputDescInfo{
 		.bindingSlot = 2u,
@@ -227,6 +258,25 @@ void RenderPipeline::CopyData() noexcept {
 			sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands)
 		);
 
+	// copy the culling data to the buffer.
+	std::uint8_t* cullingBufferPtr =
+		uploadMemoryStart + m_culldataBuffer.GetFirstUploadMemoryOffset();
+
+	CullingData cullingData{};
+	cullingData.commandCount = static_cast<std::uint32_t>(std::size(m_indirectCommands));
+	cullingData.xBounds = XBOUNDS;
+	cullingData.yBounds = YBOUNDS;
+	cullingData.zBounds = ZBOUNDS;
+
+	memcpy(cullingBufferPtr, &cullingData, sizeof(CullingData));
+
+	// copy zero to counter buffer
+	std::uint8_t* cpuWriteMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
+
+	std::uint8_t* counterCPUPtr = cpuWriteMemoryStart + m_counterBuffer.GetFirstMemoryOffset();
+	const std::uint32_t zeroValue = 0u;
+	memcpy(counterCPUPtr, &zeroValue, sizeof(std::uint32_t));
+
 	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
@@ -245,10 +295,39 @@ void RenderPipeline::AcquireOwnerShip(
 		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
 		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
+	m_culldataBuffer.AcquireOwnership(
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
+		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+	);
 }
 
 void RenderPipeline::ReleaseOwnership(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_commandBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_culldataBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+}
+
+void RenderPipeline::ResetCounterBuffer(
+	VkCommandBuffer computeBuffer, VkDeviceSize frameIndex
+) noexcept {
+	auto& argumentBuffer = m_argumentBuffers[frameIndex];
+	VkBufferCopy bufferInfo{
+		.srcOffset = m_counterBuffer.GetBufferSize(),
+		.dstOffset = argumentBuffer.GetCounterOffset(),
+		.size = argumentBuffer.GetCounterBufferSize()
+	};
+
+	vkCmdCopyBuffer(
+		computeBuffer, m_counterBuffer.GetResource(), argumentBuffer.GetResource(), 1u,
+		&bufferInfo
+	);
+
+	VkBufferBarrier().AddExecutionBarrier(
+		argumentBuffer.GetResource(), argumentBuffer.GetCounterBufferSize(),
+		argumentBuffer.GetCounterOffset(), VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_SHADER_READ_BIT
+	).RecordBarriers(
+		computeBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+	);
 }
