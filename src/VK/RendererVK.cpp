@@ -100,7 +100,7 @@ RendererVK::RendererVK(
 
 	Terra::InitTextureStorage(logicalDevice, physicalDevice);
 	Terra::InitBufferManager(logicalDevice,  bufferCount, computeAndGraphicsQueueIndices);
-	Terra::InitRenderPipeline(logicalDevice,  bufferCount);
+	Terra::InitRenderPipeline(logicalDevice,  bufferCount, computeAndGraphicsQueueIndices);
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetSceneResolution(width, height);
@@ -333,7 +333,7 @@ void RendererVK::ProcessData() {
 
 	// Check if queue families are the same
 	bool copyAndGraphics = m_copyQueueIndex == m_graphicsQueueIndex ? true : false;
-	//bool copyAndCompute = m_copyQueueIndex == m_computeQueueIndex ? true : false;
+	bool copyAndCompute = m_copyQueueIndex == m_computeQueueIndex ? true : false;
 
 	// Upload to GPU
 	Terra::copyCmdBuffer->ResetFirstBuffer();
@@ -351,10 +351,13 @@ void RendererVK::ProcessData() {
 		Terra::textureStorage->ReleaseOwnerships(
 			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
 		);
-		Terra::renderPipeline->ReleaseOwnership(
-			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
-		);
 	}
+
+	// If copy and compute queues are different release ownership from copy
+	if (!copyAndCompute)
+		Terra::renderPipeline->ReleaseOwnership(
+			copyCmdBuffer, m_copyQueueIndex, m_computeQueueIndex
+		);
 
 	Terra::copyCmdBuffer->CloseFirstBuffer();
 
@@ -379,9 +382,6 @@ void RendererVK::ProcessData() {
 		Terra::textureStorage->AcquireOwnerShips(
 			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
 		);
-		Terra::renderPipeline->AcquireOwnerShip(
-			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
-		);
 	}
 
 	Terra::graphicsCmdBuffer->CloseFirstBuffer();
@@ -391,6 +391,25 @@ void RendererVK::ProcessData() {
 	);
 	Terra::graphicsSyncObjects->WaitForFrontFence();
 	Terra::graphicsSyncObjects->ResetFrontFence();
+
+	if (!copyAndCompute) {
+		// Transfer ownership
+		Terra::computeCmdBuffer->ResetFirstBuffer();
+
+		const VkCommandBuffer computeCmdBuffer = Terra::graphicsCmdBuffer->GetFirstCommandBuffer();
+
+		Terra::renderPipeline->AcquireOwnerShip(
+			computeCmdBuffer, m_copyQueueIndex, m_computeQueueIndex
+		);
+
+		Terra::computeCmdBuffer->CloseFirstBuffer();
+
+		Terra::computeQueue->SubmitCommandBuffer(
+			computeCmdBuffer, Terra::computeSyncObjects->GetFrontFence()
+		);
+		Terra::computeSyncObjects->WaitForFrontFence();
+		Terra::computeSyncObjects->ResetFrontFence();
+	}
 
 	Terra::textureStorage->SetDescriptorLayouts();
 

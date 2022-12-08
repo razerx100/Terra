@@ -10,7 +10,10 @@
 
 class RenderPipeline {
 public:
-	RenderPipeline(VkDevice device, std::uint32_t bufferCount) noexcept;
+	RenderPipeline(
+		VkDevice device, std::uint32_t bufferCount,
+		std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+	) noexcept;
 
 	void AddGraphicsPipelineObject(std::unique_ptr<VkPipelineObject> graphicsPSO) noexcept;
 	void AddGraphicsPipelineLayout(std::unique_ptr<PipelineLayout> graphicsLayout) noexcept;
@@ -46,10 +49,12 @@ private:
 	std::unique_ptr<VkPipelineObject> m_graphicsPSO;
 	std::unique_ptr<PipelineLayout> m_computePipelineLayout;
 	std::unique_ptr<VkPipelineObject> m_computePSO;
-	VkUploadableBufferResourceView m_commandBuffers;
+	VkUploadableBufferResourceView m_commandBuffer;
+	std::vector<VkArgumentResourceView> m_argumentBuffers;
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_modelCount;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectCommands;
+	std::vector<std::uint32_t> m_computeAndGraphicsQueueIndices;
 
 	static constexpr float THREADBLOCKSIZE = 128.f;
 };

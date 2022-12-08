@@ -133,8 +133,13 @@ namespace Terra {
 			);
 	}
 
-	void InitRenderPipeline(VkDevice logicalDevice, std::uint32_t bufferCount) {
-		renderPipeline = std::make_unique<RenderPipeline>(logicalDevice, bufferCount);
+	void InitRenderPipeline(
+		VkDevice logicalDevice, std::uint32_t bufferCount,
+		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
+	) {
+		renderPipeline = std::make_unique<RenderPipeline>(
+			logicalDevice, bufferCount, computeAndGraphicsQueueIndices
+			);
 	}
 
 	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount) {

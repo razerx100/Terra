@@ -42,7 +42,7 @@ std::unique_ptr<PipelineLayout> CreateComputePipelineLayout(
 	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
 
 	// Push constants needs to be serialised according to the shader stages
-	// Doesn't do anything different now but may in the future idk
+	// Doesn't do anything different now but might, in the future idk
 
 	pipelineLayout->CreateLayout(setLayouts, layoutCount);
 

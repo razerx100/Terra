@@ -89,7 +89,10 @@ namespace Terra {
 		VkDevice logicalDevice, std::uint32_t bufferCount,
 		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
 	);
-	void InitRenderPipeline(VkDevice logicalDevice, std::uint32_t bufferCount);
+	void InitRenderPipeline(
+		VkDevice logicalDevice, std::uint32_t bufferCount,
+		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
+	);
 	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount);
 	void InitTextureStorage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 	void InitCameraManager();

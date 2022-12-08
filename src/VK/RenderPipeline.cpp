@@ -1,11 +1,20 @@
 #include <cstring>
 #include <cmath>
+#include <VkResourceBarriers.hpp>
 
 #include <RenderPipeline.hpp>
 #include <Terra.hpp>
 
-RenderPipeline::RenderPipeline(VkDevice device, std::uint32_t bufferCount) noexcept
-	: m_commandBuffers{ device }, m_bufferCount{ bufferCount }, m_modelCount{ 0u } {}
+RenderPipeline::RenderPipeline(
+	VkDevice device, std::uint32_t bufferCount,
+	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+) noexcept
+	: m_commandBuffer{ device },
+	m_bufferCount{ bufferCount }, m_modelCount{ 0u },
+	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {
+	for (size_t _ = 0u; _ < bufferCount; ++_)
+		m_argumentBuffers.emplace_back(VkArgumentResourceView{ device });
+}
 
 void RenderPipeline::AddGraphicsPipelineObject(
 	std::unique_ptr<VkPipelineObject> graphicsPSO
@@ -76,24 +85,114 @@ void RenderPipeline::DrawModels(
 	static constexpr auto strideSize =
 		static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
-	vkCmdDrawIndexedIndirect(
-		graphicsCmdBuffer, m_commandBuffers.GetGPUResource(),
-		m_commandBuffers.GetSubAllocationOffset(frameIndex), m_modelCount, strideSize
+	auto& argumentBuffer = m_argumentBuffers[frameIndex];
+	VkBufferBarrier().AddExecutionBarrier(
+		argumentBuffer.GetResource(), argumentBuffer.GetBufferSize(), 0u,
+		VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT
+	).RecordBarriers(
+		graphicsCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+	);
+
+	vkCmdDrawIndexedIndirectCount(
+		graphicsCmdBuffer, argumentBuffer.GetResource(),
+		argumentBuffer.GetBufferOffset(), argumentBuffer.GetResource(),
+		argumentBuffer.GetCounterOffset(), m_modelCount, strideSize
 	);
 }
 
 void RenderPipeline::BindResourceToMemory(VkDevice device) {
-	m_commandBuffers.BindResourceToMemory(device);
+	m_commandBuffer.BindResourceToMemory(device);
+
+	for (auto& argumentBuffer : m_argumentBuffers)
+		argumentBuffer.BindResourceToMemory(device);
 }
 
 void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
-	const size_t commandBufferSize = sizeof(VkDrawIndexedIndirectCommand) * m_modelCount;
+	const VkDeviceSize commandBufferSize =
+		static_cast<VkDeviceSize>(sizeof(VkDrawIndexedIndirectCommand) * m_modelCount);
 
-	m_commandBuffers.CreateResource(
-		device, static_cast<VkDeviceSize>(commandBufferSize), m_bufferCount,
-		VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+	m_commandBuffer.CreateResource(
+		device, commandBufferSize, 1u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 	);
-	m_commandBuffers.SetMemoryOffsetAndType(device);
+	m_commandBuffer.SetMemoryOffsetAndType(device);
+
+	for (auto& argumentBuffer : m_argumentBuffers) {
+		argumentBuffer.CreateResource(
+			device, commandBufferSize, m_computeAndGraphicsQueueIndices
+		);
+		argumentBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
+	}
+
+	// Input Buffer
+	DescriptorInfo inputDescInfo{
+		.bindingSlot = 2u,
+		.descriptorCount = 1u,
+		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+	};
+
+	std::vector<VkDescriptorBufferInfo> inputBufferInfos;
+
+	for (size_t _ = 0u; _ < m_bufferCount; ++_) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_commandBuffer.GetGPUResource();
+		bufferInfo.offset = m_commandBuffer.GetFirstSubAllocationOffset();
+		bufferInfo.range = m_commandBuffer.GetSubAllocationSize();
+
+		inputBufferInfos.emplace_back(std::move(bufferInfo));
+	}
+
+	Terra::computeDescriptorSet->AddSetLayout(
+		inputDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(inputBufferInfos)
+	);
+
+	// Output Buffer
+	DescriptorInfo outputDescInfo{
+		.bindingSlot = 3u,
+		.descriptorCount = 1u,
+		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+	};
+
+	std::vector<VkDescriptorBufferInfo> outputBufferInfos;
+
+	for (size_t index = 0u; index < m_bufferCount; ++index) {
+		auto& argumentBuffer = m_argumentBuffers[index];
+
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = argumentBuffer.GetResource();
+		bufferInfo.offset = argumentBuffer.GetBufferOffset();
+		bufferInfo.range = argumentBuffer.GetResourceBufferSize();
+
+		outputBufferInfos.emplace_back(std::move(bufferInfo));
+	}
+
+	Terra::computeDescriptorSet->AddSetLayout(
+		outputDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(outputBufferInfos)
+	);
+
+	// Counter Buffer
+	DescriptorInfo counterDescInfo{
+		.bindingSlot = 4u,
+		.descriptorCount = 1u,
+		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+	};
+
+	std::vector<VkDescriptorBufferInfo> counterBufferInfos;
+
+	for (size_t index = 0u; index < m_bufferCount; ++index) {
+		auto& argumentBuffer = m_argumentBuffers[index];
+
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = argumentBuffer.GetResource();
+		bufferInfo.offset = argumentBuffer.GetCounterOffset();
+		bufferInfo.range = argumentBuffer.GetCounterBufferSize();
+
+		counterBufferInfos.emplace_back(std::move(bufferInfo));
+	}
+
+	Terra::computeDescriptorSet->AddSetLayout(
+		counterDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(counterBufferInfos)
+	);
 }
 
 void RenderPipeline::RecordIndirectArguments(
@@ -123,7 +222,7 @@ void RenderPipeline::CopyData() noexcept {
 	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 	for (std::uint32_t bufferIndex = 0u; bufferIndex < m_bufferCount; ++bufferIndex)
 		memcpy(
-			uploadMemoryStart + m_commandBuffers.GetUploadMemoryOffset(bufferIndex),
+			uploadMemoryStart + m_commandBuffer.GetFirstUploadMemoryOffset(),
 			std::data(m_indirectCommands),
 			sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands)
 		);
@@ -132,24 +231,24 @@ void RenderPipeline::CopyData() noexcept {
 }
 
 void RenderPipeline::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
-	m_commandBuffers.RecordCopy(copyBuffer);
+	m_commandBuffer.RecordCopy(copyBuffer);
 }
 
 void RenderPipeline::ReleaseUploadResources() noexcept {
-	m_commandBuffers.CleanUpUploadResource();
+	m_commandBuffer.CleanUpUploadResource();
 }
 
 void RenderPipeline::AcquireOwnerShip(
 	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
-	m_commandBuffers.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
-		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+	m_commandBuffer.AcquireOwnership(
+		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
+		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
 }
 
 void RenderPipeline::ReleaseOwnership(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
-	m_commandBuffers.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_commandBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }

@@ -7,7 +7,7 @@
 template<std::uint32_t barrierCount = 1u>
 class VkBufferBarrier{
 public:
-	VkBufferBarrier() noexcept : m_currentIndex{ 0u } {}
+	VkBufferBarrier() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
 
 	void RecordBarriers(
 		VkCommandBuffer commandBuffer,
@@ -20,7 +20,20 @@ public:
 	}
 
 	[[nodiscard]]
-	VkBufferBarrier& AddBarrier(
+	VkBufferBarrier& AddExecutionBarrier(
+		VkBuffer buffer,
+		VkDeviceSize bufferSize, VkDeviceSize bufferOffset,
+		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess
+	) noexcept {
+		return AddMemoryBarrier(
+			buffer, bufferSize, bufferOffset,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			srcAccess, dstAccess
+		);
+	}
+
+	[[nodiscard]]
+	VkBufferBarrier& AddMemoryBarrier(
 		VkBuffer buffer,
 		VkDeviceSize bufferSize, VkDeviceSize bufferOffset,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
@@ -52,10 +65,10 @@ private:
 template<std::uint32_t barrierCount = 1u>
 class VkImageBarrier {
 public:
-	VkImageBarrier() noexcept : m_currentIndex{ 0u } {}
+	VkImageBarrier() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
 
 	[[nodiscard]]
-	VkImageBarrier& AddOwnershipBarrier(
+	VkImageBarrier& AddMemoryBarrier(
 		VkImage image, VkImageAspectFlagBits imageAspect,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess, VkImageLayout currentLayout
@@ -67,7 +80,7 @@ public:
 	}
 
 	[[nodiscard]]
-	VkImageBarrier& AddLayoutBarrier(
+	VkImageBarrier& AddExecutionBarrier(
 		VkImage image, VkImageAspectFlagBits imageAspect,
 		VkImageLayout oldLayout, VkImageLayout newLayout,
 		VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess

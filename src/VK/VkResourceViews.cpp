@@ -3,15 +3,127 @@
 
 #include <Terra.hpp>
 
-// Vk Resource view
-VkResourceView::VkResourceView(VkDevice device) noexcept
+// _vkResourceView
+_vkResourceView::_vkResourceView(VkDevice device) noexcept
 	: m_resource{ device }, m_memoryOffsetStart{ 0u }, m_bufferSize{ 0u },
-	m_resourceType{ MemoryType::none }, m_subAllocationSize{ 0u } {}
+	m_resourceType{ MemoryType::none } {}
 
-VkResourceView::VkResourceView(VkResourceView&& resourceView) noexcept
+_vkResourceView::_vkResourceView(_vkResourceView&& resourceView) noexcept
 	: m_resource{ std::move(resourceView.m_resource) },
 	m_memoryOffsetStart{ resourceView.m_memoryOffsetStart },
-	m_bufferSize{ resourceView.m_bufferSize }, m_resourceType{ resourceView.m_resourceType },
+	m_bufferSize{ resourceView.m_bufferSize }, m_resourceType{ resourceView.m_resourceType } {}
+
+_vkResourceView& _vkResourceView::operator=(_vkResourceView&& resourceView) noexcept {
+	m_resource = std::move(resourceView.m_resource);
+	m_memoryOffsetStart = resourceView.m_memoryOffsetStart;
+	m_bufferSize = resourceView.m_bufferSize;
+	m_resourceType = resourceView.m_resourceType;
+
+	return *this;
+}
+
+void _vkResourceView::BindResourceToMemory(VkDevice device) {
+	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
+
+	if (m_resourceType == MemoryType::upload)
+		resourceMemoryStart = Terra::Resources::uploadMemory->GetMemoryHandle();
+	else if (m_resourceType == MemoryType::cpuWrite)
+		resourceMemoryStart = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
+	else if (m_resourceType == MemoryType::gpuOnly)
+		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
+
+	vkBindBufferMemory(
+		device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffsetStart
+	);
+}
+
+void _vkResourceView::SetMemoryOffsetAndType(VkDevice device, MemoryType type) noexcept {
+	const auto memoryReq = GetMemoryRequirements(device);
+	m_resourceType = type;
+
+	if (type == MemoryType::upload)
+		m_memoryOffsetStart = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
+			memoryReq
+		);
+	else if (type == MemoryType::cpuWrite)
+		m_memoryOffsetStart = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(
+			memoryReq
+		);
+	else if (type == MemoryType::gpuOnly)
+		m_memoryOffsetStart = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(
+			memoryReq
+		);
+}
+
+void _vkResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept {
+	m_memoryOffsetStart = offset;
+	m_resourceType = type;
+}
+
+void _vkResourceView::CleanUpResource() noexcept {
+	m_resource.CleanUpResource();
+}
+
+void _vkResourceView::RecordCopy(
+	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer
+) noexcept {
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0u;
+	copyRegion.dstOffset = 0u;
+	copyRegion.size = m_bufferSize;
+
+	vkCmdCopyBuffer(
+		copyCmdBuffer, uploadBuffer, m_resource.GetResource(), 1u, &copyRegion
+	);
+}
+
+void _vkResourceView::ReleaseOwnerShip(
+	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	std::uint32_t newOwnerQueueIndex
+) noexcept {
+	// Destination doesn't matter in release but needs to be there because of limitation
+	VkBufferBarrier().AddMemoryBarrier(
+		m_resource.GetResource(), m_bufferSize, 0u,
+		oldOwnerQueueIndex, newOwnerQueueIndex,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT
+	).RecordBarriers(
+		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+	);
+}
+
+void _vkResourceView::AcquireOwnership(
+	VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
+	VkPipelineStageFlagBits destinationStage
+) noexcept {
+	// Source doesn't matter in acquire but needs to be there because of limitation
+	VkBufferBarrier().AddMemoryBarrier(
+		m_resource.GetResource(), m_bufferSize, 0u,
+		oldOwnerQueueIndex, newOwnerQueueIndex,
+		VK_ACCESS_TRANSFER_WRITE_BIT, destinationAccess
+	).RecordBarriers(
+		cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, destinationStage
+	);
+}
+
+VkBuffer _vkResourceView::GetResource() const noexcept {
+	return m_resource.GetResource();
+}
+
+VkDeviceSize _vkResourceView::GetBufferSize() const noexcept {
+	return m_bufferSize;
+}
+
+VkMemoryRequirements _vkResourceView::GetMemoryRequirements(VkDevice device) const noexcept {
+	return m_resource.GetMemoryRequirements(device);
+}
+
+// Vk Resource view
+VkResourceView::VkResourceView(VkDevice device) noexcept
+	: _vkResourceView{ device }, m_subAllocationSize{ 0u } {}
+
+VkResourceView::VkResourceView(VkResourceView&& resourceView) noexcept
+	: _vkResourceView{ std::move(resourceView) },
 	m_subAllocationSize{ resourceView.m_subAllocationSize } {}
 
 VkResourceView& VkResourceView::operator=(VkResourceView&& resourceView) noexcept {
@@ -33,104 +145,12 @@ void VkResourceView::CreateResource(
 	m_resource.CreateResource(device, m_bufferSize, usageFlags, queueFamilyIndices);
 }
 
-void VkResourceView::BindResourceToMemory(VkDevice device) {
-	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
-
-	if (m_resourceType == MemoryType::upload)
-		resourceMemoryStart = Terra::Resources::uploadMemory->GetMemoryHandle();
-	else if (m_resourceType == MemoryType::cpuWrite)
-		resourceMemoryStart = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
-	else if (m_resourceType == MemoryType::gpuOnly)
-		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
-
-	vkBindBufferMemory(
-		device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffsetStart
-	);
-}
-
-void VkResourceView::SetMemoryOffsetAndType(VkDevice device, MemoryType type) noexcept {
-	const auto memoryReq = GetMemoryRequirements(device);
-	m_resourceType = type;
-
-	if (type == MemoryType::upload)
-		m_memoryOffsetStart = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
-			memoryReq
-		);
-	else if (type == MemoryType::cpuWrite)
-		m_memoryOffsetStart = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(
-			memoryReq
-		);
-	else if (type == MemoryType::gpuOnly)
-		m_memoryOffsetStart = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(
-			memoryReq
-		);
-}
-
-void VkResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept {
-	m_memoryOffsetStart = offset;
-	m_resourceType = type;
-}
-
-void VkResourceView::CleanUpResource() noexcept {
-	m_resource.CleanUpResource();
-}
-
-void VkResourceView::RecordCopy(
-	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer
-) noexcept {
-	VkBufferCopy copyRegion{};
-	copyRegion.srcOffset = 0u;
-	copyRegion.dstOffset = 0u;
-	copyRegion.size = m_bufferSize;
-
-	vkCmdCopyBuffer(
-		copyCmdBuffer, uploadBuffer, m_resource.GetResource(), 1u, &copyRegion
-	);
-}
-
-void VkResourceView::ReleaseOwnerShip(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
-	std::uint32_t newOwnerQueueIndex
-) noexcept {
-	// Destination doesn't matter in release but needs to be there because of limitation
-	VkBufferBarrier().AddBarrier(
-		m_resource.GetResource(), m_bufferSize, 0u,
-		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT
-	).RecordBarriers(
-		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
-	);
-}
-
-void VkResourceView::AcquireOwnership(
-	VkCommandBuffer cmdBuffer, std::uint32_t oldOwnerQueueIndex,
-	std::uint32_t newOwnerQueueIndex, VkAccessFlagBits destinationAccess,
-	VkPipelineStageFlagBits destinationStage
-) noexcept {
-	// Source doesn't matter in acquire but needs to be there because of limitation
-	VkBufferBarrier().AddBarrier(
-		m_resource.GetResource(), m_bufferSize, 0u,
-		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_TRANSFER_WRITE_BIT, destinationAccess
-	).RecordBarriers(
-		cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, destinationStage
-	);
-}
-
-VkBuffer VkResourceView::GetResource() const noexcept {
-	return m_resource.GetResource();
-}
-
 VkDeviceSize VkResourceView::GetSubAllocationOffset(VkDeviceSize index) const noexcept {
 	return m_subAllocationSize * index;
 }
 
 VkDeviceSize VkResourceView::GetMemoryOffset(VkDeviceSize index) const noexcept {
 	return m_memoryOffsetStart + GetSubAllocationOffset(index);
-}
-
-VkMemoryRequirements VkResourceView::GetMemoryRequirements(VkDevice device) const noexcept {
-	return m_resource.GetMemoryRequirements(device);
 }
 
 VkDeviceSize VkResourceView::GetFirstMemoryOffset() const noexcept {
@@ -289,7 +309,7 @@ void VkImageResourceView::RecordCopy(
 	copyRegion.imageOffset = imageOffset;
 	copyRegion.imageExtent = imageExtent;
 
-	VkImageBarrier().AddLayoutBarrier(
+	VkImageBarrier().AddExecutionBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT
@@ -309,7 +329,7 @@ void VkImageResourceView::ReleaseOwnerShip(
 	std::uint32_t newOwnerQueueIndex
 ) noexcept {
 	// Destination doesn't matter in release but needs to be there because of limitation
-	VkImageBarrier().AddOwnershipBarrier(
+	VkImageBarrier().AddMemoryBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
 		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -325,7 +345,7 @@ void VkImageResourceView::AcquireOwnership(
 	VkPipelineStageFlagBits destinationStage
 ) noexcept {
 	// Source doesn't matter in acquire but needs to be there because of limitation
-	VkImageBarrier().AddOwnershipBarrier(
+	VkImageBarrier().AddMemoryBarrier(
 		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		oldOwnerQueueIndex, newOwnerQueueIndex,
 		VK_ACCESS_TRANSFER_WRITE_BIT, destinationAccess,
@@ -391,6 +411,10 @@ VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationOffset(
 	return m_gpuResource.GetSubAllocationOffset(index);
 }
 
+VkDeviceSize VkUploadableBufferResourceView::GetFirstSubAllocationOffset() const noexcept {
+	return GetSubAllocationOffset(0u);
+}
+
 // VK Uploadable Image ResourceView
 VkUploadableImageResourceView::VkUploadableImageResourceView(VkDevice device) noexcept
 	: VkUploadableResourceView<VkImageResourceView>{ device } {}
@@ -432,7 +456,7 @@ void VkUploadableImageResourceView::CreateImageView(
 }
 
 void VkUploadableImageResourceView::TransitionImageLayout(VkCommandBuffer cmdBuffer) noexcept {
-	VkImageBarrier().AddLayoutBarrier(
+	VkImageBarrier().AddExecutionBarrier(
 		m_gpuResource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT
@@ -443,4 +467,54 @@ void VkUploadableImageResourceView::TransitionImageLayout(VkCommandBuffer cmdBuf
 
 VkImageView VkUploadableImageResourceView::GetImageView() const noexcept {
 	return m_gpuResource.GetImageView();
+}
+
+// Vk Argument ResourceView
+
+VkArgumentResourceView::VkArgumentResourceView(VkDevice device) noexcept
+	: _vkResourceView{ device }, m_bufferOffset{ 4u } {}
+
+VkArgumentResourceView::VkArgumentResourceView(VkArgumentResourceView&& resourceView) noexcept
+	: _vkResourceView{ std::move(resourceView) },
+	m_bufferOffset{ resourceView.m_bufferOffset } {}
+
+VkArgumentResourceView& VkArgumentResourceView::operator=(
+	VkArgumentResourceView&& resourceView
+) noexcept {
+	m_resource = std::move(resourceView.m_resource);
+	m_memoryOffsetStart = resourceView.m_memoryOffsetStart;
+	m_bufferSize = resourceView.m_bufferSize;
+	m_resourceType = resourceView.m_resourceType;
+	m_bufferOffset = resourceView.m_bufferOffset;
+
+	return *this;
+}
+
+void VkArgumentResourceView::CreateResource(
+	VkDevice device, VkDeviceSize bufferSize, std::vector<std::uint32_t> queueFamilyIndices
+) {
+	m_bufferSize = bufferSize + 4u; // 4bytes for counter buffer which will be created at
+	// offset 0
+
+	m_resource.CreateResource(
+		device, m_bufferSize,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+		queueFamilyIndices
+	);
+}
+
+VkDeviceSize VkArgumentResourceView::GetCounterOffset() const noexcept {
+	return m_memoryOffsetStart;
+}
+
+VkDeviceSize VkArgumentResourceView::GetBufferOffset() const noexcept {
+	return m_memoryOffsetStart + m_bufferOffset;
+}
+
+VkDeviceSize VkArgumentResourceView::GetCounterBufferSize() const noexcept {
+	return 4u;
+}
+
+VkDeviceSize VkArgumentResourceView::GetResourceBufferSize() const noexcept {
+	return m_bufferSize - 4u;
 }
