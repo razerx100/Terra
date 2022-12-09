@@ -50,7 +50,9 @@ public:
 	) const noexcept;
 	void ResetCounterBuffer(VkCommandBuffer computeBuffer, VkDeviceSize frameIndex) noexcept;
 
-	void DispatchCompute(VkCommandBuffer computeCmdBuffer) const noexcept;
+	void DispatchCompute(
+		VkCommandBuffer computeCmdBuffer, VkDeviceSize frameIndex
+	) const noexcept;
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex) const noexcept;
 
 private:

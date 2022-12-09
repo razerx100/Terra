@@ -77,7 +77,7 @@ void InstanceManager::CreateInstance() {
 	appInfo.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u);
 	appInfo.pEngineName = "Terra";
 	appInfo.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_3;
 
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

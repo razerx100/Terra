@@ -72,10 +72,21 @@ void RenderPipeline::BindComputePipeline(
 	);
 }
 
-void RenderPipeline::DispatchCompute(VkCommandBuffer computeCmdBuffer) const noexcept {
+void RenderPipeline::DispatchCompute(
+	VkCommandBuffer computeCmdBuffer, VkDeviceSize frameIndex
+) const noexcept {
 	vkCmdDispatch(
 		computeCmdBuffer,
 		static_cast<std::uint32_t>(std::ceil(m_modelCount / THREADBLOCKSIZE)), 1u, 1u
+	);
+
+	auto& argumentBuffer = m_argumentBuffers[frameIndex];
+	VkBufferBarrier().AddExecutionBarrier(
+		argumentBuffer.GetResource(), argumentBuffer.GetBufferSize(), 0u,
+		VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT
+	).RecordBarriers(
+		computeCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
 	);
 }
 
@@ -86,13 +97,6 @@ void RenderPipeline::DrawModels(
 		static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
 	auto& argumentBuffer = m_argumentBuffers[frameIndex];
-	VkBufferBarrier().AddExecutionBarrier(
-		argumentBuffer.GetResource(), argumentBuffer.GetBufferSize(), 0u,
-		VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT
-	).RecordBarriers(
-		graphicsCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
-	);
 
 	vkCmdDrawIndexedIndirectCount(
 		graphicsCmdBuffer, argumentBuffer.GetResource(),
@@ -316,7 +320,7 @@ void RenderPipeline::ResetCounterBuffer(
 ) noexcept {
 	auto& argumentBuffer = m_argumentBuffers[frameIndex];
 	VkBufferCopy bufferInfo{
-		.srcOffset = m_counterBuffer.GetBufferSize(),
+		.srcOffset = m_counterBuffer.GetFirstSubAllocationOffset(),
 		.dstOffset = argumentBuffer.GetCounterOffset(),
 		.size = argumentBuffer.GetCounterBufferSize()
 	};

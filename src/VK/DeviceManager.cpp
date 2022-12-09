@@ -64,25 +64,32 @@ void DeviceManager::CreateLogicalDevice() {
 		queueCreateInfo.pQueuePriorities = std::data(queuePriorities);
 	}
 
-	VkPhysicalDeviceFeatures deviceFeatures = {};
+	VkPhysicalDeviceFeatures deviceFeatures{};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
 	deviceFeatures.multiDrawIndirect = VK_TRUE;
 	deviceFeatures.drawIndirectFirstInstance = VK_TRUE;
 
-	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
-	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-	indexingFeatures.runtimeDescriptorArray = VK_TRUE;
-	indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-	indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
-	indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-	indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	VkPhysicalDeviceVulkan13Features vk13Features{};
+	vk13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	vk13Features.synchronization2 = VK_TRUE;
 
-	VkPhysicalDeviceFeatures2 deviceFeatures2 = {};
+	VkPhysicalDeviceVulkan12Features vk12Features{};
+	vk12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	vk12Features.drawIndirectCount = VK_TRUE;
+	vk12Features.descriptorIndexing = VK_TRUE;
+	vk12Features.runtimeDescriptorArray = VK_TRUE;
+	vk12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	vk12Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+	vk12Features.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+	vk12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vk12Features.pNext = &vk13Features;
+
+	VkPhysicalDeviceFeatures2 deviceFeatures2{};
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures2.features = deviceFeatures;
-	deviceFeatures2.pNext = &indexingFeatures;
+	deviceFeatures2.pNext = &vk12Features;
 
-	VkDeviceCreateInfo createInfo = {};
+	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pQueueCreateInfos = std::data(queueCreateInfos);
 	createInfo.queueCreateInfoCount = static_cast<std::uint32_t>(std::size(queueCreateInfos));

@@ -180,7 +180,7 @@ void RendererVK::Render() {
 	Terra::renderPipeline->BindComputePipeline(
 		computeCommandBuffer, Terra::computeDescriptorSet->GetDescriptorSet(imageIndex)
 	);
-	Terra::renderPipeline->DispatchCompute(computeCommandBuffer);
+	Terra::renderPipeline->DispatchCompute(computeCommandBuffer, imageIndex);
 
 	Terra::computeCmdBuffer->CloseBuffer(imageIndex);
 	Terra::computeQueue->SubmitCommandBuffer(
