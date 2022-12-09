@@ -69,15 +69,15 @@ void _vkResourceView::CleanUpResource() noexcept {
 }
 
 void _vkResourceView::RecordCopy(
-	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer
+	VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
 ) noexcept {
 	VkBufferCopy copyRegion{};
 	copyRegion.srcOffset = 0u;
 	copyRegion.dstOffset = 0u;
-	copyRegion.size = m_bufferSize;
+	copyRegion.size = uploadBuffer.GetBufferSize();
 
 	vkCmdCopyBuffer(
-		copyCmdBuffer, uploadBuffer, m_resource.GetResource(), 1u, &copyRegion
+		copyCmdBuffer, uploadBuffer.GetResource(), m_resource.GetResource(), 1u, &copyRegion
 	);
 }
 
@@ -301,7 +301,7 @@ void VkImageResourceView::CleanUpImageResourceView() noexcept {
 }
 
 void VkImageResourceView::RecordCopy(
-	VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer
+	VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
 ) noexcept {
 	VkImageSubresourceLayers imageLayer{};
 	imageLayer.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -336,7 +336,7 @@ void VkImageResourceView::RecordCopy(
 	);
 
 	vkCmdCopyBufferToImage(
-		copyCmdBuffer, uploadBuffer,
+		copyCmdBuffer, uploadBuffer.GetResource(),
 		m_resource.GetResource(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1u, &copyRegion
 	);
@@ -516,7 +516,8 @@ void VkArgumentResourceView::CreateResource(
 
 	m_resource.CreateResource(
 		device, m_bufferSize,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+		| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 		queueFamilyIndices
 	);
 }

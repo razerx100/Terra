@@ -24,7 +24,9 @@ public:
 	void SetMemoryOffsetAndType(VkDevice device, MemoryType type) noexcept;
 	void SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept;
 	void CleanUpResource() noexcept;
-	void RecordCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
+	void RecordCopy(
+		VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
+	) noexcept;
 	void ReleaseOwnerShip(
 		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 		std::uint32_t newOwnerQueueIndex
@@ -110,7 +112,9 @@ public:
 	) noexcept;
 
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);
-	void RecordCopy(VkCommandBuffer copyCmdBuffer, VkBuffer uploadBuffer) noexcept;
+	void RecordCopy(
+		VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
+	) noexcept;
 	void CleanUpImageResourceView() noexcept;
 	void ReleaseOwnerShip(
 		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
@@ -186,7 +190,7 @@ public:
 	}
 
 	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept {
-		m_gpuResource.RecordCopy(copyCmdBuffer, m_uploadResource.GetResource());
+		m_gpuResource.RecordCopy(copyCmdBuffer, m_uploadResource);
 	}
 
 	void ReleaseOwnerShip(

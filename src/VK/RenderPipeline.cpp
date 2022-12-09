@@ -88,7 +88,7 @@ void RenderPipeline::DrawModels(
 	auto& argumentBuffer = m_argumentBuffers[frameIndex];
 	VkBufferBarrier().AddExecutionBarrier(
 		argumentBuffer.GetResource(), argumentBuffer.GetBufferSize(), 0u,
-		VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT
+		VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT
 	).RecordBarriers(
 		graphicsCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
@@ -133,7 +133,7 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_culldataBuffer.SetMemoryOffsetAndType(device);
 
-	m_counterBuffer.CreateResource(device, 4u, 1u, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	m_counterBuffer.CreateResource(device, 4u, 1u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 	m_counterBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
 	// Culling Buffer
