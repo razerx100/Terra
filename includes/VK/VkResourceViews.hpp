@@ -35,6 +35,8 @@ public:
 		VkPipelineStageFlagBits destinationStage
 	) noexcept;
 
+	static void SetBufferAlignments(VkPhysicalDevice device) noexcept;
+
 	[[nodiscard]]
 	VkBuffer GetResource() const noexcept;
 	[[nodiscard]]
@@ -49,6 +51,9 @@ protected:
 	VkDeviceSize m_memoryOffsetStart;
 	VkDeviceSize m_bufferSize;
 	MemoryType m_resourceType;
+
+	static VkDeviceSize s_uniformBufferAlignment;
+	static VkDeviceSize s_storageBufferAlignment;
 };
 
 class VkResourceView : public _vkResourceView {
@@ -288,11 +293,12 @@ public:
 	[[nodiscard]]
 	VkDeviceSize GetBufferOffset() const noexcept;
 	[[nodiscard]]
+	VkDeviceSize GetBufferMemoryOffset() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetCounterMemoryOffset() const noexcept;
+	[[nodiscard]]
 	VkDeviceSize GetCounterBufferSize() const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetResourceBufferSize() const noexcept;
-
-private:
-	VkDeviceSize m_bufferOffset;
 };
 #endif

@@ -48,6 +48,8 @@ RendererVK::RendererVK(
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
 
+	_vkResourceView::SetBufferAlignments(physicalDevice);
+
 	Terra::InitResources(physicalDevice, logicalDevice);
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
@@ -397,7 +399,7 @@ void RendererVK::ProcessData() {
 		// Transfer ownership
 		Terra::computeCmdBuffer->ResetFirstBuffer();
 
-		const VkCommandBuffer computeCmdBuffer = Terra::graphicsCmdBuffer->GetFirstCommandBuffer();
+		const VkCommandBuffer computeCmdBuffer = Terra::computeCmdBuffer->GetFirstCommandBuffer();
 
 		Terra::renderPipeline->AcquireOwnerShip(
 			computeCmdBuffer, m_copyQueueIndex, m_computeQueueIndex

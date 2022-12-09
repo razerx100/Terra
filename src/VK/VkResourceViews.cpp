@@ -1,9 +1,13 @@
 #include <VkResourceViews.hpp>
 #include <VkResourceBarriers.hpp>
+#include <VkHelperFunctions.hpp>
 
 #include <Terra.hpp>
 
 // _vkResourceView
+VkDeviceSize _vkResourceView::s_uniformBufferAlignment = 0u;
+VkDeviceSize _vkResourceView::s_storageBufferAlignment = 0u;
+
 _vkResourceView::_vkResourceView(VkDevice device) noexcept
 	: m_resource{ device }, m_memoryOffsetStart{ 0u }, m_bufferSize{ 0u },
 	m_resourceType{ MemoryType::none } {}
@@ -106,6 +110,14 @@ void _vkResourceView::AcquireOwnership(
 	);
 }
 
+void _vkResourceView::SetBufferAlignments(VkPhysicalDevice device) noexcept {
+	VkPhysicalDeviceProperties deviceProperty{};
+	vkGetPhysicalDeviceProperties(device, &deviceProperty);
+
+	s_uniformBufferAlignment = deviceProperty.limits.minUniformBufferOffsetAlignment;
+	s_storageBufferAlignment = deviceProperty.limits.minStorageBufferOffsetAlignment;
+}
+
 VkBuffer _vkResourceView::GetResource() const noexcept {
 	return m_resource.GetResource();
 }
@@ -140,8 +152,14 @@ void VkResourceView::CreateResource(
 	VkDevice device, VkDeviceSize bufferSize, std::uint32_t subAllocationCount,
 	VkBufferUsageFlags usageFlags, std::vector<std::uint32_t> queueFamilyIndices
 ) {
-	m_subAllocationSize = bufferSize;
-	m_bufferSize = bufferSize * subAllocationCount;
+	if(usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+		m_subAllocationSize = Align(bufferSize, s_uniformBufferAlignment);
+	else if (usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+		m_subAllocationSize = Align(bufferSize, s_storageBufferAlignment);
+	else
+		m_subAllocationSize = bufferSize;
+
+	m_bufferSize = m_subAllocationSize * subAllocationCount;
 	m_resource.CreateResource(device, m_bufferSize, usageFlags, queueFamilyIndices);
 }
 
@@ -472,11 +490,10 @@ VkImageView VkUploadableImageResourceView::GetImageView() const noexcept {
 // Vk Argument ResourceView
 
 VkArgumentResourceView::VkArgumentResourceView(VkDevice device) noexcept
-	: _vkResourceView{ device }, m_bufferOffset{ 4u } {}
+	: _vkResourceView{ device } {}
 
 VkArgumentResourceView::VkArgumentResourceView(VkArgumentResourceView&& resourceView) noexcept
-	: _vkResourceView{ std::move(resourceView) },
-	m_bufferOffset{ resourceView.m_bufferOffset } {}
+	: _vkResourceView{ std::move(resourceView) } {}
 
 VkArgumentResourceView& VkArgumentResourceView::operator=(
 	VkArgumentResourceView&& resourceView
@@ -485,7 +502,6 @@ VkArgumentResourceView& VkArgumentResourceView::operator=(
 	m_memoryOffsetStart = resourceView.m_memoryOffsetStart;
 	m_bufferSize = resourceView.m_bufferSize;
 	m_resourceType = resourceView.m_resourceType;
-	m_bufferOffset = resourceView.m_bufferOffset;
 
 	return *this;
 }
@@ -493,8 +509,10 @@ VkArgumentResourceView& VkArgumentResourceView::operator=(
 void VkArgumentResourceView::CreateResource(
 	VkDevice device, VkDeviceSize bufferSize, std::vector<std::uint32_t> queueFamilyIndices
 ) {
-	m_bufferSize = bufferSize + 4u; // 4bytes for counter buffer which will be created at
-	// offset 0
+
+	m_bufferSize = s_storageBufferAlignment + bufferSize;
+	// 4bytes for counter buffer which will be created at offset 0 then allocate the
+	// actual buffer at the alignment
 
 	m_resource.CreateResource(
 		device, m_bufferSize,
@@ -504,11 +522,19 @@ void VkArgumentResourceView::CreateResource(
 }
 
 VkDeviceSize VkArgumentResourceView::GetCounterOffset() const noexcept {
-	return m_memoryOffsetStart;
+	return 0u;
 }
 
 VkDeviceSize VkArgumentResourceView::GetBufferOffset() const noexcept {
-	return m_memoryOffsetStart + m_bufferOffset;
+	return s_storageBufferAlignment;
+}
+
+VkDeviceSize VkArgumentResourceView::GetBufferMemoryOffset() const noexcept {
+	return m_memoryOffsetStart + GetBufferOffset();
+}
+
+VkDeviceSize VkArgumentResourceView::GetCounterMemoryOffset() const noexcept {
+	return m_memoryOffsetStart + GetCounterOffset();
 }
 
 VkDeviceSize VkArgumentResourceView::GetCounterBufferSize() const noexcept {
@@ -516,5 +542,5 @@ VkDeviceSize VkArgumentResourceView::GetCounterBufferSize() const noexcept {
 }
 
 VkDeviceSize VkArgumentResourceView::GetResourceBufferSize() const noexcept {
-	return m_bufferSize - 4u;
+	return m_bufferSize - s_storageBufferAlignment;
 }

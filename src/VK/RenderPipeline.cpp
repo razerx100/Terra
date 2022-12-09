@@ -106,6 +106,9 @@ void RenderPipeline::BindResourceToMemory(VkDevice device) {
 
 	for (auto& argumentBuffer : m_argumentBuffers)
 		argumentBuffer.BindResourceToMemory(device);
+
+	m_culldataBuffer.BindResourceToMemory(device);
+	m_counterBuffer.BindResourceToMemory(device);
 }
 
 void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
@@ -205,7 +208,7 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	DescriptorInfo counterDescInfo{
 		.bindingSlot = 4u,
 		.descriptorCount = 1u,
-		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
 	std::vector<VkDescriptorBufferInfo> counterBufferInfos;
