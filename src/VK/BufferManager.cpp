@@ -187,7 +187,7 @@ void BufferManager::AddDescriptorForBuffer(
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = buffer.GetResource();
 		bufferInfo.offset = buffer.GetSubAllocationOffset(index);
-		bufferInfo.range = buffer.GetSubAllocationSize();
+		bufferInfo.range = buffer.GetSubBufferSize();
 
 		bufferInfos.emplace_back(std::move(bufferInfo));
 	}

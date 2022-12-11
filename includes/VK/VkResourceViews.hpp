@@ -78,14 +78,15 @@ public:
 	[[nodiscard]]
 	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
 	[[nodiscard]]
-	VkDeviceSize GetSubAllocationSize() const noexcept;
-	[[nodiscard]]
 	VkDeviceSize GetFirstMemoryOffset() const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetFirstSubAllocationOffset() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetSubBufferSize() const noexcept;
 
 private:
 	VkDeviceSize m_subAllocationSize;
+	VkDeviceSize m_subBufferSize;
 };
 
 class VkImageResourceView {
@@ -248,11 +249,11 @@ public:
 	);
 
 	[[nodiscard]]
-	VkDeviceSize GetSubAllocationSize() const noexcept;
-	[[nodiscard]]
 	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetFirstSubAllocationOffset() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize GetSubBufferSize() const noexcept;
 };
 
 class VkUploadableImageResourceView : public VkUploadableResourceView<VkImageResourceView> {

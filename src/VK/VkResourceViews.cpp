@@ -159,7 +159,10 @@ void VkResourceView::CreateResource(
 	else
 		m_subAllocationSize = bufferSize;
 
-	m_bufferSize = m_subAllocationSize * subAllocationCount;
+	m_subBufferSize = bufferSize;
+
+	m_bufferSize = m_subAllocationSize * static_cast<VkDeviceSize>(subAllocationCount - 1u)
+		+ m_subBufferSize;
 	m_resource.CreateResource(device, m_bufferSize, usageFlags, queueFamilyIndices);
 }
 
@@ -179,8 +182,8 @@ VkDeviceSize VkResourceView::GetFirstSubAllocationOffset() const noexcept {
 	return GetSubAllocationOffset(0u);
 }
 
-VkDeviceSize VkResourceView::GetSubAllocationSize() const noexcept {
-	return m_subAllocationSize;
+VkDeviceSize VkResourceView::GetSubBufferSize() const noexcept {
+	return m_subBufferSize;
 }
 
 // Vk Image Resource View
@@ -419,10 +422,6 @@ void VkUploadableBufferResourceView::CreateResource(
 	);
 }
 
-VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationSize() const noexcept {
-	return m_gpuResource.GetSubAllocationSize();
-}
-
 VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationOffset(
 	VkDeviceSize index
 ) const noexcept {
@@ -431,6 +430,10 @@ VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationOffset(
 
 VkDeviceSize VkUploadableBufferResourceView::GetFirstSubAllocationOffset() const noexcept {
 	return GetSubAllocationOffset(0u);
+}
+
+VkDeviceSize VkUploadableBufferResourceView::GetSubBufferSize() const noexcept {
+	return m_gpuResource.GetSubBufferSize();
 }
 
 // VK Uploadable Image ResourceView

@@ -153,7 +153,7 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = m_culldataBuffer.GetGPUResource();
 		bufferInfo.offset = m_culldataBuffer.GetFirstSubAllocationOffset();
-		bufferInfo.range = m_culldataBuffer.GetSubAllocationSize();
+		bufferInfo.range = m_culldataBuffer.GetSubBufferSize();
 
 		cullingBufferInfos.emplace_back(std::move(bufferInfo));
 	}
@@ -175,7 +175,7 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = m_commandBuffer.GetGPUResource();
 		bufferInfo.offset = m_commandBuffer.GetFirstSubAllocationOffset();
-		bufferInfo.range = m_commandBuffer.GetSubAllocationSize();
+		bufferInfo.range = m_commandBuffer.GetSubBufferSize();
 
 		inputBufferInfos.emplace_back(std::move(bufferInfo));
 	}
@@ -258,12 +258,11 @@ void RenderPipeline::RecordIndirectArguments(
 
 void RenderPipeline::CopyData() noexcept {
 	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
-	for (std::uint32_t bufferIndex = 0u; bufferIndex < m_bufferCount; ++bufferIndex)
-		memcpy(
-			uploadMemoryStart + m_commandBuffer.GetFirstUploadMemoryOffset(),
-			std::data(m_indirectCommands),
-			sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands)
-		);
+	memcpy(
+		uploadMemoryStart + m_commandBuffer.GetFirstUploadMemoryOffset(),
+		std::data(m_indirectCommands),
+		sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands)
+	);
 
 	// copy the culling data to the buffer.
 	std::uint8_t* cullingBufferPtr =
