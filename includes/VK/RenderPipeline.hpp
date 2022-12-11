@@ -10,8 +10,8 @@
 
 struct CullingData {
 	std::uint32_t commandCount;
+	float padding;	// Next Vec2 starts at 8bytes offset
 	DirectX::XMFLOAT2 xBounds;
-	float padding;
 	DirectX::XMFLOAT2 yBounds;
 	DirectX::XMFLOAT2 zBounds;
 };
