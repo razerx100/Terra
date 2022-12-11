@@ -288,10 +288,12 @@ void RenderPipeline::CopyData() noexcept {
 
 void RenderPipeline::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
 	m_commandBuffer.RecordCopy(copyBuffer);
+	m_culldataBuffer.RecordCopy(copyBuffer);
 }
 
 void RenderPipeline::ReleaseUploadResources() noexcept {
 	m_commandBuffer.CleanUpUploadResource();
+	m_culldataBuffer.CleanUpUploadResource();
 }
 
 void RenderPipeline::AcquireOwnerShip(
