@@ -74,6 +74,15 @@ public:
 	);
 
 	[[nodiscard]]
+	std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSpread(
+		size_t bufferCount
+	) const noexcept;
+	[[nodiscard]]
+	std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSplit(
+		size_t bufferCount
+	) const noexcept;
+
+	[[nodiscard]]
 	VkDeviceSize GetMemoryOffset(VkDeviceSize index) const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
@@ -249,6 +258,15 @@ public:
 	);
 
 	[[nodiscard]]
+	std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSpread(
+		size_t bufferCount
+	) const noexcept;
+	[[nodiscard]]
+	std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSplit(
+		size_t bufferCount
+	) const noexcept;
+
+	[[nodiscard]]
 	VkDeviceSize GetSubAllocationOffset(VkDeviceSize index) const noexcept;
 	[[nodiscard]]
 	VkDeviceSize GetFirstSubAllocationOffset() const noexcept;
@@ -281,6 +299,9 @@ public:
 
 class VkArgumentResourceView : public _vkResourceView {
 public:
+	using BufferInfoType =
+		std::pair<std::vector<VkDescriptorBufferInfo>, std::vector<VkDescriptorBufferInfo>>;
+
 	VkArgumentResourceView(VkDevice device) noexcept;
 
 	VkArgumentResourceView(const VkArgumentResourceView&) = delete;
@@ -292,6 +313,11 @@ public:
 	void CreateResource(
 		VkDevice device, VkDeviceSize bufferSize, std::vector<std::uint32_t> queueFamilyIndices
 	);
+
+	[[nodiscard]]
+	static BufferInfoType GetDescBufferInfo(
+		size_t bufferCount, const std::vector<VkArgumentResourceView>& buffers
+	) noexcept;
 
 	[[nodiscard]]
 	VkDeviceSize GetCounterOffset() const noexcept;

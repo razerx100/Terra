@@ -3,26 +3,25 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <DescriptorPool.hpp>
-#include <VkResourceViews.hpp>
 #include <memory>
 
 struct DescriptorInfo {
 	std::uint32_t bindingSlot;
-	std::uint32_t descriptorCount;
+	std::uint32_t descriptorCount = 1u;
 	VkDescriptorType type;
 };
 
-struct DescBufferInfo {
-	DescriptorInfo descriptorInfo;
-	std::vector<VkDescriptorBufferInfo> buffers;
-};
-
-struct DescImageInfo {
-	DescriptorInfo descriptorInfo;
-	std::vector<VkDescriptorImageInfo> images;
-};
-
 class DescriptorSetManager {
+	struct DescBufferInfo {
+		DescriptorInfo descriptorInfo;
+		std::vector<VkDescriptorBufferInfo> buffers;
+	};
+
+	struct DescImageInfo {
+		DescriptorInfo descriptorInfo;
+		std::vector<VkDescriptorImageInfo> images;
+	};
+
 public:
 	DescriptorSetManager(VkDevice device, size_t bufferCount);
 	~DescriptorSetManager() noexcept;
@@ -34,11 +33,11 @@ public:
 
 	void AddSetLayout(
 		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-		std::vector<VkDescriptorBufferInfo>&& bufferInfo
+		std::vector<VkDescriptorBufferInfo> bufferInfo
 	) noexcept;
 	void AddSetLayout(
 		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-		std::vector<VkDescriptorImageInfo>&& imageInfo
+		std::vector<VkDescriptorImageInfo> imageInfo
 	) noexcept;
 	void CreateDescriptorSets(VkDevice device);
 

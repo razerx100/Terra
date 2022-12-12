@@ -22,16 +22,17 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 
 	m_cameraBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
-	DescriptorSetManager* const graphicsDescriptorSet = Terra::graphicsDescriptorSet.get();
-	DescriptorSetManager* const computeDescriptorSet = Terra::computeDescriptorSet.get();
+	DescriptorInfo cameraDescInfo{
+		.bindingSlot = 0u,
+		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+	};
+	auto cameraBufferInfos = m_cameraBuffer.GetDescBufferInfoSplit(m_bufferCount);
 
-	AddDescriptorForBuffer(
-		m_cameraBuffer, m_bufferCount, 0u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		VK_SHADER_STAGE_VERTEX_BIT, graphicsDescriptorSet
+	Terra::graphicsDescriptorSet->AddSetLayout(
+		cameraDescInfo, VK_SHADER_STAGE_VERTEX_BIT, cameraBufferInfos
 	);
-	AddDescriptorForBuffer(
-		m_cameraBuffer, m_bufferCount, 0u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		VK_SHADER_STAGE_COMPUTE_BIT, computeDescriptorSet
+	Terra::computeDescriptorSet->AddSetLayout(
+		cameraDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, cameraBufferInfos
 	);
 
 	const size_t modelCount = std::size(m_opaqueModels);
@@ -43,13 +44,19 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_modelBuffers.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
-	AddDescriptorForBuffer(
-		m_modelBuffers, m_bufferCount, 2u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-		VK_SHADER_STAGE_VERTEX_BIT, graphicsDescriptorSet
+	DescriptorInfo modelDescInfo{
+		.bindingSlot = 2u,
+		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+	};
+	auto modelBufferInfos = m_modelBuffers.GetDescBufferInfoSplit(m_bufferCount);
+
+	Terra::graphicsDescriptorSet->AddSetLayout(
+		modelDescInfo, VK_SHADER_STAGE_VERTEX_BIT, modelBufferInfos
 	);
-	AddDescriptorForBuffer(
-		m_modelBuffers, m_bufferCount, 1u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-		VK_SHADER_STAGE_COMPUTE_BIT, computeDescriptorSet
+
+	modelDescInfo.bindingSlot = 1u;
+	Terra::computeDescriptorSet->AddSetLayout(
+		modelDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, modelBufferInfos
 	);
 }
 
@@ -169,28 +176,4 @@ void BufferManager::ReleaseOwnerships(
 void BufferManager::ReleaseUploadResources() noexcept {
 	m_gVertexBuffer.CleanUpUploadResource();
 	m_gIndexBuffer.CleanUpUploadResource();
-}
-
-void BufferManager::AddDescriptorForBuffer(
-	const VkResourceView& buffer, std::uint32_t bufferCount, std::uint32_t bindingSlot,
-	VkDescriptorType descriptorType, VkShaderStageFlagBits shaderStage,
-	DescriptorSetManager* const descriptorSetManager
-) noexcept {
-	DescriptorInfo descInfo{};
-	descInfo.bindingSlot = bindingSlot;
-	descInfo.descriptorCount = 1u;
-	descInfo.type = descriptorType;
-
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-
-	for (VkDeviceSize index = 0u; index < bufferCount; ++index) {
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = buffer.GetResource();
-		bufferInfo.offset = buffer.GetSubAllocationOffset(index);
-		bufferInfo.range = buffer.GetSubBufferSize();
-
-		bufferInfos.emplace_back(std::move(bufferInfo));
-	}
-
-	descriptorSetManager->AddSetLayout(descInfo, shaderStage, std::move(bufferInfos));
 }

@@ -143,20 +143,10 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	// Culling Buffer
 	DescriptorInfo cullingDescInfo{
 		.bindingSlot = 5u,
-		.descriptorCount = 1u,
 		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
 	};
 
-	std::vector<VkDescriptorBufferInfo> cullingBufferInfos;
-
-	for (size_t _ = 0u; _ < m_bufferCount; ++_) {
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_culldataBuffer.GetGPUResource();
-		bufferInfo.offset = m_culldataBuffer.GetFirstSubAllocationOffset();
-		bufferInfo.range = m_culldataBuffer.GetSubBufferSize();
-
-		cullingBufferInfos.emplace_back(std::move(bufferInfo));
-	}
+	auto cullingBufferInfos = m_culldataBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
 	Terra::computeDescriptorSet->AddSetLayout(
 		cullingDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(cullingBufferInfos)
@@ -165,20 +155,10 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	// Input Buffer
 	DescriptorInfo inputDescInfo{
 		.bindingSlot = 2u,
-		.descriptorCount = 1u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
-	std::vector<VkDescriptorBufferInfo> inputBufferInfos;
-
-	for (size_t _ = 0u; _ < m_bufferCount; ++_) {
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_commandBuffer.GetGPUResource();
-		bufferInfo.offset = m_commandBuffer.GetFirstSubAllocationOffset();
-		bufferInfo.range = m_commandBuffer.GetSubBufferSize();
-
-		inputBufferInfos.emplace_back(std::move(bufferInfo));
-	}
+	auto inputBufferInfos = m_commandBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
 	Terra::computeDescriptorSet->AddSetLayout(
 		inputDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(inputBufferInfos)
@@ -187,22 +167,12 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	// Output Buffer
 	DescriptorInfo outputDescInfo{
 		.bindingSlot = 3u,
-		.descriptorCount = 1u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
-	std::vector<VkDescriptorBufferInfo> outputBufferInfos;
-
-	for (size_t index = 0u; index < m_bufferCount; ++index) {
-		auto& argumentBuffer = m_argumentBuffers[index];
-
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = argumentBuffer.GetResource();
-		bufferInfo.offset = argumentBuffer.GetBufferOffset();
-		bufferInfo.range = argumentBuffer.GetResourceBufferSize();
-
-		outputBufferInfos.emplace_back(std::move(bufferInfo));
-	}
+	auto [outputBufferInfos, counterBufferInfos] = VkArgumentResourceView::GetDescBufferInfo(
+		m_bufferCount, m_argumentBuffers
+	);
 
 	Terra::computeDescriptorSet->AddSetLayout(
 		outputDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(outputBufferInfos)
@@ -211,22 +181,8 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	// Counter Buffer
 	DescriptorInfo counterDescInfo{
 		.bindingSlot = 4u,
-		.descriptorCount = 1u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
-
-	std::vector<VkDescriptorBufferInfo> counterBufferInfos;
-
-	for (size_t index = 0u; index < m_bufferCount; ++index) {
-		auto& argumentBuffer = m_argumentBuffers[index];
-
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = argumentBuffer.GetResource();
-		bufferInfo.offset = argumentBuffer.GetCounterOffset();
-		bufferInfo.range = argumentBuffer.GetCounterBufferSize();
-
-		counterBufferInfos.emplace_back(std::move(bufferInfo));
-	}
 
 	Terra::computeDescriptorSet->AddSetLayout(
 		counterDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(counterBufferInfos)

@@ -132,11 +132,12 @@ VkMemoryRequirements _vkResourceView::GetMemoryRequirements(VkDevice device) con
 
 // Vk Resource view
 VkResourceView::VkResourceView(VkDevice device) noexcept
-	: _vkResourceView{ device }, m_subAllocationSize{ 0u } {}
+	: _vkResourceView{ device }, m_subAllocationSize{ 0u }, m_subBufferSize{ 0u } {}
 
 VkResourceView::VkResourceView(VkResourceView&& resourceView) noexcept
 	: _vkResourceView{ std::move(resourceView) },
-	m_subAllocationSize{ resourceView.m_subAllocationSize } {}
+	m_subAllocationSize{ resourceView.m_subAllocationSize },
+	m_subBufferSize{ resourceView.m_subBufferSize } {}
 
 VkResourceView& VkResourceView::operator=(VkResourceView&& resourceView) noexcept {
 	m_resource = std::move(resourceView.m_resource);
@@ -144,6 +145,7 @@ VkResourceView& VkResourceView::operator=(VkResourceView&& resourceView) noexcep
 	m_bufferSize = resourceView.m_bufferSize;
 	m_resourceType = resourceView.m_resourceType;
 	m_subAllocationSize = resourceView.m_subAllocationSize;
+	m_subBufferSize = resourceView.m_subBufferSize;
 
 	return *this;
 }
@@ -164,6 +166,40 @@ void VkResourceView::CreateResource(
 	m_bufferSize = m_subAllocationSize * static_cast<VkDeviceSize>(subAllocationCount - 1u)
 		+ m_subBufferSize;
 	m_resource.CreateResource(device, m_bufferSize, usageFlags, queueFamilyIndices);
+}
+
+std::vector<VkDescriptorBufferInfo> VkResourceView::GetDescBufferInfoSpread(
+	size_t bufferCount
+) const noexcept {
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+
+	for (size_t _ = 0u; _ < bufferCount; ++_) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = GetResource();
+		bufferInfo.offset = GetFirstSubAllocationOffset();
+		bufferInfo.range = GetSubBufferSize();
+
+		bufferInfos.emplace_back(bufferInfo);
+	}
+
+	return bufferInfos;
+}
+
+std::vector<VkDescriptorBufferInfo> VkResourceView::GetDescBufferInfoSplit(
+	size_t bufferCount
+) const noexcept {
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+
+	for (VkDeviceSize index = 0u; index < bufferCount; ++index) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = GetResource();
+		bufferInfo.offset = GetSubAllocationOffset(index);
+		bufferInfo.range = GetSubBufferSize();
+
+		bufferInfos.emplace_back(bufferInfo);
+	}
+
+	return bufferInfos;
 }
 
 VkDeviceSize VkResourceView::GetSubAllocationOffset(VkDeviceSize index) const noexcept {
@@ -422,6 +458,18 @@ void VkUploadableBufferResourceView::CreateResource(
 	);
 }
 
+std::vector<VkDescriptorBufferInfo> VkUploadableBufferResourceView::GetDescBufferInfoSpread(
+	size_t bufferCount
+) const noexcept {
+	return m_gpuResource.GetDescBufferInfoSpread(bufferCount);
+}
+
+std::vector<VkDescriptorBufferInfo> VkUploadableBufferResourceView::GetDescBufferInfoSplit(
+	size_t bufferCount
+) const noexcept {
+	return m_gpuResource.GetDescBufferInfoSplit(bufferCount);
+}
+
 VkDeviceSize VkUploadableBufferResourceView::GetSubAllocationOffset(
 	VkDeviceSize index
 ) const noexcept {
@@ -523,6 +571,31 @@ void VkArgumentResourceView::CreateResource(
 		| VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 		queueFamilyIndices
 	);
+}
+
+VkArgumentResourceView::BufferInfoType VkArgumentResourceView::GetDescBufferInfo(
+	size_t bufferCount, const std::vector<VkArgumentResourceView>& buffers
+) noexcept {
+	std::vector<VkDescriptorBufferInfo> resourceBufferInfos;
+	std::vector<VkDescriptorBufferInfo> counterBufferInfos;
+
+	for (size_t index = 0u; index < bufferCount; ++index) {
+		auto& argumentBuffer = buffers[index];
+
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = argumentBuffer.GetResource();
+		bufferInfo.offset = argumentBuffer.GetBufferOffset();
+		bufferInfo.range = argumentBuffer.GetResourceBufferSize();
+
+		resourceBufferInfos.emplace_back(bufferInfo);
+
+		bufferInfo.offset = argumentBuffer.GetCounterOffset();
+		bufferInfo.range = argumentBuffer.GetCounterBufferSize();
+
+		counterBufferInfos.emplace_back(bufferInfo);
+	}
+
+	return { resourceBufferInfos, counterBufferInfos };
 }
 
 VkDeviceSize VkArgumentResourceView::GetCounterOffset() const noexcept {

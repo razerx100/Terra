@@ -75,8 +75,12 @@ void DescriptorSetManager::_addSetLayout(
 
 void DescriptorSetManager::AddSetLayout(
 	const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-	std::vector<VkDescriptorBufferInfo>&& bufferInfo
+	std::vector<VkDescriptorBufferInfo> bufferInfo
 ) noexcept {
+	assert(
+		std::size(bufferInfo) == std::size(m_descriptorSets)
+		&& "More buffers than descriptor Sets."
+	);
 	_addSetLayout(descInfo, shaderFlag);
 
 	m_bufferInfos.emplace_back(descInfo, std::move(bufferInfo));
@@ -84,7 +88,7 @@ void DescriptorSetManager::AddSetLayout(
 
 void DescriptorSetManager::AddSetLayout(
 	const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-	std::vector<VkDescriptorImageInfo>&& imageInfo
+	std::vector<VkDescriptorImageInfo> imageInfo
 ) noexcept {
 	_addSetLayout(descInfo, shaderFlag);
 
