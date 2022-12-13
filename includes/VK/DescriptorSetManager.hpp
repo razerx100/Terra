@@ -16,8 +16,14 @@ class DescriptorSetManager {
 	public:
 		virtual ~DescriptorInstance() = default;
 
-		virtual void UpdateDescriptors(
+		void UpdateDescriptors(
 			VkDevice device, const std::vector<VkDescriptorSet>& descSets
+		) const noexcept;
+
+	protected:
+		[[nodiscard]]
+		virtual std::vector<VkWriteDescriptorSet> PopulateWriteDescSets(
+			const std::vector<VkDescriptorSet>& descSets
 		) const noexcept = 0;
 	};
 
@@ -63,13 +69,17 @@ private:
 	std::vector<VkDescriptorBindingFlags> m_bindingFlags;
 
 private:
-	class DescriptorInstanceBuffer : public DescriptorInstance {
+	class DescriptorInstanceMembers : public DescriptorInstance {
 	public:
-		DescriptorInstanceBuffer() noexcept;
+		DescriptorInstanceMembers() noexcept : m_descriptorInfo{}, m_isSplit{ false } {}
 
-		void UpdateDescriptors(
-			VkDevice device, const std::vector<VkDescriptorSet>& descSets
-		) const noexcept override;
+	protected:
+		DescriptorInfo m_descriptorInfo;
+		bool m_isSplit;
+	};
+
+	class DescriptorInstanceBuffer : public DescriptorInstanceMembers {
+	public:
 		void AddBuffersSplit(
 			const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos
 		) noexcept;
@@ -81,21 +91,14 @@ private:
 		[[nodiscard]]
 		std::vector<VkWriteDescriptorSet> PopulateWriteDescSets(
 			const std::vector<VkDescriptorSet>& descSets
-		) const noexcept;
+		) const noexcept override;
 
 	private:
-		DescriptorInfo m_descriptorInfo;
 		std::vector<VkDescriptorBufferInfo> m_bufferInfos;
-		bool m_isSplit;
 	};
 
-	class DescriptorInstanceImage : public DescriptorInstance {
+	class DescriptorInstanceImage : public DescriptorInstanceMembers {
 	public:
-		DescriptorInstanceImage() noexcept;
-
-		void UpdateDescriptors(
-			VkDevice device, const std::vector<VkDescriptorSet>& descSets
-		) const noexcept override;
 		void AddImagesSplit(
 			const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos
 		) noexcept;
@@ -107,12 +110,11 @@ private:
 		[[nodiscard]]
 		std::vector<VkWriteDescriptorSet> PopulateWriteDescSets(
 			const std::vector<VkDescriptorSet>& descSets
-		) const noexcept;
+		) const noexcept override;
 
 	private:
-		DescriptorInfo m_descriptorInfo;
 		std::vector<VkDescriptorImageInfo> m_imageInfos;
-		bool m_isSplit;
 	};
 };
+
 #endif

@@ -130,11 +130,8 @@ void DescriptorSetManager::CreateSetLayouts(VkDevice device) {
 		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout);
 }
 
-// Descriptor Instance Buffer
-DescriptorSetManager::DescriptorInstanceBuffer::DescriptorInstanceBuffer() noexcept
-	: m_bufferInfos{}, m_isSplit{ false } {}
-
-void DescriptorSetManager::DescriptorInstanceBuffer::UpdateDescriptors(
+// Descriptor Instance base
+void DescriptorSetManager::DescriptorInstance::UpdateDescriptors(
 	VkDevice device, const std::vector<VkDescriptorSet>& descSets
 ) const noexcept {
 	auto setWrites = PopulateWriteDescSets(descSets);
@@ -145,6 +142,7 @@ void DescriptorSetManager::DescriptorInstanceBuffer::UpdateDescriptors(
 	);
 }
 
+// Descriptor Instance Buffer
 void DescriptorSetManager::DescriptorInstanceBuffer::AddBuffersSplit(
 	const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos
 ) noexcept {
@@ -203,27 +201,12 @@ std::vector<VkWriteDescriptorSet> DescriptorSetManager::DescriptorInstanceBuffer
 }
 
 // Descriptor Instance Image
-DescriptorSetManager::DescriptorInstanceImage::DescriptorInstanceImage() noexcept
-	: m_imageInfos{}, m_isSplit{ false } {}
-
-void DescriptorSetManager::DescriptorInstanceImage::UpdateDescriptors(
-	VkDevice device, const std::vector<VkDescriptorSet>& descSets
-) const noexcept {
-	auto setWrites = PopulateWriteDescSets(descSets);
-
-	vkUpdateDescriptorSets(
-		device, static_cast<std::uint32_t>(std::size(setWrites)), std::data(setWrites), 0u,
-		nullptr
-	);
-}
-
 void DescriptorSetManager::DescriptorInstanceImage::AddImagesSplit(
 	const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos
 ) noexcept {
 	m_descriptorInfo = descInfo;
 	m_imageInfos = std::move(imageInfos);
 	m_isSplit = true;
-
 }
 
 void DescriptorSetManager::DescriptorInstanceImage::AddImagesContiguous(
