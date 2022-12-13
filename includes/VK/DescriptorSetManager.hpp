@@ -12,14 +12,13 @@ struct DescriptorInfo {
 };
 
 class DescriptorSetManager {
-	struct DescBufferInfo {
-		DescriptorInfo descriptorInfo;
-		std::vector<VkDescriptorBufferInfo> buffers;
-	};
+	class DescriptorInstance {
+	public:
+		virtual ~DescriptorInstance() = default;
 
-	struct DescImageInfo {
-		DescriptorInfo descriptorInfo;
-		std::vector<VkDescriptorImageInfo> images;
+		virtual void UpdateDescriptors(
+			VkDevice device, const std::vector<VkDescriptorSet>& descSets
+		) const noexcept = 0;
 	};
 
 public:
@@ -31,36 +30,89 @@ public:
 	[[nodiscard]]
 	VkDescriptorSet GetDescriptorSet(size_t index) const noexcept;
 
-	void AddSetLayout(
-		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-		std::vector<VkDescriptorBufferInfo> bufferInfo
+	void AddBuffersSplit(
+		const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos,
+		VkShaderStageFlagBits shaderFlag
 	) noexcept;
-	void AddSetLayout(
-		const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-		std::vector<VkDescriptorImageInfo> imageInfo
+	void AddBuffersContiguous(
+		const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos,
+		VkShaderStageFlagBits shaderFlag
 	) noexcept;
+	void AddImagesSplit(
+		const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos,
+		VkShaderStageFlagBits shaderFlag
+	) noexcept;
+	void AddImagesContiguous(
+		const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos,
+		VkShaderStageFlagBits shaderFlag
+	) noexcept;
+
 	void CreateDescriptorSets(VkDevice device);
 
 private:
 	void CreateSetLayouts(VkDevice device);
-	void _addSetLayout(const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag);
-
-	static void BindBuffer(
-		VkDevice device, VkDescriptorSet descSet,
-		const DescriptorInfo& descriptorInfo, const VkDescriptorBufferInfo& bufferInfo
-	) noexcept;
-	static void BindImageView(
-		VkDevice device, VkDescriptorSet descSet, const DescImageInfo& imageInfo
-	) noexcept;
+	void AddSetLayout(const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag);
 
 private:
 	VkDevice m_deviceRef;
 	std::vector<VkDescriptorSet> m_descriptorSets;
 	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 	DescriptorPool m_descriptorPool;
-	std::vector<DescBufferInfo> m_bufferInfos;
-	std::vector<DescImageInfo> m_imageInfos;
+	std::vector<std::unique_ptr<DescriptorInstance>> m_descriptorInstances;
 	std::vector<VkDescriptorSetLayoutBinding> m_layoutBindings;
 	std::vector<VkDescriptorBindingFlags> m_bindingFlags;
+
+private:
+	class DescriptorInstanceBuffer : public DescriptorInstance {
+	public:
+		DescriptorInstanceBuffer() noexcept;
+
+		void UpdateDescriptors(
+			VkDevice device, const std::vector<VkDescriptorSet>& descSets
+		) const noexcept override;
+		void AddBuffersSplit(
+			const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos
+		) noexcept;
+		void AddBuffersContiguous(
+			const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos
+		) noexcept;
+
+	private:
+		[[nodiscard]]
+		std::vector<VkWriteDescriptorSet> PopulateWriteDescSets(
+			const std::vector<VkDescriptorSet>& descSets
+		) const noexcept;
+
+	private:
+		DescriptorInfo m_descriptorInfo;
+		std::vector<VkDescriptorBufferInfo> m_bufferInfos;
+		bool m_isSplit;
+	};
+
+	class DescriptorInstanceImage : public DescriptorInstance {
+	public:
+		DescriptorInstanceImage() noexcept;
+
+		void UpdateDescriptors(
+			VkDevice device, const std::vector<VkDescriptorSet>& descSets
+		) const noexcept override;
+		void AddImagesSplit(
+			const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos
+		) noexcept;
+		void AddImagesContiguous(
+			const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos
+		) noexcept;
+
+	private:
+		[[nodiscard]]
+		std::vector<VkWriteDescriptorSet> PopulateWriteDescSets(
+			const std::vector<VkDescriptorSet>& descSets
+		) const noexcept;
+
+	private:
+		DescriptorInfo m_descriptorInfo;
+		std::vector<VkDescriptorImageInfo> m_imageInfos;
+		bool m_isSplit;
+	};
 };
 #endif

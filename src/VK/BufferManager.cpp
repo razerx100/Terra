@@ -28,11 +28,11 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	};
 	auto cameraBufferInfos = m_cameraBuffer.GetDescBufferInfoSplit(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddSetLayout(
-		cameraDescInfo, VK_SHADER_STAGE_VERTEX_BIT, cameraBufferInfos
+	Terra::graphicsDescriptorSet->AddBuffersSplit(
+		cameraDescInfo, cameraBufferInfos, VK_SHADER_STAGE_VERTEX_BIT
 	);
-	Terra::computeDescriptorSet->AddSetLayout(
-		cameraDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, cameraBufferInfos
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		cameraDescInfo, std::move(cameraBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
 	const size_t modelCount = std::size(m_opaqueModels);
@@ -50,13 +50,13 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	};
 	auto modelBufferInfos = m_modelBuffers.GetDescBufferInfoSplit(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddSetLayout(
-		modelDescInfo, VK_SHADER_STAGE_VERTEX_BIT, modelBufferInfos
+	Terra::graphicsDescriptorSet->AddBuffersSplit(
+		modelDescInfo, modelBufferInfos, VK_SHADER_STAGE_VERTEX_BIT
 	);
 
 	modelDescInfo.bindingSlot = 1u;
-	Terra::computeDescriptorSet->AddSetLayout(
-		modelDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, modelBufferInfos
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		modelDescInfo, std::move(modelBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 }
 

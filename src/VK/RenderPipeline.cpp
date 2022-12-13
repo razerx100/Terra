@@ -148,8 +148,8 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 
 	auto cullingBufferInfos = m_culldataBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
-	Terra::computeDescriptorSet->AddSetLayout(
-		cullingDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(cullingBufferInfos)
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		cullingDescInfo, std::move(cullingBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
 	// Input Buffer
@@ -160,8 +160,8 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 
 	auto inputBufferInfos = m_commandBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
-	Terra::computeDescriptorSet->AddSetLayout(
-		inputDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(inputBufferInfos)
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		inputDescInfo, std::move(inputBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
 	// Output Buffer
@@ -174,8 +174,8 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 		m_bufferCount, m_argumentBuffers
 	);
 
-	Terra::computeDescriptorSet->AddSetLayout(
-		outputDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(outputBufferInfos)
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		outputDescInfo, std::move(outputBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
 	// Counter Buffer
@@ -184,8 +184,8 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
-	Terra::computeDescriptorSet->AddSetLayout(
-		counterDescInfo, VK_SHADER_STAGE_COMPUTE_BIT, std::move(counterBufferInfos)
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		counterDescInfo, std::move(counterBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 }
 

@@ -68,8 +68,8 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 		imageInfos.emplace_back(imageInfo);
 	}
 
-	Terra::graphicsDescriptorSet->AddSetLayout(
-		descInfo, VK_SHADER_STAGE_FRAGMENT_BIT, std::move(imageInfos)
+	Terra::graphicsDescriptorSet->AddImagesContiguous(
+		descInfo, std::move(imageInfos), VK_SHADER_STAGE_FRAGMENT_BIT
 	);
 }
 

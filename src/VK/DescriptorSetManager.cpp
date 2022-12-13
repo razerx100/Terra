@@ -35,22 +35,13 @@ void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 		std::data(m_descriptorSets)
 	);
 
-	for (const DescBufferInfo& bufferInfo : m_bufferInfos)
-		for (size_t index = 0u; index < std::size(m_descriptorSets); ++index)
-			BindBuffer(
-				device, m_descriptorSets[index], bufferInfo.descriptorInfo,
-				bufferInfo.buffers[index]
-			);
+	for (auto& descInst : m_descriptorInstances)
+		descInst->UpdateDescriptors(device, m_descriptorSets);
 
-	for (const DescImageInfo& imageInfo : m_imageInfos)
-		for (auto descriptorSet : m_descriptorSets)
-			BindImageView(device, descriptorSet, imageInfo);
-
-	m_bufferInfos = std::vector<DescBufferInfo>();
-	m_imageInfos = std::vector<DescImageInfo>();
+	m_descriptorInstances = std::vector<std::unique_ptr<DescriptorInstance>>();
 }
 
-void DescriptorSetManager::_addSetLayout(
+void DescriptorSetManager::AddSetLayout(
 	const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag
 ) {
 	VkDescriptorSetLayoutBinding layoutBinding{};
@@ -73,26 +64,52 @@ void DescriptorSetManager::_addSetLayout(
 	m_bindingFlags.emplace_back(bindFlags);
 }
 
-void DescriptorSetManager::AddSetLayout(
-	const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-	std::vector<VkDescriptorBufferInfo> bufferInfo
+void DescriptorSetManager::AddBuffersSplit(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos,
+	VkShaderStageFlagBits shaderFlag
 ) noexcept {
-	assert(
-		std::size(bufferInfo) == std::size(m_descriptorSets)
-		&& "More buffers than descriptor Sets."
-	);
-	_addSetLayout(descInfo, shaderFlag);
+	AddSetLayout(descInfo, shaderFlag);
 
-	m_bufferInfos.emplace_back(descInfo, std::move(bufferInfo));
+	auto descInst = std::make_unique<DescriptorInstanceBuffer>();
+	descInst->AddBuffersSplit(descInfo, std::move(bufferInfos));
+
+	m_descriptorInstances.emplace_back(std::move(descInst));
 }
 
-void DescriptorSetManager::AddSetLayout(
-	const DescriptorInfo& descInfo, VkShaderStageFlagBits shaderFlag,
-	std::vector<VkDescriptorImageInfo> imageInfo
+void DescriptorSetManager::AddBuffersContiguous(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos,
+	VkShaderStageFlagBits shaderFlag
 ) noexcept {
-	_addSetLayout(descInfo, shaderFlag);
+	AddSetLayout(descInfo, shaderFlag);
 
-	m_imageInfos.emplace_back(descInfo, std::move(imageInfo));
+	auto descInst = std::make_unique<DescriptorInstanceBuffer>();
+	descInst->AddBuffersContiguous(descInfo, std::move(bufferInfos));
+
+	m_descriptorInstances.emplace_back(std::move(descInst));
+}
+
+void DescriptorSetManager::AddImagesSplit(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos,
+	VkShaderStageFlagBits shaderFlag
+) noexcept {
+	AddSetLayout(descInfo, shaderFlag);
+
+	auto descInst = std::make_unique<DescriptorInstanceImage>();
+	descInst->AddImagesSplit(descInfo, std::move(imageInfos));
+
+	m_descriptorInstances.emplace_back(std::move(descInst));
+}
+
+void DescriptorSetManager::AddImagesContiguous(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos,
+	VkShaderStageFlagBits shaderFlag
+) noexcept {
+	AddSetLayout(descInfo, shaderFlag);
+
+	auto descInst = std::make_unique<DescriptorInstanceImage>();
+	descInst->AddImagesContiguous(descInfo, std::move(imageInfos));
+
+	m_descriptorInstances.emplace_back(std::move(descInst));
 }
 
 void DescriptorSetManager::CreateSetLayouts(VkDevice device) {
@@ -113,33 +130,147 @@ void DescriptorSetManager::CreateSetLayouts(VkDevice device) {
 		vkCreateDescriptorSetLayout(device, &createInfo, nullptr, &descriptorSetLayout);
 }
 
-void DescriptorSetManager::BindBuffer(
-	VkDevice device, VkDescriptorSet descSet,
-	const DescriptorInfo& descriptorInfo, const VkDescriptorBufferInfo& bufferInfo
-) noexcept {
-	VkWriteDescriptorSet setWrite{};
-	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	setWrite.dstBinding = descriptorInfo.bindingSlot;
-	setWrite.descriptorCount = descriptorInfo.descriptorCount;
-	setWrite.dstSet = descSet;
-	setWrite.descriptorType = descriptorInfo.type;
-	setWrite.dstArrayElement = 0u;
-	setWrite.pBufferInfo = &bufferInfo;
+// Descriptor Instance Buffer
+DescriptorSetManager::DescriptorInstanceBuffer::DescriptorInstanceBuffer() noexcept
+	: m_bufferInfos{}, m_isSplit{ false } {}
 
-	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
+void DescriptorSetManager::DescriptorInstanceBuffer::UpdateDescriptors(
+	VkDevice device, const std::vector<VkDescriptorSet>& descSets
+) const noexcept {
+	auto setWrites = PopulateWriteDescSets(descSets);
+
+	vkUpdateDescriptorSets(
+		device, static_cast<std::uint32_t>(std::size(setWrites)), std::data(setWrites), 0u,
+		nullptr
+	);
 }
 
-void DescriptorSetManager::BindImageView(
-	VkDevice device, VkDescriptorSet descSet, const DescImageInfo& imageInfo
+void DescriptorSetManager::DescriptorInstanceBuffer::AddBuffersSplit(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos
 ) noexcept {
-	VkWriteDescriptorSet setWrite{};
-	setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	setWrite.dstBinding = imageInfo.descriptorInfo.bindingSlot;
-	setWrite.descriptorCount = imageInfo.descriptorInfo.descriptorCount;
-	setWrite.dstSet = descSet;
-	setWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	setWrite.dstArrayElement = 0u;
-	setWrite.pImageInfo = std::data(imageInfo.images);
+	m_descriptorInfo = descInfo;
+	m_bufferInfos = std::move(bufferInfos);
+	m_isSplit = true;
+}
 
-	vkUpdateDescriptorSets(device, 1u, &setWrite, 0u, nullptr);
+void DescriptorSetManager::DescriptorInstanceBuffer::AddBuffersContiguous(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos
+) noexcept {
+	m_descriptorInfo = descInfo;
+	m_bufferInfos = std::move(bufferInfos);
+	m_isSplit = false;
+}
+
+std::vector<VkWriteDescriptorSet> DescriptorSetManager::DescriptorInstanceBuffer::PopulateWriteDescSets(
+	const std::vector<VkDescriptorSet>& descSets
+) const noexcept {
+	std::vector<VkWriteDescriptorSet> setWrites;
+
+	if (m_isSplit) {
+		assert(
+			std::size(m_bufferInfos) == std::size(descSets)
+			&& "More buffers than descriptor Sets."
+		);
+
+		for (size_t index = 0u; index < std::size(m_bufferInfos); ++index) {
+			VkWriteDescriptorSet setWrite{};
+			setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			setWrite.dstBinding = m_descriptorInfo.bindingSlot;
+			setWrite.descriptorCount = m_descriptorInfo.descriptorCount;
+			setWrite.dstSet = descSets[index];
+			setWrite.descriptorType = m_descriptorInfo.type;
+			setWrite.dstArrayElement = 0u;
+			setWrite.pBufferInfo = &m_bufferInfos[index];
+
+			setWrites.emplace_back(setWrite);
+		}
+	}
+	else
+		for (auto descSet : descSets) {
+			VkWriteDescriptorSet setWrite{};
+			setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			setWrite.dstBinding = m_descriptorInfo.bindingSlot;
+			setWrite.descriptorCount = m_descriptorInfo.descriptorCount;
+			setWrite.dstSet = descSet;
+			setWrite.descriptorType = m_descriptorInfo.type;
+			setWrite.dstArrayElement = 0u;
+			setWrite.pBufferInfo = std::data(m_bufferInfos);
+
+			setWrites.emplace_back(setWrite);
+		}
+
+	return setWrites;
+}
+
+// Descriptor Instance Image
+DescriptorSetManager::DescriptorInstanceImage::DescriptorInstanceImage() noexcept
+	: m_imageInfos{}, m_isSplit{ false } {}
+
+void DescriptorSetManager::DescriptorInstanceImage::UpdateDescriptors(
+	VkDevice device, const std::vector<VkDescriptorSet>& descSets
+) const noexcept {
+	auto setWrites = PopulateWriteDescSets(descSets);
+
+	vkUpdateDescriptorSets(
+		device, static_cast<std::uint32_t>(std::size(setWrites)), std::data(setWrites), 0u,
+		nullptr
+	);
+}
+
+void DescriptorSetManager::DescriptorInstanceImage::AddImagesSplit(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos
+) noexcept {
+	m_descriptorInfo = descInfo;
+	m_imageInfos = std::move(imageInfos);
+	m_isSplit = true;
+
+}
+
+void DescriptorSetManager::DescriptorInstanceImage::AddImagesContiguous(
+	const DescriptorInfo& descInfo, std::vector<VkDescriptorImageInfo> imageInfos
+) noexcept {
+	m_descriptorInfo = descInfo;
+	m_imageInfos = std::move(imageInfos);
+	m_isSplit = false;
+}
+
+std::vector<VkWriteDescriptorSet> DescriptorSetManager::DescriptorInstanceImage::PopulateWriteDescSets(
+	const std::vector<VkDescriptorSet>& descSets
+) const noexcept {
+	std::vector<VkWriteDescriptorSet> setWrites;
+
+	if (m_isSplit) {
+		assert(
+			std::size(m_imageInfos) == std::size(descSets)
+			&& "More images than descriptor Sets."
+		);
+
+		for (size_t index = 0u; index < std::size(m_imageInfos); ++index) {
+			VkWriteDescriptorSet setWrite{};
+			setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			setWrite.dstBinding = m_descriptorInfo.bindingSlot;
+			setWrite.descriptorCount = m_descriptorInfo.descriptorCount;
+			setWrite.dstSet = descSets[index];
+			setWrite.descriptorType = m_descriptorInfo.type;
+			setWrite.dstArrayElement = 0u;
+			setWrite.pImageInfo = &m_imageInfos[index];
+
+			setWrites.emplace_back(setWrite);
+		}
+	}
+	else
+		for (auto descSet : descSets) {
+			VkWriteDescriptorSet setWrite{};
+			setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			setWrite.dstBinding = m_descriptorInfo.bindingSlot;
+			setWrite.descriptorCount = m_descriptorInfo.descriptorCount;
+			setWrite.dstSet = descSet;
+			setWrite.descriptorType = m_descriptorInfo.type;
+			setWrite.dstArrayElement = 0u;
+			setWrite.pImageInfo = std::data(m_imageInfos);
+
+			setWrites.emplace_back(setWrite);
+		}
+
+	return setWrites;
 }
