@@ -1,5 +1,4 @@
 #include <array>
-#include <PipelineConstructor.hpp>
 
 #include <RendererVK.hpp>
 #include <Terra.hpp>
@@ -99,7 +98,9 @@ RendererVK::RendererVK(
 
 	Terra::InitTextureStorage(logicalDevice, physicalDevice);
 	Terra::InitBufferManager(logicalDevice,  bufferCount, computeAndGraphicsQueueIndices);
-	Terra::InitRenderPipeline(logicalDevice,  bufferCount, computeAndGraphicsQueueIndices);
+	Terra::renderEngine->InitiatePipelines(
+		logicalDevice,  bufferCount, computeAndGraphicsQueueIndices
+	);
 
 	Terra::InitCameraManager();
 	Terra::cameraManager->SetSceneResolution(width, height);
@@ -109,7 +110,6 @@ RendererVK::~RendererVK() noexcept {
 	Terra::cameraManager.reset();
 	Terra::viewportAndScissor.reset();
 	Terra::bufferManager.reset();
-	Terra::renderPipeline.reset();
 	Terra::renderEngine.reset();
 	Terra::computeDescriptorSet.reset();
 	Terra::graphicsDescriptorSet.reset();
@@ -141,7 +141,7 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 }
 
 void RendererVK::SubmitModels(std::vector<std::shared_ptr<IModel>>&& models) {
-	Terra::renderPipeline->RecordIndirectArguments(models);
+	Terra::renderEngine->RecordModelData(models);
 	Terra::bufferManager->AddOpaqueModels(std::move(models));
 }
 
@@ -224,7 +224,7 @@ void RendererVK::ProcessData() {
 
 	// Create Buffers
 	Terra::bufferManager->CreateBuffers(logicalDevice);
-	Terra::renderPipeline->CreateBuffers(logicalDevice);
+	Terra::renderEngine->CreateBuffers(logicalDevice);
 
 	// Allocate Memory
 	Terra::Resources::gpuOnlyMemory->AllocateMemory(logicalDevice);
@@ -242,7 +242,7 @@ void RendererVK::ProcessData() {
 
 	// Bind Buffers to memory
 	Terra::bufferManager->BindResourceToMemory(logicalDevice);
-	Terra::renderPipeline->BindResourceToMemory(logicalDevice);
+	Terra::renderEngine->BindResourcesToMemory(logicalDevice);
 	Terra::textureStorage->BindMemories(logicalDevice);
 
 	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, m_width, m_height);
@@ -256,7 +256,7 @@ void RendererVK::ProcessData() {
 	std::atomic_size_t works = 0u;
 
 	Terra::Resources::uploadContainer->CopyData(works);
-	Terra::renderPipeline->CopyData();
+	Terra::renderEngine->CopyData();
 
 	while (works != 0u);
 
@@ -269,7 +269,7 @@ void RendererVK::ProcessData() {
 	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetFirstCommandBuffer();
 
 	Terra::bufferManager->RecordCopy(copyCmdBuffer);
-	Terra::renderPipeline->RecordCopy(copyCmdBuffer);
+	Terra::renderEngine->RecordCopy(copyCmdBuffer);
 	Terra::textureStorage->RecordUploads(copyCmdBuffer);
 
 	// If copy and graphics queues are different release ownership from copy
@@ -284,7 +284,7 @@ void RendererVK::ProcessData() {
 
 	// If copy and compute queues are different release ownership from copy
 	if (!copyAndCompute)
-		Terra::renderPipeline->ReleaseOwnership(
+		Terra::renderEngine->ReleaseOwnership(
 			copyCmdBuffer, m_copyQueueIndex, m_computeQueueIndex
 		);
 
@@ -327,7 +327,7 @@ void RendererVK::ProcessData() {
 
 		const VkCommandBuffer computeCmdBuffer = Terra::computeCmdBuffer->GetFirstCommandBuffer();
 
-		Terra::renderPipeline->AcquireOwnerShip(
+		Terra::renderEngine->AcquireOwnerShip(
 			computeCmdBuffer, m_copyQueueIndex, m_computeQueueIndex
 		);
 
@@ -350,7 +350,7 @@ void RendererVK::ProcessData() {
 	// Cleanup Upload Buffers
 	Terra::Resources::uploadContainer.reset();
 	Terra::bufferManager->ReleaseUploadResources();
-	Terra::renderPipeline->ReleaseUploadResources();
+	Terra::renderEngine->ReleaseUploadResources();
 	Terra::textureStorage->ReleaseUploadBuffers();
 	Terra::Resources::uploadMemory.reset();
 }

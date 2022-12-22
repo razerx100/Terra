@@ -1,10 +1,9 @@
-#ifndef RENDER_PIPELINE_HPP_
-#define RENDER_PIPELINE_HPP_
+#ifndef RENDER_PIPELINE_INDIRECT_DRAW_HPP_
+#define RENDER_PIPELINE_INDIRECT_DRAW_HPP_
 #include <vector>
 #include <memory>
-#include <VKPipelineObject.hpp>
-#include <PipelineLayout.hpp>
 #include <VkResourceViews.hpp>
+#include <VKPipelineObject.hpp>
 
 #include <IModel.hpp>
 
@@ -16,18 +15,17 @@ struct CullingData {
 	DirectX::XMFLOAT2 zBounds;
 };
 
-class RenderPipeline {
+class RenderPipelineIndirectDraw {
 public:
-	RenderPipeline(
+	RenderPipelineIndirectDraw(
 		VkDevice device, std::uint32_t bufferCount,
 		std::vector<std::uint32_t> computeAndGraphicsQueueIndices
 	) noexcept;
 
-	void AddGraphicsPipelineObject(std::unique_ptr<VkPipelineObject> graphicsPSO) noexcept;
-	void AddGraphicsPipelineLayout(std::unique_ptr<PipelineLayout> graphicsLayout) noexcept;
-	void AddComputePipelineObject(std::unique_ptr<VkPipelineObject> computePSO) noexcept;
-	void AddComputePipelineLayout(std::unique_ptr<PipelineLayout> computeLayout) noexcept;
-
+	void ConfigureGraphicsPipelineObject(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
+	) noexcept;
 	void RecordIndirectArguments(const std::vector<std::shared_ptr<IModel>>& models) noexcept;
 
 	void CreateBuffers(VkDevice device) noexcept;
@@ -42,12 +40,7 @@ public:
 		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 	) noexcept;
 
-	void BindGraphicsPipeline(
-		VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet graphicsDescriptorSet
-	) const noexcept;
-	void BindComputePipeline(
-		VkCommandBuffer computeCmdBuffer, VkDescriptorSet computeDescriptorSet
-	) const noexcept;
+	void BindGraphicsPipeline(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 	void ResetCounterBuffer(VkCommandBuffer computeBuffer, VkDeviceSize frameIndex) noexcept;
 
 	void DispatchCompute(
@@ -56,10 +49,14 @@ public:
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex) const noexcept;
 
 private:
-	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
+	[[nodiscard]]
+	std::unique_ptr<VkPipelineObject> CreateGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
+	) const noexcept;
+
+private:
 	std::unique_ptr<VkPipelineObject> m_graphicsPSO;
-	std::unique_ptr<PipelineLayout> m_computePipelineLayout;
-	std::unique_ptr<VkPipelineObject> m_computePSO;
 	VkUploadableBufferResourceView m_commandBuffer;
 	VkUploadableBufferResourceView m_culldataBuffer;
 	VkResourceView m_counterBuffer;

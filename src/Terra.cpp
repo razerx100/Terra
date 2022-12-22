@@ -28,7 +28,6 @@ namespace Terra {
 	std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	std::unique_ptr<RenderPassManager> renderPass;
 	std::unique_ptr<BufferManager> bufferManager;
-	std::unique_ptr<RenderPipeline> renderPipeline;
 	std::unique_ptr<DescriptorSetManager> graphicsDescriptorSet;
 	std::unique_ptr<DescriptorSetManager> computeDescriptorSet;
 	std::unique_ptr<TextureStorage> textureStorage;
@@ -131,15 +130,6 @@ namespace Terra {
 		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
 	) {
 		bufferManager = std::make_unique<BufferManager>(
-			logicalDevice, bufferCount, computeAndGraphicsQueueIndices
-			);
-	}
-
-	void InitRenderPipeline(
-		VkDevice logicalDevice, std::uint32_t bufferCount,
-		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
-	) {
-		renderPipeline = std::make_unique<RenderPipeline>(
 			logicalDevice, bufferCount, computeAndGraphicsQueueIndices
 			);
 	}

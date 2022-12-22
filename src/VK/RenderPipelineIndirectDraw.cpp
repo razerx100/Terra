@@ -1,11 +1,12 @@
 #include <cstring>
 #include <cmath>
 #include <VkResourceBarriers.hpp>
+#include <Shader.hpp>
 
-#include <RenderPipeline.hpp>
+#include <RenderPipelineIndirectDraw.hpp>
 #include <Terra.hpp>
 
-RenderPipeline::RenderPipeline(
+RenderPipelineIndirectDraw::RenderPipelineIndirectDraw(
 	VkDevice device, std::uint32_t bufferCount,
 	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
 ) noexcept
@@ -16,63 +17,15 @@ RenderPipeline::RenderPipeline(
 		m_argumentBuffers.emplace_back(VkArgumentResourceView{ device });
 }
 
-void RenderPipeline::AddGraphicsPipelineObject(
-	std::unique_ptr<VkPipelineObject> graphicsPSO
-) noexcept {
-	m_graphicsPSO = std::move(graphicsPSO);
-}
-
-void RenderPipeline::AddGraphicsPipelineLayout(
-	std::unique_ptr<PipelineLayout> layout
-) noexcept {
-	m_graphicsPipelineLayout = std::move(layout);
-}
-
-void RenderPipeline::AddComputePipelineObject(
-	std::unique_ptr<VkPipelineObject> computePSO
-) noexcept {
-	m_computePSO = std::move(computePSO);
-}
-
-void RenderPipeline::AddComputePipelineLayout(
-	std::unique_ptr<PipelineLayout> computeLayout
-) noexcept {
-	m_computePipelineLayout = std::move(computeLayout);
-}
-
-void RenderPipeline::BindGraphicsPipeline(
-	VkCommandBuffer graphicsCmdBuffer, VkDescriptorSet graphicsDescriptorSet
+void RenderPipelineIndirectDraw::BindGraphicsPipeline(
+	VkCommandBuffer graphicsCmdBuffer
 ) const noexcept {
 	vkCmdBindPipeline(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPSO->GetPipeline()
 	);
-
-	VkDescriptorSet descSets[] = { graphicsDescriptorSet };
-
-	vkCmdBindDescriptorSets(
-		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_graphicsPipelineLayout->GetLayout(), 0u, 1u,
-		descSets, 0u, nullptr
-	);
 }
 
-void RenderPipeline::BindComputePipeline(
-	VkCommandBuffer computeCmdBuffer, VkDescriptorSet computeDescriptorSet
-) const noexcept {
-	vkCmdBindPipeline(
-		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePSO->GetPipeline()
-	);
-
-	VkDescriptorSet descSets[] = { computeDescriptorSet };
-
-	vkCmdBindDescriptorSets(
-		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-		m_computePipelineLayout->GetLayout(), 0u, 1u,
-		descSets, 0u, nullptr
-	);
-}
-
-void RenderPipeline::DispatchCompute(
+void RenderPipelineIndirectDraw::DispatchCompute(
 	VkCommandBuffer computeCmdBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	vkCmdDispatch(
@@ -90,7 +43,7 @@ void RenderPipeline::DispatchCompute(
 	);
 }
 
-void RenderPipeline::DrawModels(
+void RenderPipelineIndirectDraw::DrawModels(
 	VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	static constexpr auto strideSize =
@@ -105,7 +58,7 @@ void RenderPipeline::DrawModels(
 	);
 }
 
-void RenderPipeline::BindResourceToMemory(VkDevice device) {
+void RenderPipelineIndirectDraw::BindResourceToMemory(VkDevice device) {
 	m_commandBuffer.BindResourceToMemory(device);
 
 	for (auto& argumentBuffer : m_argumentBuffers)
@@ -115,7 +68,7 @@ void RenderPipeline::BindResourceToMemory(VkDevice device) {
 	m_counterBuffer.BindResourceToMemory(device);
 }
 
-void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
+void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	const VkDeviceSize commandBufferSize =
 		static_cast<VkDeviceSize>(sizeof(VkDrawIndexedIndirectCommand) * m_modelCount);
 
@@ -189,7 +142,7 @@ void RenderPipeline::CreateBuffers(VkDevice device) noexcept {
 	);
 }
 
-void RenderPipeline::RecordIndirectArguments(
+void RenderPipelineIndirectDraw::RecordIndirectArguments(
 	const std::vector<std::shared_ptr<IModel>>& models
 ) noexcept {
 	for (size_t index = 0u; index < std::size(models); ++index) {
@@ -212,7 +165,7 @@ void RenderPipeline::RecordIndirectArguments(
 	m_modelCount += static_cast<std::uint32_t>(std::size(models));
 }
 
-void RenderPipeline::CopyData() noexcept {
+void RenderPipelineIndirectDraw::CopyData() noexcept {
 	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 	memcpy(
 		uploadMemoryStart + m_commandBuffer.GetFirstUploadMemoryOffset(),
@@ -242,17 +195,17 @@ void RenderPipeline::CopyData() noexcept {
 	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
-void RenderPipeline::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
+void RenderPipelineIndirectDraw::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
 	m_commandBuffer.RecordCopy(copyBuffer);
 	m_culldataBuffer.RecordCopy(copyBuffer);
 }
 
-void RenderPipeline::ReleaseUploadResources() noexcept {
+void RenderPipelineIndirectDraw::ReleaseUploadResources() noexcept {
 	m_commandBuffer.CleanUpUploadResource();
 	m_culldataBuffer.CleanUpUploadResource();
 }
 
-void RenderPipeline::AcquireOwnerShip(
+void RenderPipelineIndirectDraw::AcquireOwnerShip(
 	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_commandBuffer.AcquireOwnership(
@@ -265,14 +218,14 @@ void RenderPipeline::AcquireOwnerShip(
 	);
 }
 
-void RenderPipeline::ReleaseOwnership(
+void RenderPipelineIndirectDraw::ReleaseOwnership(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_commandBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 	m_culldataBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
-void RenderPipeline::ResetCounterBuffer(
+void RenderPipelineIndirectDraw::ResetCounterBuffer(
 	VkCommandBuffer computeBuffer, VkDeviceSize frameIndex
 ) noexcept {
 	auto& argumentBuffer = m_argumentBuffers[frameIndex];
@@ -293,5 +246,37 @@ void RenderPipeline::ResetCounterBuffer(
 		VK_ACCESS_SHADER_READ_BIT
 	).RecordBarriers(
 		computeBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+	);
+}
+
+std::unique_ptr<VkPipelineObject> RenderPipelineIndirectDraw::CreateGraphicsPipeline(
+	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	const std::wstring& shaderPath, const std::wstring& fragmentShader
+) const noexcept {
+	auto vs = std::make_unique<Shader>(device);
+	vs->CreateShader(device, shaderPath + L"VertexShader.spv");
+
+	auto fs = std::make_unique<Shader>(device);
+	fs->CreateShader(device, shaderPath + fragmentShader);
+
+	auto pso = std::make_unique<VkPipelineObject>(device);
+	pso->CreateGraphicsPipeline(
+		device, graphicsLayout, renderPass,
+		VertexLayout()
+		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
+		.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u)
+		.InitLayout(),
+		vs->GetByteCode(), fs->GetByteCode()
+	);
+
+	return pso;
+}
+
+void RenderPipelineIndirectDraw::ConfigureGraphicsPipelineObject(
+	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	const std::wstring& shaderPath, const std::wstring& fragmentShader
+) noexcept {
+	m_graphicsPSO = CreateGraphicsPipeline(
+		device, graphicsLayout, renderPass, shaderPath, fragmentShader
 	);
 }

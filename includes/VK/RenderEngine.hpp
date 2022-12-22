@@ -3,13 +3,20 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <array>
+#include <vector>
 #include <cstdint>
+#include <memory>
+
+#include <IModel.hpp>
 
 class RenderEngine {
 public:
 	RenderEngine() noexcept;
 	virtual ~RenderEngine() = default;
 
+	virtual void InitiatePipelines(
+		VkDevice device, std::uint32_t bufferCount, std::vector<std::uint32_t> queueIndices = {}
+	) = 0;
 	virtual void ExecutePreRenderStage(
 		VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 	) = 0;
@@ -17,6 +24,21 @@ public:
 	virtual void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void ExecutePostRenderStage() = 0;
 	virtual void ConstructPipelines(std::uint32_t frameCount) = 0;
+
+	virtual void RecordModelData(
+		const std::vector<std::shared_ptr<IModel>>& models
+	) noexcept = 0;
+	virtual void CreateBuffers(VkDevice device) noexcept = 0;
+	virtual void BindResourcesToMemory(VkDevice device) = 0;
+	virtual void CopyData() noexcept = 0;
+	virtual void RecordCopy(VkCommandBuffer copyBuffer) noexcept = 0;
+	virtual void ReleaseUploadResources() noexcept = 0;
+	virtual void AcquireOwnerShip(
+		VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	) noexcept = 0;
+	virtual void ReleaseOwnership(
+		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	) noexcept = 0;
 
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 	void SetShaderPath(const wchar_t* path) noexcept;

@@ -18,7 +18,6 @@
 #include <DeviceMemory.hpp>
 #include <UploadContainer.hpp>
 
-#include <RenderPipeline.hpp>
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
 #include <ISharedDataContainer.hpp>
@@ -45,7 +44,6 @@ namespace Terra {
 	extern std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
 	extern std::unique_ptr<RenderPassManager> renderPass;
 	extern std::unique_ptr<BufferManager> bufferManager;
-	extern std::unique_ptr<RenderPipeline> renderPipeline;
 	extern std::unique_ptr<DescriptorSetManager> graphicsDescriptorSet;
 	extern std::unique_ptr<DescriptorSetManager> computeDescriptorSet;
 	extern std::unique_ptr<TextureStorage> textureStorage;
@@ -88,10 +86,6 @@ namespace Terra {
 		VkFormat swapChainFormat, VkFormat depthFormat
 	);
 	void InitBufferManager(
-		VkDevice logicalDevice, std::uint32_t bufferCount,
-		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
-	);
-	void InitRenderPipeline(
 		VkDevice logicalDevice, std::uint32_t bufferCount,
 		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
 	);
