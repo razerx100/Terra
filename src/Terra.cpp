@@ -6,6 +6,7 @@
 #endif
 
 #include <Terra.hpp>
+#include <RenderEngineIndirectDraw.hpp>
 
 namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;
@@ -34,6 +35,7 @@ namespace Terra {
 	std::unique_ptr<CameraManager> cameraManager;
 	std::unique_ptr<DepthBuffer> depthBuffer;
 	std::shared_ptr<ISharedDataContainer> sharedData;
+	std::unique_ptr<RenderEngine> renderEngine;
 
 	namespace Resources {
 		std::unique_ptr<DeviceMemory> gpuOnlyMemory;
@@ -161,6 +163,10 @@ namespace Terra {
 
 	void InitDepthBuffer(VkDevice logicalDevice) {
 		depthBuffer = std::make_unique<DepthBuffer>(logicalDevice);
+	}
+
+	void InitRenderEngine() {
+		renderEngine = std::make_unique<RenderEngineIndirectDraw>();
 	}
 
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept {

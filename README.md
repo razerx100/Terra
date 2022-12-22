@@ -11,6 +11,6 @@ Renderer module based on Vulkan API. Needs a window handle from a Win32 window m
 Run the Setup script to configure the project. The setup script uses the ***Visual Studio 17 2022*** generator for project generation.
 
 ## Requirements
-Vulkan SDK.\
+Vulkan SDK 1.3.\
 cmake 3.21+.\
 C++20 Standard supported Compiler.

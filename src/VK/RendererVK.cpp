@@ -9,16 +9,12 @@ RendererVK::RendererVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount
-) : m_backgroundColour{}, m_appName{appName},
+) : m_appName{appName},
 	m_bufferCount{ bufferCount }, m_width{ width }, m_height{ height },
 	m_graphicsQueueIndex{ 0u }, m_computeQueueIndex{ 0u }, m_copyQueueIndex{ 0u } {
 
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
-
-	m_backgroundColour = {
-		{0.0001f, 0.0001f, 0.0001f, 0.0001f }
-	};
 
 	Terra::InitViewportAndScissor(width, height);
 
@@ -39,6 +35,7 @@ RendererVK::RendererVK(
 #endif
 
 	Terra::InitDevice();
+	Terra::InitRenderEngine();
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
 
@@ -113,6 +110,7 @@ RendererVK::~RendererVK() noexcept {
 	Terra::viewportAndScissor.reset();
 	Terra::bufferManager.reset();
 	Terra::renderPipeline.reset();
+	Terra::renderEngine.reset();
 	Terra::computeDescriptorSet.reset();
 	Terra::graphicsDescriptorSet.reset();
 	Terra::textureStorage.reset();
@@ -139,9 +137,7 @@ RendererVK::~RendererVK() noexcept {
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
-	m_backgroundColour = {
-		{colourVector[0], colourVector[1], colourVector[2], colourVector[3]}
-	};
+	Terra::renderEngine->SetBackgroundColour(colourVector);
 }
 
 void RendererVK::SubmitModels(std::vector<std::shared_ptr<IModel>>&& models) {
@@ -168,84 +164,14 @@ void RendererVK::Update() {
 
 void RendererVK::Render() {
 	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
-
-	// Compute Stage
-	Terra::computeCmdBuffer->ResetBuffer(imageIndex);
-
-	const VkCommandBuffer computeCommandBuffer = Terra::computeCmdBuffer->GetCommandBuffer(
-		imageIndex
-	);
-
-	Terra::renderPipeline->ResetCounterBuffer(computeCommandBuffer, imageIndex);
-	Terra::renderPipeline->BindComputePipeline(
-		computeCommandBuffer, Terra::computeDescriptorSet->GetDescriptorSet(imageIndex)
-	);
-	Terra::renderPipeline->DispatchCompute(computeCommandBuffer, imageIndex);
-
-	Terra::computeCmdBuffer->CloseBuffer(imageIndex);
-	Terra::computeQueue->SubmitCommandBuffer(
-		computeCommandBuffer, Terra::computeSyncObjects->GetFrontSemaphore()
-	);
-
-	// Garphics Stage
-	Terra::graphicsCmdBuffer->ResetBuffer(imageIndex);
-
 	const VkCommandBuffer graphicsCommandBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer(
 		imageIndex
 	);
 
-	vkCmdSetViewport(
-		graphicsCommandBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef()
-	);
-	vkCmdSetScissor(
-		graphicsCommandBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef()
-	);
-
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = m_backgroundColour;
-	clearValues[1].depthStencil = { 1.f, 0 };
-
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
-	renderPassInfo.framebuffer = Terra::swapChain->GetFramebuffer(imageIndex);
-	renderPassInfo.renderArea.extent = Terra::swapChain->GetSwapExtent();
-	renderPassInfo.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues));
-	renderPassInfo.pClearValues = std::data(clearValues);
-
-	vkCmdBeginRenderPass(graphicsCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	Terra::renderPipeline->BindGraphicsPipeline(
-		graphicsCommandBuffer, Terra::graphicsDescriptorSet->GetDescriptorSet(imageIndex)
-	);
-	Terra::bufferManager->BindVertexBuffer(graphicsCommandBuffer);
-	Terra::renderPipeline->DrawModels(graphicsCommandBuffer, imageIndex);
-
-	vkCmdEndRenderPass(graphicsCommandBuffer);
-
-	Terra::graphicsCmdBuffer->CloseBuffer(imageIndex);
-
-	VkSemaphore waitSemaphores[] = {
-		Terra::computeSyncObjects->GetFrontSemaphore(),
-		Terra::graphicsSyncObjects->GetFrontSemaphore()
-	};
-	VkPipelineStageFlags waitStages[] = {
-		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-	};
-
-	Terra::graphicsQueue->SubmitCommandBuffer(
-		graphicsCommandBuffer, Terra::graphicsSyncObjects->GetFrontFence(),
-		2u, waitSemaphores, waitStages
-	);
-	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(imageIndex));
-
-	Terra::graphicsSyncObjects->AdvanceSyncObjectsInQueue();
-	Terra::computeSyncObjects->AdvanceSemaphoreInQueue();
-
-	Terra::graphicsSyncObjects->WaitForFrontFence();
-	Terra::graphicsSyncObjects->ResetFrontFence();
+	Terra::renderEngine->ExecutePreRenderStage(graphicsCommandBuffer, imageIndex);
+	Terra::renderEngine->RecordDrawCommands(graphicsCommandBuffer, imageIndex);
+	Terra::renderEngine->Present(graphicsCommandBuffer, imageIndex);
+	Terra::renderEngine->ExecutePostRenderStage();
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
@@ -290,7 +216,7 @@ Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
-	m_shaderPath = path;
+	Terra::renderEngine->SetShaderPath(path);
 }
 
 void RendererVK::ProcessData() {
@@ -419,7 +345,7 @@ void RendererVK::ProcessData() {
 	Terra::graphicsDescriptorSet->CreateDescriptorSets(logicalDevice);
 	Terra::computeDescriptorSet->CreateDescriptorSets(logicalDevice);
 
-	ConstructPipelines();
+	Terra::renderEngine->ConstructPipelines(m_bufferCount);
 
 	// Cleanup Upload Buffers
 	Terra::Resources::uploadContainer.reset();
@@ -449,29 +375,4 @@ void RendererVK::SetSharedDataContainer(
 
 void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(Terra::device->GetLogicalDevice());
-}
-
-void RendererVK::ConstructPipelines() {
-	VkDevice device = Terra::device->GetLogicalDevice();
-
-	auto graphicsLayout = CreateGraphicsPipelineLayout(
-		device, m_bufferCount, Terra::graphicsDescriptorSet->GetDescriptorSetLayouts()
-	);
-	auto graphicsPipeline = CreateGraphicsPipeline(
-		device, graphicsLayout->GetLayout(), Terra::renderPass->GetRenderPass(),
-		m_shaderPath
-	);
-
-	Terra::renderPipeline->AddGraphicsPipelineLayout(std::move(graphicsLayout));
-	Terra::renderPipeline->AddGraphicsPipelineObject(std::move(graphicsPipeline));
-
-	auto computeLayout = CreateComputePipelineLayout(
-		device, m_bufferCount, Terra::computeDescriptorSet->GetDescriptorSetLayouts()
-	);
-	auto computePipeline = CreateComputePipeline(
-		device, computeLayout->GetLayout(), m_shaderPath
-	);
-
-	Terra::renderPipeline->AddComputePipelineLayout(std::move(computeLayout));
-	Terra::renderPipeline->AddComputePipelineObject(std::move(computePipeline));
 }

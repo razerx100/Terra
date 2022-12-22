@@ -44,16 +44,11 @@ public:
 	) noexcept override;
 
 private:
-	void ConstructPipelines();
-
-private:
-	VkClearColorValue m_backgroundColour;
 	const std::string m_appName;
 
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_width;
 	std::uint32_t m_height;
-	std::wstring m_shaderPath;
 
 	std::uint32_t m_graphicsQueueIndex;
 	std::uint32_t m_computeQueueIndex;
