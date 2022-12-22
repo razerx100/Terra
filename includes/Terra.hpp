@@ -17,6 +17,7 @@
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <UploadContainer.hpp>
+#include <VertexManager.hpp>
 
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
@@ -51,6 +52,7 @@ namespace Terra {
 	extern std::unique_ptr<DepthBuffer> depthBuffer;
 	extern std::shared_ptr<ISharedDataContainer> sharedData;
 	extern std::unique_ptr<RenderEngine> renderEngine;
+	extern std::unique_ptr<VertexManager> vertexManager;
 
 	namespace Resources {
 		extern std::unique_ptr<DeviceMemory> gpuOnlyMemory;
@@ -94,6 +96,7 @@ namespace Terra {
 	void InitCameraManager();
 	void InitDepthBuffer(VkDevice logicalDevice);
 	void InitRenderEngine();
+	void InitVertexManager(VkDevice logicalDevice);
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;
 	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) noexcept;
 	void CleanUpResources() noexcept;

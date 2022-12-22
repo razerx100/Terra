@@ -1,6 +1,7 @@
 #ifdef TERRA_WIN32
 #include <DisplayManagerWin32.hpp>
 #include <SurfaceManagerWin32.hpp>
+#include <VertexManagerVertex.hpp>
 #else
 #include <DisplayManagerVK.hpp>
 #endif
@@ -35,6 +36,7 @@ namespace Terra {
 	std::unique_ptr<DepthBuffer> depthBuffer;
 	std::shared_ptr<ISharedDataContainer> sharedData;
 	std::unique_ptr<RenderEngine> renderEngine;
+	std::unique_ptr<VertexManager> vertexManager;
 
 	namespace Resources {
 		std::unique_ptr<DeviceMemory> gpuOnlyMemory;
@@ -157,6 +159,10 @@ namespace Terra {
 
 	void InitRenderEngine() {
 		renderEngine = std::make_unique<RenderEngineIndirectDraw>();
+	}
+
+	void InitVertexManager(VkDevice logicalDevice) {
+		vertexManager = std::make_unique<VertexManagerVertex>(logicalDevice);
 	}
 
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept {

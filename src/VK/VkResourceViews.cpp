@@ -26,7 +26,7 @@ _vkResourceView& _vkResourceView::operator=(_vkResourceView&& resourceView) noex
 	return *this;
 }
 
-void _vkResourceView::BindResourceToMemory(VkDevice device) {
+void _vkResourceView::BindResourceToMemory(VkDevice device) const noexcept {
 	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
 
 	if (m_resourceType == MemoryType::upload)
@@ -291,7 +291,7 @@ void VkImageResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType
 	m_resourceType = type;
 }
 
-void VkImageResourceView::BindResourceToMemory(VkDevice device) {
+void VkImageResourceView::BindResourceToMemory(VkDevice device) const noexcept {
 	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
 
 	if (m_resourceType == MemoryType::upload)

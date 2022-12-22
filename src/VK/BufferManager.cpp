@@ -8,8 +8,7 @@ BufferManager::BufferManager(
 	VkDevice device, std::uint32_t bufferCount,
 	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
 ) noexcept
-	: m_cameraBuffer{ device }, m_gVertexBuffer{ device }, m_gIndexBuffer{ device },
-	m_modelBuffers{ device }, m_bufferCount{ bufferCount },
+	: m_cameraBuffer{ device }, m_modelBuffers{ device }, m_bufferCount{ bufferCount },
 	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
@@ -72,46 +71,6 @@ void BufferManager::Update(VkDeviceSize index) const noexcept {
 	UpdateModelData(index);
 }
 
-void BufferManager::BindVertexBuffer(VkCommandBuffer graphicsCommandBuffer) const noexcept {
-	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetGPUResource() };
-	static const VkDeviceSize vertexOffsets[] = { 0u };
-
-	vkCmdBindVertexBuffers(graphicsCommandBuffer, 0u, 1u, vertexBuffers, vertexOffsets);
-	vkCmdBindIndexBuffer(
-		graphicsCommandBuffer, m_gIndexBuffer.GetGPUResource(), 0u, VK_INDEX_TYPE_UINT32
-	);
-}
-
-void BufferManager::AddModelInputs(
-	VkDevice device,
-	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
-) {
-	// Vertex Buffer
-	m_gVertexBuffer.CreateResource(
-		device, static_cast<VkDeviceSize>(vertexBufferSize), 1u,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-	);
-
-	m_gVertexBuffer.SetMemoryOffsetAndType(device);
-
-	Terra::Resources::uploadContainer->AddMemory(
-		std::move(vertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
-	);
-
-	// Index Buffer
-	m_gIndexBuffer.CreateResource(
-		device, static_cast<VkDeviceSize>(indexBufferSize), 1u,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-	);
-
-	m_gIndexBuffer.SetMemoryOffsetAndType(device);
-
-	Terra::Resources::uploadContainer->AddMemory(
-		std::move(indices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
-	);
-}
-
 void BufferManager::UpdateModelData(VkDeviceSize index) const noexcept {
 	size_t offset = 0u;
 	constexpr size_t bufferStride = sizeof(ModelConstantBuffer);
@@ -141,39 +100,7 @@ void BufferManager::UpdateModelData(VkDeviceSize index) const noexcept {
 	}
 }
 
-void BufferManager::BindResourceToMemory(VkDevice device) {
+void BufferManager::BindResourceToMemory(VkDevice device) const noexcept {
 	m_modelBuffers.BindResourceToMemory(device);
 	m_cameraBuffer.BindResourceToMemory(device);
-	m_gVertexBuffer.BindResourceToMemory(device);
-	m_gIndexBuffer.BindResourceToMemory(device);
-}
-
-void BufferManager::RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept {
-	m_gVertexBuffer.RecordCopy(copyCmdBuffer);
-	m_gIndexBuffer.RecordCopy(copyCmdBuffer);
-}
-
-void BufferManager::AcquireOwnerShips(
-	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept{
-	m_gVertexBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-	);
-	m_gIndexBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDEX_READ_BIT,
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-	);
-}
-
-void BufferManager::ReleaseOwnerships(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept {
-	m_gVertexBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
-	m_gIndexBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
-}
-
-void BufferManager::ReleaseUploadResources() noexcept {
-	m_gVertexBuffer.CleanUpUploadResource();
-	m_gIndexBuffer.CleanUpUploadResource();
 }

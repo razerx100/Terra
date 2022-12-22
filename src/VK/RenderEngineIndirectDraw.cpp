@@ -72,7 +72,7 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 		descSets, 0u, nullptr
 	);
 
-	Terra::bufferManager->BindVertexBuffer(graphicsCmdBuffer);
+	Terra::vertexManager->BindVertices(graphicsCmdBuffer);
 	m_renderPipeline->DrawModels(graphicsCmdBuffer, frameIndex);
 }
 

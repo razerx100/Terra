@@ -20,7 +20,7 @@ public:
 	_vkResourceView(_vkResourceView&& resourceView) noexcept;
 	_vkResourceView& operator=(_vkResourceView&& resourceView) noexcept;
 
-	void BindResourceToMemory(VkDevice device);
+	void BindResourceToMemory(VkDevice device) const noexcept;
 	void SetMemoryOffsetAndType(VkDevice device, MemoryType type) noexcept;
 	void SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept;
 	void CleanUpResource() noexcept;
@@ -113,7 +113,7 @@ public:
 		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 		VkImageUsageFlags usageFlags, std::vector<std::uint32_t> queueFamilyIndices = {}
 	);
-	void BindResourceToMemory(VkDevice device);
+	void BindResourceToMemory(VkDevice device) const noexcept;
 	void SetMemoryOffsetAndType(
 		VkDevice device, MemoryType type = MemoryType::gpuOnly
 	) noexcept;
@@ -183,7 +183,7 @@ public:
 		return *this;
 	}
 
-	void BindResourceToMemory(VkDevice device	) {
+	void BindResourceToMemory(VkDevice device) const noexcept {
 		m_uploadResource.BindResourceToMemory(device);
 		m_gpuResource.BindResourceToMemory(device);
 	}

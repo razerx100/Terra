@@ -27,32 +27,15 @@ public:
 	) noexcept;
 
 	void Update(VkDeviceSize index) const noexcept;
-	void BindVertexBuffer(VkCommandBuffer commandBuffer) const noexcept;
-
 	void CreateBuffers(VkDevice device) noexcept;
 	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
-	void AddModelInputs(
-		VkDevice device,
-		std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
-	);
-	void BindResourceToMemory(VkDevice device);
-	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept;
-	void AcquireOwnerShips(
-		VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-	) noexcept;
-	void ReleaseOwnerships(
-		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-	) noexcept;
-	void ReleaseUploadResources() noexcept;
+	void BindResourceToMemory(VkDevice device) const noexcept;
 
 private:
 	void UpdateModelData(VkDeviceSize index) const noexcept;
 
 private:
 	VkResourceView m_cameraBuffer;
-	VkUploadableBufferResourceView m_gVertexBuffer;
-	VkUploadableBufferResourceView m_gIndexBuffer;
 	VkResourceView m_modelBuffers;
 	std::uint32_t m_bufferCount;
 	std::vector<std::shared_ptr<IModel>> m_opaqueModels;

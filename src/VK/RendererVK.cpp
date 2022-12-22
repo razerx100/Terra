@@ -47,6 +47,7 @@ RendererVK::RendererVK(
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 
 	Terra::InitResources(physicalDevice, logicalDevice);
+	Terra::InitVertexManager(logicalDevice);
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
@@ -111,6 +112,7 @@ RendererVK::~RendererVK() noexcept {
 	Terra::viewportAndScissor.reset();
 	Terra::bufferManager.reset();
 	Terra::renderEngine.reset();
+	Terra::vertexManager.reset();
 	Terra::computeDescriptorSet.reset();
 	Terra::graphicsDescriptorSet.reset();
 	Terra::textureStorage.reset();
@@ -149,7 +151,7 @@ void RendererVK::SubmitModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize, size_t strideSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-	Terra::bufferManager->AddModelInputs(
+	Terra::vertexManager->AddGlobalVertices(
 		Terra::device->GetLogicalDevice(),
 		std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
@@ -242,6 +244,7 @@ void RendererVK::ProcessData() {
 
 	// Bind Buffers to memory
 	Terra::bufferManager->BindResourceToMemory(logicalDevice);
+	Terra::vertexManager->BindResourceToMemory(logicalDevice);
 	Terra::renderEngine->BindResourcesToMemory(logicalDevice);
 	Terra::textureStorage->BindMemories(logicalDevice);
 
@@ -268,13 +271,13 @@ void RendererVK::ProcessData() {
 	Terra::copyCmdBuffer->ResetFirstBuffer();
 	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetFirstCommandBuffer();
 
-	Terra::bufferManager->RecordCopy(copyCmdBuffer);
+	Terra::vertexManager->RecordCopy(copyCmdBuffer);
 	Terra::renderEngine->RecordCopy(copyCmdBuffer);
 	Terra::textureStorage->RecordUploads(copyCmdBuffer);
 
 	// If copy and graphics queues are different release ownership from copy
 	if (!copyAndGraphics) {
-		Terra::bufferManager->ReleaseOwnerships(
+		Terra::vertexManager->ReleaseOwnerships(
 			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
 		);
 		Terra::textureStorage->ReleaseOwnerships(
@@ -305,7 +308,7 @@ void RendererVK::ProcessData() {
 
 	// If copy and graphics queues are different release ownership from copy
 	if (!copyAndGraphics) {
-		Terra::bufferManager->AcquireOwnerShips(
+		Terra::vertexManager->AcquireOwnerShips(
 			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
 		);
 		Terra::textureStorage->AcquireOwnerShips(
@@ -349,7 +352,7 @@ void RendererVK::ProcessData() {
 
 	// Cleanup Upload Buffers
 	Terra::Resources::uploadContainer.reset();
-	Terra::bufferManager->ReleaseUploadResources();
+	Terra::vertexManager->ReleaseUploadResources();
 	Terra::renderEngine->ReleaseUploadResources();
 	Terra::textureStorage->ReleaseUploadBuffers();
 	Terra::Resources::uploadMemory.reset();
