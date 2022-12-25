@@ -43,9 +43,7 @@ public:
 	void BindGraphicsPipeline(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 	void ResetCounterBuffer(VkCommandBuffer computeBuffer, VkDeviceSize frameIndex) noexcept;
 
-	void DispatchCompute(
-		VkCommandBuffer computeCmdBuffer, VkDeviceSize frameIndex
-	) const noexcept;
+	void DispatchCompute(VkCommandBuffer computeCmdBuffer) const noexcept;
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex) const noexcept;
 
 private:
@@ -59,8 +57,9 @@ private:
 	std::unique_ptr<VkPipelineObject> m_graphicsPSO;
 	VkUploadableBufferResourceView m_commandBuffer;
 	VkUploadableBufferResourceView m_culldataBuffer;
-	VkResourceView m_counterBuffer;
-	std::vector<VkArgumentResourceView> m_argumentBuffers;
+	VkResourceView m_counterResetBuffer;
+	std::vector<VkResourceView> m_argumentBuffers;
+	std::vector<VkResourceView> m_counterBuffers;
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_modelCount;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectCommands;

@@ -10,11 +10,14 @@ RenderPipelineIndirectDraw::RenderPipelineIndirectDraw(
 	VkDevice device, std::uint32_t bufferCount,
 	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
 ) noexcept
-	: m_commandBuffer{ device }, m_culldataBuffer{ device }, m_counterBuffer{ device },
+	: m_commandBuffer{ device }, m_culldataBuffer{ device }, m_counterResetBuffer{ device },
 	m_bufferCount{ bufferCount }, m_modelCount{ 0u },
 	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {
-	for (size_t _ = 0u; _ < bufferCount; ++_)
-		m_argumentBuffers.emplace_back(VkArgumentResourceView{ device });
+	// Copy ctors are deleted. So, have to emplace_back to use move ctors
+	for (size_t _ = 0u; _ < bufferCount; ++_) {
+		m_argumentBuffers.emplace_back(VkResourceView{ device });
+		m_counterBuffers.emplace_back(VkResourceView{ device });
+	}
 }
 
 void RenderPipelineIndirectDraw::BindGraphicsPipeline(
@@ -26,20 +29,11 @@ void RenderPipelineIndirectDraw::BindGraphicsPipeline(
 }
 
 void RenderPipelineIndirectDraw::DispatchCompute(
-	VkCommandBuffer computeCmdBuffer, VkDeviceSize frameIndex
+	VkCommandBuffer computeCmdBuffer
 ) const noexcept {
 	vkCmdDispatch(
 		computeCmdBuffer,
 		static_cast<std::uint32_t>(std::ceil(m_modelCount / THREADBLOCKSIZE)), 1u, 1u
-	);
-
-	auto& argumentBuffer = m_argumentBuffers[frameIndex];
-	VkBufferBarrier().AddExecutionBarrier(
-		argumentBuffer.GetResource(), argumentBuffer.GetBufferSize(), 0u,
-		VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_INDIRECT_COMMAND_READ_BIT
-	).RecordBarriers(
-		computeCmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
 	);
 }
 
@@ -49,12 +43,11 @@ void RenderPipelineIndirectDraw::DrawModels(
 	static constexpr auto strideSize =
 		static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
-	auto& argumentBuffer = m_argumentBuffers[frameIndex];
-
 	vkCmdDrawIndexedIndirectCount(
-		graphicsCmdBuffer, argumentBuffer.GetResource(),
-		argumentBuffer.GetBufferOffset(), argumentBuffer.GetResource(),
-		argumentBuffer.GetCounterOffset(), m_modelCount, strideSize
+		graphicsCmdBuffer, m_argumentBuffers[frameIndex].GetResource(),
+		m_argumentBuffers[frameIndex].GetFirstSubAllocationOffset(),
+		m_counterBuffers[frameIndex].GetResource(), 0u,
+		m_modelCount, strideSize
 	);
 }
 
@@ -64,8 +57,11 @@ void RenderPipelineIndirectDraw::BindResourceToMemory(VkDevice device) {
 	for (auto& argumentBuffer : m_argumentBuffers)
 		argumentBuffer.BindResourceToMemory(device);
 
+	for (auto& counterBuffer : m_counterBuffers)
+		counterBuffer.BindResourceToMemory(device);
+
 	m_culldataBuffer.BindResourceToMemory(device);
-	m_counterBuffer.BindResourceToMemory(device);
+	m_counterResetBuffer.BindResourceToMemory(device);
 }
 
 void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
@@ -79,9 +75,21 @@ void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	for (auto& argumentBuffer : m_argumentBuffers) {
 		argumentBuffer.CreateResource(
-			device, commandBufferSize, m_computeAndGraphicsQueueIndices
+			device, commandBufferSize, 1u,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+			m_computeAndGraphicsQueueIndices
 		);
 		argumentBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
+	}
+
+	for (auto& counterBuffer : m_counterBuffers) {
+		counterBuffer.CreateResource(
+			device, sizeof(std::uint32_t), 1u,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+			VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+			m_computeAndGraphicsQueueIndices
+		);
+		counterBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
 	}
 
 	m_culldataBuffer.CreateResource(
@@ -90,8 +98,8 @@ void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_culldataBuffer.SetMemoryOffsetAndType(device);
 
-	m_counterBuffer.CreateResource(device, 4u, 1u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-	m_counterBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
+	m_counterResetBuffer.CreateResource(device, 4u, 1u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+	m_counterResetBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
 	// Culling Buffer
 	DescriptorInfo cullingDescInfo{
@@ -123,7 +131,7 @@ void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
-	auto [outputBufferInfos, counterBufferInfos] = VkArgumentResourceView::GetDescBufferInfo(
+	auto outputBufferInfos = VkResourceView::GetDescBufferInfoSplit(
 		m_bufferCount, m_argumentBuffers
 	);
 
@@ -136,6 +144,9 @@ void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		.bindingSlot = 4u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
+	auto counterBufferInfos = VkResourceView::GetDescBufferInfoSplit(
+		m_bufferCount, m_counterBuffers
+	);
 
 	Terra::computeDescriptorSet->AddBuffersSplit(
 		counterDescInfo, std::move(counterBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
@@ -188,7 +199,8 @@ void RenderPipelineIndirectDraw::CopyData() noexcept {
 	// copy zero to counter buffer
 	std::uint8_t* cpuWriteMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
 
-	std::uint8_t* counterCPUPtr = cpuWriteMemoryStart + m_counterBuffer.GetFirstMemoryOffset();
+	std::uint8_t* counterCPUPtr =
+		cpuWriteMemoryStart + m_counterResetBuffer.GetFirstMemoryOffset();
 	const std::uint32_t zeroValue = 0u;
 	memcpy(counterCPUPtr, &zeroValue, sizeof(std::uint32_t));
 
@@ -228,21 +240,21 @@ void RenderPipelineIndirectDraw::ReleaseOwnership(
 void RenderPipelineIndirectDraw::ResetCounterBuffer(
 	VkCommandBuffer computeBuffer, VkDeviceSize frameIndex
 ) noexcept {
-	auto& argumentBuffer = m_argumentBuffers[frameIndex];
+	auto& counterBuffer = m_counterBuffers[frameIndex];
 	VkBufferCopy bufferInfo{
-		.srcOffset = m_counterBuffer.GetFirstSubAllocationOffset(),
-		.dstOffset = argumentBuffer.GetCounterOffset(),
-		.size = argumentBuffer.GetCounterBufferSize()
+		.srcOffset = m_counterResetBuffer.GetFirstSubAllocationOffset(),
+		.dstOffset = counterBuffer.GetFirstSubAllocationOffset(),
+		.size = counterBuffer.GetSubBufferSize()
 	};
 
 	vkCmdCopyBuffer(
-		computeBuffer, m_counterBuffer.GetResource(), argumentBuffer.GetResource(), 1u,
+		computeBuffer, m_counterResetBuffer.GetResource(), counterBuffer.GetResource(), 1u,
 		&bufferInfo
 	);
 
 	VkBufferBarrier().AddExecutionBarrier(
-		argumentBuffer.GetResource(), argumentBuffer.GetCounterBufferSize(),
-		argumentBuffer.GetCounterOffset(), VK_ACCESS_TRANSFER_WRITE_BIT,
+		counterBuffer.GetResource(), counterBuffer.GetSubBufferSize(),
+		counterBuffer.GetFirstSubAllocationOffset(), VK_ACCESS_TRANSFER_WRITE_BIT,
 		VK_ACCESS_SHADER_READ_BIT
 	).RecordBarriers(
 		computeBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT

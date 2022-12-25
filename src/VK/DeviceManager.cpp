@@ -178,9 +178,7 @@ void DeviceManager::SetQueueFamilyInfo(
 		[](
 			const std::pair<size_t, QueueType>& pair1,
 			const std::pair<size_t, QueueType>& pair2
-			) {
-				return pair1.first < pair2.first;
-		}
+			) { return pair1.first < pair2.first; }
 	);
 
 	auto& [previousFamilyIndex, queueType] = familyInfos.front();

@@ -74,6 +74,11 @@ public:
 	);
 
 	[[nodiscard]]
+	static std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSplit(
+		size_t bufferCount, const std::vector<VkResourceView>& buffers
+	) noexcept;
+
+	[[nodiscard]]
 	std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSpread(
 		size_t bufferCount
 	) const noexcept;

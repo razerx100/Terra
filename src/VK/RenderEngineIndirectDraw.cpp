@@ -26,7 +26,7 @@ void RenderEngineIndirectDraw::ExecutePreRenderStage(
 		descSets, 0u, nullptr
 	);
 
-	m_renderPipeline->DispatchCompute(computeCommandBuffer, frameIndex);
+	m_renderPipeline->DispatchCompute(computeCommandBuffer);
 
 	Terra::computeCmdBuffer->CloseBuffer(frameIndex);
 	Terra::computeQueue->SubmitCommandBuffer(
