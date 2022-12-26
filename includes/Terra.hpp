@@ -27,7 +27,6 @@
 
 namespace Terra {
 	// Variables
-	extern ObjectManager objectManager;
 	extern std::shared_ptr<IThreadPool> threadPool;
 	extern std::unique_ptr<DebugLayerManager> debugLayer;
 	extern std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
@@ -64,24 +63,34 @@ namespace Terra {
 	}
 
 	// Initialization functions
-	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept;
+	void SetThreadPool(
+		ObjectManager& om, std::shared_ptr<IThreadPool>&& threadPoolArg
+	) noexcept;
 	void InitGraphicsQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
 	);
 	void InitCopyQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
+		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
 	);
 	void InitComputeQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
 	);
-	void InitDisplay();
-	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle);
-	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount);
-	void InitRenderEngine();
-	void InitVertexManager(VkDevice logicalDevice);
-	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;
-	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
+	void InitDisplay(ObjectManager& om);
+	void InitSurface(
+		ObjectManager& om, VkInstance instance, void* windowHandle, void* moduleHandle
+	);
+	void InitDescriptorSets(
+		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount
+	);
+	void InitRenderEngine(ObjectManager& om);
+	void InitVertexManager(ObjectManager& om, VkDevice logicalDevice);
+	void SetSharedData(
+		ObjectManager& om, std::shared_ptr<ISharedDataContainer>&& sharedDataArg
+	) noexcept;
+	void InitResources(
+		ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice
+	);
 }
 #endif

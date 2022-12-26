@@ -2,6 +2,7 @@
 #define RENDERER_VK_HPP_
 #include <vulkan/vulkan.hpp>
 #include <string>
+#include <ObjectManager.hpp>
 
 #include <Renderer.hpp>
 
@@ -13,7 +14,6 @@ public:
 		std::uint32_t width, std::uint32_t height,
 		std::uint32_t bufferCount
 	);
-	~RendererVK() noexcept override;
 
 	void Resize(std::uint32_t width, std::uint32_t height) override;
 
@@ -53,5 +53,6 @@ private:
 	std::uint32_t m_graphicsQueueIndex;
 	std::uint32_t m_computeQueueIndex;
 	std::uint32_t m_copyQueueIndex;
+	ObjectManager m_objectManager;
 };
 #endif

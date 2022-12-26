@@ -10,7 +10,6 @@
 #include <RenderEngineIndirectDraw.hpp>
 
 namespace Terra {
-	ObjectManager objectManager;
 	std::shared_ptr<IThreadPool> threadPool;
 	std::unique_ptr<DebugLayerManager> debugLayer;
 	std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
@@ -46,96 +45,98 @@ namespace Terra {
 		std::unique_ptr<UploadContainer> uploadContainer;
 	}
 
-	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept {
-		objectManager.CreateObject(threadPool, std::move(threadPoolArg), 0u);
+	void SetThreadPool(
+		ObjectManager& om, std::shared_ptr<IThreadPool>&& threadPoolArg
+	) noexcept {
+		om.CreateObject(threadPool, std::move(threadPoolArg), 0u);
 	}
 
 	void InitGraphicsQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
 	) {
-		objectManager.CreateObject(graphicsQueue, { queue }, 1u);
-		objectManager.CreateObject(
-			graphicsCmdBuffer, { logicalDevice, queueIndex, bufferCount }, 1u
-		);
-		objectManager.CreateObject(
-			graphicsSyncObjects, { logicalDevice, bufferCount, true }, 1u
-		);
+		om.CreateObject(graphicsQueue, { queue }, 1u);
+		om.CreateObject(graphicsCmdBuffer, { logicalDevice, queueIndex, bufferCount }, 1u);
+		om.CreateObject(graphicsSyncObjects, { logicalDevice, bufferCount, true }, 1u);
 	}
 
 	void InitCopyQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
+		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
 	) {
-		objectManager.CreateObject(copyQueue, { queue }, 1u);
-		objectManager.CreateObject(
+		om.CreateObject(copyQueue, { queue }, 1u);
+		om.CreateObject(
 			copyCmdBuffer, { .device = logicalDevice, .queueIndex = queueIndex }, 1u
 		);
-		objectManager.CreateObject(copySyncObjects, { .device = logicalDevice }, 1u);
+		om.CreateObject(copySyncObjects, { .device = logicalDevice }, 1u);
 	}
 
 	void InitComputeQueue(
-		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
+		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
 	) {
-		objectManager.CreateObject(computeQueue, { queue }, 1u);
-		objectManager.CreateObject(
-			computeCmdBuffer, { logicalDevice, queueIndex, bufferCount }, 1u
-		);
-		objectManager.CreateObject(
-			computeSyncObjects, { logicalDevice, bufferCount, true }, 1u
-		);
+		om.CreateObject(computeQueue, { queue }, 1u);
+		om.CreateObject(computeCmdBuffer, { logicalDevice, queueIndex, bufferCount }, 1u);
+		om.CreateObject(computeSyncObjects, { logicalDevice, bufferCount, true }, 1u);
 	}
 
-	void InitDisplay() {
+	void InitDisplay(ObjectManager& om) {
 #ifdef TERRA_WIN32
-		objectManager.CreateObject<DisplayManagerWin32>(display, 3u);
+		om.CreateObject<DisplayManagerWin32>(display, 3u);
 #else
 		objectManager.CreateObject<DisplayManagerVK>(display, 3u);
 #endif
 	}
 
-	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle) {
+	void InitSurface(
+		ObjectManager& om, VkInstance instance, void* windowHandle, void* moduleHandle
+	) {
 #ifdef TERRA_WIN32
-		objectManager.CreateObject<SurfaceManagerWin32>(
+		om.CreateObject<SurfaceManagerWin32>(
 			surface, { instance, windowHandle, moduleHandle }, 3u
 		);
 #endif
 	}
 
-	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount) {
-		objectManager.CreateObject(graphicsDescriptorSet, { logicalDevice, bufferCount }, 1u);
-		objectManager.CreateObject(computeDescriptorSet, { logicalDevice, bufferCount }, 1u);
+	void InitDescriptorSets(
+		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount
+	) {
+		om.CreateObject(graphicsDescriptorSet, { logicalDevice, bufferCount }, 1u);
+		om.CreateObject(computeDescriptorSet, { logicalDevice, bufferCount }, 1u);
 	}
 
-	void InitRenderEngine() {
-		objectManager.CreateObject<RenderEngineIndirectDraw>(renderEngine, 1u);
+	void InitRenderEngine(ObjectManager& om) {
+		om.CreateObject<RenderEngineIndirectDraw>(renderEngine, 1u);
 	}
 
-	void InitVertexManager(VkDevice logicalDevice) {
-		objectManager.CreateObject<VertexManagerVertex>(vertexManager, { logicalDevice } , 1u);
+	void InitVertexManager(ObjectManager& om, VkDevice logicalDevice) {
+		om.CreateObject<VertexManagerVertex>(vertexManager, { logicalDevice } , 1u);
 	}
 
-	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept {
-		objectManager.CreateObject(sharedData, std::move(sharedDataArg), 0u);
+	void SetSharedData(
+		ObjectManager& om, std::shared_ptr<ISharedDataContainer>&& sharedDataArg
+	) noexcept {
+		om.CreateObject(sharedData, std::move(sharedDataArg), 0u);
 	}
 
-	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) {
-		objectManager.CreateObject(
+	void InitResources(
+		ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice
+	) {
+		om.CreateObject(
 			Resources::cpuWriteMemory,
 			{ logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 			2u
 		);
-		objectManager.CreateObject(
+		om.CreateObject(
 			Resources::uploadMemory,
 			{ logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 			2u
 		);
-		objectManager.CreateObject(
+		om.CreateObject(
 			Resources::gpuOnlyMemory,
 			{ logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 			2u
 		);
 
-		objectManager.CreateObject(Resources::uploadContainer, 0u);
+		om.CreateObject(Resources::uploadContainer, 0u);
 	}
 }

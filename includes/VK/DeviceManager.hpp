@@ -8,6 +8,7 @@ class DeviceManager {
 public:
 	using QueueIndicesType = std::vector<std::uint32_t>;
 
+	DeviceManager() noexcept;
 	~DeviceManager() noexcept;
 
 	void FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);

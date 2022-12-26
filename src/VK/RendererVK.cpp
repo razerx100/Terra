@@ -15,26 +15,26 @@ RendererVK::RendererVK(
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
 
-	Terra::objectManager.CreateObject(Terra::viewportAndScissor, { width, height }, 0u);
+	m_objectManager.CreateObject(Terra::viewportAndScissor, { width, height }, 0u);
 
-	Terra::InitDisplay();
+	Terra::InitDisplay(m_objectManager);
 
-	Terra::objectManager.CreateObject(Terra::vkInstance, { appName }, 5u);
+	m_objectManager.CreateObject(Terra::vkInstance, { appName }, 5u);
 	Terra::vkInstance->AddExtensionNames(Terra::display->GetRequiredExtensions());
 	Terra::vkInstance->CreateInstance();
 
 	VkInstance vkInstance = Terra::vkInstance->GetVKInstance();
 
 #ifdef _DEBUG
-	Terra::objectManager.CreateObject(Terra::debugLayer, { vkInstance }, 4u);
+	m_objectManager.CreateObject(Terra::debugLayer, { vkInstance }, 4u);
 #endif
 
 #ifdef TERRA_WIN32
-	Terra::InitSurface(vkInstance, windowHandle, moduleHandle);
+	Terra::InitSurface(m_objectManager, vkInstance, windowHandle, moduleHandle);
 #endif
 
-	Terra::objectManager.CreateObject(Terra::device, 3u);
-	Terra::InitRenderEngine();
+	m_objectManager.CreateObject(Terra::device, 3u);
+	Terra::InitRenderEngine(m_objectManager);
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
 
@@ -46,8 +46,8 @@ RendererVK::RendererVK(
 
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 
-	Terra::InitResources(physicalDevice, logicalDevice);
-	Terra::InitVertexManager(logicalDevice);
+	Terra::InitResources(m_objectManager, physicalDevice, logicalDevice);
+	Terra::InitVertexManager(m_objectManager, logicalDevice);
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
@@ -65,10 +65,11 @@ RendererVK::RendererVK(
 		.presentQueue = graphicsQueueHandle
 	};
 
-	Terra::objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
+	m_objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
 
 	Terra::InitGraphicsQueue(
-		graphicsQueueHandle, logicalDevice, graphicsQueueFamilyIndex, bufferCount
+		m_objectManager, graphicsQueueHandle, logicalDevice, graphicsQueueFamilyIndex,
+		bufferCount
 	);
 
 	auto [copyQueueHandle, copyQueueFamilyIndex] = Terra::device->GetQueue(
@@ -76,7 +77,9 @@ RendererVK::RendererVK(
 	);
 	m_copyQueueIndex = copyQueueFamilyIndex;
 
-	Terra::InitCopyQueue(copyQueueHandle, logicalDevice, copyQueueFamilyIndex);
+	Terra::InitCopyQueue(
+		m_objectManager, copyQueueHandle, logicalDevice, copyQueueFamilyIndex
+	);
 
 	auto [computeQueueHandle, computeQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::ComputeQueue
@@ -87,13 +90,14 @@ RendererVK::RendererVK(
 		DeviceManager::ResolveQueueIndices(computeQueueFamilyIndex, graphicsQueueFamilyIndex);
 
 	Terra::InitComputeQueue(
-		computeQueueHandle, logicalDevice, computeQueueFamilyIndex, bufferCount
+		m_objectManager, computeQueueHandle, logicalDevice, computeQueueFamilyIndex,
+		bufferCount
 	);
 
-	Terra::objectManager.CreateObject(Terra::depthBuffer, { logicalDevice }, 0u);
+	m_objectManager.CreateObject(Terra::depthBuffer, { logicalDevice }, 0u);
 	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
 
-	Terra::objectManager.CreateObject(
+	m_objectManager.CreateObject(
 		Terra::renderPass,
 		{
 			logicalDevice, Terra::swapChain->GetSwapFormat(),
@@ -102,10 +106,10 @@ RendererVK::RendererVK(
 		0u
 	);
 
-	Terra::InitDescriptorSets(logicalDevice, bufferCount);
+	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
 
-	Terra::objectManager.CreateObject(Terra::textureStorage, { logicalDevice, physicalDevice }, 1u);
-	Terra::objectManager.CreateObject(
+	m_objectManager.CreateObject(Terra::textureStorage, { logicalDevice, physicalDevice }, 1u);
+	m_objectManager.CreateObject(
 		Terra::bufferManager,
 		{ logicalDevice,  bufferCount, computeAndGraphicsQueueIndices },
 		1u
@@ -114,12 +118,8 @@ RendererVK::RendererVK(
 		logicalDevice,  bufferCount, computeAndGraphicsQueueIndices
 	);
 
-	Terra::objectManager.CreateObject(Terra::cameraManager, 0u);
+	m_objectManager.CreateObject(Terra::cameraManager, 0u);
 	Terra::cameraManager->SetSceneResolution(width, height);
-}
-
-RendererVK::~RendererVK() noexcept {
-	Terra::objectManager.StartDestruction();
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
@@ -351,13 +351,13 @@ size_t RendererVK::RegisterResource(
 }
 
 void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
-	Terra::SetThreadPool(std::move(threadPoolArg));
+	Terra::SetThreadPool(m_objectManager, std::move(threadPoolArg));
 }
 
 void RendererVK::SetSharedDataContainer(
 	std::shared_ptr<ISharedDataContainer> sharedData
 ) noexcept {
-	Terra::SetSharedData(std::move(sharedData));
+	Terra::SetSharedData(m_objectManager, std::move(sharedData));
 }
 
 void RendererVK::WaitForAsyncTasks() {

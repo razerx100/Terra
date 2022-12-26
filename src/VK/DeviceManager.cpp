@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <Exception.hpp>
 
+DeviceManager::DeviceManager() noexcept
+	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE } {}
+
 DeviceManager::~DeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
 }
