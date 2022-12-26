@@ -3,11 +3,13 @@
 
 #include <Terra.hpp>
 
-TextureStorage::TextureStorage(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice
-) : m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ logicalDevice } {
+TextureStorage::TextureStorage(const Args& arguments)
+	: m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ arguments.logicalDevice.value() } {
 
-	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
+	CreateSampler(
+		arguments.logicalDevice.value(), arguments.physicalDevice.value(), &m_textureSampler,
+		true
+	);
 }
 
 TextureStorage::~TextureStorage() noexcept {

@@ -2,10 +2,16 @@
 #define DEPTH_BUFFER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <VkResourceViews.hpp>
+#include <optional>
 
 class DepthBuffer {
 public:
-	DepthBuffer(VkDevice logicalDevice);
+	struct Args {
+		std::optional<VkDevice> device;
+	};
+
+public:
+	DepthBuffer(const Args& arguments);
 
 	DepthBuffer(const DepthBuffer&) = delete;
 	DepthBuffer& operator=(const DepthBuffer&) = delete;

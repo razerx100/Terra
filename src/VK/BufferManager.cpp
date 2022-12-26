@@ -4,12 +4,12 @@
 #include <BufferManager.hpp>
 #include <Terra.hpp>
 
-BufferManager::BufferManager(
-	VkDevice device, std::uint32_t bufferCount,
-	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
-) noexcept
-	: m_cameraBuffer{ device }, m_modelBuffers{ device }, m_bufferCount{ bufferCount },
-	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {}
+BufferManager::BufferManager(Args& arguments)
+	: m_cameraBuffer{ arguments.device.value() }, m_modelBuffers{ arguments.device.value() },
+	m_bufferCount{ arguments.bufferCount.value() },
+	m_computeAndGraphicsQueueIndices{
+		std::move(arguments.computeAndGraphicsQueueIndices.value())
+	} {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	static constexpr size_t cameraBufferSize = sizeof(DirectX::XMMATRIX) * 2u;

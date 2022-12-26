@@ -2,8 +2,8 @@
 
 #include <Terra.hpp>
 
-VertexManagerVertex::VertexManagerVertex(VkDevice device) noexcept
-	: m_gVertexBuffer{ device }, m_gIndexBuffer{ device } {}
+VertexManagerVertex::VertexManagerVertex(const Args& arguments)
+	: m_gVertexBuffer{ arguments.device.value() }, m_gIndexBuffer{ arguments.device.value() } {}
 
 void VertexManagerVertex::AddGlobalVertices(
 	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,

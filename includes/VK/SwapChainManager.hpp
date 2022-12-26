@@ -4,21 +4,22 @@
 #include <DeviceManager.hpp>
 #include <memory>
 #include <VkHelperFunctions.hpp>
-
-struct SwapChainManagerCreateInfo {
-	VkDevice device;
-	VkSurfaceKHR surface;
-	SurfaceInfo surfaceInfo;
-	std::uint32_t width;
-	std::uint32_t height;
-	std::uint32_t bufferCount;
-};
+#include <optional>
 
 class SwapChainManager {
 public:
-	SwapChainManager(
-		const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
-	);
+	struct Args {
+		std::optional<VkDevice> device;
+		std::optional<VkSurfaceKHR> surface;
+		std::optional<SurfaceInfo> surfaceInfo;
+		std::optional<std::uint32_t> width;
+		std::optional<std::uint32_t> height;
+		std::optional<std::uint32_t> bufferCount;
+		std::optional<VkQueue> presentQueue;
+	};
+
+public:
+	SwapChainManager(const Args& arguments);
 	~SwapChainManager() noexcept;
 
 	[[nodiscard]]
@@ -44,6 +45,16 @@ public:
 	);
 
 private:
+	struct SwapChainManagerCreateInfo {
+		VkDevice device;
+		VkSurfaceKHR surface;
+		SurfaceInfo surfaceInfo;
+		std::uint32_t width;
+		std::uint32_t height;
+		std::uint32_t bufferCount;
+	};
+
+private:
 	[[nodiscard]]
 	VkSurfaceFormatKHR ChooseSurfaceFormat(
 		const std::vector<VkSurfaceFormatKHR>& availableFormats
@@ -56,7 +67,8 @@ private:
 	void QueryImages();
 	void CreateImageViews(VkDevice device);
 	void CreateSwapchain(
-		const SwapChainManagerCreateInfo& swapCreateInfo, bool& formatChanged
+		const SwapChainManagerCreateInfo& swapCreateInfo,
+		const VkSurfaceFormatKHR& surfaceFormat
 	);
 	void CleanUpSwapchain() noexcept;
 

@@ -3,10 +3,16 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>
+#include <optional>
 
 class InstanceManager {
 public:
-	InstanceManager(const char* appName) noexcept;
+	struct Args {
+		std::optional<std::string> appName;
+	};
+
+public:
+	InstanceManager(Args& arguments);
 	~InstanceManager() noexcept;
 
 	void AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;

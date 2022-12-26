@@ -17,8 +17,8 @@ static std::unordered_map<std::uint32_t, const char*> messageTypes{
 	{VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT, "NOTHING"}
 };
 
-DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
-	: m_debugMessenger(VK_NULL_HANDLE), m_pInstanceRef(instanceRef) {
+DebugLayerManager::DebugLayerManager(const Args& arguments)
+	: m_debugMessenger{ VK_NULL_HANDLE }, m_pInstanceRef{ arguments.instance.value() } {
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo;
 	PopulateDebugMessengerCreateInfo(createInfo);
@@ -27,8 +27,7 @@ DebugLayerManager::DebugLayerManager(VkInstance instanceRef)
 }
 
 DebugLayerManager::~DebugLayerManager() noexcept {
-	if(m_pInstanceRef)
-		DestroyDebugUtilsMessengerEXT(m_pInstanceRef, m_debugMessenger, nullptr);
+	DestroyDebugUtilsMessengerEXT(m_pInstanceRef, m_debugMessenger, nullptr);
 }
 
 VkResult DebugLayerManager::CreateDebugUtilsMessengerEXT(

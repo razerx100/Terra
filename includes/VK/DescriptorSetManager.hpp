@@ -4,6 +4,7 @@
 #include <vector>
 #include <DescriptorPool.hpp>
 #include <memory>
+#include <optional>
 
 struct DescriptorInfo {
 	std::uint32_t bindingSlot;
@@ -28,7 +29,13 @@ class DescriptorSetManager {
 	};
 
 public:
-	DescriptorSetManager(VkDevice device, size_t bufferCount);
+	struct Args {
+		std::optional<VkDevice> device;
+		std::optional<size_t> bufferCount;
+	};
+
+public:
+	DescriptorSetManager(const Args& arguments);
 	~DescriptorSetManager() noexcept;
 
 	[[nodiscard]]

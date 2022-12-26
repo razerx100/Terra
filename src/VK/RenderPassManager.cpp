@@ -1,9 +1,10 @@
 #include <RenderPassManager.hpp>
 
-RenderPassManager::RenderPassManager(
-	VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat
-) : m_deviceRef(device), m_renderPass(VK_NULL_HANDLE) {
-	CreateRenderPass(device, swapchainFormat, depthFormat);
+RenderPassManager::RenderPassManager(const Args& arguments)
+	: m_deviceRef{arguments.device.value()}, m_renderPass{VK_NULL_HANDLE} {
+	CreateRenderPass(
+		m_deviceRef, arguments.swapchainFormat.value(), arguments.depthFormat.value()
+	);
 }
 
 RenderPassManager::~RenderPassManager() noexcept {

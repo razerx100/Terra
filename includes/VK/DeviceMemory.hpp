@@ -2,13 +2,18 @@
 #define DEVICE_MEMORY_HPP_
 #include <vulkan/vulkan.hpp>
 #include <unordered_map>
+#include <optional>
 
 class DeviceMemory {
 public:
-	DeviceMemory(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice,
-		VkMemoryPropertyFlagBits memoryType
-	) noexcept;
+	struct Args {
+		std::optional<VkDevice> logicalDevice;
+		std::optional<VkPhysicalDevice> physicalDevice;
+		std::optional<VkMemoryPropertyFlagBits> memoryType;
+	};
+
+public:
+	DeviceMemory(const Args& arguments);
 	DeviceMemory(DeviceMemory&& deviceMemory) noexcept;
 	~DeviceMemory() noexcept;
 

@@ -3,9 +3,11 @@
 #include <Terra.hpp>
 
 // DescriptorSet Manager
-DescriptorSetManager::DescriptorSetManager(VkDevice device, size_t bufferCount)
-	: m_deviceRef{ device }, m_descriptorSets{ bufferCount, VK_NULL_HANDLE },
-	m_descriptorSetLayouts{ bufferCount, VK_NULL_HANDLE }, m_descriptorPool{ device } {}
+DescriptorSetManager::DescriptorSetManager(const Args& arguments)
+	: m_deviceRef{ arguments.device.value() },
+	m_descriptorSets{ arguments.bufferCount.value(), VK_NULL_HANDLE },
+	m_descriptorSetLayouts{ arguments.bufferCount.value(), VK_NULL_HANDLE },
+	m_descriptorPool{ arguments.device.value() } {}
 
 DescriptorSetManager::~DescriptorSetManager() noexcept {
 	for (auto descriptorSetLayout : m_descriptorSetLayouts)

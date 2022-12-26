@@ -18,6 +18,7 @@
 #include <DeviceMemory.hpp>
 #include <UploadContainer.hpp>
 #include <VertexManager.hpp>
+#include <ObjectManager.hpp>
 
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
@@ -26,6 +27,7 @@
 
 namespace Terra {
 	// Variables
+	extern ObjectManager objectManager;
 	extern std::shared_ptr<IThreadPool> threadPool;
 	extern std::unique_ptr<DebugLayerManager> debugLayer;
 	extern std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
@@ -63,9 +65,6 @@ namespace Terra {
 
 	// Initialization functions
 	void SetThreadPool(std::shared_ptr<IThreadPool>&& threadPoolArg) noexcept;
-	void InitDebugLayer(VkInstance instance);
-	void InitDevice();
-	void InitVkInstance(const char* appName);
 	void InitGraphicsQueue(
 		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
@@ -77,28 +76,12 @@ namespace Terra {
 		VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
 	);
-	void InitSwapChain(
-		const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
-	);
 	void InitDisplay();
 	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle);
-	void InitViewportAndScissor(std::uint32_t width, std::uint32_t height);
-	void InitRenderPass(
-		VkDevice logicalDevice,
-		VkFormat swapChainFormat, VkFormat depthFormat
-	);
-	void InitBufferManager(
-		VkDevice logicalDevice, std::uint32_t bufferCount,
-		const std::vector<std::uint32_t>& computeAndGraphicsQueueIndices
-	);
 	void InitDescriptorSets(VkDevice logicalDevice, std::uint32_t bufferCount);
-	void InitTextureStorage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
-	void InitCameraManager();
-	void InitDepthBuffer(VkDevice logicalDevice);
 	void InitRenderEngine();
 	void InitVertexManager(VkDevice logicalDevice);
 	void SetSharedData(std::shared_ptr<ISharedDataContainer>&& sharedDataArg) noexcept;
-	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice) noexcept;
-	void CleanUpResources() noexcept;
+	void InitResources(VkPhysicalDevice physicalDevice, VkDevice logicalDevice);
 }
 #endif

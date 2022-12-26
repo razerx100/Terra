@@ -3,10 +3,17 @@
 #include <vulkan/vulkan.hpp>
 #include <atomic>
 #include <VkResourceViews.hpp>
+#include <optional>
 
 class TextureStorage {
 public:
-	TextureStorage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
+	struct Args {
+		std::optional<VkDevice> logicalDevice;
+		std::optional<VkPhysicalDevice> physicalDevice;
+	};
+
+public:
+	TextureStorage(const Args& arguments);
 	~TextureStorage() noexcept;
 
 	size_t AddTexture(

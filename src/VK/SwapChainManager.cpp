@@ -1,16 +1,24 @@
 #include <SwapChainManager.hpp>
 #include <VkResourceViews.hpp>
 
-SwapChainManager::SwapChainManager(
-	const SwapChainManagerCreateInfo& swapCreateInfo, VkQueue presentQueue
-) : m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ swapCreateInfo.device },
-	m_swapchainFormat{}, m_swapchainExtent{}, m_presentQueue{ presentQueue },
-	m_surfaceInfo{ swapCreateInfo.surfaceInfo }, m_nextImageIndex{ 0u } {
+SwapChainManager::SwapChainManager(const Args& arguments)
+	: m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ arguments.device.value() },
+	m_swapchainFormat{}, m_swapchainExtent{}, m_presentQueue{ arguments.presentQueue.value() },
+	m_surfaceInfo{ arguments.surfaceInfo.value() }, m_nextImageIndex{ 0u } {
 
-	bool useless;
-	CreateSwapchain(swapCreateInfo, useless);
+	SwapChainManagerCreateInfo swapCreateInfo{
+		.device = arguments.device.value(),
+		.surface = arguments.surface.value(),
+		.surfaceInfo = arguments.surfaceInfo.value(),
+		.width = arguments.width.value(),
+		.height = arguments.height.value(),
+		.bufferCount = arguments.bufferCount.value()
+	};
+
+	auto surfaceFormat = ChooseSurfaceFormat(m_surfaceInfo.formats);
+	CreateSwapchain(swapCreateInfo, surfaceFormat);
 	QueryImages();
-	CreateImageViews(swapCreateInfo.device);
+	CreateImageViews(m_deviceRef);
 }
 
 SwapChainManager::~SwapChainManager() noexcept {
@@ -103,49 +111,50 @@ void SwapChainManager::ResizeSwapchain(
 ) {
 	CleanUpSwapchain();
 
-	SwapChainManagerCreateInfo createInfo = {};
-	createInfo.device = device;
-	createInfo.surfaceInfo = m_surfaceInfo;
-	createInfo.surface = surface;
-	createInfo.bufferCount = static_cast<std::uint32_t>(std::size(m_swapchainImages));
-	createInfo.width = width;
-	createInfo.height = height;
+	SwapChainManagerCreateInfo createInfo{
+		.device = device,
+		.surface = surface,
+		.surfaceInfo = m_surfaceInfo,
+		.width = width,
+		.height = height,
+		.bufferCount = static_cast<std::uint32_t>(std::size(m_swapchainImages))
+	};
 
-	CreateSwapchain(createInfo, formatChanged);
+	auto surfaceFormat = ChooseSurfaceFormat(m_surfaceInfo.formats);
+	if (surfaceFormat.format != m_swapchainFormat)
+		formatChanged = true;
+
+	CreateSwapchain(createInfo, surfaceFormat);
 	QueryImages();
 	CreateImageViews(device);
 	CreateFramebuffers(device, renderPass, depthImageView, width, height);
 }
 
 void SwapChainManager::CreateSwapchain(
-	const SwapChainManagerCreateInfo& swapCreateInfo, bool& formatChanged
+	const SwapChainManagerCreateInfo& swapCreateInfo,
+	const VkSurfaceFormatKHR& surfaceFormat
 ) {
-	VkSurfaceFormatKHR swapFormat = ChooseSurfaceFormat(
-		swapCreateInfo.surfaceInfo.formats
-	);
-	VkPresentModeKHR swapPresentMode = ChoosePresentMode(
-		swapCreateInfo.surfaceInfo.presentModes
-	);
 	VkExtent2D swapExtent = { swapCreateInfo.width, swapCreateInfo.height };
 	m_surfaceInfo.capabilities.currentExtent = swapExtent;
 
-	if (swapFormat.format != m_swapchainFormat)
-		formatChanged = true;
-
 	m_swapchainExtent = swapExtent;
-	m_swapchainFormat = swapFormat.format;
+	m_swapchainFormat = surfaceFormat.format;
+
+	VkPresentModeKHR swapPresentMode = ChoosePresentMode(
+		swapCreateInfo.surfaceInfo.presentModes
+	);
 
 	std::uint32_t imageCount = swapCreateInfo.bufferCount;
 	if (swapCreateInfo.surfaceInfo.capabilities.maxImageCount > 0u
 		&& swapCreateInfo.surfaceInfo.capabilities.maxImageCount < imageCount)
 		imageCount = swapCreateInfo.surfaceInfo.capabilities.maxImageCount;
 
-	VkSwapchainCreateInfoKHR createInfo = {};
+	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = swapCreateInfo.surface;
 	createInfo.minImageCount = imageCount;
-	createInfo.imageFormat = swapFormat.format;
-	createInfo.imageColorSpace = swapFormat.colorSpace;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 	createInfo.imageExtent = swapExtent;
 	createInfo.imageArrayLayers = 1u;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

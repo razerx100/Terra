@@ -15,25 +15,25 @@ RendererVK::RendererVK(
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
 
-	Terra::InitViewportAndScissor(width, height);
+	Terra::objectManager.CreateObject(Terra::viewportAndScissor, { width, height }, 0u);
 
 	Terra::InitDisplay();
 
-	Terra::InitVkInstance(appName);
+	Terra::objectManager.CreateObject(Terra::vkInstance, { appName }, 5u);
 	Terra::vkInstance->AddExtensionNames(Terra::display->GetRequiredExtensions());
 	Terra::vkInstance->CreateInstance();
 
 	VkInstance vkInstance = Terra::vkInstance->GetVKInstance();
 
 #ifdef _DEBUG
-	Terra::InitDebugLayer(vkInstance);
+	Terra::objectManager.CreateObject(Terra::debugLayer, { vkInstance }, 4u);
 #endif
 
 #ifdef TERRA_WIN32
 	Terra::InitSurface(vkInstance, windowHandle, moduleHandle);
 #endif
 
-	Terra::InitDevice();
+	Terra::objectManager.CreateObject(Terra::device, 3u);
 	Terra::InitRenderEngine();
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
@@ -54,16 +54,18 @@ RendererVK::RendererVK(
 	);
 	m_graphicsQueueIndex = graphicsQueueFamilyIndex;
 
-	SwapChainManagerCreateInfo swapCreateInfo{};
-	swapCreateInfo.device = logicalDevice;
-	swapCreateInfo.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface);
-	swapCreateInfo.surface = vkSurface;
-	swapCreateInfo.width = width;
-	swapCreateInfo.height = height;
-	swapCreateInfo.bufferCount = bufferCount;
+	SwapChainManager::Args swapArguments{
+		.device = logicalDevice,
+		.surface = vkSurface,
+		.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface),
+		.width = width,
+		.height = height,
+		.bufferCount = bufferCount,
+		// Graphics and Present queues should be the same
+		.presentQueue = graphicsQueueHandle
+	};
 
-	// Graphics and Present queues should be the same
-	Terra::InitSwapChain(swapCreateInfo, graphicsQueueHandle);
+	Terra::objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
 
 	Terra::InitGraphicsQueue(
 		graphicsQueueHandle, logicalDevice, graphicsQueueFamilyIndex, bufferCount
@@ -88,54 +90,36 @@ RendererVK::RendererVK(
 		computeQueueHandle, logicalDevice, computeQueueFamilyIndex, bufferCount
 	);
 
-	Terra::InitDepthBuffer(logicalDevice);
+	Terra::objectManager.CreateObject(Terra::depthBuffer, { logicalDevice }, 0u);
 	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
 
-	Terra::InitRenderPass(
-		logicalDevice, Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
+	Terra::objectManager.CreateObject(
+		Terra::renderPass,
+		{
+			logicalDevice, Terra::swapChain->GetSwapFormat(),
+			Terra::depthBuffer->GetDepthFormat()
+		},
+		0u
 	);
 
 	Terra::InitDescriptorSets(logicalDevice, bufferCount);
 
-	Terra::InitTextureStorage(logicalDevice, physicalDevice);
-	Terra::InitBufferManager(logicalDevice,  bufferCount, computeAndGraphicsQueueIndices);
+	Terra::objectManager.CreateObject(Terra::textureStorage, { logicalDevice, physicalDevice }, 1u);
+	Terra::objectManager.CreateObject(
+		Terra::bufferManager,
+		{ logicalDevice,  bufferCount, computeAndGraphicsQueueIndices },
+		1u
+	);
 	Terra::renderEngine->InitiatePipelines(
 		logicalDevice,  bufferCount, computeAndGraphicsQueueIndices
 	);
 
-	Terra::InitCameraManager();
+	Terra::objectManager.CreateObject(Terra::cameraManager, 0u);
 	Terra::cameraManager->SetSceneResolution(width, height);
 }
 
 RendererVK::~RendererVK() noexcept {
-	Terra::cameraManager.reset();
-	Terra::viewportAndScissor.reset();
-	Terra::bufferManager.reset();
-	Terra::renderEngine.reset();
-	Terra::vertexManager.reset();
-	Terra::computeDescriptorSet.reset();
-	Terra::graphicsDescriptorSet.reset();
-	Terra::textureStorage.reset();
-	Terra::copyQueue.reset();
-	Terra::copyCmdBuffer.reset();
-	Terra::copySyncObjects.reset();
-	Terra::renderPass.reset();
-	Terra::depthBuffer.reset();
-	Terra::swapChain.reset();
-	Terra::CleanUpResources();
-	Terra::computeCmdBuffer.reset();
-	Terra::computeQueue.reset();
-	Terra::computeSyncObjects.reset();
-	Terra::graphicsQueue.reset();
-	Terra::graphicsCmdBuffer.reset();
-	Terra::graphicsSyncObjects.reset();
-	Terra::display.reset();
-	Terra::device.reset();
-	Terra::surface.reset();
-#ifdef _DEBUG
-	Terra::debugLayer.reset();
-#endif
-	Terra::vkInstance.reset();
+	Terra::objectManager.StartDestruction();
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {

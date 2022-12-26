@@ -4,7 +4,8 @@
 
 #include <Terra.hpp>
 
-DepthBuffer::DepthBuffer(VkDevice device) : m_depthImage{ device }, m_deviceRef{ device },
+DepthBuffer::DepthBuffer(const Args& arguments)
+	: m_depthImage{ arguments.device.value() }, m_deviceRef{ arguments.device.value() },
 	m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
 
 void DepthBuffer::CleanUp() noexcept {

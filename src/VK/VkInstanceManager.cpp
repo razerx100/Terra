@@ -3,8 +3,8 @@
 #include <cassert>
 #include <Exception.hpp>
 
-InstanceManager::InstanceManager(const char* appName) noexcept
-	: m_vkInstance(VK_NULL_HANDLE), m_appName(appName) {}
+InstanceManager::InstanceManager(Args& arguments)
+	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(arguments.appName.value()) } {}
 
 InstanceManager::~InstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);

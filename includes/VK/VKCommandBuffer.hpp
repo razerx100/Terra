@@ -2,12 +2,18 @@
 #define VK_COMMAND_BUFFER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <optional>
 
 class VKCommandBuffer {
 public:
-	VKCommandBuffer(
-		VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount = 1u
-	);
+	struct Args {
+		std::optional<VkDevice> device;
+		std::optional<std::uint32_t> queueIndex;
+		std::optional<std::uint32_t> bufferCount = 1u;
+	};
+
+public:
+	VKCommandBuffer(const Args& arguments);
 	~VKCommandBuffer() noexcept;
 
 	void ResetBuffer(size_t index) const noexcept;

@@ -1,15 +1,18 @@
 #include <VKCommandBuffer.hpp>
 
-VKCommandBuffer::VKCommandBuffer(
-	VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount
-) : m_deviceRef{ device }, m_commandBuffers{ bufferCount, VK_NULL_HANDLE } {
+VKCommandBuffer::VKCommandBuffer(const Args& arguments)
+	: m_deviceRef{ arguments.device.value() },
+	m_commandBuffers{ arguments.bufferCount.value(), VK_NULL_HANDLE } {
+
+	std::uint32_t queueIndex = arguments.queueIndex.value();
+	std::uint32_t bufferCount = arguments.bufferCount.value();
 
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = queueIndex;
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	vkCreateCommandPool(device, &poolInfo, nullptr, &m_commandPool);
+	vkCreateCommandPool(m_deviceRef, &poolInfo, nullptr, &m_commandPool);
 
 	VkCommandBufferAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -17,7 +20,7 @@ VKCommandBuffer::VKCommandBuffer(
 	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocateInfo.commandBufferCount = bufferCount;
 
-	vkAllocateCommandBuffers(device, &allocateInfo, std::data(m_commandBuffers));
+	vkAllocateCommandBuffers(m_deviceRef, &allocateInfo, std::data(m_commandBuffers));
 }
 
 VKCommandBuffer::~VKCommandBuffer() noexcept {

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <VkResourceViews.hpp>
 #include <DescriptorSetManager.hpp>
+#include <optional>
 
 #include <IModel.hpp>
 
@@ -21,10 +22,14 @@ struct ModelConstantBuffer {
 
 class BufferManager {
 public:
-	BufferManager(
-		VkDevice device, std::uint32_t bufferCount,
-		std::vector<std::uint32_t> computeAndGraphicsQueueIndices
-	) noexcept;
+	struct Args {
+		std::optional<VkDevice> device;
+		std::optional<std::uint32_t> bufferCount;
+		std::optional<std::vector<std::uint32_t>> computeAndGraphicsQueueIndices;
+	};
+
+public:
+	BufferManager(Args& arguments);
 
 	void Update(VkDeviceSize index) const noexcept;
 	void CreateBuffers(VkDevice device) noexcept;

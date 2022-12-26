@@ -2,10 +2,16 @@
 #define VERTEX_MANAGER_VERTEX_HPP_
 #include <VertexManager.hpp>
 #include <VkResourceViews.hpp>
+#include <optional>
 
 class VertexManagerVertex : public VertexManager {
 public:
-	VertexManagerVertex(VkDevice device) noexcept;
+	struct Args {
+		std::optional<VkDevice> device;
+	};
+
+public:
+	VertexManagerVertex(const Args& arguments);
 
 	void AddGlobalVertices(
 		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,

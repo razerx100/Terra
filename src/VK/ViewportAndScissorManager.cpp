@@ -1,11 +1,14 @@
 #include <ViewportAndScissorManager.hpp>
 
-ViewportAndScissorManager::ViewportAndScissorManager(
-	std::uint32_t width, std::uint32_t height
-) : m_viewport{}, m_scissor{} {
+ViewportAndScissorManager::ViewportAndScissorManager(const Args& arguments)
+	: m_viewport{}, m_scissor{} {
 	m_viewport.x = 0.0f;
 	m_viewport.minDepth = 0.0f;
 	m_viewport.maxDepth = 1.0f;
+
+	std::uint32_t width = arguments.width.value();
+	std::uint32_t height = arguments.height.value();
+
 	ResizeViewport(width, height);
 
 	m_scissor.offset = { 0, 0 };
