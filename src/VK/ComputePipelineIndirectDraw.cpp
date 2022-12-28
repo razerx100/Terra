@@ -1,34 +1,63 @@
-#include <cstring>
-#include <cmath>
-#include <VkResourceBarriers.hpp>
 #include <Shader.hpp>
+#include <VkResourceBarriers.hpp>
 
-#include <RenderPipelineIndirectDraw.hpp>
+#include <ComputePipelineIndirectDraw.hpp>
 #include <Terra.hpp>
 
-RenderPipelineIndirectDraw::RenderPipelineIndirectDraw(
+ComputePipelineIndirectDraw::ComputePipelineIndirectDraw(
 	VkDevice device, std::uint32_t bufferCount,
 	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
 ) noexcept
 	: m_commandBuffer{ device }, m_culldataBuffer{ device }, m_counterResetBuffer{ device },
-	m_bufferCount{ bufferCount }, m_modelCount{ 0u },
-	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) } {
+	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) },
+	m_bufferCount{ bufferCount }, m_modelCount{ 0u } {
 	// Copy ctors are deleted. So, have to emplace_back to use move ctors
 	for (size_t _ = 0u; _ < bufferCount; ++_) {
 		m_argumentBuffers.emplace_back(VkResourceView{ device });
-		m_counterBuffers.emplace_back(VkResourceView{ device });
+		m_counterBuffers.emplace_back(VkUploadableBufferResourceView{ device });
 	}
 }
 
-void RenderPipelineIndirectDraw::BindGraphicsPipeline(
-	VkCommandBuffer graphicsCmdBuffer
-) const noexcept {
-	vkCmdBindPipeline(
-		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPSO->GetPipeline()
+void ComputePipelineIndirectDraw::CreateComputePipelineLayout(
+	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+) noexcept {
+	m_computePipelineLayout = _createComputePipelineLayout(device, layoutCount, setLayouts);
+}
+
+void ComputePipelineIndirectDraw::CreateComputePipeline(
+	VkDevice device, const std::wstring& shaderPath
+) noexcept {
+	m_computePipeline = _createComputePipeline(
+		device, m_computePipelineLayout->GetLayout(), shaderPath
 	);
 }
 
-void RenderPipelineIndirectDraw::DispatchCompute(
+std::unique_ptr<PipelineLayout> ComputePipelineIndirectDraw::_createComputePipelineLayout(
+	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+) const noexcept {
+	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
+
+	// Push constants needs to be serialised according to the shader stages
+	// Doesn't do anything different now but might, in the future idk
+
+	pipelineLayout->CreateLayout(setLayouts, layoutCount);
+
+	return pipelineLayout;
+}
+
+std::unique_ptr<VkPipelineObject> ComputePipelineIndirectDraw::_createComputePipeline(
+	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
+) const noexcept {
+	auto cs = std::make_unique<Shader>(device);
+	cs->CreateShader(device, shaderPath + L"ComputeShader.spv");
+
+	auto pso = std::make_unique<VkPipelineObject>(device);
+	pso->CreateComputePipeline(device, computeLayout, cs->GetByteCode());
+
+	return pso;
+}
+
+void ComputePipelineIndirectDraw::DispatchCompute(
 	VkCommandBuffer computeCmdBuffer
 ) const noexcept {
 	vkCmdDispatch(
@@ -37,21 +66,23 @@ void RenderPipelineIndirectDraw::DispatchCompute(
 	);
 }
 
-void RenderPipelineIndirectDraw::DrawModels(
-	VkCommandBuffer graphicsCmdBuffer, VkDeviceSize frameIndex
+void ComputePipelineIndirectDraw::BindComputePipeline(
+	VkCommandBuffer computeCmdBuffer, size_t frameIndex
 ) const noexcept {
-	static constexpr auto strideSize =
-		static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
+	vkCmdBindPipeline(
+		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_computePipeline->GetPipeline()
+	);
 
-	vkCmdDrawIndexedIndirectCount(
-		graphicsCmdBuffer, m_argumentBuffers[frameIndex].GetResource(),
-		m_argumentBuffers[frameIndex].GetFirstSubAllocationOffset(),
-		m_counterBuffers[frameIndex].GetResource(), 0u,
-		m_modelCount, strideSize
+	VkDescriptorSet descSets[] = { Terra::computeDescriptorSet->GetDescriptorSet(frameIndex) };
+	vkCmdBindDescriptorSets(
+		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_computePipelineLayout->GetLayout(), 0u, 1u,
+		descSets, 0u, nullptr
 	);
 }
 
-void RenderPipelineIndirectDraw::BindResourceToMemory(VkDevice device) {
+void ComputePipelineIndirectDraw::BindResourceToMemory(VkDevice device) {
 	m_commandBuffer.BindResourceToMemory(device);
 
 	for (auto& argumentBuffer : m_argumentBuffers)
@@ -64,8 +95,8 @@ void RenderPipelineIndirectDraw::BindResourceToMemory(VkDevice device) {
 	m_counterResetBuffer.BindResourceToMemory(device);
 }
 
-void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
-	const VkDeviceSize commandBufferSize =
+void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
+	const auto commandBufferSize =
 		static_cast<VkDeviceSize>(sizeof(VkDrawIndexedIndirectCommand) * m_modelCount);
 
 	m_commandBuffer.CreateResource(
@@ -82,14 +113,17 @@ void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		argumentBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
 	}
 
+	const auto counterBufferSize =
+		static_cast<VkDeviceSize>(COUNTERBUFFERSTRIDE * std::size(m_modelCountOffsets));
+
 	for (auto& counterBuffer : m_counterBuffers) {
 		counterBuffer.CreateResource(
-			device, sizeof(std::uint32_t), 1u,
+			device, counterBufferSize, 1u,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
 			VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 			m_computeAndGraphicsQueueIndices
 		);
-		counterBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
+		counterBuffer.SetMemoryOffsetAndType(device);
 	}
 
 	m_culldataBuffer.CreateResource(
@@ -153,7 +187,7 @@ void RenderPipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	);
 }
 
-void RenderPipelineIndirectDraw::RecordIndirectArguments(
+void ComputePipelineIndirectDraw::RecordIndirectArguments(
 	const std::vector<std::shared_ptr<IModel>>& models
 ) noexcept {
 	for (size_t index = 0u; index < std::size(models); ++index) {
@@ -163,20 +197,22 @@ void RenderPipelineIndirectDraw::RecordIndirectArguments(
 		const std::uint32_t indexCount = model->GetIndexCount();
 		const std::uint32_t indexOffset = model->GetIndexOffset();
 
-		VkDrawIndexedIndirectCommand command{};
-		command.firstIndex = indexOffset;
-		command.firstInstance = u32Index;
-		command.indexCount = indexCount;
-		command.instanceCount = 1u;
-		command.vertexOffset = 0u;
+		VkDrawIndexedIndirectCommand command{
+			.indexCount = indexCount,
+			.instanceCount = 1u,
+			.firstIndex = indexOffset,
+			.vertexOffset = 0u,
+			.firstInstance = u32Index
+		};
 
 		m_indirectCommands.emplace_back(command);
 	}
 
+	m_modelCountOffsets.emplace_back(m_modelCount);
 	m_modelCount += static_cast<std::uint32_t>(std::size(models));
 }
 
-void RenderPipelineIndirectDraw::CopyData() noexcept {
+void ComputePipelineIndirectDraw::CopyData() noexcept {
 	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 	memcpy(
 		uploadMemoryStart + m_commandBuffer.GetFirstUploadMemoryOffset(),
@@ -196,6 +232,29 @@ void RenderPipelineIndirectDraw::CopyData() noexcept {
 
 	memcpy(cullingBufferPtr, &cullingData, sizeof(CullingData));
 
+	// Copy modelCount offsets
+	for (auto& counterBuffer : m_counterBuffers) {
+		std::uint8_t* offsetBufferPtr =
+			uploadMemoryStart + counterBuffer.GetFirstUploadMemoryOffset();
+
+		struct {
+			std::uint32_t counter;
+			std::uint32_t modelCountOffset;
+		}sourceCountOffset{ 0u, 0u };
+		size_t destOffset = 0u;
+
+		for (auto modelCountOffset : m_modelCountOffsets) {
+			sourceCountOffset.modelCountOffset = modelCountOffset;
+
+			memcpy(
+				offsetBufferPtr + destOffset, &sourceCountOffset,
+				COUNTERBUFFERSTRIDE
+			);
+
+			destOffset += COUNTERBUFFERSTRIDE;
+		}
+	}
+
 	// copy zero to counter buffer
 	std::uint8_t* cpuWriteMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
 
@@ -207,17 +266,23 @@ void RenderPipelineIndirectDraw::CopyData() noexcept {
 	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
-void RenderPipelineIndirectDraw::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
+void ComputePipelineIndirectDraw::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
 	m_commandBuffer.RecordCopy(copyBuffer);
 	m_culldataBuffer.RecordCopy(copyBuffer);
+
+	for (auto& counterBuffer : m_counterBuffers)
+		counterBuffer.RecordCopy(copyBuffer);
 }
 
-void RenderPipelineIndirectDraw::ReleaseUploadResources() noexcept {
+void ComputePipelineIndirectDraw::ReleaseUploadResources() noexcept {
 	m_commandBuffer.CleanUpUploadResource();
 	m_culldataBuffer.CleanUpUploadResource();
+
+	for (auto& counterBuffer : m_counterBuffers)
+		counterBuffer.CleanUpUploadResource();
 }
 
-void RenderPipelineIndirectDraw::AcquireOwnerShip(
+void ComputePipelineIndirectDraw::AcquireOwnerShip(
 	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_commandBuffer.AcquireOwnership(
@@ -230,27 +295,30 @@ void RenderPipelineIndirectDraw::AcquireOwnerShip(
 	);
 }
 
-void RenderPipelineIndirectDraw::ReleaseOwnership(
+void ComputePipelineIndirectDraw::ReleaseOwnership(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_commandBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 	m_culldataBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
-void RenderPipelineIndirectDraw::ResetCounterBuffer(
+void ComputePipelineIndirectDraw::ResetCounterBuffer(
 	VkCommandBuffer computeBuffer, VkDeviceSize frameIndex
 ) noexcept {
 	auto& counterBuffer = m_counterBuffers[frameIndex];
-	VkBufferCopy bufferInfo{
-		.srcOffset = m_counterResetBuffer.GetFirstSubAllocationOffset(),
-		.dstOffset = counterBuffer.GetFirstSubAllocationOffset(),
-		.size = counterBuffer.GetSubBufferSize()
-	};
 
-	vkCmdCopyBuffer(
-		computeBuffer, m_counterResetBuffer.GetResource(), counterBuffer.GetResource(), 1u,
-		&bufferInfo
-	);
+	for (size_t index = 0u; index < std::size(m_modelCountOffsets); ++index) {
+		VkBufferCopy bufferInfo{
+			.srcOffset = m_counterResetBuffer.GetFirstSubAllocationOffset(),
+			.dstOffset = COUNTERBUFFERSTRIDE * index,
+			.size = sizeof(std::uint32_t)
+		};
+
+		vkCmdCopyBuffer(
+			computeBuffer, m_counterResetBuffer.GetResource(), counterBuffer.GetResource(),
+			1u, &bufferInfo
+		);
+	}
 
 	VkBufferBarrier().AddExecutionBarrier(
 		counterBuffer.GetResource(), counterBuffer.GetSubBufferSize(),
@@ -261,34 +329,14 @@ void RenderPipelineIndirectDraw::ResetCounterBuffer(
 	);
 }
 
-std::unique_ptr<VkPipelineObject> RenderPipelineIndirectDraw::CreateGraphicsPipeline(
-	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
-) const noexcept {
-	auto vs = std::make_unique<Shader>(device);
-	vs->CreateShader(device, shaderPath + L"VertexShader.spv");
-
-	auto fs = std::make_unique<Shader>(device);
-	fs->CreateShader(device, shaderPath + fragmentShader);
-
-	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateGraphicsPipeline(
-		device, graphicsLayout, renderPass,
-		VertexLayout()
-		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
-		.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u)
-		.InitLayout(),
-		vs->GetByteCode(), fs->GetByteCode()
-	);
-
-	return pso;
+std::uint32_t ComputePipelineIndirectDraw::GetCurrentModelCount() const noexcept {
+	return m_modelCount;
 }
 
-void RenderPipelineIndirectDraw::ConfigureGraphicsPipelineObject(
-	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
-) noexcept {
-	m_graphicsPSO = CreateGraphicsPipeline(
-		device, graphicsLayout, renderPass, shaderPath, fragmentShader
-	);
+VkBuffer ComputePipelineIndirectDraw::GetArgumentBuffer(size_t frameIndex) const noexcept{
+	return m_argumentBuffers[frameIndex].GetResource();
+}
+
+VkBuffer ComputePipelineIndirectDraw::GetCounterBuffer(size_t frameIndex) const noexcept {
+	return m_counterBuffers[frameIndex].GetResource();
 }

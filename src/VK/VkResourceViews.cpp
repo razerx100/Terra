@@ -202,25 +202,6 @@ std::vector<VkDescriptorBufferInfo> VkResourceView::GetDescBufferInfoSplit(
 	return bufferInfos;
 }
 
-std::vector<VkDescriptorBufferInfo> VkResourceView::GetDescBufferInfoSplit(
-	size_t bufferCount, const std::vector<VkResourceView>& buffers
-) noexcept {
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-
-	for (size_t index = 0u; index < bufferCount; ++index) {
-		auto& buffer = buffers[index];
-
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = buffer.GetResource();
-		bufferInfo.offset = buffer.GetFirstSubAllocationOffset();
-		bufferInfo.range = buffer.GetSubBufferSize();
-
-		bufferInfos.emplace_back(bufferInfo);
-	}
-
-	return bufferInfos;
-}
-
 VkDeviceSize VkResourceView::GetSubAllocationOffset(VkDeviceSize index) const noexcept {
 	return m_subAllocationSize * index;
 }
@@ -558,7 +539,6 @@ VkImageView VkUploadableImageResourceView::GetImageView() const noexcept {
 }
 
 // Vk Argument ResourceView
-
 VkArgumentResourceView::VkArgumentResourceView(VkDevice device) noexcept
 	: _vkResourceView{ device } {}
 

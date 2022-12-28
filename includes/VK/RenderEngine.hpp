@@ -14,9 +14,6 @@ public:
 	RenderEngine() noexcept;
 	virtual ~RenderEngine() = default;
 
-	virtual void InitiatePipelines(
-		VkDevice device, std::uint32_t bufferCount, std::vector<std::uint32_t> queueIndices = {}
-	) = 0;
 	virtual void ExecutePreRenderStage(
 		VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 	) = 0;
@@ -25,8 +22,8 @@ public:
 	virtual void ExecutePostRenderStage() = 0;
 	virtual void ConstructPipelines(std::uint32_t frameCount) = 0;
 
-	virtual void RecordModelData(
-		const std::vector<std::shared_ptr<IModel>>& models
+	virtual void RecordModelDataSet(
+		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 	) noexcept = 0;
 	virtual void CreateBuffers(VkDevice device) noexcept = 0;
 	virtual void BindResourcesToMemory(VkDevice device) = 0;

@@ -104,8 +104,13 @@ namespace Terra {
 		om.CreateObject(computeDescriptorSet, { logicalDevice, bufferCount }, 1u);
 	}
 
-	void InitRenderEngine(ObjectManager& om) {
-		om.CreateObject<RenderEngineIndirectDraw>(renderEngine, 1u);
+	void InitRenderEngine(
+		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount,
+		std::vector<std::uint32_t> bufferQueueIndices
+	) {
+		om.CreateObject<RenderEngineIndirectDraw>(
+			renderEngine, { logicalDevice, bufferCount, std::move(bufferQueueIndices) }, 1u
+			);
 	}
 
 	void InitVertexManager(ObjectManager& om, VkDevice logicalDevice) {

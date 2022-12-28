@@ -1,17 +1,24 @@
 #ifndef RENDER_ENGINE_INDIRECT_DRAW_HPP_
 #define RENDER_ENGINE_INDIRECT_DRAW_HPP_
 #include <PipelineLayout.hpp>
-#include <VKPipelineObject.hpp>
+#include <vector>
+#include <GraphicsPipelineIndirectDraw.hpp>
+#include <optional>
 
 #include <RenderEngine.hpp>
-#include <RenderPipelineIndirectDraw.hpp>
+#include <ComputePipelineIndirectDraw.hpp>
 
 class RenderEngineIndirectDraw final : public RenderEngine {
 public:
-	void InitiatePipelines(
-		VkDevice device, std::uint32_t bufferCount,
-		std::vector<std::uint32_t> computeAndGraphicsQueueIndices = {}
-	) noexcept override;
+	struct Args {
+		std::optional<VkDevice> device;
+		std::optional<std::uint32_t> bufferCount;
+		std::optional<std::vector<std::uint32_t>> computeAndGraphicsQueueIndices;
+	};
+
+public:
+	RenderEngineIndirectDraw(Args& arguments);
+
 	void ExecutePreRenderStage(
 		VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 	) override;
@@ -20,8 +27,8 @@ public:
 	void ExecutePostRenderStage() override;
 	void ConstructPipelines(std::uint32_t frameCount) override;
 
-	void RecordModelData(
-		const std::vector<std::shared_ptr<IModel>>& models
+	void RecordModelDataSet(
+		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 	) noexcept override;
 	void CreateBuffers(VkDevice device) noexcept override;
 	void BindResourcesToMemory(VkDevice device) override;
@@ -40,19 +47,14 @@ private:
 	std::unique_ptr<PipelineLayout> CreateGraphicsPipelineLayout(
 		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
 	) const noexcept;
-	[[nodiscard]]
-	std::unique_ptr<PipelineLayout> CreateComputePipelineLayout(
-		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
-	) const noexcept;
-	[[nodiscard]]
-	std::unique_ptr<VkPipelineObject> CreateComputePipeline(
-		VkDevice device, VkPipelineLayout computeLayout
-	) const noexcept;
+
+	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndirectDraw>;
 
 private:
+	ComputePipelineIndirectDraw m_computePipeline;
 	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
-	std::unique_ptr<PipelineLayout> m_computePipelineLayout;
-	std::unique_ptr<VkPipelineObject> m_computePSO;
-	std::unique_ptr<RenderPipelineIndirectDraw> m_renderPipeline;
+	// Need to bind one pipeline first to bind descriptors
+	GraphicsPipeline m_graphicsPipeline0;
+	std::vector<GraphicsPipeline> m_graphicsPipelines;
 };
 #endif

@@ -35,12 +35,12 @@ void VertexManagerVertex::AddGlobalVertices(
 }
 
 void VertexManagerVertex::BindVertices(VkCommandBuffer graphicsCmdBuffer) const noexcept {
-	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetGPUResource() };
+	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetResource() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
 
 	vkCmdBindVertexBuffers(graphicsCmdBuffer, 0u, 1u, vertexBuffers, vertexOffsets);
 	vkCmdBindIndexBuffer(
-		graphicsCmdBuffer, m_gIndexBuffer.GetGPUResource(), 0u, VK_INDEX_TYPE_UINT32
+		graphicsCmdBuffer, m_gIndexBuffer.GetResource(), 0u, VK_INDEX_TYPE_UINT32
 	);
 }
 

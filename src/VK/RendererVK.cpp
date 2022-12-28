@@ -34,7 +34,6 @@ RendererVK::RendererVK(
 #endif
 
 	m_objectManager.CreateObject(Terra::device, 3u);
-	Terra::InitRenderEngine(m_objectManager);
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
 
@@ -86,8 +85,12 @@ RendererVK::RendererVK(
 	);
 	m_computeQueueIndex = computeQueueFamilyIndex;
 
-	std::vector<std::uint32_t> computeAndGraphicsQueueIndices =
-		DeviceManager::ResolveQueueIndices(computeQueueFamilyIndex, graphicsQueueFamilyIndex);
+	Terra::InitRenderEngine(
+		m_objectManager, logicalDevice, bufferCount,
+		ResolveQueueIndices(
+			computeQueueFamilyIndex, graphicsQueueFamilyIndex, copyQueueFamilyIndex
+		)
+	);
 
 	Terra::InitComputeQueue(
 		m_objectManager, computeQueueHandle, logicalDevice, computeQueueFamilyIndex,
@@ -111,11 +114,11 @@ RendererVK::RendererVK(
 	m_objectManager.CreateObject(Terra::textureStorage, { logicalDevice, physicalDevice }, 1u);
 	m_objectManager.CreateObject(
 		Terra::bufferManager,
-		{ logicalDevice,  bufferCount, computeAndGraphicsQueueIndices },
+		{ logicalDevice,  bufferCount, ResolveQueueIndices(
+				computeQueueFamilyIndex, graphicsQueueFamilyIndex
+			)
+		},
 		1u
-	);
-	Terra::renderEngine->InitiatePipelines(
-		logicalDevice,  bufferCount, computeAndGraphicsQueueIndices
 	);
 
 	m_objectManager.CreateObject(Terra::cameraManager, 0u);
@@ -127,7 +130,7 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 }
 
 void RendererVK::SubmitModels(std::vector<std::shared_ptr<IModel>>&& models) {
-	Terra::renderEngine->RecordModelData(models);
+	Terra::renderEngine->RecordModelDataSet(models, L"FragmentShader.spv");
 	Terra::bufferManager->AddOpaqueModels(std::move(models));
 }
 

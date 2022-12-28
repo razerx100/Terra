@@ -84,7 +84,10 @@ namespace Terra {
 	void InitDescriptorSets(
 		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount
 	);
-	void InitRenderEngine(ObjectManager& om);
+	void InitRenderEngine(
+		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount,
+		std::vector<std::uint32_t> bufferQueueIndices = {}
+	);
 	void InitVertexManager(ObjectManager& om, VkDevice logicalDevice);
 	void SetSharedData(
 		ObjectManager& om, std::shared_ptr<ISharedDataContainer>&& sharedDataArg

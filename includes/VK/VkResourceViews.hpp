@@ -73,10 +73,26 @@ public:
 		VkBufferUsageFlags usageFlags, std::vector<std::uint32_t> queueFamilyIndices = {}
 	);
 
+	template<class ResourceView>
 	[[nodiscard]]
 	static std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSplit(
-		size_t bufferCount, const std::vector<VkResourceView>& buffers
-	) noexcept;
+		size_t bufferCount, const std::vector<ResourceView>& buffers
+	) noexcept {
+		std::vector<VkDescriptorBufferInfo> bufferInfos;
+
+		for (size_t index = 0u; index < bufferCount; ++index) {
+			auto& buffer = buffers[index];
+
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = buffer.GetResource();
+			bufferInfo.offset = buffer.GetFirstSubAllocationOffset();
+			bufferInfo.range = buffer.GetSubBufferSize();
+
+			bufferInfos.emplace_back(bufferInfo);
+		}
+
+		return bufferInfos;
+	}
 
 	[[nodiscard]]
 	std::vector<VkDescriptorBufferInfo> GetDescBufferInfoSpread(
@@ -227,7 +243,7 @@ public:
 	}
 
 	[[nodiscard]]
-	auto GetGPUResource() const noexcept {
+	auto GetResource() const noexcept {
 		return m_gpuResource.GetResource();
 	}
 

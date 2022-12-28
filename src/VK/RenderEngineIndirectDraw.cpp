@@ -1,7 +1,12 @@
-#include <Shader.hpp>
 
 #include <Terra.hpp>
 #include <RenderEngineIndirectDraw.hpp>
+
+RenderEngineIndirectDraw::RenderEngineIndirectDraw(Args& arguments)
+	: m_computePipeline{
+		arguments.device.value(), arguments.bufferCount.value(),
+		std::move(arguments.computeAndGraphicsQueueIndices.value())
+	} {}
 
 void RenderEngineIndirectDraw::ExecutePreRenderStage(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
@@ -13,20 +18,9 @@ void RenderEngineIndirectDraw::ExecutePreRenderStage(
 		frameIndex
 	);
 
-	m_renderPipeline->ResetCounterBuffer(computeCommandBuffer, frameIndex);
-	// Compute Pipeline doesn't need to be changed for different Graphics Pipelines
-	vkCmdBindPipeline(
-		computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePSO->GetPipeline()
-	);
-
-	VkDescriptorSet descSets[] = { Terra::computeDescriptorSet->GetDescriptorSet(frameIndex) };
-	vkCmdBindDescriptorSets(
-		computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-		m_computePipelineLayout->GetLayout(), 0u, 1u,
-		descSets, 0u, nullptr
-	);
-
-	m_renderPipeline->DispatchCompute(computeCommandBuffer);
+	m_computePipeline.ResetCounterBuffer(computeCommandBuffer, frameIndex);
+	m_computePipeline.BindComputePipeline(computeCommandBuffer, frameIndex);
+	m_computePipeline.DispatchCompute(computeCommandBuffer);
 
 	Terra::computeCmdBuffer->CloseBuffer(frameIndex);
 	Terra::computeQueue->SubmitCommandBuffer(
@@ -47,14 +41,14 @@ void RenderEngineIndirectDraw::ExecutePreRenderStage(
 	clearValues[0].color = m_backgroundColour;
 	clearValues[1].depthStencil = { 1.f, 0 };
 
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderPass = Terra::renderPass->GetRenderPass();
-	renderPassInfo.framebuffer = Terra::swapChain->GetFramebuffer(frameIndex);
-	renderPassInfo.renderArea.extent = Terra::swapChain->GetSwapExtent();
-	renderPassInfo.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues));
-	renderPassInfo.pClearValues = std::data(clearValues);
+	VkRenderPassBeginInfo renderPassInfo{
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.renderPass = Terra::renderPass->GetRenderPass(),
+		.framebuffer = Terra::swapChain->GetFramebuffer(frameIndex),
+		.renderArea = { VkOffset2D{ 0, 0 }, Terra::swapChain->GetSwapExtent() },
+		.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues)),
+		.pClearValues = std::data(clearValues)
+	};
 
 	vkCmdBeginRenderPass(graphicsCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
@@ -63,7 +57,7 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_renderPipeline->BindGraphicsPipeline(graphicsCmdBuffer);
+	m_graphicsPipeline0->BindGraphicsPipeline(graphicsCmdBuffer);
 
 	VkDescriptorSet descSets[] = { Terra::graphicsDescriptorSet->GetDescriptorSet(frameIndex) };
 	vkCmdBindDescriptorSets(
@@ -73,7 +67,16 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 	);
 
 	Terra::vertexManager->BindVertices(graphicsCmdBuffer);
-	m_renderPipeline->DrawModels(graphicsCmdBuffer, frameIndex);
+
+	const VkBuffer argumentBuffer = m_computePipeline.GetArgumentBuffer(frameIndex);
+	const VkBuffer counterBuffer = m_computePipeline.GetCounterBuffer(frameIndex);
+
+	m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
+
+	for (auto& graphicsPipeline : m_graphicsPipelines) {
+		graphicsPipeline->BindGraphicsPipeline(graphicsCmdBuffer);
+		graphicsPipeline->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
+	}
 }
 
 void RenderEngineIndirectDraw::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) {
@@ -111,62 +114,71 @@ void RenderEngineIndirectDraw::ConstructPipelines(std::uint32_t frameCount) {
 	m_graphicsPipelineLayout = CreateGraphicsPipelineLayout(
 		device, frameCount, Terra::graphicsDescriptorSet->GetDescriptorSetLayouts()
 	);
-	m_renderPipeline->ConfigureGraphicsPipelineObject(
-		device, m_graphicsPipelineLayout->GetLayout(), Terra::renderPass->GetRenderPass(),
-		m_shaderPath, L"FragmentShader.spv"
-	);
 
-	m_computePipelineLayout = CreateComputePipelineLayout(
+	m_graphicsPipeline0->CreateGraphicsPipeline(
+		device, m_graphicsPipelineLayout->GetLayout(), Terra::renderPass->GetRenderPass(),
+		m_shaderPath
+	);
+	for (auto& graphicsPipeline : m_graphicsPipelines)
+		graphicsPipeline->CreateGraphicsPipeline(
+			device, m_graphicsPipelineLayout->GetLayout(), Terra::renderPass->GetRenderPass(),
+			m_shaderPath
+		);
+
+	m_computePipeline.CreateComputePipelineLayout(
 		device, frameCount, Terra::computeDescriptorSet->GetDescriptorSetLayouts()
 	);
-	m_computePSO = CreateComputePipeline(device, m_computePipelineLayout->GetLayout());
+	m_computePipeline.CreateComputePipeline(device, m_shaderPath);
 }
 
-void RenderEngineIndirectDraw::InitiatePipelines(
-	VkDevice device, std::uint32_t bufferCount,
-	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+void RenderEngineIndirectDraw::RecordModelDataSet(
+	const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 ) noexcept {
-	m_renderPipeline = std::make_unique<RenderPipelineIndirectDraw>(
-		device, bufferCount, computeAndGraphicsQueueIndices
-		);
-}
+	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndirectDraw>();
+	graphicsPipeline->ConfigureGraphicsPipeline(
+		fragmentShader, static_cast<std::uint32_t>(std::size(models)),
+		m_computePipeline.GetCurrentModelCount()
+	);
 
-void RenderEngineIndirectDraw::RecordModelData(
-	const std::vector<std::shared_ptr<IModel>>& models
-) noexcept {
-	m_renderPipeline->RecordIndirectArguments(models);
+	// old currentModelCount hold the modelCountOffset value
+	m_computePipeline.RecordIndirectArguments(models);
+
+	if (!m_graphicsPipeline0)
+		m_graphicsPipeline0 = std::move(graphicsPipeline);
+	else
+		m_graphicsPipelines.emplace_back(std::move(graphicsPipeline));
 }
 
 void RenderEngineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
-	m_renderPipeline->CreateBuffers(device);
+	m_computePipeline.CreateBuffers(device);
 }
 
 void RenderEngineIndirectDraw::BindResourcesToMemory(VkDevice device) {
-	m_renderPipeline->BindResourceToMemory(device);
+	m_computePipeline.BindResourceToMemory(device);
 }
 
 void RenderEngineIndirectDraw::CopyData() noexcept {
-	m_renderPipeline->CopyData();
+	m_computePipeline.CopyData();
 }
 
 void RenderEngineIndirectDraw::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
-	m_renderPipeline->RecordCopy(copyBuffer);
+	m_computePipeline.RecordCopy(copyBuffer);
 }
 
 void RenderEngineIndirectDraw::ReleaseUploadResources() noexcept {
-	m_renderPipeline->ReleaseUploadResources();
+	m_computePipeline.ReleaseUploadResources();
 }
 
 void RenderEngineIndirectDraw::AcquireOwnerShip(
 	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
-	m_renderPipeline->AcquireOwnerShip(cmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_computePipeline.AcquireOwnerShip(cmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
 void RenderEngineIndirectDraw::ReleaseOwnership(
 	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
-	m_renderPipeline->ReleaseOwnership(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_computePipeline.ReleaseOwnership(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
 std::unique_ptr<PipelineLayout> RenderEngineIndirectDraw::CreateGraphicsPipelineLayout(
@@ -179,29 +191,4 @@ std::unique_ptr<PipelineLayout> RenderEngineIndirectDraw::CreateGraphicsPipeline
 	pipelineLayout->CreateLayout(setLayouts, layoutCount);
 
 	return pipelineLayout;
-}
-
-std::unique_ptr<PipelineLayout> RenderEngineIndirectDraw::CreateComputePipelineLayout(
-	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
-) const noexcept {
-	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
-
-	// Push constants needs to be serialised according to the shader stages
-	// Doesn't do anything different now but might, in the future idk
-
-	pipelineLayout->CreateLayout(setLayouts, layoutCount);
-
-	return pipelineLayout;
-}
-
-std::unique_ptr<VkPipelineObject> RenderEngineIndirectDraw::CreateComputePipeline(
-	VkDevice device, VkPipelineLayout computeLayout
-) const noexcept {
-	auto cs = std::make_unique<Shader>(device);
-	cs->CreateShader(device, m_shaderPath + L"ComputeShader.spv");
-
-	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateComputePipeline(device, computeLayout, cs->GetByteCode());
-
-	return pso;
 }

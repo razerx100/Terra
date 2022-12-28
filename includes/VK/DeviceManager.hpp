@@ -6,22 +6,11 @@
 
 class DeviceManager {
 public:
-	using QueueIndicesType = std::vector<std::uint32_t>;
-
 	DeviceManager() noexcept;
 	~DeviceManager() noexcept;
 
 	void FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 	void CreateLogicalDevice();
-
-	[[nodiscard]]
-	static QueueIndicesType ResolveQueueIndices(
-		std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
-	) noexcept;
-	[[nodiscard]]
-	static QueueIndicesType ResolveQueueIndices(
-		std::uint32_t index0, std::uint32_t index1
-	) noexcept;
 
 	[[nodiscard]]
 	std::pair<VkQueue, std::uint32_t> GetQueue(QueueType type) noexcept;
@@ -50,11 +39,6 @@ private:
 	) const noexcept;
 
 	void SetQueueFamilyInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
-
-	[[nodiscard]]
-	static QueueIndicesType _resolveQueueIndices(
-		std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
-	) noexcept;
 
 private:
 	VkPhysicalDevice m_physicalDevice;
