@@ -49,12 +49,12 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsP
 
 void GraphicsPipelineIndirectDraw::ConfigureGraphicsPipeline(
 	const std::wstring& fragmentShader, std::uint32_t modelCount,
-	std::uint32_t modelCountOffset
+	std::uint32_t modelCountOffset, size_t counterIndex
 ) noexcept {
 	m_modelCount = modelCount;
 
 	m_argumentBufferOffset = sizeof(VkDrawIndexedIndirectCommand) * modelCountOffset;
-	m_counterBufferOffset = sizeof(std::uint32_t) * 2u * modelCountOffset;
+	m_counterBufferOffset = sizeof(std::uint32_t) * 2u * counterIndex;
 	m_fragmentShader = fragmentShader;
 }
 

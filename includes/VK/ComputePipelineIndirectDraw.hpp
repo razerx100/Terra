@@ -43,6 +43,8 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetCurrentModelCount() const noexcept;
 	[[nodiscard]]
+	size_t GetCounterCount() const noexcept;
+	[[nodiscard]]
 	VkBuffer GetArgumentBuffer(size_t frameIndex) const noexcept;
 	[[nodiscard]]
 	VkBuffer GetCounterBuffer(size_t frameIndex) const noexcept;
@@ -81,7 +83,7 @@ private:
 private:
 	struct CullingData {
 		std::uint32_t commandCount;
-		float padding;	// Next Vec2 starts at 8bytes offset
+		std::uint32_t modelTypes;	// Next Vec2 starts at 8bytes offset
 		DirectX::XMFLOAT2 xBounds;
 		DirectX::XMFLOAT2 yBounds;
 		DirectX::XMFLOAT2 zBounds;

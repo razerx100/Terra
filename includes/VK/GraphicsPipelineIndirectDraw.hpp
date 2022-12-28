@@ -9,7 +9,7 @@ public:
 
 	void ConfigureGraphicsPipeline(
 		const std::wstring& fragmentShader, std::uint32_t modelCount,
-		std::uint32_t modelCountOffset
+		std::uint32_t modelCountOffset, size_t counterIndex
 	) noexcept;
 	void CreateGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,

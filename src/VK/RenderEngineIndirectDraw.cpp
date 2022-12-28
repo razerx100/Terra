@@ -137,7 +137,7 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndirectDraw>();
 	graphicsPipeline->ConfigureGraphicsPipeline(
 		fragmentShader, static_cast<std::uint32_t>(std::size(models)),
-		m_computePipeline.GetCurrentModelCount()
+		m_computePipeline.GetCurrentModelCount(), m_computePipeline.GetCounterCount()
 	);
 
 	// old currentModelCount hold the modelCountOffset value

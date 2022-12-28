@@ -226,6 +226,7 @@ void ComputePipelineIndirectDraw::CopyData() noexcept {
 
 	CullingData cullingData{};
 	cullingData.commandCount = static_cast<std::uint32_t>(std::size(m_indirectCommands));
+	cullingData.modelTypes = static_cast<std::uint32_t>(std::size(m_modelCountOffsets));
 	cullingData.xBounds = XBOUNDS;
 	cullingData.yBounds = YBOUNDS;
 	cullingData.zBounds = ZBOUNDS;
@@ -331,6 +332,10 @@ void ComputePipelineIndirectDraw::ResetCounterBuffer(
 
 std::uint32_t ComputePipelineIndirectDraw::GetCurrentModelCount() const noexcept {
 	return m_modelCount;
+}
+
+size_t ComputePipelineIndirectDraw::GetCounterCount() const noexcept {
+	return std::size(m_modelCountOffsets);
 }
 
 VkBuffer ComputePipelineIndirectDraw::GetArgumentBuffer(size_t frameIndex) const noexcept{
