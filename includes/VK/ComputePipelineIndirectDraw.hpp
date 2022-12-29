@@ -6,6 +6,7 @@
 #include <PipelineLayout.hpp>
 #include <VKPipelineObject.hpp>
 #include <VkResourceViews.hpp>
+#include <VkHelperFunctions.hpp>
 
 #include <IModel.hpp>
 #include <DirectXMath.h>
@@ -13,8 +14,7 @@
 class ComputePipelineIndirectDraw {
 public:
 	ComputePipelineIndirectDraw(
-		VkDevice device, std::uint32_t bufferCount,
-		std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+		VkDevice device, std::uint32_t bufferCount, QueueIndices3 queueIndices
 	) noexcept;
 
 	void CreateComputePipelineLayout(
@@ -25,14 +25,10 @@ public:
 	void BindResourceToMemory(VkDevice device);
 	void RecordIndirectArguments(const std::vector<std::shared_ptr<IModel>>& models) noexcept;
 	void CopyData() noexcept;
-	void RecordCopy(VkCommandBuffer copyBuffer) noexcept;
+	void RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept;
 	void ReleaseUploadResources() noexcept;
-	void AcquireOwnerShip(
-		VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-	) noexcept;
-	void ReleaseOwnership(
-		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-	) noexcept;
+	void AcquireOwnerShip(VkCommandBuffer computeCmdBuffer) noexcept;
+	void ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept;
 
 	void BindComputePipeline(
 		VkCommandBuffer computeCmdBuffer, size_t frameIndex
@@ -63,12 +59,12 @@ private:
 	std::unique_ptr<PipelineLayout> m_computePipelineLayout;
 	std::unique_ptr<VkPipelineObject> m_computePipeline;
 	VkUploadableBufferResourceView m_commandBuffer;
-	VkUploadableBufferResourceView m_culldataBuffer;
+	VkUploadableBufferResourceView m_cullDataBuffer;
 	VkResourceView m_counterResetBuffer;
 	std::vector<VkResourceView> m_argumentBuffers;
 	std::vector<VkUploadableBufferResourceView> m_counterBuffers;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectCommands;
-	std::vector<std::uint32_t> m_computeAndGraphicsQueueIndices;
+	QueueIndices3 m_queueIndices;
 	std::vector<std::uint32_t> m_modelCountOffsets;
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_modelCount;

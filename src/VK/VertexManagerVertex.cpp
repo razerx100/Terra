@@ -2,8 +2,8 @@
 
 #include <Terra.hpp>
 
-VertexManagerVertex::VertexManagerVertex(const Args& arguments)
-	: m_gVertexBuffer{ arguments.device.value() }, m_gIndexBuffer{ arguments.device.value() } {}
+VertexManagerVertex::VertexManagerVertex(VkDevice device) noexcept
+	: m_gVertexBuffer{ device }, m_gIndexBuffer{ device } {}
 
 void VertexManagerVertex::AddGlobalVertices(
 	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
@@ -34,7 +34,9 @@ void VertexManagerVertex::AddGlobalVertices(
 	);
 }
 
-void VertexManagerVertex::BindVertices(VkCommandBuffer graphicsCmdBuffer) const noexcept {
+void VertexManagerVertex::BindVertexAndIndexBuffer(
+	VkCommandBuffer graphicsCmdBuffer
+) const noexcept {
 	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetResource() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
 
@@ -45,28 +47,28 @@ void VertexManagerVertex::BindVertices(VkCommandBuffer graphicsCmdBuffer) const 
 }
 
 void VertexManagerVertex::AcquireOwnerShips(
-	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	VkCommandBuffer graphicsCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept{
 	m_gVertexBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+		graphicsCmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
 		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
 	);
 	m_gIndexBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDEX_READ_BIT,
+		graphicsCmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDEX_READ_BIT,
 		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
 	);
 }
 
 void VertexManagerVertex::ReleaseOwnerships(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+	VkCommandBuffer transferCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
-	m_gVertexBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
-	m_gIndexBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_gVertexBuffer.ReleaseOwnerShip(transferCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_gIndexBuffer.ReleaseOwnerShip(transferCmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
-void VertexManagerVertex::RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept {
-	m_gVertexBuffer.RecordCopy(copyCmdBuffer);
-	m_gIndexBuffer.RecordCopy(copyCmdBuffer);
+void VertexManagerVertex::RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept {
+	m_gVertexBuffer.RecordCopy(transferCmdBuffer);
+	m_gIndexBuffer.RecordCopy(transferCmdBuffer);
 }
 
 void VertexManagerVertex::ReleaseUploadResources() noexcept {

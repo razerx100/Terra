@@ -69,7 +69,7 @@ void _vkResourceView::CleanUpResource() noexcept {
 }
 
 void _vkResourceView::RecordCopy(
-	VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
+	VkCommandBuffer transferCmdBuffer, const _vkResourceView& uploadBuffer
 ) noexcept {
 	VkBufferCopy copyRegion{};
 	copyRegion.srcOffset = 0u;
@@ -77,12 +77,12 @@ void _vkResourceView::RecordCopy(
 	copyRegion.size = uploadBuffer.GetBufferSize();
 
 	vkCmdCopyBuffer(
-		copyCmdBuffer, uploadBuffer.GetResource(), m_resource.GetResource(), 1u, &copyRegion
+		transferCmdBuffer, uploadBuffer.GetResource(), m_resource.GetResource(), 1u, &copyRegion
 	);
 }
 
 void _vkResourceView::ReleaseOwnerShip(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	VkCommandBuffer transferCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 	std::uint32_t newOwnerQueueIndex
 ) noexcept {
 	// Destination doesn't matter in release but needs to be there because of limitation
@@ -91,7 +91,7 @@ void _vkResourceView::ReleaseOwnerShip(
 		oldOwnerQueueIndex, newOwnerQueueIndex,
 		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT
 	).RecordBarriers(
-		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+		transferCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
 	);
 }
 
@@ -340,7 +340,7 @@ void VkImageResourceView::CleanUpImageResourceView() noexcept {
 }
 
 void VkImageResourceView::RecordCopy(
-	VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
+	VkCommandBuffer transferCmdBuffer, const _vkResourceView& uploadBuffer
 ) noexcept {
 	VkImageSubresourceLayers imageLayer{};
 	imageLayer.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -371,18 +371,18 @@ void VkImageResourceView::RecordCopy(
 		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT
 	).RecordBarriers(
-		copyCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+		transferCmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
 	);
 
 	vkCmdCopyBufferToImage(
-		copyCmdBuffer, uploadBuffer.GetResource(),
+		transferCmdBuffer, uploadBuffer.GetResource(),
 		m_resource.GetResource(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1u, &copyRegion
 	);
 }
 
 void VkImageResourceView::ReleaseOwnerShip(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+	VkCommandBuffer transferCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 	std::uint32_t newOwnerQueueIndex
 ) noexcept {
 	// Destination doesn't matter in release but needs to be there because of limitation
@@ -392,7 +392,7 @@ void VkImageResourceView::ReleaseOwnerShip(
 		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 	).RecordBarriers(
-		copyCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+		transferCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
 	);
 }
 

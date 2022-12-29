@@ -1,34 +1,31 @@
 #ifndef VERTEX_MANAGER_VERTEX_HPP_
 #define VERTEX_MANAGER_VERTEX_HPP_
-#include <VertexManager.hpp>
+#include <vulkan/vulkan.hpp>
+#include <memory>
 #include <VkResourceViews.hpp>
-#include <optional>
 
-class VertexManagerVertex : public VertexManager {
+class VertexManagerVertex {
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-	};
-
-public:
-	VertexManagerVertex(const Args& arguments);
+	VertexManagerVertex(VkDevice device) noexcept;
 
 	void AddGlobalVertices(
 		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
-	) noexcept override;
+	) noexcept;
 
-	void BindVertices(VkCommandBuffer graphicsCmdBuffer) const noexcept override;
+	void BindVertexAndIndexBuffer(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 
 	void AcquireOwnerShips(
-		VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-	) noexcept override;
+		VkCommandBuffer graphicsCmdBuffer, std::uint32_t srcQueueIndex,
+		std::uint32_t dstQueueIndex
+	) noexcept;
 	void ReleaseOwnerships(
-		VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-	) noexcept override;
-	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept override;
-	void ReleaseUploadResources() noexcept override;
-	void BindResourceToMemory(VkDevice device) const noexcept override;
+		VkCommandBuffer transferCmdBuffer, std::uint32_t srcQueueIndex,
+		std::uint32_t dstQueueIndex
+	) noexcept;
+	void RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept;
+	void ReleaseUploadResources() noexcept;
+	void BindResourceToMemory(VkDevice device) const noexcept;
 
 private:
 	VkUploadableBufferResourceView m_gVertexBuffer;

@@ -4,7 +4,8 @@
 #include <Terra.hpp>
 
 TextureStorage::TextureStorage(const Args& arguments)
-	: m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ arguments.logicalDevice.value() } {
+	: m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ arguments.logicalDevice.value() },
+	m_queueIndices{ arguments.queueIndices.value() } {
 
 	CreateSampler(
 		arguments.logicalDevice.value(), arguments.physicalDevice.value(), &m_textureSampler,
@@ -75,29 +76,27 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 	);
 }
 
-void TextureStorage::RecordUploads(VkCommandBuffer copyCmdBuffer) noexcept {
+void TextureStorage::RecordUploads(VkCommandBuffer transferCmdBuffer) noexcept {
 	for (auto& texture : m_textures)
-		texture.RecordCopy(copyCmdBuffer);
+		texture.RecordCopy(transferCmdBuffer);
 }
 
-void TextureStorage::TransitionImages(VkCommandBuffer graphicsBuffer) noexcept {
+void TextureStorage::TransitionImages(VkCommandBuffer graphicsCmdBuffer) noexcept {
 	for (auto& texture : m_textures)
-		texture.TransitionImageLayout(graphicsBuffer);
+		texture.TransitionImageLayout(graphicsCmdBuffer);
 }
 
-void TextureStorage::AcquireOwnerShips(
-	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept {
+void TextureStorage::AcquireOwnerShips(VkCommandBuffer graphicsCmdBuffer) noexcept {
 	for (auto& texture : m_textures)
 		texture.AcquireOwnership(
-			cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics,
+			VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
 		);
 }
 
-void TextureStorage::ReleaseOwnerships(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept {
+void TextureStorage::ReleaseOwnerships(VkCommandBuffer transferCmdBuffer) noexcept {
 	for (auto& texture : m_textures)
-		texture.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+		texture.ReleaseOwnerShip(
+			transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
+		);
 }

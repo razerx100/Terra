@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <VkResourceViews.hpp>
 #include <DescriptorSetManager.hpp>
+#include <VkHelperFunctions.hpp>
 #include <optional>
 
 #include <IModel.hpp>
@@ -28,7 +29,7 @@ public:
 	struct Args {
 		std::optional<VkDevice> device;
 		std::optional<std::uint32_t> bufferCount;
-		std::optional<std::vector<std::uint32_t>> computeAndGraphicsQueueIndices;
+		std::optional<QueueIndicesCG> queueIndices;
 	};
 
 public:
@@ -47,6 +48,6 @@ private:
 	VkResourceView m_modelBuffers;
 	std::uint32_t m_bufferCount;
 	std::vector<std::shared_ptr<IModel>> m_opaqueModels;
-	std::vector<std::uint32_t> m_computeAndGraphicsQueueIndices;
+	QueueIndicesCG m_queueIndices;
 };
 #endif

@@ -5,12 +5,10 @@
 #include <Terra.hpp>
 
 ComputePipelineIndirectDraw::ComputePipelineIndirectDraw(
-	VkDevice device, std::uint32_t bufferCount,
-	std::vector<std::uint32_t> computeAndGraphicsQueueIndices
+	VkDevice device, std::uint32_t bufferCount,	QueueIndices3 queueIndices
 ) noexcept
-	: m_commandBuffer{ device }, m_culldataBuffer{ device }, m_counterResetBuffer{ device },
-	m_computeAndGraphicsQueueIndices{ std::move(computeAndGraphicsQueueIndices) },
-	m_bufferCount{ bufferCount }, m_modelCount{ 0u } {
+	: m_commandBuffer{ device }, m_cullDataBuffer{ device }, m_counterResetBuffer{ device },
+	m_queueIndices{ queueIndices }, m_bufferCount{ bufferCount }, m_modelCount{ 0u } {
 	// Copy ctors are deleted. So, have to emplace_back to use move ctors
 	for (size_t _ = 0u; _ < bufferCount; ++_) {
 		m_argumentBuffers.emplace_back(VkResourceView{ device });
@@ -91,7 +89,7 @@ void ComputePipelineIndirectDraw::BindResourceToMemory(VkDevice device) {
 	for (auto& counterBuffer : m_counterBuffers)
 		counterBuffer.BindResourceToMemory(device);
 
-	m_culldataBuffer.BindResourceToMemory(device);
+	m_cullDataBuffer.BindResourceToMemory(device);
 	m_counterResetBuffer.BindResourceToMemory(device);
 }
 
@@ -108,7 +106,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		argumentBuffer.CreateResource(
 			device, commandBufferSize, 1u,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-			m_computeAndGraphicsQueueIndices
+			ResolveQueueIndices(m_queueIndices.compute, m_queueIndices.graphics)
 		);
 		argumentBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
 	}
@@ -121,16 +119,18 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 			device, counterBufferSize, 1u,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
 			VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-			m_computeAndGraphicsQueueIndices
+			ResolveQueueIndices(
+				m_queueIndices.compute, m_queueIndices.graphics, m_queueIndices.transfer
+			)
 		);
 		counterBuffer.SetMemoryOffsetAndType(device);
 	}
 
-	m_culldataBuffer.CreateResource(
+	m_cullDataBuffer.CreateResource(
 		device, static_cast<VkDeviceSize>(sizeof(CullingData)), 1u,
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
 	);
-	m_culldataBuffer.SetMemoryOffsetAndType(device);
+	m_cullDataBuffer.SetMemoryOffsetAndType(device);
 
 	m_counterResetBuffer.CreateResource(device, 4u, 1u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 	m_counterResetBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
@@ -141,7 +141,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
 	};
 
-	auto cullingBufferInfos = m_culldataBuffer.GetDescBufferInfoSpread(m_bufferCount);
+	auto cullingBufferInfos = m_cullDataBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
 	Terra::computeDescriptorSet->AddBuffersSplit(
 		cullingDescInfo, std::move(cullingBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
@@ -222,7 +222,7 @@ void ComputePipelineIndirectDraw::CopyData() noexcept {
 
 	// copy the culling data to the buffer.
 	std::uint8_t* cullingBufferPtr =
-		uploadMemoryStart + m_culldataBuffer.GetFirstUploadMemoryOffset();
+		uploadMemoryStart + m_cullDataBuffer.GetFirstUploadMemoryOffset();
 
 	CullingData cullingData{};
 	cullingData.commandCount = static_cast<std::uint32_t>(std::size(m_indirectCommands));
@@ -267,44 +267,44 @@ void ComputePipelineIndirectDraw::CopyData() noexcept {
 	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
-void ComputePipelineIndirectDraw::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
-	m_commandBuffer.RecordCopy(copyBuffer);
-	m_culldataBuffer.RecordCopy(copyBuffer);
+void ComputePipelineIndirectDraw::RecordCopy(VkCommandBuffer transferBuffer) noexcept {
+	m_commandBuffer.RecordCopy(transferBuffer);
+	m_cullDataBuffer.RecordCopy(transferBuffer);
 
 	for (auto& counterBuffer : m_counterBuffers)
-		counterBuffer.RecordCopy(copyBuffer);
+		counterBuffer.RecordCopy(transferBuffer);
 }
 
 void ComputePipelineIndirectDraw::ReleaseUploadResources() noexcept {
 	m_commandBuffer.CleanUpUploadResource();
-	m_culldataBuffer.CleanUpUploadResource();
+	m_cullDataBuffer.CleanUpUploadResource();
 
 	for (auto& counterBuffer : m_counterBuffers)
 		counterBuffer.CleanUpUploadResource();
 }
 
-void ComputePipelineIndirectDraw::AcquireOwnerShip(
-	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept {
+void ComputePipelineIndirectDraw::AcquireOwnerShip(VkCommandBuffer computeCmdBuffer) noexcept {
 	m_commandBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+		computeCmdBuffer, m_queueIndices.transfer, m_queueIndices.compute,
+		VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
-	m_culldataBuffer.AcquireOwnership(
-		cmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+	m_cullDataBuffer.AcquireOwnership(
+		computeCmdBuffer, m_queueIndices.transfer, m_queueIndices.compute,
+		VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
 }
 
-void ComputePipelineIndirectDraw::ReleaseOwnership(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept {
-	m_commandBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
-	m_culldataBuffer.ReleaseOwnerShip(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+void ComputePipelineIndirectDraw::ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {
+	m_commandBuffer.ReleaseOwnerShip(
+		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.compute
+	);
+	m_cullDataBuffer.ReleaseOwnerShip(
+		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.compute
+	);
 }
 
 void ComputePipelineIndirectDraw::ResetCounterBuffer(
-	VkCommandBuffer computeBuffer, VkDeviceSize frameIndex
+	VkCommandBuffer computeCmdBuffer, VkDeviceSize frameIndex
 ) noexcept {
 	auto& counterBuffer = m_counterBuffers[frameIndex];
 
@@ -316,7 +316,7 @@ void ComputePipelineIndirectDraw::ResetCounterBuffer(
 		};
 
 		vkCmdCopyBuffer(
-			computeBuffer, m_counterResetBuffer.GetResource(), counterBuffer.GetResource(),
+			computeCmdBuffer, m_counterResetBuffer.GetResource(), counterBuffer.GetResource(),
 			1u, &bufferInfo
 		);
 	}
@@ -326,7 +326,7 @@ void ComputePipelineIndirectDraw::ResetCounterBuffer(
 		counterBuffer.GetFirstSubAllocationOffset(), VK_ACCESS_TRANSFER_WRITE_BIT,
 		VK_ACCESS_SHADER_READ_BIT
 	).RecordBarriers(
-		computeBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+		computeCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
 }
 

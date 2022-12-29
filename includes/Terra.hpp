@@ -17,8 +17,8 @@
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <UploadContainer.hpp>
-#include <VertexManager.hpp>
 #include <ObjectManager.hpp>
+#include <VkHelperFunctions.hpp>
 
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
@@ -30,13 +30,13 @@ namespace Terra {
 	extern std::shared_ptr<IThreadPool> threadPool;
 	extern std::unique_ptr<DebugLayerManager> debugLayer;
 	extern std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
-	extern std::unique_ptr<VKCommandBuffer> copyCmdBuffer;
+	extern std::unique_ptr<VKCommandBuffer> transferCmdBuffer;
 	extern std::unique_ptr<VKCommandBuffer> computeCmdBuffer;
 	extern std::unique_ptr<VkCommandQueue> graphicsQueue;
 	extern std::unique_ptr<VkSyncObjects> graphicsSyncObjects;
-	extern std::unique_ptr<VkSyncObjects> copySyncObjects;
+	extern std::unique_ptr<VkSyncObjects> transferSyncObjects;
 	extern std::unique_ptr<VkSyncObjects> computeSyncObjects;
-	extern std::unique_ptr<VkCommandQueue> copyQueue;
+	extern std::unique_ptr<VkCommandQueue> transferQueue;
 	extern std::unique_ptr<VkCommandQueue> computeQueue;
 	extern std::unique_ptr<DeviceManager> device;
 	extern std::unique_ptr<InstanceManager> vkInstance;
@@ -53,7 +53,6 @@ namespace Terra {
 	extern std::unique_ptr<DepthBuffer> depthBuffer;
 	extern std::shared_ptr<ISharedDataContainer> sharedData;
 	extern std::unique_ptr<RenderEngine> renderEngine;
-	extern std::unique_ptr<VertexManager> vertexManager;
 
 	namespace Resources {
 		extern std::unique_ptr<DeviceMemory> gpuOnlyMemory;
@@ -70,7 +69,7 @@ namespace Terra {
 		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
 		std::uint32_t bufferCount
 	);
-	void InitCopyQueue(
+	void InitTransferQueue(
 		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
 	);
 	void InitComputeQueue(
@@ -86,9 +85,8 @@ namespace Terra {
 	);
 	void InitRenderEngine(
 		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount,
-		std::vector<std::uint32_t> bufferQueueIndices = {}
+		QueueIndices3 queueIndices
 	);
-	void InitVertexManager(ObjectManager& om, VkDevice logicalDevice);
 	void SetSharedData(
 		ObjectManager& om, std::shared_ptr<ISharedDataContainer>&& sharedDataArg
 	) noexcept;

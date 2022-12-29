@@ -5,7 +5,11 @@
 RenderEngineIndirectDraw::RenderEngineIndirectDraw(Args& arguments)
 	: m_computePipeline{
 		arguments.device.value(), arguments.bufferCount.value(),
-		std::move(arguments.computeAndGraphicsQueueIndices.value())
+		arguments.queueIndices.value()
+	}, m_vertexManager{ arguments.device.value() },
+	m_queueIndices{
+		arguments.queueIndices.value().transfer,
+		arguments.queueIndices.value().graphics
 	} {}
 
 void RenderEngineIndirectDraw::ExecutePreRenderStage(
@@ -66,7 +70,7 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 		descSets, 0u, nullptr
 	);
 
-	Terra::vertexManager->BindVertices(graphicsCmdBuffer);
+	m_vertexManager.BindVertexAndIndexBuffer(graphicsCmdBuffer);
 
 	const VkBuffer argumentBuffer = m_computePipeline.GetArgumentBuffer(frameIndex);
 	const VkBuffer counterBuffer = m_computePipeline.GetCounterBuffer(frameIndex);
@@ -149,36 +153,57 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 		m_graphicsPipelines.emplace_back(std::move(graphicsPipeline));
 }
 
+void RenderEngineIndirectDraw::AddGlobalVertices(
+	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
+	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+) noexcept {
+	m_vertexManager.AddGlobalVertices(
+		device, std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
+	);
+}
+
 void RenderEngineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	m_computePipeline.CreateBuffers(device);
 }
 
 void RenderEngineIndirectDraw::BindResourcesToMemory(VkDevice device) {
 	m_computePipeline.BindResourceToMemory(device);
+	m_vertexManager.BindResourceToMemory(device);
 }
 
 void RenderEngineIndirectDraw::CopyData() noexcept {
 	m_computePipeline.CopyData();
 }
 
-void RenderEngineIndirectDraw::RecordCopy(VkCommandBuffer copyBuffer) noexcept {
-	m_computePipeline.RecordCopy(copyBuffer);
+void RenderEngineIndirectDraw::RecordCopy(VkCommandBuffer transferBuffer) noexcept {
+	m_computePipeline.RecordCopy(transferBuffer);
+	m_vertexManager.RecordCopy(transferBuffer);
 }
 
 void RenderEngineIndirectDraw::ReleaseUploadResources() noexcept {
 	m_computePipeline.ReleaseUploadResources();
+	m_vertexManager.ReleaseUploadResources();
 }
 
-void RenderEngineIndirectDraw::AcquireOwnerShip(
-	VkCommandBuffer cmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+void RenderEngineIndirectDraw::AcquireOwnerShipGraphics(
+	VkCommandBuffer graphicsCmdBuffer
 ) noexcept {
-	m_computePipeline.AcquireOwnerShip(cmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_vertexManager.AcquireOwnerShips(
+		graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
+	);
 }
 
-void RenderEngineIndirectDraw::ReleaseOwnership(
-	VkCommandBuffer copyCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
+void RenderEngineIndirectDraw::AcquireOwnerShipCompute(
+	VkCommandBuffer computeCmdBuffer
 ) noexcept {
-	m_computePipeline.ReleaseOwnership(copyCmdBuffer, srcQueueIndex, dstQueueIndex);
+	m_computePipeline.AcquireOwnerShip(computeCmdBuffer);
+}
+
+void RenderEngineIndirectDraw::ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {
+	m_computePipeline.ReleaseOwnership(transferCmdBuffer);
+	m_vertexManager.ReleaseOwnerships(
+		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
+	);
 }
 
 std::unique_ptr<PipelineLayout> RenderEngineIndirectDraw::CreateGraphicsPipelineLayout(

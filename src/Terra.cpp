@@ -13,13 +13,13 @@ namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;
 	std::unique_ptr<DebugLayerManager> debugLayer;
 	std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
-	std::unique_ptr<VKCommandBuffer> copyCmdBuffer;
+	std::unique_ptr<VKCommandBuffer> transferCmdBuffer;
 	std::unique_ptr<VKCommandBuffer> computeCmdBuffer;
 	std::unique_ptr<VkSyncObjects> graphicsSyncObjects;
-	std::unique_ptr<VkSyncObjects> copySyncObjects;
+	std::unique_ptr<VkSyncObjects> transferSyncObjects;
 	std::unique_ptr<VkSyncObjects> computeSyncObjects;
 	std::unique_ptr<VkCommandQueue> graphicsQueue;
-	std::unique_ptr<VkCommandQueue> copyQueue;
+	std::unique_ptr<VkCommandQueue> transferQueue;
 	std::unique_ptr<VkCommandQueue> computeQueue;
 	std::unique_ptr<DeviceManager> device;
 	std::unique_ptr<InstanceManager> vkInstance;
@@ -36,7 +36,6 @@ namespace Terra {
 	std::unique_ptr<DepthBuffer> depthBuffer;
 	std::shared_ptr<ISharedDataContainer> sharedData;
 	std::unique_ptr<RenderEngine> renderEngine;
-	std::unique_ptr<VertexManager> vertexManager;
 
 	namespace Resources {
 		std::unique_ptr<DeviceMemory> gpuOnlyMemory;
@@ -60,14 +59,14 @@ namespace Terra {
 		om.CreateObject(graphicsSyncObjects, { logicalDevice, bufferCount, true }, 1u);
 	}
 
-	void InitCopyQueue(
+	void InitTransferQueue(
 		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
 	) {
-		om.CreateObject(copyQueue, { queue }, 1u);
+		om.CreateObject(transferQueue, { queue }, 1u);
 		om.CreateObject(
-			copyCmdBuffer, { .device = logicalDevice, .queueIndex = queueIndex }, 1u
+			transferCmdBuffer, { .device = logicalDevice, .queueIndex = queueIndex }, 1u
 		);
-		om.CreateObject(copySyncObjects, { .device = logicalDevice }, 1u);
+		om.CreateObject(transferSyncObjects, { .device = logicalDevice }, 1u);
 	}
 
 	void InitComputeQueue(
@@ -106,15 +105,11 @@ namespace Terra {
 
 	void InitRenderEngine(
 		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount,
-		std::vector<std::uint32_t> bufferQueueIndices
+		QueueIndices3 queueIndices
 	) {
 		om.CreateObject<RenderEngineIndirectDraw>(
-			renderEngine, { logicalDevice, bufferCount, std::move(bufferQueueIndices) }, 1u
+			renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
 			);
-	}
-
-	void InitVertexManager(ObjectManager& om, VkDevice logicalDevice) {
-		om.CreateObject<VertexManagerVertex>(vertexManager, { logicalDevice } , 1u);
 	}
 
 	void SetSharedData(

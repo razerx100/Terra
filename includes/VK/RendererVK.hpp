@@ -49,10 +49,6 @@ private:
 	std::uint32_t m_bufferCount;
 	std::uint32_t m_width;
 	std::uint32_t m_height;
-
-	std::uint32_t m_graphicsQueueIndex;
-	std::uint32_t m_computeQueueIndex;
-	std::uint32_t m_copyQueueIndex;
 	ObjectManager m_objectManager;
 };
 #endif

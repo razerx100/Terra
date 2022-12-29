@@ -11,6 +11,22 @@ enum QueueType {
 	GraphicsQueue = 4
 };
 
+struct QueueIndices3 {
+	std::uint32_t transfer;
+	std::uint32_t graphics;
+	std::uint32_t compute;
+};
+
+struct QueueIndicesTG {
+	std::uint32_t transfer;
+	std::uint32_t graphics;
+};
+
+struct QueueIndicesCG {
+	std::uint32_t compute;
+	std::uint32_t graphics;
+};
+
 struct SurfaceInfo {
 	VkSurfaceCapabilitiesKHR capabilities;
 	std::vector<VkSurfaceFormatKHR> formats;

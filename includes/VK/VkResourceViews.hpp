@@ -25,10 +25,10 @@ public:
 	void SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept;
 	void CleanUpResource() noexcept;
 	void RecordCopy(
-		VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
+		VkCommandBuffer transferCmdBuffer, const _vkResourceView& uploadBuffer
 	) noexcept;
 	void ReleaseOwnerShip(
-		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		VkCommandBuffer transferCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 		std::uint32_t newOwnerQueueIndex
 	) noexcept;
 	void AcquireOwnership(
@@ -144,11 +144,11 @@ public:
 
 	void CreateImageView(VkDevice device, VkImageAspectFlagBits aspectBit);
 	void RecordCopy(
-		VkCommandBuffer copyCmdBuffer, const _vkResourceView& uploadBuffer
+		VkCommandBuffer transferCmdBuffer, const _vkResourceView& uploadBuffer
 	) noexcept;
 	void CleanUpImageResourceView() noexcept;
 	void ReleaseOwnerShip(
-		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		VkCommandBuffer transferCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 		std::uint32_t newOwnerQueueIndex
 	) noexcept;
 	void AcquireOwnership(
@@ -220,15 +220,17 @@ public:
 		m_uploadResource.CleanUpResource();
 	}
 
-	void RecordCopy(VkCommandBuffer copyCmdBuffer) noexcept {
-		m_gpuResource.RecordCopy(copyCmdBuffer, m_uploadResource);
+	void RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept {
+		m_gpuResource.RecordCopy(transferCmdBuffer, m_uploadResource);
 	}
 
 	void ReleaseOwnerShip(
-		VkCommandBuffer copyCmdBuffer, std::uint32_t oldOwnerQueueIndex,
+		VkCommandBuffer transferCmdBuffer, std::uint32_t oldOwnerQueueIndex,
 		std::uint32_t newOwnerQueueIndex
 	) noexcept {
-		m_gpuResource.ReleaseOwnerShip(copyCmdBuffer, oldOwnerQueueIndex, newOwnerQueueIndex);
+		m_gpuResource.ReleaseOwnerShip(
+			transferCmdBuffer, oldOwnerQueueIndex, newOwnerQueueIndex
+		);
 	}
 
 	void AcquireOwnership(

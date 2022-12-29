@@ -9,8 +9,7 @@ RendererVK::RendererVK(
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount
 ) : m_appName{appName},
-	m_bufferCount{ bufferCount }, m_width{ width }, m_height{ height },
-	m_graphicsQueueIndex{ 0u }, m_computeQueueIndex{ 0u }, m_copyQueueIndex{ 0u } {
+	m_bufferCount{ bufferCount }, m_width{ width }, m_height{ height } {
 
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
@@ -46,12 +45,10 @@ RendererVK::RendererVK(
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 
 	Terra::InitResources(m_objectManager, physicalDevice, logicalDevice);
-	Terra::InitVertexManager(m_objectManager, logicalDevice);
 
 	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::GraphicsQueue
 	);
-	m_graphicsQueueIndex = graphicsQueueFamilyIndex;
 
 	SwapChainManager::Args swapArguments{
 		.device = logicalDevice,
@@ -71,25 +68,21 @@ RendererVK::RendererVK(
 		bufferCount
 	);
 
-	auto [copyQueueHandle, copyQueueFamilyIndex] = Terra::device->GetQueue(
+	auto [transferQueueHandle, transferQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::TransferQueue
 	);
-	m_copyQueueIndex = copyQueueFamilyIndex;
 
-	Terra::InitCopyQueue(
-		m_objectManager, copyQueueHandle, logicalDevice, copyQueueFamilyIndex
+	Terra::InitTransferQueue(
+		m_objectManager, transferQueueHandle, logicalDevice, transferQueueFamilyIndex
 	);
 
 	auto [computeQueueHandle, computeQueueFamilyIndex] = Terra::device->GetQueue(
 		QueueType::ComputeQueue
 	);
-	m_computeQueueIndex = computeQueueFamilyIndex;
 
 	Terra::InitRenderEngine(
 		m_objectManager, logicalDevice, bufferCount,
-		ResolveQueueIndices(
-			computeQueueFamilyIndex, graphicsQueueFamilyIndex, copyQueueFamilyIndex
-		)
+		{ transferQueueFamilyIndex, graphicsQueueFamilyIndex, computeQueueFamilyIndex }
 	);
 
 	Terra::InitComputeQueue(
@@ -111,12 +104,16 @@ RendererVK::RendererVK(
 
 	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
 
-	m_objectManager.CreateObject(Terra::textureStorage, { logicalDevice, physicalDevice }, 1u);
+	m_objectManager.CreateObject(
+		Terra::textureStorage, {
+			logicalDevice, physicalDevice,
+			QueueIndicesTG{transferQueueFamilyIndex, graphicsQueueFamilyIndex}
+		}, 1u
+	);
 	m_objectManager.CreateObject(
 		Terra::bufferManager,
-		{ logicalDevice,  bufferCount, ResolveQueueIndices(
-				computeQueueFamilyIndex, graphicsQueueFamilyIndex
-			)
+		{ logicalDevice,  bufferCount,
+			QueueIndicesCG{computeQueueFamilyIndex, graphicsQueueFamilyIndex}
 		},
 		1u
 	);
@@ -138,7 +135,7 @@ void RendererVK::SubmitModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize, size_t strideSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
-	Terra::vertexManager->AddGlobalVertices(
+	Terra::renderEngine->AddGlobalVertices(
 		Terra::device->GetLogicalDevice(),
 		std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
 	);
@@ -231,7 +228,6 @@ void RendererVK::ProcessData() {
 
 	// Bind Buffers to memory
 	Terra::bufferManager->BindResourceToMemory(logicalDevice);
-	Terra::vertexManager->BindResourceToMemory(logicalDevice);
 	Terra::renderEngine->BindResourcesToMemory(logicalDevice);
 	Terra::textureStorage->BindMemories(logicalDevice);
 
@@ -250,58 +246,33 @@ void RendererVK::ProcessData() {
 
 	while (works != 0u);
 
-	// Check if queue families are the same
-	bool copyAndGraphics = m_copyQueueIndex == m_graphicsQueueIndex ? true : false;
-	bool copyAndCompute = m_copyQueueIndex == m_computeQueueIndex ? true : false;
-
 	// Upload to GPU
-	Terra::copyCmdBuffer->ResetFirstBuffer();
-	const VkCommandBuffer copyCmdBuffer = Terra::copyCmdBuffer->GetFirstCommandBuffer();
+	Terra::transferCmdBuffer->ResetFirstBuffer();
+	const VkCommandBuffer transferCmdBuffer = Terra::transferCmdBuffer->GetFirstCommandBuffer();
 
-	Terra::vertexManager->RecordCopy(copyCmdBuffer);
-	Terra::renderEngine->RecordCopy(copyCmdBuffer);
-	Terra::textureStorage->RecordUploads(copyCmdBuffer);
+	Terra::renderEngine->RecordCopy(transferCmdBuffer);
+	Terra::textureStorage->RecordUploads(transferCmdBuffer);
 
-	// If copy and graphics queues are different release ownership from copy
-	if (!copyAndGraphics) {
-		Terra::vertexManager->ReleaseOwnerships(
-			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
-		);
-		Terra::textureStorage->ReleaseOwnerships(
-			copyCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
-		);
-	}
+	Terra::textureStorage->ReleaseOwnerships(transferCmdBuffer);
+	Terra::renderEngine->ReleaseOwnership(transferCmdBuffer);
 
-	// If copy and compute queues are different release ownership from copy
-	if (!copyAndCompute)
-		Terra::renderEngine->ReleaseOwnership(
-			copyCmdBuffer, m_copyQueueIndex, m_computeQueueIndex
-		);
+	Terra::transferCmdBuffer->CloseFirstBuffer();
 
-	Terra::copyCmdBuffer->CloseFirstBuffer();
-
-	Terra::copyQueue->SubmitCommandBuffer(
-		copyCmdBuffer, Terra::copySyncObjects->GetFrontFence()
+	Terra::transferQueue->SubmitCommandBuffer(
+		transferCmdBuffer, Terra::transferSyncObjects->GetFrontFence()
 	);
-	Terra::copySyncObjects->WaitForFrontFence();
-	Terra::copySyncObjects->ResetFrontFence();
+	Terra::transferSyncObjects->WaitForFrontFence();
+	Terra::transferSyncObjects->ResetFrontFence();
 
 	// Transition Images to Fragment Optimal
 	Terra::graphicsCmdBuffer->ResetFirstBuffer();
 
 	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetFirstCommandBuffer();
 
-	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
+	Terra::textureStorage->AcquireOwnerShips(graphicsCmdBuffer);
+	Terra::renderEngine->AcquireOwnerShipGraphics(graphicsCmdBuffer);
 
-	// If copy and graphics queues are different release ownership from copy
-	if (!copyAndGraphics) {
-		Terra::vertexManager->AcquireOwnerShips(
-			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
-		);
-		Terra::textureStorage->AcquireOwnerShips(
-			graphicsCmdBuffer, m_copyQueueIndex, m_graphicsQueueIndex
-		);
-	}
+	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
 
 	Terra::graphicsCmdBuffer->CloseFirstBuffer();
 
@@ -311,24 +282,20 @@ void RendererVK::ProcessData() {
 	Terra::graphicsSyncObjects->WaitForFrontFence();
 	Terra::graphicsSyncObjects->ResetFrontFence();
 
-	if (!copyAndCompute) {
-		// Transfer ownership
-		Terra::computeCmdBuffer->ResetFirstBuffer();
+	// Compute
+	Terra::computeCmdBuffer->ResetFirstBuffer();
 
-		const VkCommandBuffer computeCmdBuffer = Terra::computeCmdBuffer->GetFirstCommandBuffer();
+	const VkCommandBuffer computeCmdBuffer = Terra::computeCmdBuffer->GetFirstCommandBuffer();
 
-		Terra::renderEngine->AcquireOwnerShip(
-			computeCmdBuffer, m_copyQueueIndex, m_computeQueueIndex
-		);
+	Terra::renderEngine->AcquireOwnerShipCompute(computeCmdBuffer);
 
-		Terra::computeCmdBuffer->CloseFirstBuffer();
+	Terra::computeCmdBuffer->CloseFirstBuffer();
 
-		Terra::computeQueue->SubmitCommandBuffer(
-			computeCmdBuffer, Terra::computeSyncObjects->GetFrontFence()
-		);
-		Terra::computeSyncObjects->WaitForFrontFence();
-		Terra::computeSyncObjects->ResetFrontFence();
-	}
+	Terra::computeQueue->SubmitCommandBuffer(
+		computeCmdBuffer, Terra::computeSyncObjects->GetFrontFence()
+	);
+	Terra::computeSyncObjects->WaitForFrontFence();
+	Terra::computeSyncObjects->ResetFrontFence();
 
 	Terra::textureStorage->SetDescriptorLayouts();
 
@@ -339,7 +306,6 @@ void RendererVK::ProcessData() {
 
 	// Cleanup Upload Buffers
 	Terra::Resources::uploadContainer.reset();
-	Terra::vertexManager->ReleaseUploadResources();
 	Terra::renderEngine->ReleaseUploadResources();
 	Terra::textureStorage->ReleaseUploadBuffers();
 	Terra::Resources::uploadMemory.reset();

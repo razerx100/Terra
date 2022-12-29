@@ -7,16 +7,16 @@
 BufferManager::BufferManager(Args& arguments)
 	: m_cameraBuffer{ arguments.device.value() }, m_modelBuffers{ arguments.device.value() },
 	m_bufferCount{ arguments.bufferCount.value() },
-	m_computeAndGraphicsQueueIndices{
-		std::move(arguments.computeAndGraphicsQueueIndices.value())
-	} {}
+	m_queueIndices{ arguments.queueIndices.value() } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	static constexpr size_t cameraBufferSize = sizeof(DirectX::XMMATRIX) * 2u;
 
+	auto resolvedIndices = ResolveQueueIndices(m_queueIndices.compute, m_queueIndices.graphics);
+
 	m_cameraBuffer.CreateResource(
 		device, cameraBufferSize, m_bufferCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		m_computeAndGraphicsQueueIndices
+		resolvedIndices
 	);
 
 	m_cameraBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
@@ -39,7 +39,7 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 
 	m_modelBuffers.CreateResource(
 		device, static_cast<VkDeviceSize>(modelBufferSize), m_bufferCount,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, m_computeAndGraphicsQueueIndices
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, resolvedIndices
 	);
 	m_modelBuffers.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
