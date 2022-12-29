@@ -15,9 +15,12 @@ struct ModelConstantBuffer {
 	std::uint32_t textureIndex;
 	float padding0[3];
 	DirectX::XMFLOAT3 modelOffset;
-	DirectX::XMFLOAT4 boundingBox[2u]; // GLSL's vec3 is actually vec4.
-	// So, Float4 should be used when contiguous vec3s are required. Float3 is fine
-	// for single vec3
+	float padding1;
+	DirectX::XMFLOAT3 positiveBounds;
+	float padding2;
+	DirectX::XMFLOAT3 negativeBounds;
+	float padding3;
+	// GLSL's vec3 is actually vec4.
 };
 
 class BufferManager {
