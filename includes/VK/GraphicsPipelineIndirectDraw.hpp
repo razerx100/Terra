@@ -14,7 +14,7 @@ public:
 	void CreateGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath
-	);
+	) noexcept;
 
 	void BindGraphicsPipeline(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 	void DrawModels(

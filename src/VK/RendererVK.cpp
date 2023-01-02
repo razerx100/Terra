@@ -126,8 +126,10 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 	Terra::renderEngine->SetBackgroundColour(colourVector);
 }
 
-void RendererVK::SubmitModels(std::vector<std::shared_ptr<IModel>>&& models) {
-	Terra::renderEngine->RecordModelDataSet(models, L"FragmentShader.spv");
+void RendererVK::SubmitModelSet(
+	std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
+) {
+	Terra::renderEngine->RecordModelDataSet(models, fragmentShader + L".spv");
 	Terra::bufferManager->AddOpaqueModels(std::move(models));
 }
 

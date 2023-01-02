@@ -61,7 +61,7 @@ void GraphicsPipelineIndirectDraw::ConfigureGraphicsPipeline(
 void GraphicsPipelineIndirectDraw::CreateGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath
-) {
+) noexcept {
 	m_graphicsPipeline = _createGraphicsPipeline(
 		device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
 	);
