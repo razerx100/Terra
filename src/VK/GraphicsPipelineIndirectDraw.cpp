@@ -39,6 +39,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsP
 		device, graphicsLayout, renderPass,
 		VertexLayout()
 		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
+		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
 		.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u)
 		.InitLayout(),
 		vs->GetByteCode(), fs->GetByteCode()

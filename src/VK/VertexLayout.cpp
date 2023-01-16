@@ -1,8 +1,7 @@
 #include <VertexLayout.hpp>
 
 VertexLayout::VertexLayout() noexcept
-	: m_createInfo{}, m_bindingDesc{},
-	m_binding{ 0u }, m_vertexOffset{ 0u }, m_position{ 0u } {}
+	: m_createInfo{}, m_bindingDesc{}, m_binding{ 0u }, m_vertexOffset{ 0u }, m_position{ 0u } {}
 
 const VkPipelineVertexInputStateCreateInfo* VertexLayout::GetInputInfo() const noexcept {
 	return &m_createInfo;
@@ -18,6 +17,8 @@ VertexLayout& VertexLayout::AddInput(VkFormat format, std::uint32_t sizeInBytes)
 }
 
 VertexLayout& VertexLayout::InitLayout() noexcept {
+	// These are member data, since the pointer of create info is required in the
+	// GetInputInfo method
 	m_bindingDesc.binding = m_binding;
 	m_bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	m_bindingDesc.stride = m_vertexOffset;
