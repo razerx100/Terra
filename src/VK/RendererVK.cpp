@@ -126,14 +126,14 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 	Terra::renderEngine->SetBackgroundColour(colourVector);
 }
 
-void RendererVK::SubmitModelSet(
+void RendererVK::AddModelSet(
 	std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
 ) {
 	Terra::renderEngine->RecordModelDataSet(models, fragmentShader + L".spv");
 	Terra::bufferManager->AddOpaqueModels(std::move(models));
 }
 
-void RendererVK::SubmitModelInputs(
+void RendererVK::AddModelInputs(
 	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) {
@@ -313,7 +313,7 @@ void RendererVK::ProcessData() {
 	Terra::Resources::uploadMemory.reset();
 }
 
-size_t RendererVK::RegisterResource(
+size_t RendererVK::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
 	return Terra::textureStorage->AddTexture(
