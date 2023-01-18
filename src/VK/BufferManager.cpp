@@ -6,97 +6,192 @@
 
 BufferManager::BufferManager(Args& arguments)
 	: m_cameraBuffer{ arguments.device.value() }, m_modelBuffers{ arguments.device.value() },
+	m_materialBuffers{ arguments.device.value() }, m_lightBuffers{ arguments.device.value() },
+	m_fragmentDataBuffer{ arguments.device.value() },
 	m_bufferCount{ arguments.bufferCount.value() },
 	m_queueIndices{ arguments.queueIndices.value() } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
+	// Camera
 	static constexpr size_t cameraBufferSize = sizeof(DirectX::XMMATRIX) * 2u;
 
 	auto resolvedIndices = ResolveQueueIndices(m_queueIndices.compute, m_queueIndices.graphics);
 
-	m_cameraBuffer.CreateResource(
-		device, cameraBufferSize, m_bufferCount, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		resolvedIndices
+	CreateBufferComputeAndGraphics(
+		device, m_cameraBuffer, static_cast<VkDeviceSize>(cameraBufferSize),
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		{ .bindingSlot = 0u, .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER }, resolvedIndices
 	);
 
-	m_cameraBuffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
-
-	DescriptorInfo cameraDescInfo{
-		.bindingSlot = 0u,
-		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-	};
-	auto cameraBufferInfos = m_cameraBuffer.GetDescBufferInfoSplit(m_bufferCount);
-
-	Terra::graphicsDescriptorSet->AddBuffersSplit(
-		cameraDescInfo, cameraBufferInfos, VK_SHADER_STAGE_VERTEX_BIT
-	);
-	Terra::computeDescriptorSet->AddBuffersSplit(
-		cameraDescInfo, std::move(cameraBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
-	);
-
+	// Model
 	const size_t modelCount = std::size(m_opaqueModels);
-	const size_t modelBufferSize = sizeof(ModelConstantBuffer) * modelCount;
+	const size_t modelBufferSize = sizeof(ModelBuffer) * modelCount;
 
-	m_modelBuffers.CreateResource(
-		device, static_cast<VkDeviceSize>(modelBufferSize), m_bufferCount,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, resolvedIndices
-	);
-	m_modelBuffers.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
-
-	DescriptorInfo modelDescInfo{
-		.bindingSlot = 2u,
-		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
-	};
-	auto modelBufferInfos = m_modelBuffers.GetDescBufferInfoSplit(m_bufferCount);
-
-	Terra::graphicsDescriptorSet->AddBuffersSplit(
-		modelDescInfo, modelBufferInfos, VK_SHADER_STAGE_VERTEX_BIT
+	CreateBufferComputeAndGraphics(
+		device, m_modelBuffers, static_cast<VkDeviceSize>(modelBufferSize),
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		{ .bindingSlot = 1u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }, resolvedIndices
 	);
 
-	modelDescInfo.bindingSlot = 1u;
-	Terra::computeDescriptorSet->AddBuffersSplit(
-		modelDescInfo, std::move(modelBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
+	// Material
+	const size_t materialBufferSize = sizeof(MaterialBuffer) * modelCount;
+
+	CreateBufferGraphics(
+		device, m_materialBuffers, static_cast<VkDeviceSize>(materialBufferSize),
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		{ .bindingSlot = 3u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }
+	);
+
+	// Light
+	const size_t lightBufferSize = sizeof(LightBuffer) * std::size(m_lightModelIndices);
+
+	CreateBufferGraphics(
+		device, m_lightBuffers, static_cast<VkDeviceSize>(lightBufferSize),
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		{ .bindingSlot = 4u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }
+	);
+
+	// Fragment Data
+	static constexpr size_t fragmentDataBufferSize = sizeof(FragmentData);
+
+	CreateBufferGraphics(
+		device, m_fragmentDataBuffer, static_cast<VkDeviceSize>(fragmentDataBufferSize),
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		{ .bindingSlot = 5u, .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER }
 	);
 }
 
 void BufferManager::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept {
+	for (size_t index = 0u; index < std::size(models); ++index)
+		if (models[index]->IsLightSource())
+			m_lightModelIndices.emplace_back(std::size(m_opaqueModels) + index);
+
 	std::ranges::move(models, std::back_inserter(m_opaqueModels));
 }
 
-void BufferManager::Update(VkDeviceSize index) const noexcept {
+void BufferManager::Update(VkDeviceSize bufferIndex) const noexcept {
 	std::uint8_t* cpuMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
 
-	Terra::cameraManager->CopyData(cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(index));
-
-	UpdateModelData(index);
+	UpdateCameraData(bufferIndex, cpuMemoryStart);
+	UpdatePerModelData(bufferIndex, cpuMemoryStart);
+	UpdateLightData(bufferIndex, cpuMemoryStart);
+	UpdateFragmentData(bufferIndex, cpuMemoryStart);
 }
 
-void BufferManager::UpdateModelData(VkDeviceSize index) const noexcept {
-	size_t offset = 0u;
-	constexpr size_t bufferStride = sizeof(ModelConstantBuffer);
+void BufferManager::UpdateCameraData(
+	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+) const noexcept {
+	Terra::cameraManager->CopyData(
+		cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(bufferIndex)
+	);
+}
 
-	std::uint8_t* cpuWriteStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
-	const VkDeviceSize modelBuffersOffset = m_modelBuffers.GetMemoryOffset(index);
+void BufferManager::UpdatePerModelData(
+	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+) const noexcept {
+	size_t modelOffset = 0u;
+	size_t materialOffset = 0u;
+
+	std::uint8_t* modelBuffersOffset =
+		cpuMemoryStart + m_modelBuffers.GetMemoryOffset(bufferIndex);
+	std::uint8_t* materialBuffersOffset =
+		cpuMemoryStart + m_materialBuffers.GetMemoryOffset(bufferIndex);
 
 	for (auto& model : m_opaqueModels) {
-		ModelConstantBuffer modelBuffer{};
-		modelBuffer.textureIndex = model->GetTextureIndex();
-		modelBuffer.uvInfo = model->GetUVInfo();
-		modelBuffer.modelMatrix = model->GetModelMatrix();
-		modelBuffer.modelOffset = model->GetModelOffset();
-
 		const auto& boundingBox = model->GetBoundingBox();
-		modelBuffer.positiveBounds = boundingBox.positiveAxes;
-		modelBuffer.negativeBounds = boundingBox.negativeAxes;
 
-		// Copy Model Buffer
-		memcpy(cpuWriteStart + modelBuffersOffset + offset, &modelBuffer, bufferStride);
+		ModelBuffer modelBuffer{
+			.uvInfo = model->GetUVInfo(),
+			.modelMatrix = model->GetModelMatrix(),
+			.textureIndex = model->GetTextureIndex(),
+			.modelOffset = model->GetModelOffset(),
+			.positiveBounds = boundingBox.positiveAxes,
+			.negativeBounds = boundingBox.negativeAxes
+		};
+		CopyStruct(modelBuffer, modelBuffersOffset, modelOffset);
+
+		const auto& modelMaterial = model->GetMaterial();
+
+		MaterialBuffer material{
+			.ambient = modelMaterial.ambient,
+			.diffuse = modelMaterial.diffuse,
+			.specular = modelMaterial.specular,
+			.shininess = modelMaterial.shininess
+		};
+		CopyStruct(material, materialBuffersOffset, materialOffset);
+	}
+}
+
+void BufferManager::UpdateLightData(
+	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+) const noexcept {
+	size_t offset = 0u;
+	static constexpr size_t bufferStride = sizeof(LightBuffer);
+
+	const VkDeviceSize lightBuffersOffset = m_lightBuffers.GetMemoryOffset(bufferIndex);
+
+	for (auto& lightIndex : m_lightModelIndices) {
+		auto& model = m_opaqueModels[lightIndex];
+		const auto& modelMaterial = model->GetMaterial();
+
+		LightBuffer light {
+			.position = model->GetModelOffset(),
+			.ambient = modelMaterial.ambient,
+			.diffuse = modelMaterial.diffuse,
+			.specular = modelMaterial.specular
+		};
+
+		memcpy(cpuMemoryStart + lightBuffersOffset + offset, &light, bufferStride);
 
 		offset += bufferStride;
 	}
 }
 
+void BufferManager::UpdateFragmentData(
+	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+) const noexcept {
+	const VkDeviceSize fragmentDataOffset = m_fragmentDataBuffer.GetMemoryOffset(bufferIndex);
+	const auto lightCount = static_cast<std::uint32_t>(std::size(m_lightModelIndices));
+
+	memcpy(cpuMemoryStart + fragmentDataOffset, &lightCount, sizeof(FragmentData));
+}
+
 void BufferManager::BindResourceToMemory(VkDevice device) const noexcept {
 	m_modelBuffers.BindResourceToMemory(device);
 	m_cameraBuffer.BindResourceToMemory(device);
+	m_materialBuffers.BindResourceToMemory(device);
+	m_lightBuffers.BindResourceToMemory(device);
+	m_fragmentDataBuffer.BindResourceToMemory(device);
+}
+
+void BufferManager::CreateBufferComputeAndGraphics(
+	VkDevice device, VkResourceView& buffer, VkDeviceSize bufferSize,
+	VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo,
+	const std::vector<std::uint32_t>& resolvedQueueIndices
+) const noexcept {
+	buffer.CreateResource(device, bufferSize, m_bufferCount, bufferType, resolvedQueueIndices);
+	buffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
+
+	auto bufferInfos = buffer.GetDescBufferInfoSplit(m_bufferCount);
+
+	Terra::graphicsDescriptorSet->AddBuffersSplit(
+		descInfo, bufferInfos, VK_SHADER_STAGE_VERTEX_BIT
+	);
+	Terra::computeDescriptorSet->AddBuffersSplit(
+		descInfo, std::move(bufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
+	);
+}
+
+void BufferManager::CreateBufferGraphics(
+	VkDevice device, VkResourceView& buffer, VkDeviceSize bufferSize,
+	VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo
+) const noexcept {
+	buffer.CreateResource(device, bufferSize, m_bufferCount, bufferType);
+	buffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
+
+	auto bufferInfos = buffer.GetDescBufferInfoSplit(m_bufferCount);
+
+	Terra::graphicsDescriptorSet->AddBuffersSplit(
+		descInfo, bufferInfos, VK_SHADER_STAGE_FRAGMENT_BIT
+	);
 }

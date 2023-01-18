@@ -55,7 +55,7 @@ void TextureStorage::BindMemories(VkDevice device) {
 
 void TextureStorage::SetDescriptorLayouts() const noexcept {
 	DescriptorInfo descInfo{};
-	descInfo.bindingSlot = 1u;
+	descInfo.bindingSlot = 2u;
 	descInfo.descriptorCount = static_cast<std::uint32_t>(std::size(m_textures));
 	descInfo.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
