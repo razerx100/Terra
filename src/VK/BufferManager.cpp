@@ -71,10 +71,11 @@ void BufferManager::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& model
 
 void BufferManager::Update(VkDeviceSize bufferIndex) const noexcept {
 	std::uint8_t* cpuMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
+	const DirectX::XMMATRIX viewMatrix = Terra::sharedData->GetViewMatrix();
 
 	UpdateCameraData(bufferIndex, cpuMemoryStart);
-	UpdatePerModelData(bufferIndex, cpuMemoryStart);
-	UpdateLightData(bufferIndex, cpuMemoryStart);
+	UpdatePerModelData(bufferIndex, cpuMemoryStart, viewMatrix);
+	UpdateLightData(bufferIndex, cpuMemoryStart, viewMatrix);
 	UpdateFragmentData(bufferIndex, cpuMemoryStart);
 }
 
@@ -87,7 +88,7 @@ void BufferManager::UpdateCameraData(
 }
 
 void BufferManager::UpdatePerModelData(
-	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart, const DirectX::XMMATRIX& viewMatrix
 ) const noexcept {
 	size_t modelOffset = 0u;
 	size_t materialOffset = 0u;
@@ -99,14 +100,18 @@ void BufferManager::UpdatePerModelData(
 
 	for (auto& model : m_opaqueModels) {
 		const auto& boundingBox = model->GetBoundingBox();
+		const DirectX::XMMATRIX modelMatrix = model->GetModelMatrix();
 
 		ModelBuffer modelBuffer{
 			.uvInfo = model->GetUVInfo(),
-			.modelMatrix = model->GetModelMatrix(),
+			.modelMatrix = modelMatrix,
 			.textureIndex = model->GetTextureIndex(),
 			.modelOffset = model->GetModelOffset(),
 			.positiveBounds = boundingBox.positiveAxes,
-			.negativeBounds = boundingBox.negativeAxes
+			.negativeBounds = boundingBox.negativeAxes,
+			.viewNormalMatrix = DirectX::XMMatrixTranspose(
+				DirectX::XMMatrixInverse(nullptr, modelMatrix * viewMatrix)
+			)
 		};
 		CopyStruct(modelBuffer, modelBuffersOffset, modelOffset);
 
@@ -123,14 +128,12 @@ void BufferManager::UpdatePerModelData(
 }
 
 void BufferManager::UpdateLightData(
-	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart, const DirectX::XMMATRIX& viewMatrix
 ) const noexcept {
 	size_t offset = 0u;
 
 	std::uint8_t* lightBuffersOffset =
 		cpuMemoryStart + m_lightBuffers.GetMemoryOffset(bufferIndex);
-
-	const DirectX::XMMATRIX viewMatrix = Terra::sharedData->GetViewMatrix();
 
 	for (auto& lightIndex : m_lightModelIndices) {
 		auto& model = m_opaqueModels[lightIndex];
@@ -142,9 +145,10 @@ void BufferManager::UpdateLightData(
 			.specular = modelMaterial.specular
 		};
 
-		DirectX::XMFLOAT3 worldPosition = model->GetModelOffset();
+		DirectX::XMFLOAT3 modelPosition = model->GetModelOffset();
+		DirectX::XMMATRIX viewSpace = model->GetModelMatrix() * viewMatrix;
 		DirectX::XMVECTOR viewPosition = DirectX::XMVector3Transform(
-			DirectX::XMLoadFloat3(&worldPosition), viewMatrix
+			DirectX::XMLoadFloat3(&modelPosition), viewMatrix
 		);
 		DirectX::XMStoreFloat3(&light.position, viewPosition);
 

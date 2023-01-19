@@ -31,10 +31,12 @@ private:
 		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
 	) const noexcept;
 	void UpdatePerModelData(
-		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart,
+		const DirectX::XMMATRIX& viewMatrix
 	) const noexcept;
 	void UpdateLightData(
-		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
+		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart,
+		const DirectX::XMMATRIX& viewMatrix
 	) const noexcept;
 	void UpdateFragmentData(
 		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
@@ -83,6 +85,7 @@ struct ModelBuffer {
 	float padding2;
 	DirectX::XMFLOAT3 negativeBounds;
 	float padding3;
+	DirectX::XMMATRIX viewNormalMatrix;
 	// GLSL's vec3 is actually vec4.
 };
 
