@@ -126,24 +126,29 @@ void BufferManager::UpdateLightData(
 	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
 ) const noexcept {
 	size_t offset = 0u;
-	static constexpr size_t bufferStride = sizeof(LightBuffer);
 
-	const VkDeviceSize lightBuffersOffset = m_lightBuffers.GetMemoryOffset(bufferIndex);
+	std::uint8_t* lightBuffersOffset =
+		cpuMemoryStart + m_lightBuffers.GetMemoryOffset(bufferIndex);
+
+	const DirectX::XMMATRIX viewMatrix = Terra::sharedData->GetViewMatrix();
 
 	for (auto& lightIndex : m_lightModelIndices) {
 		auto& model = m_opaqueModels[lightIndex];
 		const auto& modelMaterial = model->GetMaterial();
 
 		LightBuffer light {
-			.position = model->GetModelOffset(),
 			.ambient = modelMaterial.ambient,
 			.diffuse = modelMaterial.diffuse,
 			.specular = modelMaterial.specular
 		};
 
-		memcpy(cpuMemoryStart + lightBuffersOffset + offset, &light, bufferStride);
+		DirectX::XMFLOAT3 worldPosition = model->GetModelOffset();
+		DirectX::XMVECTOR viewPosition = DirectX::XMVector3Transform(
+			DirectX::XMLoadFloat3(&worldPosition), viewMatrix
+		);
+		DirectX::XMStoreFloat3(&light.position, viewPosition);
 
-		offset += bufferStride;
+		CopyStruct(light, lightBuffersOffset, offset);
 	}
 }
 
