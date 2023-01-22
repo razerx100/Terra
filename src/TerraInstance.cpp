@@ -7,9 +7,9 @@ Renderer* CreateTerraInstance(
 	void* windowHandle,
 	void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	std::uint32_t bufferCount
+	RenderEngineType engineType, std::uint32_t bufferCount
 ) {
 	return new RendererVK(
-		appName, windowHandle, moduleHandle, width, height, bufferCount
+		appName, windowHandle, moduleHandle, width, height, bufferCount, engineType
 	);
 }

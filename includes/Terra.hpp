@@ -1,6 +1,7 @@
 #ifndef TERRA_HPP_
 #define TERRA_HPP_
 #include <IThreadPool.hpp>
+#include <Renderer.hpp>
 #include <DebugLayerManager.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkSyncObjects.hpp>
@@ -84,8 +85,8 @@ namespace Terra {
 		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount
 	);
 	void InitRenderEngine(
-		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount,
-		QueueIndices3 queueIndices
+		ObjectManager& om, VkDevice logicalDevice, RenderEngineType engineType,
+		std::uint32_t bufferCount, QueueIndices3 queueIndices
 	);
 	void SetSharedData(
 		ObjectManager& om, std::shared_ptr<ISharedDataContainer>&& sharedDataArg

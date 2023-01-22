@@ -104,8 +104,8 @@ namespace Terra {
 	}
 
 	void InitRenderEngine(
-		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount,
-		QueueIndices3 queueIndices
+		ObjectManager& om, VkDevice logicalDevice, RenderEngineType engineType,
+		std::uint32_t bufferCount, QueueIndices3 queueIndices
 	) {
 		om.CreateObject<RenderEngineIndirectDraw>(
 			renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u

@@ -13,6 +13,6 @@ TERRA_DLL Renderer* __cdecl CreateTerraInstance(
 	void* windowHandle,
 	void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	std::uint32_t bufferCount = 2u
+	RenderEngineType engineType, std::uint32_t bufferCount = 2u
 );
 #endif

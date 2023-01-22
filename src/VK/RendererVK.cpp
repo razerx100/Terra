@@ -7,7 +7,7 @@ RendererVK::RendererVK(
 	const char* appName,
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	std::uint32_t bufferCount
+	std::uint32_t bufferCount, RenderEngineType engineType
 ) : m_appName{appName},
 	m_bufferCount{ bufferCount }, m_width{ width }, m_height{ height } {
 
@@ -81,7 +81,7 @@ RendererVK::RendererVK(
 	);
 
 	Terra::InitRenderEngine(
-		m_objectManager, logicalDevice, bufferCount,
+		m_objectManager, logicalDevice, engineType, bufferCount,
 		{ transferQueueFamilyIndex, graphicsQueueFamilyIndex, computeQueueFamilyIndex }
 	);
 
