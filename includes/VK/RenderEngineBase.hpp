@@ -2,7 +2,9 @@
 #define RENDER_ENGINE_BASE_HPP_
 #include <memory>
 #include <concepts>
+#include <span>
 #include <PipelineLayout.hpp>
+#include <GraphicsPipelineBase.hpp>
 #include <RenderEngine.hpp>
 #include <RenderPassManager.hpp>
 
@@ -21,6 +23,10 @@ protected:
 	std::unique_ptr<PipelineLayout> CreateGraphicsPipelineLayout(
 		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
 	) const noexcept;
+
+	using WaitSemaphoreData = std::pair<std::span<VkSemaphore>, std::span<VkPipelineStageFlags>>;
+
+	virtual WaitSemaphoreData GetWaitSemaphores() const noexcept = 0;
 
 	template<std::derived_from<GraphicsPipelineBase> Pipeline>
 	void CreateGraphicsPipelines(

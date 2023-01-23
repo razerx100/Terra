@@ -125,6 +125,21 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 		m_graphicsPipelines.emplace_back(std::move(graphicsPipeline));
 }
 
+RenderEngineBase::WaitSemaphoreData RenderEngineIndirectDraw::GetWaitSemaphores(
+) const noexcept {
+	VkSemaphore waitSemaphores[] = {
+		Terra::computeSyncObjects->GetFrontSemaphore(),
+		Terra::graphicsSyncObjects->GetFrontSemaphore()
+	};
+
+	static VkPipelineStageFlags waitStages[] = {
+		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	};
+
+	return { waitSemaphores, waitStages };
+}
+
 void RenderEngineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	m_computePipeline.CreateBuffers(device);
 }
@@ -237,4 +252,17 @@ void RenderEngineIndividualDraw::RecordModelArguments(
 
 		m_modelArguments.emplace_back(arguments);
 	}
+}
+
+RenderEngineBase::WaitSemaphoreData RenderEngineIndividualDraw::GetWaitSemaphores(
+) const noexcept {
+	VkSemaphore waitSemaphores[] = {
+		Terra::graphicsSyncObjects->GetFrontSemaphore()
+	};
+
+	static VkPipelineStageFlags waitStages[] = {
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	};
+
+	return { waitSemaphores, waitStages };
 }

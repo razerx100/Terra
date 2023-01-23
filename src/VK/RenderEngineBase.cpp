@@ -7,18 +7,12 @@ void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIn
 
 	Terra::graphicsCmdBuffer->CloseBuffer(frameIndex);
 
-	VkSemaphore waitSemaphores[] = {
-		Terra::computeSyncObjects->GetFrontSemaphore(),
-		Terra::graphicsSyncObjects->GetFrontSemaphore()
-	};
-	VkPipelineStageFlags waitStages[] = {
-		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-	};
+	const auto& waitSemaphores = GetWaitSemaphores();
+	static auto semaphoreCount = static_cast<std::uint32_t>(std::size(waitSemaphores.first));
 
 	Terra::graphicsQueue->SubmitCommandBuffer(
 		graphicsCmdBuffer, Terra::graphicsSyncObjects->GetFrontFence(),
-		2u, waitSemaphores, waitStages
+		semaphoreCount, std::data(waitSemaphores.first), std::data(waitSemaphores.second)
 	);
 	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(frameIndex));
 }

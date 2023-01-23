@@ -67,6 +67,8 @@ private:
 
 	void ExecuteComputeStage(size_t frameIndex);
 
+	WaitSemaphoreData GetWaitSemaphores() const noexcept override;
+
 	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndirectDraw>;
 
 private:
@@ -94,9 +96,11 @@ public:
 	) noexcept final;
 
 private:
-	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndividualDraw>;
+	WaitSemaphoreData GetWaitSemaphores() const noexcept override;
 
 	void RecordModelArguments(const std::vector<std::shared_ptr<IModel>>& models) noexcept;
+
+	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndividualDraw>;
 
 private:
 	GraphicsPipeline m_graphicsPipeline0;
