@@ -1,13 +1,12 @@
 #ifdef TERRA_WIN32
 #include <DisplayManagerWin32.hpp>
 #include <SurfaceManagerWin32.hpp>
-#include <VertexManagerVertex.hpp>
 #else
 #include <DisplayManagerVK.hpp>
 #endif
 
 #include <Terra.hpp>
-#include <RenderEngineIndirectDraw.hpp>
+#include <RenderEngineVertexShader.hpp>
 
 namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;
@@ -107,9 +106,14 @@ namespace Terra {
 		ObjectManager& om, VkDevice logicalDevice, RenderEngineType engineType,
 		std::uint32_t bufferCount, QueueIndices3 queueIndices
 	) {
-		om.CreateObject<RenderEngineIndirectDraw>(
-			renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
-			);
+		if (engineType == RenderEngineType::IndirectDraw)
+			om.CreateObject<RenderEngineIndirectDraw>(
+				renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
+				);
+		else if (engineType == RenderEngineType::IndividualDraw)
+			om.CreateObject<RenderEngineIndividualDraw>(
+				renderEngine, { logicalDevice, queueIndices }, 1u
+				);
 	}
 
 	void SetSharedData(

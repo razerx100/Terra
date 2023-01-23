@@ -11,12 +11,6 @@ enum QueueType {
 	GraphicsQueue = 4
 };
 
-struct QueueIndices3 {
-	std::uint32_t transfer;
-	std::uint32_t graphics;
-	std::uint32_t compute;
-};
-
 struct QueueIndicesTG {
 	std::uint32_t transfer;
 	std::uint32_t graphics;
@@ -25,6 +19,20 @@ struct QueueIndicesTG {
 struct QueueIndicesCG {
 	std::uint32_t compute;
 	std::uint32_t graphics;
+};
+
+struct QueueIndices3 {
+	std::uint32_t transfer;
+	std::uint32_t graphics;
+	std::uint32_t compute;
+
+	inline operator QueueIndicesTG() const {
+		return { transfer, graphics };
+	}
+
+	inline operator QueueIndicesCG() const {
+		return { compute, graphics };
+	}
 };
 
 struct SurfaceInfo {

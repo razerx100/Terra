@@ -29,14 +29,15 @@ public:
 	virtual void RecordModelDataSet(
 		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 	) noexcept = 0;
-	virtual void CreateBuffers(VkDevice device) noexcept = 0;
 	virtual void BindResourcesToMemory(VkDevice device) = 0;
-	virtual void CopyData() noexcept = 0;
 	virtual void RecordCopy(VkCommandBuffer transferBuffer) noexcept = 0;
 	virtual void ReleaseUploadResources() noexcept = 0;
 	virtual void AcquireOwnerShipGraphics(VkCommandBuffer graphicsCmdBuffer) noexcept = 0;
-	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept = 0;
 	virtual void ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept = 0;
+
+	virtual void CreateBuffers(VkDevice device) noexcept;
+	virtual void CopyData() noexcept;
+	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept;
 
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 	void SetShaderPath(const wchar_t* path) noexcept;

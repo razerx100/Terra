@@ -1,12 +1,12 @@
-#ifndef VERTEX_MANAGER_VERTEX_HPP_
-#define VERTEX_MANAGER_VERTEX_HPP_
+#ifndef VERTEX_MANAGER_VERTEX_SHADER_HPP_
+#define VERTEX_MANAGER_VERTEX_SHADER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <VkResourceViews.hpp>
 
-class VertexManagerVertex {
+class VertexManagerVertexShader {
 public:
-	VertexManagerVertex(VkDevice device) noexcept;
+	VertexManagerVertexShader(VkDevice device) noexcept;
 
 	void AddGlobalVertices(
 		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,

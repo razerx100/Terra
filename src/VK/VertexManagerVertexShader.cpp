@@ -1,11 +1,11 @@
-#include <VertexManagerVertex.hpp>
+#include <VertexManagerVertexShader.hpp>
 
 #include <Terra.hpp>
 
-VertexManagerVertex::VertexManagerVertex(VkDevice device) noexcept
+VertexManagerVertexShader::VertexManagerVertexShader(VkDevice device) noexcept
 	: m_gVertexBuffer{ device }, m_gIndexBuffer{ device } {}
 
-void VertexManagerVertex::AddGlobalVertices(
+void VertexManagerVertexShader::AddGlobalVertices(
 	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
 ) noexcept {
@@ -34,7 +34,7 @@ void VertexManagerVertex::AddGlobalVertices(
 	);
 }
 
-void VertexManagerVertex::BindVertexAndIndexBuffer(
+void VertexManagerVertexShader::BindVertexAndIndexBuffer(
 	VkCommandBuffer graphicsCmdBuffer
 ) const noexcept {
 	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetResource() };
@@ -46,7 +46,7 @@ void VertexManagerVertex::BindVertexAndIndexBuffer(
 	);
 }
 
-void VertexManagerVertex::AcquireOwnerShips(
+void VertexManagerVertexShader::AcquireOwnerShips(
 	VkCommandBuffer graphicsCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept{
 	m_gVertexBuffer.AcquireOwnership(
@@ -59,24 +59,24 @@ void VertexManagerVertex::AcquireOwnerShips(
 	);
 }
 
-void VertexManagerVertex::ReleaseOwnerships(
+void VertexManagerVertexShader::ReleaseOwnerships(
 	VkCommandBuffer transferCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
 ) noexcept {
 	m_gVertexBuffer.ReleaseOwnerShip(transferCmdBuffer, srcQueueIndex, dstQueueIndex);
 	m_gIndexBuffer.ReleaseOwnerShip(transferCmdBuffer, srcQueueIndex, dstQueueIndex);
 }
 
-void VertexManagerVertex::RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept {
+void VertexManagerVertexShader::RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept {
 	m_gVertexBuffer.RecordCopy(transferCmdBuffer);
 	m_gIndexBuffer.RecordCopy(transferCmdBuffer);
 }
 
-void VertexManagerVertex::ReleaseUploadResources() noexcept {
+void VertexManagerVertexShader::ReleaseUploadResources() noexcept {
 	m_gVertexBuffer.CleanUpUploadResource();
 	m_gIndexBuffer.CleanUpUploadResource();
 }
 
-void VertexManagerVertex::BindResourceToMemory(VkDevice device) const noexcept {
+void VertexManagerVertexShader::BindResourceToMemory(VkDevice device) const noexcept {
 	m_gVertexBuffer.BindResourceToMemory(device);
 	m_gIndexBuffer.BindResourceToMemory(device);
 }
