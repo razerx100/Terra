@@ -127,10 +127,9 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 
 RenderEngineBase::WaitSemaphoreData RenderEngineIndirectDraw::GetWaitSemaphores(
 ) const noexcept {
-	VkSemaphore waitSemaphores[] = {
-		Terra::computeSyncObjects->GetFrontSemaphore(),
-		Terra::graphicsSyncObjects->GetFrontSemaphore()
-	};
+	static VkSemaphore waitSemaphores[2]{};
+	waitSemaphores[0] = Terra::computeSyncObjects->GetFrontSemaphore();
+	waitSemaphores[1] = Terra::graphicsSyncObjects->GetFrontSemaphore();
 
 	static VkPipelineStageFlags waitStages[] = {
 		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
@@ -256,9 +255,8 @@ void RenderEngineIndividualDraw::RecordModelArguments(
 
 RenderEngineBase::WaitSemaphoreData RenderEngineIndividualDraw::GetWaitSemaphores(
 ) const noexcept {
-	VkSemaphore waitSemaphores[] = {
-		Terra::graphicsSyncObjects->GetFrontSemaphore()
-	};
+	static VkSemaphore waitSemaphores[1]{};
+	waitSemaphores[0] = Terra::graphicsSyncObjects->GetFrontSemaphore();
 
 	static VkPipelineStageFlags waitStages[] = {
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
