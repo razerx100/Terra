@@ -25,14 +25,11 @@ namespace Terra {
 	std::unique_ptr<SwapChainManager> swapChain;
 	std::unique_ptr<IDisplayManager> display;
 	std::unique_ptr<ISurfaceManager> surface;
-	std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
-	std::unique_ptr<RenderPassManager> renderPass;
 	std::unique_ptr<BufferManager> bufferManager;
 	std::unique_ptr<DescriptorSetManager> graphicsDescriptorSet;
 	std::unique_ptr<DescriptorSetManager> computeDescriptorSet;
 	std::unique_ptr<TextureStorage> textureStorage;
 	std::unique_ptr<CameraManager> cameraManager;
-	std::unique_ptr<DepthBuffer> depthBuffer;
 	std::shared_ptr<ISharedDataContainer> sharedData;
 	std::unique_ptr<RenderEngine> renderEngine;
 

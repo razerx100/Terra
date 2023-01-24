@@ -10,11 +10,8 @@
 #include <ISurfaceManager.hpp>
 #include <SwapChainManager.hpp>
 #include <IDisplayManager.hpp>
-#include <ViewportAndScissorManager.hpp>
-#include <RenderPassManager.hpp>
 #include <DescriptorSetManager.hpp>
 #include <TextureStorage.hpp>
-#include <DepthBuffer.hpp>
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <UploadContainer.hpp>
@@ -44,14 +41,11 @@ namespace Terra {
 	extern std::unique_ptr<SwapChainManager> swapChain;
 	extern std::unique_ptr<IDisplayManager> display;
 	extern std::unique_ptr<ISurfaceManager> surface;
-	extern std::unique_ptr<ViewportAndScissorManager> viewportAndScissor;
-	extern std::unique_ptr<RenderPassManager> renderPass;
 	extern std::unique_ptr<BufferManager> bufferManager;
 	extern std::unique_ptr<DescriptorSetManager> graphicsDescriptorSet;
 	extern std::unique_ptr<DescriptorSetManager> computeDescriptorSet;
 	extern std::unique_ptr<TextureStorage> textureStorage;
 	extern std::unique_ptr<CameraManager> cameraManager;
-	extern std::unique_ptr<DepthBuffer> depthBuffer;
 	extern std::shared_ptr<ISharedDataContainer> sharedData;
 	extern std::unique_ptr<RenderEngine> renderEngine;
 

@@ -107,7 +107,8 @@ VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept
 
 void SwapChainManager::ResizeSwapchain(
 	VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
-	VkRenderPass renderPass, VkImageView depthImageView, bool& formatChanged
+	VkRenderPass renderPass, VkImageView depthImageView,
+	const VkSurfaceFormatKHR& surfaceFormat
 ) {
 	CleanUpSwapchain();
 
@@ -120,19 +121,24 @@ void SwapChainManager::ResizeSwapchain(
 		.bufferCount = static_cast<std::uint32_t>(std::size(m_swapchainImages))
 	};
 
-	auto surfaceFormat = ChooseSurfaceFormat(m_surfaceInfo.formats);
-	if (surfaceFormat.format != m_swapchainFormat)
-		formatChanged = true;
-
 	CreateSwapchain(createInfo, surfaceFormat);
 	QueryImages();
 	CreateImageViews(device);
 	CreateFramebuffers(device, renderPass, depthImageView, width, height);
 }
 
-void SwapChainManager::CreateSwapchain(
-	const SwapChainManagerCreateInfo& swapCreateInfo,
+VkSurfaceFormatKHR SwapChainManager::GetSurfaceFormat() const noexcept {
+	return ChooseSurfaceFormat(m_surfaceInfo.formats);
+}
+
+bool SwapChainManager::HasSurfaceFormatChanged(
 	const VkSurfaceFormatKHR& surfaceFormat
+) const noexcept {
+	return surfaceFormat.format != m_swapchainFormat ? true : false;
+}
+
+void SwapChainManager::CreateSwapchain(
+	const SwapChainManagerCreateInfo& swapCreateInfo, const VkSurfaceFormatKHR& surfaceFormat
 ) {
 	VkExtent2D swapExtent = { swapCreateInfo.width, swapCreateInfo.height };
 	m_surfaceInfo.capabilities.currentExtent = swapExtent;
@@ -149,21 +155,22 @@ void SwapChainManager::CreateSwapchain(
 		&& swapCreateInfo.surfaceInfo.capabilities.maxImageCount < imageCount)
 		imageCount = swapCreateInfo.surfaceInfo.capabilities.maxImageCount;
 
-	VkSwapchainCreateInfoKHR createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = swapCreateInfo.surface;
-	createInfo.minImageCount = imageCount;
-	createInfo.imageFormat = surfaceFormat.format;
-	createInfo.imageColorSpace = surfaceFormat.colorSpace;
-	createInfo.imageExtent = swapExtent;
-	createInfo.imageArrayLayers = 1u;
-	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	createInfo.preTransform = swapCreateInfo.surfaceInfo.capabilities.currentTransform;
-	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	createInfo.presentMode = swapPresentMode;
-	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = VK_NULL_HANDLE;
+	VkSwapchainCreateInfoKHR createInfo{
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+		.surface = swapCreateInfo.surface,
+		.minImageCount = imageCount,
+		.imageFormat = surfaceFormat.format,
+		.imageColorSpace = surfaceFormat.colorSpace,
+		.imageExtent = swapExtent,
+		.imageArrayLayers = 1u,
+		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.preTransform = swapCreateInfo.surfaceInfo.capabilities.currentTransform,
+		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+		.presentMode = swapPresentMode,
+		.clipped = VK_TRUE,
+		.oldSwapchain = VK_NULL_HANDLE
+	};
 
 	vkCreateSwapchainKHR(swapCreateInfo.device, &createInfo, nullptr, &m_swapchain);
 }
@@ -196,14 +203,15 @@ void SwapChainManager::CreateFramebuffers(
 	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index) {
 		VkImageView attachments[] = { m_swapchainImageViews[index], depthImageView };
 
-		VkFramebufferCreateInfo frameBufferInfo = {};
-		frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		frameBufferInfo.renderPass = renderPass;
-		frameBufferInfo.attachmentCount = static_cast<std::uint32_t>(std::size(attachments));
-		frameBufferInfo.pAttachments = attachments;
-		frameBufferInfo.width = width;
-		frameBufferInfo.height = height;
-		frameBufferInfo.layers = 1u;
+		VkFramebufferCreateInfo frameBufferInfo{
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.renderPass = renderPass,
+			.attachmentCount = static_cast<std::uint32_t>(std::size(attachments)),
+			.pAttachments = attachments,
+			.width = width,
+			.height = height,
+			.layers = 1u
+		};
 
 		vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &m_frameBuffers[index]);
 	}

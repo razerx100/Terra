@@ -14,8 +14,6 @@ RendererVK::RendererVK(
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
 
-	m_objectManager.CreateObject(Terra::viewportAndScissor, { width, height }, 0u);
-
 	Terra::InitDisplay(m_objectManager);
 
 	m_objectManager.CreateObject(Terra::vkInstance, { appName }, 5u);
@@ -84,22 +82,12 @@ RendererVK::RendererVK(
 		m_objectManager, logicalDevice, engineType, bufferCount,
 		{ transferQueueFamilyIndex, graphicsQueueFamilyIndex, computeQueueFamilyIndex }
 	);
+	Terra::renderEngine->ResizeViewportAndScissor(width, height);
+	Terra::renderEngine->CreateRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
 
 	Terra::InitComputeQueue(
 		m_objectManager, computeQueueHandle, logicalDevice, computeQueueFamilyIndex,
 		bufferCount
-	);
-
-	m_objectManager.CreateObject(Terra::depthBuffer, { logicalDevice }, 0u);
-	Terra::depthBuffer->AllocateForMaxResolution(logicalDevice, 7680u, 4320u);
-
-	m_objectManager.CreateObject(
-		Terra::renderPass,
-		{
-			logicalDevice, Terra::swapChain->GetSwapFormat(),
-			Terra::depthBuffer->GetDepthFormat()
-		},
-		0u
 	);
 
 	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
@@ -171,27 +159,26 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		vkDeviceWaitIdle(device);
 
-		Terra::depthBuffer->CleanUp();
-		Terra::depthBuffer->CreateDepthBuffer(device, width, height);
+		Terra::renderEngine->CleanUpDepthBuffer();
+		Terra::renderEngine->CreateDepthBuffer(device, width, height);
 
-		bool hasSwapFormatChanged = false;
-		Terra::swapChain->ResizeSwapchain(
-			device,
-			Terra::surface->GetSurface(),
-			width, height,
-			Terra::renderPass->GetRenderPass(), Terra::depthBuffer->GetDepthImageView(),
-			hasSwapFormatChanged
-		);
-
-		Terra::viewportAndScissor->Resize(width, height);
-
-		Terra::cameraManager->SetSceneResolution(width, height);
+		VkSurfaceFormatKHR surfaceFormat = Terra::swapChain->GetSurfaceFormat();
+		bool hasSwapFormatChanged = Terra::swapChain->HasSurfaceFormatChanged(surfaceFormat);
 
 		if (hasSwapFormatChanged)
-			Terra::renderPass->CreateRenderPass(
-				Terra::device->GetLogicalDevice(),
-				Terra::swapChain->GetSwapFormat(), Terra::depthBuffer->GetDepthFormat()
+			Terra::renderEngine->CreateRenderPass(
+				Terra::device->GetLogicalDevice(), Terra::swapChain->GetSwapFormat()
 			);
+
+		Terra::swapChain->ResizeSwapchain(
+			device, Terra::surface->GetSurface(), width, height,
+			Terra::renderEngine->GetRenderPass(), Terra::renderEngine->GetDepthImageView(),
+			surfaceFormat
+		);
+
+		Terra::renderEngine->ResizeViewportAndScissor(width, height);
+
+		Terra::cameraManager->SetSceneResolution(width, height);
 	}
 }
 
@@ -233,10 +220,10 @@ void RendererVK::ProcessData() {
 	Terra::renderEngine->BindResourcesToMemory(logicalDevice);
 	Terra::textureStorage->BindMemories(logicalDevice);
 
-	Terra::depthBuffer->CreateDepthBuffer(logicalDevice, m_width, m_height);
+	Terra::renderEngine->CreateDepthBuffer(logicalDevice, m_width, m_height);
 	Terra::swapChain->CreateFramebuffers(
 		logicalDevice,
-		Terra::renderPass->GetRenderPass(), Terra::depthBuffer->GetDepthImageView(),
+		Terra::renderEngine->GetRenderPass(), Terra::renderEngine->GetDepthImageView(),
 		m_width, m_height
 	);
 

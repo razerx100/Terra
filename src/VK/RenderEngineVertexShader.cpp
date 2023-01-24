@@ -5,7 +5,7 @@
 // Vertex Shader
 RenderEngineVertexShader::RenderEngineVertexShader(
 	VkDevice device, QueueIndicesTG queueIndices
-) : m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
+) : RenderEngineBase{ device }, m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
 
 void RenderEngineVertexShader::AddGlobalVertices(
 	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
@@ -97,9 +97,7 @@ void RenderEngineIndirectDraw::ConstructPipelines(std::uint32_t frameCount) {
 	VkDevice device = Terra::device->GetLogicalDevice();
 
 	ConstructGraphicsPipelineLayout(device, frameCount);
-	CreateGraphicsPipelines(
-		device, m_graphicsPipeline0, m_graphicsPipelines, Terra::renderPass->GetRenderPass()
-	);
+	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 
 	m_computePipeline.CreateComputePipelineLayout(
 		device, frameCount, Terra::computeDescriptorSet->GetDescriptorSetLayouts()
@@ -215,9 +213,7 @@ void RenderEngineIndividualDraw::ConstructPipelines(std::uint32_t frameCount) {
 	VkDevice device = Terra::device->GetLogicalDevice();
 
 	ConstructGraphicsPipelineLayout(device, frameCount);
-	CreateGraphicsPipelines(
-		device, m_graphicsPipeline0, m_graphicsPipelines, Terra::renderPass->GetRenderPass()
-	);
+	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 }
 
 void RenderEngineIndividualDraw::RecordModelDataSet(

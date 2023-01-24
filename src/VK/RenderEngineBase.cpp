@@ -2,6 +2,11 @@
 
 #include <Terra.hpp>
 
+RenderEngineBase::RenderEngineBase(VkDevice device) noexcept
+	: m_renderPass{ device }, m_depthBuffer{ device } {
+	m_depthBuffer.AllocateForMaxResolution(device, 7680u, 4320u);
+}
+
 void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) {
 	vkCmdEndRenderPass(graphicsCmdBuffer);
 
@@ -42,12 +47,8 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 ) {
 	Terra::graphicsCmdBuffer->ResetBuffer(frameIndex);
 
-	vkCmdSetViewport(
-		graphicsCmdBuffer, 0u, 1u, Terra::viewportAndScissor->GetViewportRef()
-	);
-	vkCmdSetScissor(
-		graphicsCmdBuffer, 0u, 1u, Terra::viewportAndScissor->GetScissorRef()
-	);
+	vkCmdSetViewport(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetViewportRef());
+	vkCmdSetScissor(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetScissorRef());
 
 	std::array<VkClearValue, 2> clearValues{};
 	clearValues[0].color = m_backgroundColour;
@@ -55,7 +56,7 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 
 	VkRenderPassBeginInfo renderPassInfo{
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderPass = Terra::renderPass->GetRenderPass(),
+		.renderPass = GetRenderPass(),
 		.framebuffer = Terra::swapChain->GetFramebuffer(frameIndex),
 		.renderArea = { VkOffset2D{ 0, 0 }, Terra::swapChain->GetSwapExtent() },
 		.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues)),
@@ -82,4 +83,32 @@ void RenderEngineBase::BindGraphicsDescriptorSets(
 		m_graphicsPipelineLayout->GetLayout(), 0u, 1u,
 		descSets, 0u, nullptr
 	);
+}
+
+void RenderEngineBase::CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
+	m_renderPass.CreateRenderPass(device, swapchainFormat, m_depthBuffer.GetDepthFormat());
+}
+
+VkImageView RenderEngineBase::GetDepthImageView() const noexcept {
+	return m_depthBuffer.GetDepthImageView();
+}
+
+VkRenderPass RenderEngineBase::GetRenderPass() const noexcept {
+	return m_renderPass.GetRenderPass();
+}
+
+void RenderEngineBase::ResizeViewportAndScissor(
+	std::uint32_t width, std::uint32_t height
+) noexcept {
+	m_viewportAndScissor.Resize(width, height);
+}
+
+void RenderEngineBase::CreateDepthBuffer(
+	VkDevice device, std::uint32_t width, std::uint32_t height
+) {
+	m_depthBuffer.CreateDepthBuffer(device, width, height);
+}
+
+void RenderEngineBase::CleanUpDepthBuffer() noexcept {
+	m_depthBuffer.CleanUp();
 }

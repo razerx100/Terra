@@ -2,16 +2,10 @@
 #define DEPTH_BUFFER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <VkResourceViews.hpp>
-#include <optional>
 
 class DepthBuffer {
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-	};
-
-public:
-	DepthBuffer(const Args& arguments);
+	DepthBuffer(VkDevice device) noexcept;
 
 	DepthBuffer(const DepthBuffer&) = delete;
 	DepthBuffer& operator=(const DepthBuffer&) = delete;
@@ -21,12 +15,8 @@ public:
 
 	void CleanUp() noexcept;
 
-	void CreateDepthBuffer(
-		VkDevice device, std::uint32_t width, std::uint32_t height
-	);
-	void AllocateForMaxResolution(
-		VkDevice device, std::uint32_t width, std::uint32_t height
-	);
+	void CreateDepthBuffer(VkDevice device, std::uint32_t width, std::uint32_t height);
+	void AllocateForMaxResolution(VkDevice device, std::uint32_t width, std::uint32_t height);
 
 	[[nodiscard]]
 	VkFormat GetDepthFormat() const noexcept;
@@ -35,8 +25,6 @@ public:
 
 private:
 	VkImageResourceView m_depthImage;
-
-	VkDevice m_deviceRef;
 
 	std::uint32_t m_maxWidth;
 	std::uint32_t m_maxHeight;

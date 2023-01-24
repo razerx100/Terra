@@ -2,11 +2,8 @@
 #include <VkHelperFunctions.hpp>
 #include <Exception.hpp>
 
-#include <Terra.hpp>
-
-DepthBuffer::DepthBuffer(const Args& arguments)
-	: m_depthImage{ arguments.device.value() }, m_deviceRef{ arguments.device.value() },
-	m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
+DepthBuffer::DepthBuffer(VkDevice device) noexcept
+	: m_depthImage{ device }, m_maxWidth{ 0u }, m_maxHeight{ 0u } {}
 
 void DepthBuffer::CleanUp() noexcept {
 	m_depthImage.CleanUpImageResourceView();
@@ -14,12 +11,10 @@ void DepthBuffer::CleanUp() noexcept {
 
 DepthBuffer::DepthBuffer(DepthBuffer&& depthBuffer) noexcept
 	: m_depthImage{ std::move(depthBuffer.m_depthImage) },
-	m_deviceRef{ depthBuffer.m_deviceRef },
 	m_maxWidth{ depthBuffer.m_maxWidth }, m_maxHeight{ depthBuffer.m_maxHeight } {}
 
 DepthBuffer& DepthBuffer::operator=(DepthBuffer&& depthBuffer) noexcept {
 	m_depthImage = std::move(depthBuffer.m_depthImage);
-	m_deviceRef = depthBuffer.m_deviceRef;
 	m_maxWidth = depthBuffer.m_maxWidth;
 	m_maxHeight = depthBuffer.m_maxHeight;
 

@@ -32,12 +32,17 @@ public:
 	size_t GetNextImageIndex() const noexcept;
 	[[nodiscard]]
 	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept;
+	[[nodiscard]]
+	bool HasSurfaceFormatChanged(const VkSurfaceFormatKHR& surfaceFormat) const noexcept;
+	[[nodiscard]]
+	VkSurfaceFormatKHR GetSurfaceFormat() const noexcept;
 
 	void AcquireNextImageIndex(VkSemaphore signalSemaphore) noexcept;
 	void PresentImage(std::uint32_t imageIndex) const noexcept;
 	void ResizeSwapchain(
 		VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
-		VkRenderPass renderPass, VkImageView depthImageView, bool& formatChanged
+		VkRenderPass renderPass, VkImageView depthImageView,
+		const VkSurfaceFormatKHR& surfaceFormat
 	);
 	void CreateFramebuffers(
 		VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,

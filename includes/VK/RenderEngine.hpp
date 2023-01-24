@@ -22,6 +22,15 @@ public:
 	virtual void ExecutePostRenderStage() = 0;
 	virtual void ConstructPipelines(std::uint32_t frameCount) = 0;
 
+	virtual void ResizeViewportAndScissor(
+		std::uint32_t width, std::uint32_t height
+	) noexcept = 0;
+	virtual void CreateRenderPass(VkDevice device, VkFormat swapchainFormat) = 0;
+	virtual void CreateDepthBuffer(
+		VkDevice device, std::uint32_t width, std::uint32_t height
+	) = 0;
+	virtual void CleanUpDepthBuffer() noexcept = 0;
+
 	virtual void AddGlobalVertices(
 		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
 		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
@@ -38,6 +47,11 @@ public:
 	virtual void CreateBuffers(VkDevice device) noexcept;
 	virtual void CopyData() noexcept;
 	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept;
+
+	[[nodiscard]]
+	virtual VkImageView GetDepthImageView() const noexcept = 0;
+	[[nodiscard]]
+	virtual VkRenderPass GetRenderPass() const noexcept = 0;
 
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 	void SetShaderPath(const wchar_t* path) noexcept;
