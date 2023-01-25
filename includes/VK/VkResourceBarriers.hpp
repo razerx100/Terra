@@ -41,15 +41,16 @@ public:
 	) noexcept {
 		assert(m_currentIndex < barrierCount && "Barrier Count exceeded.");
 
-		VkBufferMemoryBarrier barrier{};
-		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-		barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
-		barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
-		barrier.srcAccessMask = srcAccess;
-		barrier.dstAccessMask = dstAccess;
-		barrier.buffer = buffer;
-		barrier.size = bufferSize;
-		barrier.offset = bufferOffset;
+		VkBufferMemoryBarrier barrier{
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.srcAccessMask = static_cast<VkAccessFlags>(srcAccess),
+			.dstAccessMask = static_cast<VkAccessFlags>(dstAccess),
+			.srcQueueFamilyIndex = srcQueueFamilyIndex,
+			.dstQueueFamilyIndex = dstQueueFamilyIndex,
+			.buffer = buffer,
+			.offset = bufferOffset,
+			.size = bufferSize
+		};
 
 		m_barriers[m_currentIndex] = barrier;
 		++m_currentIndex;
@@ -111,23 +112,25 @@ protected:
 	) noexcept {
 		assert(m_currentIndex < barrierCount && "Barrier Count exceeded.");
 
-		VkImageSubresourceRange subresourceRange{};
-		subresourceRange.aspectMask = imageAspect;
-		subresourceRange.baseMipLevel = 0u;
-		subresourceRange.levelCount = 1u;
-		subresourceRange.baseArrayLayer = 0u;
-		subresourceRange.layerCount = 1u;
+		VkImageSubresourceRange subresourceRange{
+			.aspectMask = static_cast<VkImageAspectFlags>(imageAspect),
+			.baseMipLevel = 0u,
+			.levelCount = 1u,
+			.baseArrayLayer = 0u,
+			.layerCount = 1u
+		};
 
-		VkImageMemoryBarrier barrier{};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
-		barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
-		barrier.oldLayout = oldLayout;
-		barrier.newLayout = newLayout;
-		barrier.srcAccessMask = srcAccess;
-		barrier.dstAccessMask = dstAccess;
-		barrier.image = image;
-		barrier.subresourceRange = subresourceRange;
+		VkImageMemoryBarrier barrier{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+			.srcAccessMask = static_cast<VkAccessFlags>(srcAccess),
+			.dstAccessMask = static_cast<VkAccessFlags>(dstAccess),
+			.oldLayout = oldLayout,
+			.newLayout = newLayout,
+			.srcQueueFamilyIndex = srcQueueFamilyIndex,
+			.dstQueueFamilyIndex = dstQueueFamilyIndex,
+			.image = image,
+			.subresourceRange = subresourceRange
+		};
 
 		m_barriers[m_currentIndex] = barrier;
 		++m_currentIndex;
