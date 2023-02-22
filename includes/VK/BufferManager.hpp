@@ -75,17 +75,14 @@ private:
 };
 
 struct ModelBuffer {
-	UVInfo uvInfo;
 	DirectX::XMMATRIX modelMatrix;
-	std::uint32_t textureIndex;
-	float padding0[3];
+	DirectX::XMMATRIX viewNormalMatrix;
 	DirectX::XMFLOAT3 modelOffset;
 	float padding1;
 	DirectX::XMFLOAT3 positiveBounds;
 	float padding2;
 	DirectX::XMFLOAT3 negativeBounds;
 	float padding3;
-	DirectX::XMMATRIX viewNormalMatrix;
 	// GLSL's vec3 is actually vec4.
 };
 
@@ -93,8 +90,12 @@ struct MaterialBuffer{
 	DirectX::XMFLOAT4 ambient;
 	DirectX::XMFLOAT4 diffuse;
 	DirectX::XMFLOAT4 specular;
+	UVInfo diffuseTexUVInfo;
+	UVInfo specularTexUVInfo;
+	std::uint32_t diffuseTexIndex;
+	std::uint32_t specularTexIndex;
 	float shininess;
-	float padding[3];
+	float padding;
 };
 
 struct LightBuffer {

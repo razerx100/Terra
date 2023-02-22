@@ -103,15 +103,13 @@ void BufferManager::UpdatePerModelData(
 		const DirectX::XMMATRIX modelMatrix = model->GetModelMatrix();
 
 		ModelBuffer modelBuffer{
-			.uvInfo = model->GetUVInfo(),
 			.modelMatrix = modelMatrix,
-			.textureIndex = model->GetTextureIndex(),
-			.modelOffset = model->GetModelOffset(),
-			.positiveBounds = boundingBox.positiveAxes,
-			.negativeBounds = boundingBox.negativeAxes,
 			.viewNormalMatrix = DirectX::XMMatrixTranspose(
 				DirectX::XMMatrixInverse(nullptr, modelMatrix * viewMatrix)
-			)
+			),
+			.modelOffset = model->GetModelOffset(),
+			.positiveBounds = boundingBox.positiveAxes,
+			.negativeBounds = boundingBox.negativeAxes
 		};
 		CopyStruct(modelBuffer, modelBuffersOffset, modelOffset);
 
@@ -121,6 +119,10 @@ void BufferManager::UpdatePerModelData(
 			.ambient = modelMaterial.ambient,
 			.diffuse = modelMaterial.diffuse,
 			.specular = modelMaterial.specular,
+			.diffuseTexUVInfo = model->GetDiffuseTexUVInfo(),
+			.specularTexUVInfo = model->GetSpecularTexUVInfo(),
+			.diffuseTexIndex = model->GetDiffuseTexIndex(),
+			.specularTexIndex = model->GetSpecularTexIndex(),
 			.shininess = modelMaterial.shininess
 		};
 		CopyStruct(material, materialBuffersOffset, materialOffset);
