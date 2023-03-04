@@ -7,13 +7,10 @@ RenderEngineVertexShader::RenderEngineVertexShader(
 	VkDevice device, QueueIndicesTG queueIndices
 ) : RenderEngineBase{ device }, m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
 
-void RenderEngineVertexShader::AddGlobalVertices(
-	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+void RenderEngineVertexShader::AddGVerticesAndIndices(
+	VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 ) noexcept {
-	m_vertexManager.AddGlobalVertices(
-		device, std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
-	);
+	m_vertexManager.AddGVerticesAndIndices(device, std::move(gVertices), std::move(gIndices));
 }
 
 void RenderEngineVertexShader::BindGraphicsBuffers(

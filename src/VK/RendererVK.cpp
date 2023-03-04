@@ -121,14 +121,25 @@ void RendererVK::AddModelSet(
 	Terra::bufferManager->AddOpaqueModels(std::move(models));
 }
 
-void RendererVK::AddModelInputs(
-	std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+void RendererVK::AddMeshletModelSet(
+	std::vector<MeshletModel>&& meshletModels, const std::wstring& pixelShader
 ) {
-	Terra::renderEngine->AddGlobalVertices(
-		Terra::device->GetLogicalDevice(),
-		std::move(vertices), vertexBufferSize, std::move(indices), indexBufferSize
+
+}
+
+void RendererVK::AddModelInputs(
+	std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
+) {
+	Terra::renderEngine->AddGVerticesAndIndices(
+		Terra::device->GetLogicalDevice(), std::move(gVertices), std::move(gIndices)
 	);
+}
+
+void RendererVK::AddModelInputs(
+	std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gVerticesIndices,
+	std::vector<std::uint32_t>&& gPrimIndices
+) {
+
 }
 
 void RendererVK::Update() {

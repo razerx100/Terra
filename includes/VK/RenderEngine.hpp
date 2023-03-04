@@ -31,10 +31,10 @@ public:
 	) = 0;
 	virtual void CleanUpDepthBuffer() noexcept = 0;
 
-	virtual void AddGlobalVertices(
-		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+	virtual void AddGVerticesAndIndices(
+		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 	) noexcept = 0;
+
 	virtual void RecordModelDataSet(
 		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 	) noexcept = 0;

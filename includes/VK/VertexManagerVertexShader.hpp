@@ -2,15 +2,17 @@
 #define VERTEX_MANAGER_VERTEX_SHADER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
+#include <vector>
 #include <VkResourceViews.hpp>
+
+#include <IModel.hpp>
 
 class VertexManagerVertexShader {
 public:
 	VertexManagerVertexShader(VkDevice device) noexcept;
 
-	void AddGlobalVertices(
-		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+	void AddGVerticesAndIndices(
+		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 	) noexcept;
 
 	void BindVertexAndIndexBuffer(VkCommandBuffer graphicsCmdBuffer) const noexcept;
@@ -30,5 +32,7 @@ public:
 private:
 	VkUploadableBufferResourceView m_gVertexBuffer;
 	VkUploadableBufferResourceView m_gIndexBuffer;
+	std::vector<Vertex> m_gVertices;
+	std::vector<std::uint32_t> m_gIndices;
 };
 #endif

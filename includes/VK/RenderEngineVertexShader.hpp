@@ -13,9 +13,8 @@ class RenderEngineVertexShader : public RenderEngineBase {
 public:
 	RenderEngineVertexShader(VkDevice device, QueueIndicesTG queueIndices);
 
-	void AddGlobalVertices(
-		VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-		std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+	void AddGVerticesAndIndices(
+		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 	) noexcept final;
 
 	void BindResourcesToMemory(VkDevice device) final;

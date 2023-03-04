@@ -11,6 +11,7 @@ public:
 	void AddMemory(
 		std::unique_ptr<std::uint8_t> data, size_t memorySize, size_t offset
 	) noexcept;
+	void AddMemory(void* memoryRef, size_t memorySize, size_t offset) noexcept;
 	void CopyData(std::atomic_size_t& workCount) noexcept;
 
 private:
@@ -22,6 +23,8 @@ private:
 private:
 	std::vector<MemoryInfo> m_memoryInfos;
 	std::vector<std::unique_ptr<std::uint8_t>> m_memories;
+	std::vector<MemoryInfo> m_memoryRefInfos;
+	std::vector<void*> m_memoryRefs;
 	std::uint8_t* m_memoryStart;
 };
 #endif

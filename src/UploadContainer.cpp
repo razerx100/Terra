@@ -16,6 +16,11 @@ void UploadContainer::AddMemory(
 	m_memories.emplace_back(std::move(data));
 }
 
+void UploadContainer::AddMemory(void* memoryRef, size_t memorySize, size_t offset) noexcept {
+	m_memoryRefInfos.emplace_back(memorySize, offset);
+	m_memoryRefs.emplace_back(memoryRef);
+}
+
 void UploadContainer::CopyData(std::atomic_size_t& workCount) noexcept {
 	++workCount;
 
@@ -25,6 +30,12 @@ void UploadContainer::CopyData(std::atomic_size_t& workCount) noexcept {
 				const MemoryInfo& info = m_memoryInfos[index];
 
 				memcpy(m_memoryStart + info.offset, m_memories[index].get(), info.size);
+			}
+
+			for (size_t index = 0u; index < std::size(m_memoryRefs); ++index) {
+				const MemoryInfo& info = m_memoryRefInfos[index];
+
+				memcpy(m_memoryStart + info.offset, m_memoryRefs[index], info.size);
 			}
 
 			--workCount;

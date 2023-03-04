@@ -5,11 +5,12 @@
 VertexManagerVertexShader::VertexManagerVertexShader(VkDevice device) noexcept
 	: m_gVertexBuffer{ device }, m_gIndexBuffer{ device } {}
 
-void VertexManagerVertexShader::AddGlobalVertices(
-	VkDevice device, std::unique_ptr<std::uint8_t> vertices, size_t vertexBufferSize,
-	std::unique_ptr<std::uint8_t> indices, size_t indexBufferSize
+void VertexManagerVertexShader::AddGVerticesAndIndices(
+	VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 ) noexcept {
 	// Vertex Buffer
+	const size_t vertexBufferSize = sizeof(Vertex) * std::size(gVertices);
+
 	m_gVertexBuffer.CreateResource(
 		device, static_cast<VkDeviceSize>(vertexBufferSize), 1u,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
@@ -18,10 +19,14 @@ void VertexManagerVertexShader::AddGlobalVertices(
 	m_gVertexBuffer.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(vertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
+		std::data(gVertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
 	);
 
+	m_gVertices = gVertices;
+
 	// Index Buffer
+	const size_t indexBufferSize = sizeof(std::uint32_t) * std::size(gIndices);
+
 	m_gIndexBuffer.CreateResource(
 		device, static_cast<VkDeviceSize>(indexBufferSize), 1u,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT
@@ -30,8 +35,10 @@ void VertexManagerVertexShader::AddGlobalVertices(
 	m_gIndexBuffer.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(indices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
+		std::data(gIndices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
 	);
+
+	m_gIndices = gIndices;
 }
 
 void VertexManagerVertexShader::BindVertexAndIndexBuffer(
@@ -74,6 +81,9 @@ void VertexManagerVertexShader::RecordCopy(VkCommandBuffer transferCmdBuffer) no
 void VertexManagerVertexShader::ReleaseUploadResources() noexcept {
 	m_gVertexBuffer.CleanUpUploadResource();
 	m_gIndexBuffer.CleanUpUploadResource();
+
+	m_gVertices = std::vector<Vertex>{};
+	m_gIndices = std::vector<std::uint32_t>{};
 }
 
 void VertexManagerVertexShader::BindResourceToMemory(VkDevice device) const noexcept {
