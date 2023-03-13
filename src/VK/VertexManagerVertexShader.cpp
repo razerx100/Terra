@@ -22,7 +22,7 @@ void VertexManagerVertexShader::AddGVerticesAndIndices(
 		std::data(gVertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
 	);
 
-	m_gVertices = gVertices;
+	m_gVertices = std::move(gVertices);
 
 	// Index Buffer
 	const size_t indexBufferSize = sizeof(std::uint32_t) * std::size(gIndices);
@@ -38,7 +38,7 @@ void VertexManagerVertexShader::AddGVerticesAndIndices(
 		std::data(gIndices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
 	);
 
-	m_gIndices = gIndices;
+	m_gIndices = std::move(gIndices);
 }
 
 void VertexManagerVertexShader::BindVertexAndIndexBuffer(

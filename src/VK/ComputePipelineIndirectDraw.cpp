@@ -213,13 +213,13 @@ void ComputePipelineIndirectDraw::RecordIndirectArguments(
 }
 
 void ComputePipelineIndirectDraw::CopyData() noexcept {
-	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
-	memcpy(
-		uploadMemoryStart + m_commandBuffer.GetFirstUploadMemoryOffset(),
+	Terra::Resources::uploadContainer->AddMemory(
 		std::data(m_indirectCommands),
-		sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands)
+		sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands),
+		m_commandBuffer.GetFirstUploadMemoryOffset()
 	);
 
+	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 	// copy the culling data to the buffer.
 	std::uint8_t* cullingBufferPtr =
 		uploadMemoryStart + m_cullDataBuffer.GetFirstUploadMemoryOffset();
@@ -263,8 +263,6 @@ void ComputePipelineIndirectDraw::CopyData() noexcept {
 		cpuWriteMemoryStart + m_counterResetBuffer.GetFirstMemoryOffset();
 	const std::uint32_t zeroValue = 0u;
 	memcpy(counterCPUPtr, &zeroValue, sizeof(std::uint32_t));
-
-	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
 void ComputePipelineIndirectDraw::RecordCopy(VkCommandBuffer transferBuffer) noexcept {
@@ -281,6 +279,8 @@ void ComputePipelineIndirectDraw::ReleaseUploadResources() noexcept {
 
 	for (auto& counterBuffer : m_counterBuffers)
 		counterBuffer.CleanUpUploadResource();
+
+	m_indirectCommands = std::vector<VkDrawIndexedIndirectCommand>();
 }
 
 void ComputePipelineIndirectDraw::AcquireOwnerShip(VkCommandBuffer computeCmdBuffer) noexcept {

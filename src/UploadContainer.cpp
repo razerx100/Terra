@@ -3,22 +3,22 @@
 
 #include <Terra.hpp>
 
-UploadContainer::UploadContainer() noexcept : m_memoryStart{ nullptr } {}
+UploadContainer::UploadContainer() noexcept : m_dstMemoryStart{ nullptr } {}
 
-void UploadContainer::SetMemoryStart(std::uint8_t* memoryStart) noexcept {
-	m_memoryStart = memoryStart;
+void UploadContainer::SetMemoryStart(std::uint8_t* dstMemoryStart) noexcept {
+	m_dstMemoryStart = dstMemoryStart;
 }
 
 void UploadContainer::AddMemory(
-	std::unique_ptr<std::uint8_t> data, size_t memorySize, size_t offset
+	void const* src, size_t memorySize, size_t offset
 ) noexcept {
-	m_memoryInfos.emplace_back(memorySize, offset);
-	m_memories.emplace_back(std::move(data));
-}
+	MemoryInfo memInfo{
+		.size = memorySize,
+		.offset = offset,
+		.src = src
+	};
 
-void UploadContainer::AddMemory(void* memoryRef, size_t memorySize, size_t offset) noexcept {
-	m_memoryRefInfos.emplace_back(memorySize, offset);
-	m_memoryRefs.emplace_back(memoryRef);
+	m_memoryRefInfos.emplace_back(memInfo);
 }
 
 void UploadContainer::CopyData(std::atomic_size_t& workCount) noexcept {
@@ -26,19 +26,14 @@ void UploadContainer::CopyData(std::atomic_size_t& workCount) noexcept {
 
 	Terra::threadPool->SubmitWork(
 		[&] {
-			for (size_t index = 0u; index < std::size(m_memories); ++index) {
-				const MemoryInfo& info = m_memoryInfos[index];
-
-				memcpy(m_memoryStart + info.offset, m_memories[index].get(), info.size);
-			}
-
-			for (size_t index = 0u; index < std::size(m_memoryRefs); ++index) {
-				const MemoryInfo& info = m_memoryRefInfos[index];
-
-				memcpy(m_memoryStart + info.offset, m_memoryRefs[index], info.size);
-			}
+			for (size_t index = 0u; index < std::size(m_memoryRefInfos); ++index)
+				CopyMem(m_memoryRefInfos[index]);
 
 			--workCount;
 		}
 	);
+}
+
+void UploadContainer::CopyMem(const MemoryInfo& memInfo) const noexcept {
+	memcpy(m_dstMemoryStart + memInfo.offset, memInfo.src, memInfo.size);
 }

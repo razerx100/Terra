@@ -37,5 +37,6 @@ private:
 	VkSampler m_textureSampler;
 	VkDevice m_deviceRef;
 	QueueIndicesTG m_queueIndices;
+	std::vector<std::unique_ptr<std::uint8_t>> m_textureHandles;
 };
 #endif

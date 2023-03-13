@@ -32,9 +32,10 @@ size_t TextureStorage::AddTexture(
 	texture.SetMemoryOffsetAndType(device);
 
 	Terra::Resources::uploadContainer->AddMemory(
-		std::move(textureDataHandle), width * height * 4u, texture.GetFirstUploadMemoryOffset()
+		textureDataHandle.get(), width * height * 4u, texture.GetFirstUploadMemoryOffset()
 	);
 
+	m_textureHandles.emplace_back(std::move(textureDataHandle));
 	m_textures.emplace_back(std::move(texture));
 
 	return std::size(m_textures) - 1u;
@@ -43,6 +44,8 @@ size_t TextureStorage::AddTexture(
 void TextureStorage::ReleaseUploadBuffers() noexcept {
 	for (auto& texture : m_textures)
 		texture.CleanUpUploadResource();
+
+	m_textureHandles = std::vector<std::unique_ptr<std::uint8_t>>{};
 }
 
 void TextureStorage::BindMemories(VkDevice device) {
