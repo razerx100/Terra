@@ -50,6 +50,7 @@ public:
 	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void ConstructPipelines(std::uint32_t frameCount) final;
+	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
 
 	void RecordModelDataSet(
 		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
@@ -89,6 +90,7 @@ public:
 	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void ConstructPipelines(std::uint32_t frameCount) final;
+	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
 
 	void RecordModelDataSet(
 		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader

@@ -3,12 +3,13 @@
 #include <GraphicsPipelineBase.hpp>
 
 class GraphicsPipelineVertexShader : public GraphicsPipelineBase {
-private:
+protected:
 	[[nodiscard]]
-	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
+	std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) const noexcept final;
+		const std::wstring& shaderPath, const std::wstring& fragmentShader,
+		const std::wstring& vertexShader
+	) const noexcept;
 };
 
 class GraphicsPipelineIndirectDraw : public GraphicsPipelineVertexShader {
@@ -23,6 +24,13 @@ public:
 	void DrawModels(
 		VkCommandBuffer graphicsCmdBuffer, VkBuffer argumentBuffer, VkBuffer counterBuffer
 	) const noexcept;
+
+private:
+	[[nodiscard]]
+	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
+	) const noexcept final;
 
 private:
 	std::uint32_t m_modelCount;
@@ -42,6 +50,13 @@ public:
 		VkCommandBuffer graphicsCmdBuffer,
 		const std::vector<VkDrawIndexedIndirectCommand>& drawArguments
 	) const noexcept;
+
+private:
+	[[nodiscard]]
+	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
+	) const noexcept final;
 
 private:
 	size_t m_modelCount;

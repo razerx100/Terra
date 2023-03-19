@@ -98,10 +98,14 @@ RendererVK::RendererVK(
 			QueueIndicesTG{transferQueueFamilyIndex, graphicsQueueFamilyIndex}
 		}, 1u
 	);
+
+	const bool modelDataNoBB = engineType == RenderEngineType::IndirectDraw ? false : true;
+
 	m_objectManager.CreateObject(
 		Terra::bufferManager,
 		{ logicalDevice,  bufferCount,
-			QueueIndicesCG{computeQueueFamilyIndex, graphicsQueueFamilyIndex}
+			QueueIndicesCG{computeQueueFamilyIndex, graphicsQueueFamilyIndex},
+			modelDataNoBB
 		},
 		1u
 	);
@@ -146,7 +150,7 @@ void RendererVK::Update() {
 	Terra::swapChain->AcquireNextImageIndex(Terra::graphicsSyncObjects->GetFrontSemaphore());
 	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
 
-	Terra::bufferManager->Update(static_cast<VkDeviceSize>(imageIndex));
+	Terra::renderEngine->UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
 }
 
 void RendererVK::Render() {

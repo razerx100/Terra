@@ -52,10 +52,13 @@ void RenderEngineVertexShader::ReleaseOwnership(
 	_releaseOwnership(transferCmdBuffer);
 }
 
+#pragma warning(push)
+#pragma warning(disable: 4100)
 void RenderEngineVertexShader::_bindResourcesToMemory(VkDevice device) {}
 void RenderEngineVertexShader::_recordCopy(VkCommandBuffer transferBuffer) noexcept {}
 void RenderEngineVertexShader::_releaseUploadResources() noexcept {}
 void RenderEngineVertexShader::_releaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {}
+#pragma warning(pop)
 
 // Indirect Draw
 RenderEngineIndirectDraw::RenderEngineIndirectDraw(Args& arguments)
@@ -100,6 +103,10 @@ void RenderEngineIndirectDraw::ConstructPipelines(std::uint32_t frameCount) {
 		device, frameCount, Terra::computeDescriptorSet->GetDescriptorSetLayouts()
 	);
 	m_computePipeline.CreateComputePipeline(device, m_shaderPath);
+}
+
+void RenderEngineIndirectDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
+	Terra::bufferManager->Update<false>(frameIndex);
 }
 
 void RenderEngineIndirectDraw::RecordModelDataSet(
@@ -211,6 +218,10 @@ void RenderEngineIndividualDraw::ConstructPipelines(std::uint32_t frameCount) {
 
 	ConstructGraphicsPipelineLayout(device, frameCount);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
+}
+
+void RenderEngineIndividualDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
+	Terra::bufferManager->Update<true>(frameIndex);
 }
 
 void RenderEngineIndividualDraw::RecordModelDataSet(

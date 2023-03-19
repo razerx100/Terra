@@ -9,7 +9,8 @@ BufferManager::BufferManager(Args& arguments)
 	m_materialBuffers{ arguments.device.value() }, m_lightBuffers{ arguments.device.value() },
 	m_fragmentDataBuffer{ arguments.device.value() },
 	m_bufferCount{ arguments.bufferCount.value() },
-	m_queueIndices{ arguments.queueIndices.value() } {}
+	m_queueIndices{ arguments.queueIndices.value() },
+	m_modelDataNoBB{ arguments.modelDataNoBB.value() } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	// Camera
@@ -25,7 +26,9 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 
 	// Model
 	const size_t modelCount = std::size(m_opaqueModels);
-	const size_t modelBufferSize = sizeof(ModelBuffer) * modelCount;
+	const size_t modelBufferStride =
+		m_modelDataNoBB ? sizeof(ModelBufferNoBB) : sizeof(ModelBuffer);
+	const size_t modelBufferSize = modelBufferStride * modelCount;
 
 	CreateBufferComputeAndGraphics(
 		device, m_modelBuffers, static_cast<VkDeviceSize>(modelBufferSize),
@@ -61,22 +64,16 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	);
 }
 
-void BufferManager::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept {
-	for (size_t index = 0u; index < std::size(models); ++index)
-		if (models[index]->IsLightSource())
-			m_lightModelIndices.emplace_back(std::size(m_opaqueModels) + index);
+void BufferManager::CheckLightSourceAndAddOpaque(std::shared_ptr<IModel>&& model) noexcept {
+	if (model->IsLightSource())
+		m_lightModelIndices.emplace_back(std::size(m_opaqueModels));
 
-	std::ranges::move(models, std::back_inserter(m_opaqueModels));
+	m_opaqueModels.emplace_back(std::move(model));
 }
 
-void BufferManager::Update(VkDeviceSize bufferIndex) const noexcept {
-	std::uint8_t* cpuMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
-	const DirectX::XMMATRIX viewMatrix = Terra::sharedData->GetViewMatrix();
-
-	UpdateCameraData(bufferIndex, cpuMemoryStart);
-	UpdatePerModelData(bufferIndex, cpuMemoryStart, viewMatrix);
-	UpdateLightData(bufferIndex, cpuMemoryStart, viewMatrix);
-	UpdateFragmentData(bufferIndex, cpuMemoryStart);
+void BufferManager::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept {
+	for (size_t index = 0u; index < std::size(models); ++index)
+		CheckLightSourceAndAddOpaque(std::move(models[index]));
 }
 
 void BufferManager::UpdateCameraData(
@@ -85,48 +82,6 @@ void BufferManager::UpdateCameraData(
 	Terra::cameraManager->CopyData(
 		cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(bufferIndex)
 	);
-}
-
-void BufferManager::UpdatePerModelData(
-	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart, const DirectX::XMMATRIX& viewMatrix
-) const noexcept {
-	size_t modelOffset = 0u;
-	size_t materialOffset = 0u;
-
-	std::uint8_t* modelBuffersOffset =
-		cpuMemoryStart + m_modelBuffers.GetMemoryOffset(bufferIndex);
-	std::uint8_t* materialBuffersOffset =
-		cpuMemoryStart + m_materialBuffers.GetMemoryOffset(bufferIndex);
-
-	for (auto& model : m_opaqueModels) {
-		const auto& boundingBox = model->GetBoundingBox();
-		const DirectX::XMMATRIX modelMatrix = model->GetModelMatrix();
-
-		ModelBuffer modelBuffer{
-			.modelMatrix = modelMatrix,
-			.viewNormalMatrix = DirectX::XMMatrixTranspose(
-				DirectX::XMMatrixInverse(nullptr, modelMatrix * viewMatrix)
-			),
-			.modelOffset = model->GetModelOffset(),
-			.positiveBounds = boundingBox.positiveAxes,
-			.negativeBounds = boundingBox.negativeAxes
-		};
-		CopyStruct(modelBuffer, modelBuffersOffset, modelOffset);
-
-		const auto& modelMaterial = model->GetMaterial();
-
-		MaterialBuffer material{
-			.ambient = modelMaterial.ambient,
-			.diffuse = modelMaterial.diffuse,
-			.specular = modelMaterial.specular,
-			.diffuseTexUVInfo = model->GetDiffuseTexUVInfo(),
-			.specularTexUVInfo = model->GetSpecularTexUVInfo(),
-			.diffuseTexIndex = model->GetDiffuseTexIndex(),
-			.specularTexIndex = model->GetSpecularTexIndex(),
-			.shininess = modelMaterial.shininess
-		};
-		CopyStruct(material, materialBuffersOffset, materialOffset);
-	}
 }
 
 void BufferManager::UpdateLightData(
@@ -205,4 +160,12 @@ void BufferManager::CreateBufferGraphics(
 	Terra::graphicsDescriptorSet->AddBuffersSplit(
 		descInfo, bufferInfos, VK_SHADER_STAGE_FRAGMENT_BIT
 	);
+}
+
+DirectX::XMMATRIX BufferManager::GetViewMatrix() const noexcept {
+	return Terra::sharedData->GetViewMatrix();
+}
+
+std::uint8_t* BufferManager::GetCPUWriteStartMemory() const noexcept {
+	return Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
 }

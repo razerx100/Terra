@@ -1,6 +1,7 @@
 #ifdef TERRA_WIN32
 #include <DisplayManagerWin32.hpp>
 #include <SurfaceManagerWin32.hpp>
+#include <Exception.hpp>
 #else
 #include <DisplayManagerVK.hpp>
 #endif
@@ -103,14 +104,24 @@ namespace Terra {
 		ObjectManager& om, VkDevice logicalDevice, RenderEngineType engineType,
 		std::uint32_t bufferCount, QueueIndices3 queueIndices
 	) {
-		if (engineType == RenderEngineType::IndirectDraw)
+		switch (engineType) {
+		case RenderEngineType::IndirectDraw: {
 			om.CreateObject<RenderEngineIndirectDraw>(
 				renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
 				);
-		else if (engineType == RenderEngineType::IndividualDraw)
+			break;
+		}
+		case RenderEngineType::IndividualDraw: {
 			om.CreateObject<RenderEngineIndividualDraw>(
 				renderEngine, { logicalDevice, queueIndices }, 1u
 				);
+			break;
+		}
+		case RenderEngineType::MeshDraw: {
+			throw Exception("No Support", "Mesh Shader is not supported yet.");
+			break;
+		}
+		}
 	}
 
 	void SetSharedData(

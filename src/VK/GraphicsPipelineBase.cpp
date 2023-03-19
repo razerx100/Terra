@@ -16,4 +16,3 @@ void GraphicsPipelineBase::CreateGraphicsPipeline(
 		device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
 	);
 }
-

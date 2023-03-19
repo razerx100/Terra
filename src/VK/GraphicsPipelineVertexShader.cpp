@@ -2,12 +2,13 @@
 #include <Shader.hpp>
 
 // Vertex Shader
-std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::_createGraphicsPipeline(
+std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPipelineVS(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
+	const std::wstring& shaderPath, const std::wstring& fragmentShader,
+	const std::wstring& vertexShader
 ) const noexcept {
 	auto vs = std::make_unique<Shader>(device);
-	vs->CreateShader(device, shaderPath + L"VertexShader.spv");
+	vs->CreateShader(device, shaderPath + vertexShader);
 
 	auto fs = std::make_unique<Shader>(device);
 	fs->CreateShader(device, shaderPath + fragmentShader);
@@ -53,6 +54,16 @@ void GraphicsPipelineIndirectDraw::ConfigureGraphicsPipeline(
 	m_fragmentShader = fragmentShader;
 }
 
+std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsPipeline(
+	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	const std::wstring& shaderPath, const std::wstring& fragmentShader
+) const noexcept {
+	return CreateGraphicsPipelineVS(
+		device, graphicsLayout, renderPass, shaderPath, fragmentShader,
+		L"VertexShaderIndirect.spv"
+	);
+}
+
 // Individual Draw
 GraphicsPipelineIndividualDraw::GraphicsPipelineIndividualDraw() noexcept
 	: m_modelCount{ 0u }, m_modelOffset{ 0u } {}
@@ -77,4 +88,14 @@ void GraphicsPipelineIndividualDraw::DrawModels(
 			modelArgs.firstIndex, modelArgs.vertexOffset, modelArgs.firstInstance
 		);
 	}
+}
+
+std::unique_ptr<VkPipelineObject> GraphicsPipelineIndividualDraw::_createGraphicsPipeline(
+	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	const std::wstring& shaderPath, const std::wstring& fragmentShader
+) const noexcept {
+	return CreateGraphicsPipelineVS(
+		device, graphicsLayout, renderPass, shaderPath, fragmentShader,
+		L"VertexShaderIndividual.spv"
+	);
 }

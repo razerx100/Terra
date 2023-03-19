@@ -57,6 +57,8 @@ void DebugLayerManager::DestroyDebugUtilsMessengerEXT(
 		function(instance, debugMessenger, pAllocator);
 }
 
+#pragma warning(push)
+#pragma warning(disable: 4100)
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -72,6 +74,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
 
 	return VK_FALSE;
 }
+#pragma warning(pop)
 
 std::string DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept {
 	std::string messageTypeDescription;

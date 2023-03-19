@@ -21,6 +21,7 @@ public:
 	virtual void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void ExecutePostRenderStage() = 0;
 	virtual void ConstructPipelines(std::uint32_t frameCount) = 0;
+	virtual void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept = 0;
 
 	virtual void ResizeViewportAndScissor(
 		std::uint32_t width, std::uint32_t height
