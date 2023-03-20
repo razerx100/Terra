@@ -23,9 +23,8 @@ IDisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
 	d3dGpu->GetDesc(&gpuDesc);
 
 	ComPtr<IDXGIOutput> pDisplayOutput;
-	assert(
-		SUCCEEDED(d3dGpu->EnumOutputs(displayIndex, &pDisplayOutput)) && "Invalid display index."
-	);
+	[[maybe_unused]] HRESULT displayCheck = d3dGpu->EnumOutputs(displayIndex, &pDisplayOutput);
+	assert(SUCCEEDED(displayCheck) && "Invalid display index.");
 
 	DXGI_OUTPUT_DESC displayData = {};
 	pDisplayOutput->GetDesc(&displayData);
