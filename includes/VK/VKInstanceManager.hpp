@@ -5,15 +5,15 @@
 #include <string>
 #include <optional>
 
-class InstanceManager {
+class VkInstanceManager {
 public:
 	struct Args {
 		std::optional<std::string> appName;
 	};
 
 public:
-	InstanceManager(Args& arguments);
-	~InstanceManager() noexcept;
+	VkInstanceManager(Args& arguments);
+	~VkInstanceManager() noexcept;
 
 	void AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
 	void CreateInstance();

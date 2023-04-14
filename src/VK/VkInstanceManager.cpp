@@ -1,20 +1,22 @@
+#include <cassert>
+#include <ranges>
+#include <algorithm>
 #include <VkInstanceManager.hpp>
 #include <DebugLayerManager.hpp>
-#include <cassert>
 #include <Exception.hpp>
 
-InstanceManager::InstanceManager(Args& arguments)
+VkInstanceManager::VkInstanceManager(Args& arguments)
 	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(arguments.appName.value()) } {}
 
-InstanceManager::~InstanceManager() noexcept {
+VkInstanceManager::~VkInstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);
 }
 
-VkInstance InstanceManager::GetVKInstance() const noexcept {
+VkInstance VkInstanceManager::GetVKInstance() const noexcept {
 	return m_vkInstance;
 }
 
-void InstanceManager::CheckExtensionSupport() const {
+void VkInstanceManager::CheckExtensionSupport() const {
 	std::uint32_t extensionCount = 0u;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
@@ -38,7 +40,7 @@ void InstanceManager::CheckExtensionSupport() const {
 	}
 }
 
-void InstanceManager::CheckLayerSupport() const {
+void VkInstanceManager::CheckLayerSupport() const {
 	std::uint32_t layerCount = 0u;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -61,27 +63,26 @@ void InstanceManager::CheckLayerSupport() const {
 	}
 }
 
-void InstanceManager::AddExtensionNames(
+void VkInstanceManager::AddExtensionNames(
 	const std::vector<const char*>& extensionNames
 ) noexcept {
-	m_extensionNames.insert(
-		std::end(m_extensionNames),
-		std::begin(extensionNames), std::end(extensionNames)
-	);
+	std::ranges::copy(extensionNames, std::back_inserter(m_extensionNames));
 }
 
-void InstanceManager::CreateInstance() {
-	VkApplicationInfo appInfo = {};
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = m_appName.c_str();
-	appInfo.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u);
-	appInfo.pEngineName = "Terra";
-	appInfo.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u);
-	appInfo.apiVersion = VK_API_VERSION_1_3;
+void VkInstanceManager::CreateInstance() {
+	VkApplicationInfo appInfo{
+		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pApplicationName = m_appName.c_str(),
+		.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u),
+		.pEngineName = "Terra",
+		.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u),
+		.apiVersion = VK_API_VERSION_1_3
+	};
 
-	VkInstanceCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pApplicationInfo = &appInfo;
+	VkInstanceCreateInfo createInfo{
+		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.pApplicationInfo = &appInfo
+	};
 
 #ifdef _DEBUG
 	const bool enableValidationLayers = true;
@@ -89,7 +90,7 @@ void InstanceManager::CreateInstance() {
 	const bool enableValidationLayers = false;
 #endif
 
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
 	if (enableValidationLayers) {
 		CheckLayerSupport();

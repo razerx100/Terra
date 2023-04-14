@@ -21,8 +21,8 @@ namespace Terra {
 	std::unique_ptr<VkCommandQueue> graphicsQueue;
 	std::unique_ptr<VkCommandQueue> transferQueue;
 	std::unique_ptr<VkCommandQueue> computeQueue;
-	std::unique_ptr<DeviceManager> device;
-	std::unique_ptr<InstanceManager> vkInstance;
+	std::unique_ptr<VkDeviceManager> device;
+	std::unique_ptr<VkInstanceManager> vkInstance;
 	std::unique_ptr<SwapChainManager> swapChain;
 	std::unique_ptr<IDisplayManager> display;
 	std::unique_ptr<ISurfaceManager> surface;

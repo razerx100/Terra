@@ -4,10 +4,10 @@
 #include <vector>
 #include <VkHelperFunctions.hpp>
 
-class DeviceManager {
+class VkDeviceManager {
 public:
-	DeviceManager() noexcept;
-	~DeviceManager() noexcept;
+	VkDeviceManager() noexcept;
+	~VkDeviceManager() noexcept;
 
 	void FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 	void CreateLogicalDevice();
@@ -45,9 +45,23 @@ private:
 	VkDevice m_logicalDevice;
 	std::vector<QueueFamilyInfo> m_usableQueueFamilies;
 	const std::vector<const char*> m_extensionNames = {
-		"VK_KHR_swapchain",
-		"VK_EXT_descriptor_indexing",
-		"VK_KHR_shader_draw_parameters"
+		"VK_KHR_swapchain"
+	};
+
+private:
+	class DeviceFeatures {
+	public:
+		DeviceFeatures() noexcept;
+
+		[[nodiscard]]
+		VkPhysicalDeviceFeatures2 const* GetDeviceFeatures2() const noexcept;
+
+	private:
+		VkPhysicalDeviceVulkan13Features m_deviceFeaturesvk1_3;
+		VkPhysicalDeviceVulkan12Features m_deviceFeaturesvk1_2;
+		VkPhysicalDeviceVulkan11Features m_deviceFeaturesvk1_1;
+		VkPhysicalDeviceFeatures m_deviceFeatures1;
+		VkPhysicalDeviceFeatures2 m_deviceFeatures2;
 	};
 };
 #endif

@@ -23,8 +23,7 @@ VkDescriptorSet DescriptorSetManager::GetDescriptorSet(size_t index) const noexc
 }
 
 void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
-	const std::uint32_t descriptorSetCount =
-		static_cast<std::uint32_t>(std::size(m_descriptorSets));
+	const auto descriptorSetCount = static_cast<std::uint32_t>(std::size(m_descriptorSets));
 
 	assert(descriptorSetCount && "DescriptorSetCount is zero.");
 
@@ -54,7 +53,7 @@ void DescriptorSetManager::AddSetLayout(
 
 	m_layoutBindings.emplace_back(std::move(layoutBinding));
 
-	const static std::uint32_t descriptorMultiplier =
+	const static auto descriptorMultiplier =
 		static_cast<std::uint32_t>(std::size(m_descriptorSets));
 
 	m_descriptorPool.AddDescriptorTypeLimit(

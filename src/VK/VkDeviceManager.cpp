@@ -1,16 +1,16 @@
-#include <DeviceManager.hpp>
+#include <VkDeviceManager.hpp>
 #include <ranges>
 #include <algorithm>
 #include <Exception.hpp>
 
-DeviceManager::DeviceManager() noexcept
+VkDeviceManager::VkDeviceManager() noexcept
 	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE } {}
 
-DeviceManager::~DeviceManager() noexcept {
+VkDeviceManager::~VkDeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-void DeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
+void VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
 	std::uint32_t deviceCount = 0u;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -37,7 +37,7 @@ void DeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface
 	}
 }
 
-VkPhysicalDevice DeviceManager::QueryPhysicalDevices(
+VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
 	const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface,
 	VkPhysicalDeviceType deviceType
 ) const noexcept {
@@ -49,7 +49,7 @@ VkPhysicalDevice DeviceManager::QueryPhysicalDevices(
 	return VK_NULL_HANDLE;
 }
 
-void DeviceManager::CreateLogicalDevice() {
+void VkDeviceManager::CreateLogicalDevice() {
 	size_t mostQueueCount = 0u;
 	for (const auto& info : m_usableQueueFamilies)
 		mostQueueCount = std::max(mostQueueCount, info.queueRequired);
@@ -67,43 +67,20 @@ void DeviceManager::CreateLogicalDevice() {
 		queueCreateInfo.pQueuePriorities = std::data(queuePriorities);
 	}
 
-	VkPhysicalDeviceFeatures deviceFeatures{};
-	deviceFeatures.samplerAnisotropy = VK_TRUE;
-	deviceFeatures.multiDrawIndirect = VK_TRUE;
-	deviceFeatures.drawIndirectFirstInstance = VK_TRUE;
-
-	VkPhysicalDeviceVulkan13Features vk13Features{};
-	vk13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	vk13Features.synchronization2 = VK_TRUE;
-
-	VkPhysicalDeviceVulkan12Features vk12Features{};
-	vk12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	vk12Features.drawIndirectCount = VK_TRUE;
-	vk12Features.descriptorIndexing = VK_TRUE;
-	vk12Features.runtimeDescriptorArray = VK_TRUE;
-	vk12Features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-	vk12Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-	vk12Features.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
-	vk12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-	vk12Features.pNext = &vk13Features;
-
-	VkPhysicalDeviceFeatures2 deviceFeatures2{};
-	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures2.features = deviceFeatures;
-	deviceFeatures2.pNext = &vk12Features;
+	DeviceFeatures deviceFeatures{};
 
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pNext = deviceFeatures.GetDeviceFeatures2();
 	createInfo.pQueueCreateInfos = std::data(queueCreateInfos);
 	createInfo.queueCreateInfoCount = static_cast<std::uint32_t>(std::size(queueCreateInfos));
 	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(std::size(m_extensionNames));
 	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
-	createInfo.pNext = &deviceFeatures2;
 
 	vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice);
 }
 
-bool DeviceManager::CheckDeviceType(
+bool VkDeviceManager::CheckDeviceType(
 	VkPhysicalDevice device, VkPhysicalDeviceType deviceType
 ) const noexcept {
 	VkPhysicalDeviceProperties deviceProperty{};
@@ -112,15 +89,15 @@ bool DeviceManager::CheckDeviceType(
 	return deviceProperty.deviceType == deviceType;
 }
 
-VkPhysicalDevice DeviceManager::GetPhysicalDevice() const noexcept {
+VkPhysicalDevice VkDeviceManager::GetPhysicalDevice() const noexcept {
 	return m_physicalDevice;
 }
 
-VkDevice DeviceManager::GetLogicalDevice() const noexcept {
+VkDevice VkDeviceManager::GetLogicalDevice() const noexcept {
 	return m_logicalDevice;
 }
 
-std::pair<VkQueue, std::uint32_t> DeviceManager::GetQueue(QueueType type) noexcept {
+std::pair<VkQueue, std::uint32_t> VkDeviceManager::GetQueue(QueueType type) noexcept {
 	VkQueue queue = VK_NULL_HANDLE;
 	std::uint32_t familyIndex = 0u;
 	for (size_t index = 0u; index < std::size(m_usableQueueFamilies); ++index)
@@ -142,8 +119,8 @@ std::pair<VkQueue, std::uint32_t> DeviceManager::GetQueue(QueueType type) noexce
 	return { queue, familyIndex };
 }
 
-bool DeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const noexcept {
-	std::uint32_t extensionCount;
+bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const noexcept {
+	std::uint32_t extensionCount = 0;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
 	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
@@ -166,7 +143,7 @@ bool DeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const n
 	return true;
 }
 
-void DeviceManager::SetQueueFamilyInfo(
+void VkDeviceManager::SetQueueFamilyInfo(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) {
 	FamilyInfo familyInfos;
@@ -206,7 +183,7 @@ void DeviceManager::SetQueueFamilyInfo(
 	m_usableQueueFamilies.emplace_back(previousFamilyIndex, queueFlag, queueCount, 0u);
 }
 
-bool DeviceManager::IsDeviceSuitable(
+bool VkDeviceManager::IsDeviceSuitable(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) const noexcept {
 	SurfaceInfo surfaceInfo = QuerySurfaceCapabilities(device, surface);
@@ -235,4 +212,42 @@ bool DeviceManager::IsDeviceSuitable(
 		return true;
 	else
 		return false;
+}
+
+// Device Features
+VkDeviceManager::DeviceFeatures::DeviceFeatures() noexcept
+	: m_deviceFeaturesvk1_3{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+		.synchronization2 = VK_TRUE
+	},
+	m_deviceFeaturesvk1_2{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+		.pNext = &m_deviceFeaturesvk1_3,
+		.drawIndirectCount = VK_TRUE,
+		.descriptorIndexing = VK_TRUE,
+		.shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+		.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+		.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+		.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
+		.runtimeDescriptorArray = VK_TRUE,
+	},
+	m_deviceFeaturesvk1_1{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+		.pNext = &m_deviceFeaturesvk1_2,
+		.shaderDrawParameters = VK_TRUE
+	},
+	m_deviceFeatures1{
+		.multiDrawIndirect = VK_TRUE,
+		.drawIndirectFirstInstance = VK_TRUE,
+		.samplerAnisotropy = VK_TRUE
+	},
+	m_deviceFeatures2{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+		.pNext = &m_deviceFeaturesvk1_1,
+		.features = m_deviceFeatures1
+	} {}
+
+VkPhysicalDeviceFeatures2 const* VkDeviceManager::DeviceFeatures::GetDeviceFeatures2(
+) const noexcept {
+	return &m_deviceFeatures2;
 }

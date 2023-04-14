@@ -1,7 +1,6 @@
 #ifndef SWAPCHAIN_MANAGER_HPP_
 #define SWAPCHAIN_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
-#include <DeviceManager.hpp>
 #include <memory>
 #include <VkHelperFunctions.hpp>
 #include <optional>

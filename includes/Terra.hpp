@@ -5,7 +5,7 @@
 #include <DebugLayerManager.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkSyncObjects.hpp>
-#include <DeviceManager.hpp>
+#include <VkDeviceManager.hpp>
 #include <VKInstanceManager.hpp>
 #include <ISurfaceManager.hpp>
 #include <SwapChainManager.hpp>
@@ -36,8 +36,8 @@ namespace Terra {
 	extern std::unique_ptr<VkSyncObjects> computeSyncObjects;
 	extern std::unique_ptr<VkCommandQueue> transferQueue;
 	extern std::unique_ptr<VkCommandQueue> computeQueue;
-	extern std::unique_ptr<DeviceManager> device;
-	extern std::unique_ptr<InstanceManager> vkInstance;
+	extern std::unique_ptr<VkDeviceManager> device;
+	extern std::unique_ptr<VkInstanceManager> vkInstance;
 	extern std::unique_ptr<SwapChainManager> swapChain;
 	extern std::unique_ptr<IDisplayManager> display;
 	extern std::unique_ptr<ISurfaceManager> surface;
