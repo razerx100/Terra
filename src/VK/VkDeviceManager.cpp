@@ -20,6 +20,19 @@ void VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surfa
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
 
+	VkPhysicalDevice suitableDevice = SelectPhysicalDevice(devices, surface);
+
+	if (suitableDevice == VK_NULL_HANDLE)
+		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
+	else {
+		SetQueueFamilyInfo(suitableDevice, surface);
+		m_physicalDevice = suitableDevice;
+	}
+}
+
+VkPhysicalDevice VkDeviceManager::SelectPhysicalDevice(
+	const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface
+) const noexcept {
 	VkPhysicalDevice suitableDevice = QueryPhysicalDevices(
 		devices, surface, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
 	);
@@ -29,12 +42,7 @@ void VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surfa
 			devices, surface, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
 		);
 
-	if (suitableDevice == VK_NULL_HANDLE)
-		throw Exception("QueueFamily Error", "No GPU with all Queue Family support found.");
-	else {
-		SetQueueFamilyInfo(suitableDevice, surface);
-		m_physicalDevice = suitableDevice;
-	}
+	return suitableDevice;
 }
 
 VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
@@ -49,33 +57,49 @@ VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
 	return VK_NULL_HANDLE;
 }
 
-void VkDeviceManager::CreateLogicalDevice() {
+void VkDeviceManager::AddExtensionName(const char* name) noexcept {
+	m_extensionNames.emplace_back(name);
+}
+
+void VkDeviceManager::AddExtensionNames(const std::vector<const char*>& names) noexcept {
+	std::ranges::copy(names, std::back_inserter(m_extensionNames));
+}
+
+void VkDeviceManager::CreateLogicalDevice(bool meshShader) {
 	size_t mostQueueCount = 0u;
 	for (const auto& info : m_usableQueueFamilies)
 		mostQueueCount = std::max(mostQueueCount, info.queueRequired);
 
-	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(std::size(m_usableQueueFamilies));
+	// This array's element count will be the highest count of queues. In the case of a queue
+	// with a lesser count, it will only read the values till its count from the priority array
+	// and since those counts will always be lesser, it will always work. Unless you want
+	// different priority values for different queues
 	const std::vector<float> queuePriorities(mostQueueCount, 1.0f);
 
-	for (size_t index = 0u; index < std::size(queueCreateInfos); ++index) {
-		VkDeviceQueueCreateInfo& queueCreateInfo = queueCreateInfos[index];
-		const QueueFamilyInfo& queueFamilyInfo = m_usableQueueFamilies[index];
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	for (const QueueFamilyInfo& queueFamilyInfo : m_usableQueueFamilies) {
+		VkDeviceQueueCreateInfo createInfo{
+			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+			.queueFamilyIndex = static_cast<std::uint32_t>(queueFamilyInfo.index),
+			.queueCount = static_cast<std::uint32_t>(queueFamilyInfo.queueRequired),
+			.pQueuePriorities = std::data(queuePriorities)
+		};
 
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = static_cast<std::uint32_t>(queueFamilyInfo.index);
-		queueCreateInfo.queueCount = static_cast<std::uint32_t>(queueFamilyInfo.queueRequired);
-		queueCreateInfo.pQueuePriorities = std::data(queuePriorities);
+		queueCreateInfos.emplace_back(createInfo);
 	}
 
 	DeviceFeatures deviceFeatures{};
+	if (meshShader)
+		deviceFeatures.ActivateMeshShader();
 
-	VkDeviceCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pNext = deviceFeatures.GetDeviceFeatures2();
-	createInfo.pQueueCreateInfos = std::data(queueCreateInfos);
-	createInfo.queueCreateInfoCount = static_cast<std::uint32_t>(std::size(queueCreateInfos));
-	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(std::size(m_extensionNames));
-	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
+	VkDeviceCreateInfo createInfo{
+		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.pNext = deviceFeatures.GetDeviceFeatures2(),
+		.queueCreateInfoCount = static_cast<std::uint32_t>(std::size(queueCreateInfos)),
+		.pQueueCreateInfos = std::data(queueCreateInfos),
+		.enabledExtensionCount = static_cast<std::uint32_t>(std::size(m_extensionNames)),
+		.ppEnabledExtensionNames = std::data(m_extensionNames)
+	};
 
 	vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice);
 }
@@ -153,7 +177,7 @@ void VkDeviceManager::SetQueueFamilyInfo(
 	if (auto familyInfoCheck = QueryQueueFamilyInfo(device, surface); familyInfoCheck)
 		familyInfos = std::move(*familyInfoCheck);
 
-	// Sorting family indices to find consecuitive different queue types with same index
+	// Sorting family indices to find consecuitive different queue types with the same index
 	std::ranges::sort(familyInfos,
 		[](
 			const std::pair<size_t, QueueType>& pair1,
@@ -173,51 +197,71 @@ void VkDeviceManager::SetQueueFamilyInfo(
 			queueFlag |= familyType;
 		}
 		else {
-			m_usableQueueFamilies.emplace_back(previousFamilyIndex, queueFlag, queueCount, 0u);
+
+			QueueFamilyInfo familyInfo{
+				.index = previousFamilyIndex,
+				.typeFlags = queueFlag,
+				.queueRequired = queueCount
+			};
+			m_usableQueueFamilies.emplace_back(familyInfo);
 			previousFamilyIndex = familyIndex;
 			queueFlag = familyType;
 			queueCount = 1u;
 		}
 	}
 
-	m_usableQueueFamilies.emplace_back(previousFamilyIndex, queueFlag, queueCount, 0u);
+	QueueFamilyInfo familyInfo{
+		.index = previousFamilyIndex,
+		.typeFlags = queueFlag,
+		.queueRequired = queueCount
+	};
+	m_usableQueueFamilies.emplace_back(familyInfo);
 }
 
 bool VkDeviceManager::IsDeviceSuitable(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) const noexcept {
-	SurfaceInfo surfaceInfo = QuerySurfaceCapabilities(device, surface);
-	FamilyInfo familyInfos;
 
-	if (auto familyInfoCheck = QueryQueueFamilyInfo(device, surface); familyInfoCheck)
-		familyInfos = std::move(*familyInfoCheck);
-	else
+	if (!CheckDeviceExtensionSupport(device))
 		return false;
 
-	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
-	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+	if (!QuerySurfaceCapabilities(device, surface).IsCapable())
+		return false;
 
-	VkPhysicalDeviceFeatures2 features2 = {};
-	features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	features2.pNext = &indexingFeatures;
+	if (!DoesDeviceSupportFeatures(device))
+		return false;
+
+	if (!QueryQueueFamilyInfo(device, surface))
+		return false;
+
+	return true;
+}
+
+bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept {
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES
+	};
+
+	VkPhysicalDeviceFeatures2 features2{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+		.pNext = &indexingFeatures
+	};
 
 	vkGetPhysicalDeviceFeatures2(device, &features2);
 
-	if (CheckDeviceExtensionSupport(device)
-		&& surfaceInfo.IsCapable()
-		&& !std::empty(familyInfos)
-		&& features2.features.samplerAnisotropy
+	return features2.features.samplerAnisotropy
 		&& indexingFeatures.descriptorBindingPartiallyBound
-		&& indexingFeatures.runtimeDescriptorArray)
-		return true;
-	else
-		return false;
+		&& indexingFeatures.runtimeDescriptorArray;
 }
 
 // Device Features
 VkDeviceManager::DeviceFeatures::DeviceFeatures() noexcept
-	: m_deviceFeaturesvk1_3{
+	: m_deviceMeshFeatures{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT
+	},
+	m_deviceFeaturesvk1_3{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+		.pNext = &m_deviceMeshFeatures,
 		.synchronization2 = VK_TRUE
 	},
 	m_deviceFeaturesvk1_2{
@@ -229,7 +273,7 @@ VkDeviceManager::DeviceFeatures::DeviceFeatures() noexcept
 		.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
 		.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
 		.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-		.runtimeDescriptorArray = VK_TRUE,
+		.runtimeDescriptorArray = VK_TRUE
 	},
 	m_deviceFeaturesvk1_1{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
@@ -246,6 +290,10 @@ VkDeviceManager::DeviceFeatures::DeviceFeatures() noexcept
 		.pNext = &m_deviceFeaturesvk1_1,
 		.features = m_deviceFeatures1
 	} {}
+
+void VkDeviceManager::DeviceFeatures::ActivateMeshShader() noexcept {
+	m_deviceMeshFeatures.meshShader =  VK_TRUE;
+}
 
 VkPhysicalDeviceFeatures2 const* VkDeviceManager::DeviceFeatures::GetDeviceFeatures2(
 ) const noexcept {

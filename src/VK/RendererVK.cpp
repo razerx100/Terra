@@ -33,9 +33,13 @@ RendererVK::RendererVK(
 	m_objectManager.CreateObject(Terra::device, 3u);
 
 	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
+	const bool meshShader = engineType == RenderEngineType::MeshDraw;
+
+	if (meshShader)
+		Terra::device->AddExtensionName("VK_EXT_mesh_shader");
 
 	Terra::device->FindPhysicalDevice(vkInstance, vkSurface);
-	Terra::device->CreateLogicalDevice();
+	Terra::device->CreateLogicalDevice(meshShader);
 
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();

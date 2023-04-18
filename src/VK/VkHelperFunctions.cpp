@@ -39,6 +39,15 @@ void CreateSampler(
 	vkCreateSampler(logicalDevice, &createInfo, nullptr, sampler);
 }
 
+static void ConfigureQueue(
+	FamilyInfo& familyInfo, bool& queueTypeAvailability, VkQueueFamilyProperties& queueFamily,
+	size_t index, QueueType queueType
+) noexcept {
+	familyInfo.emplace_back(std::make_pair(index, queueType));
+	queueTypeAvailability = true;
+	--queueFamily.queueCount;
+}
+
 std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept {
@@ -59,12 +68,10 @@ std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	// Transfer only
 	for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 		VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+		const VkQueueFlags queueFlags = queueFamily.queueFlags;
 
-		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
-			&& !(queueFamily.queueFlags & 3u)) {
-			familyInfo.emplace_back(index, QueueType::TransferQueue);
-			transfer = true;
-			--queueFamily.queueCount;
+		if (queueFlags & VK_QUEUE_TRANSFER_BIT && !(queueFlags & 3u)) {
+			ConfigureQueue(familyInfo, transfer, queueFamily, index, TransferQueue);
 
 			break;
 		}
@@ -73,13 +80,11 @@ std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	if (transfer)
 		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+			const VkQueueFlags queueFlags = queueFamily.queueFlags;
 
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			if (queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				&& queueFamily.queueCount) {
-				familyInfo.emplace_back(index, QueueType::ComputeQueue);
-				compute = true;
-				--queueFamily.queueCount;
+				ConfigureQueue(familyInfo, compute, queueFamily, index, ComputeQueue);
 
 				break;
 			}
@@ -87,12 +92,12 @@ std::optional<FamilyInfo> QueryQueueFamilyInfo(
 	else
 		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+			const VkQueueFlags queueFlags = queueFamily.queueFlags;
 
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			if (queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				&& queueFamily.queueCount >= 2) {
-				familyInfo.emplace_back(index, QueueType::TransferQueue);
-				familyInfo.emplace_back(index, QueueType::ComputeQueue);
+				familyInfo.emplace_back(std::make_pair(index, TransferQueue));
+				familyInfo.emplace_back(std::make_pair(index, ComputeQueue));
 				compute = true;
 				transfer = true;
 				queueFamily.queueCount -= 2;
@@ -105,11 +110,8 @@ std::optional<FamilyInfo> QueryQueueFamilyInfo(
 		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
-			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT
-				&& queueFamily.queueCount) {
-				familyInfo.emplace_back(index, QueueType::TransferQueue);
-				transfer = true;
-				--queueFamily.queueCount;
+			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && queueFamily.queueCount) {
+				ConfigureQueue(familyInfo, transfer, queueFamily, index, TransferQueue);
 
 				break;
 			}
@@ -119,11 +121,8 @@ std::optional<FamilyInfo> QueryQueueFamilyInfo(
 		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
-			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT
-				&& queueFamily.queueCount) {
-				familyInfo.emplace_back(index, QueueType::ComputeQueue);
-				compute = true;
-				--queueFamily.queueCount;
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && queueFamily.queueCount) {
+				ConfigureQueue(familyInfo, compute, queueFamily, index, ComputeQueue);
 
 				break;
 			}
@@ -135,9 +134,7 @@ std::optional<FamilyInfo> QueryQueueFamilyInfo(
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
 			&& CheckPresentSupport(device, surface, index)
 			&& queueFamily.queueCount >= 1) {
-			familyInfo.emplace_back(index, QueueType::GraphicsQueue);
-			graphics = true;
-			--queueFamily.queueCount;
+			ConfigureQueue(familyInfo, graphics, queueFamily, index, GraphicsQueue);
 
 			break;
 		}
@@ -163,7 +160,7 @@ bool CheckPresentSupport(
 SurfaceInfo QuerySurfaceCapabilities(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept {
-	SurfaceInfo surfaceInfo = {};
+	SurfaceInfo surfaceInfo{};
 
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &surfaceInfo.capabilities);
 
