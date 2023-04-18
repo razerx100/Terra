@@ -52,19 +52,6 @@ RendererVK::RendererVK(
 		QueueType::GraphicsQueue
 	);
 
-	SwapChainManager::Args swapArguments{
-		.device = logicalDevice,
-		.surface = vkSurface,
-		.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface),
-		.width = width,
-		.height = height,
-		.bufferCount = bufferCount,
-		// Graphics and Present queues should be the same
-		.presentQueue = graphicsQueueHandle
-	};
-
-	m_objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
-
 	Terra::InitGraphicsQueue(
 		m_objectManager, graphicsQueueHandle, logicalDevice, graphicsQueueFamilyIndex,
 		bufferCount
@@ -82,17 +69,30 @@ RendererVK::RendererVK(
 		QueueType::ComputeQueue
 	);
 
+	Terra::InitComputeQueue(
+		m_objectManager, computeQueueHandle, logicalDevice, computeQueueFamilyIndex,
+		bufferCount
+	);
+
+	SwapChainManager::Args swapArguments{
+		.device = logicalDevice,
+		.surface = vkSurface,
+		.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface),
+		.width = width,
+		.height = height,
+		.bufferCount = bufferCount,
+		// Graphics and Present queues should be the same
+		.presentQueue = graphicsQueueHandle
+	};
+
+	m_objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
+
 	Terra::InitRenderEngine(
 		m_objectManager, logicalDevice, engineType, bufferCount,
 		{ transferQueueFamilyIndex, graphicsQueueFamilyIndex, computeQueueFamilyIndex }
 	);
 	Terra::renderEngine->ResizeViewportAndScissor(width, height);
 	Terra::renderEngine->CreateRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
-
-	Terra::InitComputeQueue(
-		m_objectManager, computeQueueHandle, logicalDevice, computeQueueFamilyIndex,
-		bufferCount
-	);
 
 	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
 

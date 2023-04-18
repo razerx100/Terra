@@ -3,7 +3,11 @@
 
 SwapChainManager::SwapChainManager(const Args& arguments)
 	: m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ arguments.device.value() },
-	m_swapchainFormat{}, m_swapchainExtent{}, m_presentQueue{ arguments.presentQueue.value() },
+	m_swapchainFormat{}, m_swapchainExtent{},
+	m_swapchainImages{ arguments.bufferCount.value(), VK_NULL_HANDLE },
+	m_swapchainImageViews{ arguments.bufferCount.value(), VK_NULL_HANDLE },
+	m_frameBuffers{ arguments.bufferCount.value(), VK_NULL_HANDLE },
+	m_presentQueue{ arguments.presentQueue.value() },
 	m_surfaceInfo{ arguments.surfaceInfo.value() }, m_nextImageIndex{ 0u } {
 
 	SwapChainManagerCreateInfo swapCreateInfo{
