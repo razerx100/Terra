@@ -87,14 +87,14 @@ RendererVK::RendererVK(
 
 	m_objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
 
+	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
+
 	Terra::InitRenderEngine(
 		m_objectManager, logicalDevice, engineType, bufferCount,
 		{ transferQueueFamilyIndex, graphicsQueueFamilyIndex, computeQueueFamilyIndex }
 	);
 	Terra::renderEngine->ResizeViewportAndScissor(width, height);
 	Terra::renderEngine->CreateRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
-
-	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
 
 	m_objectManager.CreateObject(
 		Terra::textureStorage, {
