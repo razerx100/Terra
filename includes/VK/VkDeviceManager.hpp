@@ -24,16 +24,6 @@ public:
 	VkDevice GetLogicalDevice() const noexcept;
 
 private:
-	struct QueueFamilyInfo {
-		size_t index = 0u;
-		std::uint32_t typeFlags = 0u;
-		size_t queueRequired = 0u;
-		size_t queueCreated = 0u;
-	};
-
-	using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
-
-private:
 	[[nodiscard]]
 	bool CheckDeviceType(VkPhysicalDevice device,VkPhysicalDeviceType deviceType) const noexcept;
 	[[nodiscard]]
@@ -44,12 +34,6 @@ private:
 	bool DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept;
 
 	[[nodiscard]]
-	std::pair<VkQueue, std::uint32_t> GetQueue(QueueType type) noexcept;
-	[[nodiscard]]
-	std::optional<FamilyInfo> QueryQueueFamilyInfo(
-		VkPhysicalDevice device, VkSurfaceKHR surface
-	) const noexcept;
-	[[nodiscard]]
 	VkPhysicalDevice QueryPhysicalDevices(
 		const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface,
 		VkPhysicalDeviceType deviceType
@@ -59,18 +43,9 @@ private:
 		const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface
 	) const noexcept;
 
-	void SetQueueFamilyInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
-	void SetQueueFamilyManager() noexcept;
-
-	static void ConfigureQueue(
-		FamilyInfo& familyInfo, bool& queueTypeAvailability, VkQueueFamilyProperties& queueFamily,
-		size_t index, QueueType queueType
-	) noexcept;
-
 private:
 	VkPhysicalDevice m_physicalDevice;
 	VkDevice m_logicalDevice;
-	std::vector<QueueFamilyInfo> m_usableQueueFamilies;
 	std::vector<const char*> m_extensionNames = {
 		"VK_KHR_swapchain"
 	};
