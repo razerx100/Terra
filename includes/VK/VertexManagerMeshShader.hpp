@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <VkResourceViews.hpp>
-#include <VkHelperFunctions.hpp>
+#include <VkQueueFamilyManager.hpp>
 #include <UploadContainer.hpp>
 
 #include <IModel.hpp>

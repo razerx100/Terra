@@ -30,7 +30,7 @@ protected:
 	void ExecutePreGraphicsStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex);
 	void BindGraphicsDescriptorSets(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex);
 
-	void ConstructGraphicsPipelineLayout(VkDevice device, std::uint32_t frameCount);
+	void ConstructGraphicsPipelineLayout(VkDevice device);
 
 	[[nodiscard]]
 	std::unique_ptr<PipelineLayout> CreateGraphicsPipelineLayout(

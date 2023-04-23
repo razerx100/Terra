@@ -8,8 +8,7 @@ RendererVK::RendererVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount, RenderEngineType engineType
-) : m_appName{appName},
-	m_bufferCount{ bufferCount }, m_width{ width }, m_height{ height } {
+) : m_appName{appName}, m_width{ width }, m_height{ height } {
 
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
@@ -43,35 +42,25 @@ RendererVK::RendererVK(
 
 	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
+	VkQueueFamilyMananger queFamilyMan = Terra::device->GetQueueFamilyManager();
 
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 
 	Terra::InitResources(m_objectManager, physicalDevice, logicalDevice);
 
-	auto [graphicsQueueHandle, graphicsQueueFamilyIndex] = Terra::device->GetQueue(
-		QueueType::GraphicsQueue
-	);
-
 	Terra::InitGraphicsQueue(
-		m_objectManager, graphicsQueueHandle, logicalDevice, graphicsQueueFamilyIndex,
-		bufferCount
-	);
-
-	auto [transferQueueHandle, transferQueueFamilyIndex] = Terra::device->GetQueue(
-		QueueType::TransferQueue
+		m_objectManager, queFamilyMan.GetQueue(GraphicsQueue), logicalDevice,
+		queFamilyMan.GetIndex(GraphicsQueue), bufferCount
 	);
 
 	Terra::InitTransferQueue(
-		m_objectManager, transferQueueHandle, logicalDevice, transferQueueFamilyIndex
-	);
-
-	auto [computeQueueHandle, computeQueueFamilyIndex] = Terra::device->GetQueue(
-		QueueType::ComputeQueue
+		m_objectManager, queFamilyMan.GetQueue(TransferQueue), logicalDevice,
+		queFamilyMan.GetIndex(TransferQueue)
 	);
 
 	Terra::InitComputeQueue(
-		m_objectManager, computeQueueHandle, logicalDevice, computeQueueFamilyIndex,
-		bufferCount
+		m_objectManager, queFamilyMan.GetQueue(ComputeQueue), logicalDevice,
+		queFamilyMan.GetIndex(ComputeQueue), bufferCount
 	);
 
 	SwapChainManager::Args swapArguments{
@@ -82,7 +71,7 @@ RendererVK::RendererVK(
 		.height = height,
 		.bufferCount = bufferCount,
 		// Graphics and Present queues should be the same
-		.presentQueue = graphicsQueueHandle
+		.presentQueue = queFamilyMan.GetQueue(GraphicsQueue)
 	};
 
 	m_objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
@@ -90,16 +79,14 @@ RendererVK::RendererVK(
 	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
 
 	Terra::InitRenderEngine(
-		m_objectManager, logicalDevice, engineType, bufferCount,
-		{ transferQueueFamilyIndex, graphicsQueueFamilyIndex, computeQueueFamilyIndex }
+		m_objectManager, logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices()
 	);
 	Terra::renderEngine->ResizeViewportAndScissor(width, height);
 	Terra::renderEngine->CreateRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
 
 	m_objectManager.CreateObject(
 		Terra::textureStorage, {
-			logicalDevice, physicalDevice,
-			QueueIndicesTG{transferQueueFamilyIndex, graphicsQueueFamilyIndex}
+			logicalDevice, physicalDevice, queFamilyMan.GetTransferAndGraphicsIndices()
 		}, 1u
 	);
 
@@ -107,8 +94,7 @@ RendererVK::RendererVK(
 
 	m_objectManager.CreateObject(
 		Terra::bufferManager,
-		{ logicalDevice,  bufferCount,
-			QueueIndicesCG{computeQueueFamilyIndex, graphicsQueueFamilyIndex},
+		{ logicalDevice,  bufferCount,queFamilyMan.GetComputeAndGraphicsIndices(),
 			modelDataNoBB
 		},
 		1u
@@ -310,7 +296,7 @@ void RendererVK::ProcessData() {
 	Terra::graphicsDescriptorSet->CreateDescriptorSets(logicalDevice);
 	Terra::computeDescriptorSet->CreateDescriptorSets(logicalDevice);
 
-	Terra::renderEngine->ConstructPipelines(m_bufferCount);
+	Terra::renderEngine->ConstructPipelines();
 
 	// Cleanup Upload Buffers
 	Terra::Resources::uploadContainer.reset();

@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <atomic>
 #include <VkResourceViews.hpp>
-#include <VkHelperFunctions.hpp>
+#include <VkQueueFamilyManager.hpp>
 #include <optional>
 
 class TextureStorage {

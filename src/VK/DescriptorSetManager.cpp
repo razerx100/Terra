@@ -22,6 +22,10 @@ VkDescriptorSet DescriptorSetManager::GetDescriptorSet(size_t index) const noexc
 	return m_descriptorSets[index];
 }
 
+std::uint32_t DescriptorSetManager::GetDescriptorSetCount() const noexcept {
+	return static_cast<std::uint32_t>(std::size(m_descriptorSets));
+}
+
 void DescriptorSetManager::CreateDescriptorSets(VkDevice device) {
 	const auto descriptorSetCount = static_cast<std::uint32_t>(std::size(m_descriptorSets));
 

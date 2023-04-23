@@ -93,14 +93,16 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 	}
 }
 
-void RenderEngineIndirectDraw::ConstructPipelines(std::uint32_t frameCount) {
+void RenderEngineIndirectDraw::ConstructPipelines() {
 	VkDevice device = Terra::device->GetLogicalDevice();
 
-	ConstructGraphicsPipelineLayout(device, frameCount);
+	ConstructGraphicsPipelineLayout(device);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 
+	DescriptorSetManager const* descManager = Terra::computeDescriptorSet.get();
+
 	m_computePipeline.CreateComputePipelineLayout(
-		device, frameCount, Terra::computeDescriptorSet->GetDescriptorSetLayouts()
+		device, descManager->GetDescriptorSetCount(), descManager->GetDescriptorSetLayouts()
 	);
 	m_computePipeline.CreateComputePipeline(device, m_shaderPath);
 }
@@ -213,10 +215,10 @@ void RenderEngineIndividualDraw::RecordDrawCommands(
 	}
 }
 
-void RenderEngineIndividualDraw::ConstructPipelines(std::uint32_t frameCount) {
+void RenderEngineIndividualDraw::ConstructPipelines() {
 	VkDevice device = Terra::device->GetLogicalDevice();
 
-	ConstructGraphicsPipelineLayout(device, frameCount);
+	ConstructGraphicsPipelineLayout(device);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 }
 

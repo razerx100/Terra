@@ -2,7 +2,8 @@
 #define DEVICE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
-#include <VkHelperFunctions.hpp>
+#include <optional>
+#include <VkQueueFamilyManager.hpp>
 
 class VkDeviceManager {
 public:
@@ -15,7 +16,8 @@ public:
 	void AddExtensionNames(const std::vector<const char*>& names) noexcept;
 
 	[[nodiscard]]
-	std::pair<VkQueue, std::uint32_t> GetQueue(QueueType type) noexcept;
+	VkQueueFamilyMananger GetQueueFamilyManager() const noexcept;
+
 	[[nodiscard]]
 	VkPhysicalDevice GetPhysicalDevice() const noexcept;
 	[[nodiscard]]
@@ -29,6 +31,8 @@ private:
 		size_t queueCreated = 0u;
 	};
 
+	using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
+
 private:
 	[[nodiscard]]
 	bool CheckDeviceType(VkPhysicalDevice device,VkPhysicalDeviceType deviceType) const noexcept;
@@ -40,6 +44,12 @@ private:
 	bool DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept;
 
 	[[nodiscard]]
+	std::pair<VkQueue, std::uint32_t> GetQueue(QueueType type) noexcept;
+	[[nodiscard]]
+	std::optional<FamilyInfo> QueryQueueFamilyInfo(
+		VkPhysicalDevice device, VkSurfaceKHR surface
+	) const noexcept;
+	[[nodiscard]]
 	VkPhysicalDevice QueryPhysicalDevices(
 		const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface,
 		VkPhysicalDeviceType deviceType
@@ -50,6 +60,12 @@ private:
 	) const noexcept;
 
 	void SetQueueFamilyInfo(VkPhysicalDevice device, VkSurfaceKHR surface);
+	void SetQueueFamilyManager() noexcept;
+
+	static void ConfigureQueue(
+		FamilyInfo& familyInfo, bool& queueTypeAvailability, VkQueueFamilyProperties& queueFamily,
+		size_t index, QueueType queueType
+	) noexcept;
 
 private:
 	VkPhysicalDevice m_physicalDevice;
@@ -58,6 +74,7 @@ private:
 	std::vector<const char*> m_extensionNames = {
 		"VK_KHR_swapchain"
 	};
+	VkQueueFamilyMananger m_queueFamilyManager;
 
 private:
 	class DeviceFeatures {

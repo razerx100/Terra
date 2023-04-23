@@ -5,36 +5,6 @@
 #include <concepts>
 #include <vector>
 
-enum QueueType {
-	TransferQueue = 1,
-	ComputeQueue = 2,
-	GraphicsQueue = 4
-};
-
-struct QueueIndicesTG {
-	std::uint32_t transfer;
-	std::uint32_t graphics;
-};
-
-struct QueueIndicesCG {
-	std::uint32_t compute;
-	std::uint32_t graphics;
-};
-
-struct QueueIndices3 {
-	std::uint32_t transfer;
-	std::uint32_t graphics;
-	std::uint32_t compute;
-
-	inline operator QueueIndicesTG() const {
-		return { transfer, graphics };
-	}
-
-	inline operator QueueIndicesCG() const {
-		return { compute, graphics };
-	}
-};
-
 struct SurfaceInfo {
 	VkSurfaceCapabilitiesKHR capabilities;
 	std::vector<VkSurfaceFormatKHR> formats;
@@ -46,17 +16,10 @@ struct SurfaceInfo {
 	}
 };
 
-using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
-
 void CreateSampler(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSampler* sampler,
 	bool anisotropy = false, float maxAnisotropy = 1.f
 );
-
-[[nodiscard]]
-std::optional<FamilyInfo> QueryQueueFamilyInfo(
-	VkPhysicalDevice device, VkSurfaceKHR surface
-) noexcept;
 
 [[nodiscard]]
 bool CheckPresentSupport(

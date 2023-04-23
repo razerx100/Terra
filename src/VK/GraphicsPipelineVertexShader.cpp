@@ -1,5 +1,5 @@
 #include <GraphicsPipelineVertexShader.hpp>
-#include <Shader.hpp>
+#include <VkShader.hpp>
 
 // Vertex Shader
 std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPipelineVS(
@@ -7,10 +7,10 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 	const std::wstring& shaderPath, const std::wstring& fragmentShader,
 	const std::wstring& vertexShader
 ) const noexcept {
-	auto vs = std::make_unique<Shader>(device);
+	auto vs = std::make_unique<VkShader>(device);
 	vs->CreateShader(device, shaderPath + vertexShader);
 
-	auto fs = std::make_unique<Shader>(device);
+	auto fs = std::make_unique<VkShader>(device);
 	fs->CreateShader(device, shaderPath + fragmentShader);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
@@ -21,7 +21,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
 		.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u)
 		.InitLayout(),
-		vs->GetByteCode(), fs->GetByteCode()
+		vs->GetShaderModule(), fs->GetShaderModule()
 	);
 
 	return pso;

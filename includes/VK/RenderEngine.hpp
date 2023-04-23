@@ -20,7 +20,7 @@ public:
 	virtual void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void ExecutePostRenderStage() = 0;
-	virtual void ConstructPipelines(std::uint32_t frameCount) = 0;
+	virtual void ConstructPipelines() = 0;
 	virtual void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept = 0;
 
 	virtual void ResizeViewportAndScissor(

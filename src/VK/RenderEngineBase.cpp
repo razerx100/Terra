@@ -66,11 +66,11 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 	vkCmdBeginRenderPass(graphicsCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void RenderEngineBase::ConstructGraphicsPipelineLayout(
-	VkDevice device, std::uint32_t frameCount
-) {
+void RenderEngineBase::ConstructGraphicsPipelineLayout(VkDevice device) {
+	DescriptorSetManager const* descManager = Terra::graphicsDescriptorSet.get();
+
 	m_graphicsPipelineLayout = CreateGraphicsPipelineLayout(
-		device, frameCount, Terra::graphicsDescriptorSet->GetDescriptorSetLayouts()
+		device, descManager->GetDescriptorSetCount(), descManager->GetDescriptorSetLayouts()
 	);
 }
 

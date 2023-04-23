@@ -54,7 +54,6 @@ public:
 private:
 	const std::string m_appName;
 
-	std::uint32_t m_bufferCount;
 	std::uint32_t m_width;
 	std::uint32_t m_height;
 	ObjectManager m_objectManager;

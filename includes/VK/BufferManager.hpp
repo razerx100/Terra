@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <VkResourceViews.hpp>
 #include <DescriptorSetManager.hpp>
-#include <VkHelperFunctions.hpp>
+#include <VkQueueFamilyManager.hpp>
 #include <optional>
 
 #include <IModel.hpp>

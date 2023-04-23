@@ -42,6 +42,8 @@ public:
 	VkDescriptorSetLayout const* GetDescriptorSetLayouts() const noexcept;
 	[[nodiscard]]
 	VkDescriptorSet GetDescriptorSet(size_t index) const noexcept;
+	[[nodiscard]]
+	std::uint32_t GetDescriptorSetCount() const noexcept;
 
 	void AddBuffersSplit(
 		const DescriptorInfo& descInfo, std::vector<VkDescriptorBufferInfo> bufferInfos,

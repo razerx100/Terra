@@ -2,9 +2,11 @@
 #include <ranges>
 #include <algorithm>
 #include <Exception.hpp>
+#include <VkHelperFunctions.hpp>
 
 VkDeviceManager::VkDeviceManager() noexcept
-	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE } {}
+	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE },
+	m_queueFamilyManager{} {}
 
 VkDeviceManager::~VkDeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -102,6 +104,8 @@ void VkDeviceManager::CreateLogicalDevice(bool meshShader) {
 	};
 
 	vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice);
+
+	SetQueueFamilyManager();
 }
 
 bool VkDeviceManager::CheckDeviceType(
@@ -119,6 +123,26 @@ VkPhysicalDevice VkDeviceManager::GetPhysicalDevice() const noexcept {
 
 VkDevice VkDeviceManager::GetLogicalDevice() const noexcept {
 	return m_logicalDevice;
+}
+
+VkQueueFamilyMananger VkDeviceManager::GetQueueFamilyManager() const noexcept {
+	return m_queueFamilyManager;
+}
+
+void VkDeviceManager::SetQueueFamilyManager() noexcept {
+	auto [graphicsQueue, graphicsIndex] = GetQueue(GraphicsQueue);
+	auto [computeQueue, computeIndex] = GetQueue(ComputeQueue);
+	auto [transferQueue, transferIndex] = GetQueue(TransferQueue);
+	QueueIndices3 indices{
+		.transfer = transferIndex,
+		.graphics = graphicsIndex,
+		.compute = computeIndex,
+	};
+
+	m_queueFamilyManager.AddQueueFamilyIndices(indices);
+	m_queueFamilyManager.AddQueue(GraphicsQueue, graphicsQueue);
+	m_queueFamilyManager.AddQueue(ComputeQueue, computeQueue);
+	m_queueFamilyManager.AddQueue(TransferQueue, transferQueue);
 }
 
 std::pair<VkQueue, std::uint32_t> VkDeviceManager::GetQueue(QueueType type) noexcept {
@@ -253,6 +277,114 @@ bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const n
 		&& indexingFeatures.descriptorBindingPartiallyBound
 		&& indexingFeatures.runtimeDescriptorArray;
 }
+
+void VkDeviceManager::ConfigureQueue(
+	FamilyInfo& familyInfo, bool& queueTypeAvailability, VkQueueFamilyProperties& queueFamily,
+	size_t index, QueueType queueType
+) noexcept {
+	familyInfo.emplace_back(std::make_pair(index, queueType));
+	queueTypeAvailability = true;
+	--queueFamily.queueCount;
+}
+
+std::optional<VkDeviceManager::FamilyInfo> VkDeviceManager::QueryQueueFamilyInfo(
+	VkPhysicalDevice device, VkSurfaceKHR surface
+) const noexcept {
+	std::uint32_t queueFamilyCount = 0u;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(
+		device, &queueFamilyCount, std::data(queueFamilies)
+	);
+
+	bool transfer = false;
+	bool compute = false;
+	bool graphics = false;
+
+	FamilyInfo familyInfo;
+
+	// Transfer only
+	for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+		VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+		const VkQueueFlags queueFlags = queueFamily.queueFlags;
+
+		if (queueFlags & VK_QUEUE_TRANSFER_BIT && !(queueFlags & 3u)) {
+			ConfigureQueue(familyInfo, transfer, queueFamily, index, TransferQueue);
+
+			break;
+		}
+	}
+
+	if (transfer)
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+			const VkQueueFlags queueFlags = queueFamily.queueFlags;
+
+			if (queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				&& queueFamily.queueCount) {
+				ConfigureQueue(familyInfo, compute, queueFamily, index, ComputeQueue);
+
+				break;
+			}
+		}
+	else
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+			const VkQueueFlags queueFlags = queueFamily.queueFlags;
+
+			if (queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				&& queueFamily.queueCount >= 2) {
+				familyInfo.emplace_back(std::make_pair(index, TransferQueue));
+				familyInfo.emplace_back(std::make_pair(index, ComputeQueue));
+				compute = true;
+				transfer = true;
+				queueFamily.queueCount -= 2;
+
+				break;
+			}
+		}
+
+	if (!transfer)
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT && queueFamily.queueCount) {
+				ConfigureQueue(familyInfo, transfer, queueFamily, index, TransferQueue);
+
+				break;
+			}
+		}
+
+	if (!compute)
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && queueFamily.queueCount) {
+				ConfigureQueue(familyInfo, compute, queueFamily, index, ComputeQueue);
+
+				break;
+			}
+		}
+
+	for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
+			&& CheckPresentSupport(device, surface, index)
+			&& queueFamily.queueCount >= 1) {
+			ConfigureQueue(familyInfo, graphics, queueFamily, index, GraphicsQueue);
+
+			break;
+		}
+	}
+
+	if (graphics && compute && transfer)
+		return familyInfo;
+	else
+		return {};
+}
+
 
 // Device Features
 VkDeviceManager::DeviceFeatures::DeviceFeatures() noexcept

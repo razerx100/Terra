@@ -6,7 +6,7 @@
 #include <PipelineLayout.hpp>
 #include <VKPipelineObject.hpp>
 #include <VkResourceViews.hpp>
-#include <VkHelperFunctions.hpp>
+#include <VkQueueFamilyManager.hpp>
 
 #include <IModel.hpp>
 #include <DirectXMath.h>

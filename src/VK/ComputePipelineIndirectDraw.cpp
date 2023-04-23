@@ -1,4 +1,4 @@
-#include <Shader.hpp>
+#include <VkShader.hpp>
 #include <VkResourceBarriers.hpp>
 
 #include <ComputePipelineIndirectDraw.hpp>
@@ -46,11 +46,11 @@ std::unique_ptr<PipelineLayout> ComputePipelineIndirectDraw::_createComputePipel
 std::unique_ptr<VkPipelineObject> ComputePipelineIndirectDraw::_createComputePipeline(
 	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
 ) const noexcept {
-	auto cs = std::make_unique<Shader>(device);
+	auto cs = std::make_unique<VkShader>(device);
 	cs->CreateShader(device, shaderPath + L"ComputeShader.spv");
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateComputePipeline(device, computeLayout, cs->GetByteCode());
+	pso->CreateComputePipeline(device, computeLayout, cs->GetShaderModule());
 
 	return pso;
 }
