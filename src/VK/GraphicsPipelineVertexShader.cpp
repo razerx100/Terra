@@ -14,7 +14,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 	fs->CreateShader(device, shaderPath + fragmentShader);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateGraphicsPipeline(
+	pso->CreateGraphicsPipelineVS(
 		device, graphicsLayout, renderPass,
 		VertexLayout()
 		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)

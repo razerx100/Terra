@@ -20,7 +20,7 @@ private:
 	VkVertexInputBindingDescription m_bindingDesc;
 	std::vector<VkVertexInputAttributeDescription> m_attrDescs;
 
-	const std::uint32_t m_binding;
+	std::uint32_t m_binding;
 	std::uint32_t m_vertexOffset;
 	std::uint32_t m_position;
 };

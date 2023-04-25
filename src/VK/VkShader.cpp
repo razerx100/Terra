@@ -1,5 +1,6 @@
 #include <VkShader.hpp>
 #include <fstream>
+#include <Exception.hpp>
 
 VkShader::VkShader(VkDevice device)
 	: m_deviceRef{ device }, m_pBinary{ VK_NULL_HANDLE } {}
@@ -32,6 +33,9 @@ VkShaderModule VkShader::GetShaderModule() const noexcept {
 
 std::vector<char> VkShader::LoadBinary(const std::wstring& fileName) {
 	std::ifstream shader(fileName.c_str(), std::ios_base::binary | std::ios_base::ate);
+
+	if (!shader.is_open())
+		throw Exception("Shader Compilation Error", "Shader couldn't be found.");
 
 	const size_t shaderSize = static_cast<size_t>(shader.tellg());
 	shader.seekg(0u);
