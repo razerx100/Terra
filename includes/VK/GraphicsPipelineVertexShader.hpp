@@ -3,6 +3,12 @@
 #include <GraphicsPipelineBase.hpp>
 
 class GraphicsPipelineVertexShader : public GraphicsPipelineBase {
+public:
+	void CreateGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath
+	) noexcept final;
+
 protected:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
@@ -10,6 +16,11 @@ protected:
 		const std::wstring& shaderPath, const std::wstring& fragmentShader,
 		const std::wstring& vertexShader
 	) const noexcept;
+	[[nodiscard]]
+	virtual std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
+	) const noexcept = 0;
 };
 
 class GraphicsPipelineIndirectDraw : public GraphicsPipelineVertexShader {

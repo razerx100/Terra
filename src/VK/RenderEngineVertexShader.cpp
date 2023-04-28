@@ -52,6 +52,18 @@ void RenderEngineVertexShader::ReleaseOwnership(
 	_releaseOwnership(transferCmdBuffer);
 }
 
+std::unique_ptr<PipelineLayout> RenderEngineVertexShader::CreateGraphicsPipelineLayout(
+	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
+) const noexcept {
+	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
+
+	// Push constants needs to be serialised according to the shader stages
+
+	pipelineLayout->CreateLayout(setLayouts, layoutCount);
+
+	return pipelineLayout;
+}
+
 #pragma warning(push)
 #pragma warning(disable: 4100)
 void RenderEngineVertexShader::_bindResourcesToMemory(VkDevice device) {}

@@ -20,10 +20,10 @@ void VkPipelineObject::CreateGraphicsPipelineVS(
 
 void VkPipelineObject::CreateGraphicsPipelineMS(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	VkShaderModule meshShader
+	VkShaderModule meshShader, VkShaderModule fragmentShader
 ) noexcept {
 	GraphicsPipelineCreateInfo pipelineInfo{ graphicsLayout, renderPass };
-	pipelineInfo.SetMeshShaderStage(meshShader);
+	pipelineInfo.SetMeshShaderStage(meshShader, fragmentShader);
 
 	vkCreateGraphicsPipelines(
 		device, VK_NULL_HANDLE, 1u, pipelineInfo.GetGraphicsCreateInfoRef(), nullptr,
@@ -181,10 +181,13 @@ void VkPipelineObject::GraphicsPipelineCreateInfo::SetVertexShaderStage(
 }
 
 void VkPipelineObject::GraphicsPipelineCreateInfo::SetMeshShaderStage(
-	VkShaderModule meshShader
+	VkShaderModule meshShader, VkShaderModule fragmentShader
 ) noexcept {
 	m_shaderStagesInfo.emplace_back(
 		GetShaderStageInfo(meshShader, VK_SHADER_STAGE_MESH_BIT_EXT)
+	);
+	m_shaderStagesInfo.emplace_back(
+		GetShaderStageInfo(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT)
 	);
 
 	AddShaderStages();

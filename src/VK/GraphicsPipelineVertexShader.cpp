@@ -27,6 +27,15 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 	return pso;
 }
 
+void GraphicsPipelineVertexShader::CreateGraphicsPipeline(
+	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	const std::wstring& shaderPath
+) noexcept {
+	m_graphicsPipeline = _createGraphicsPipeline(
+		device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
+	);
+}
+
 // Indirect Draw
 GraphicsPipelineIndirectDraw::GraphicsPipelineIndirectDraw() noexcept
 	: m_modelCount{ 0u }, m_counterBufferOffset{ 0u }, m_argumentBufferOffset{ 0u } {}

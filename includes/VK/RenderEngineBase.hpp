@@ -33,9 +33,9 @@ protected:
 	void ConstructGraphicsPipelineLayout(VkDevice device);
 
 	[[nodiscard]]
-	std::unique_ptr<PipelineLayout> CreateGraphicsPipelineLayout(
+	virtual std::unique_ptr<PipelineLayout> CreateGraphicsPipelineLayout(
 		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
-	) const noexcept;
+	) const noexcept = 0;
 
 	using WaitSemaphoreData = std::pair<std::span<VkSemaphore>, std::span<VkPipelineStageFlags>>;
 

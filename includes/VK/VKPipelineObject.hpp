@@ -16,7 +16,7 @@ public:
 	) noexcept;
 	void CreateGraphicsPipelineMS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		VkShaderModule meshShader
+		VkShaderModule meshShader, VkShaderModule fragmentShader
 	) noexcept;
 	void CreateComputePipeline(
 		VkDevice device, VkPipelineLayout computeLayout, VkShaderModule computeShader
@@ -46,7 +46,9 @@ private:
 		void SetVertexShaderStage(
 			VkShaderModule vertexShader, VkShaderModule fragmentShader
 		) noexcept;
-		void SetMeshShaderStage(VkShaderModule meshShader) noexcept;
+		void SetMeshShaderStage(
+			VkShaderModule meshShader, VkShaderModule fragmentShader
+		) noexcept;
 
 		[[nodiscard]]
 		VkGraphicsPipelineCreateInfo const* GetGraphicsCreateInfoRef() const noexcept;

@@ -7,19 +7,12 @@
 
 class GraphicsPipelineBase {
 public:
-	void CreateGraphicsPipeline(
+	virtual void CreateGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath
-	) noexcept;
+	) noexcept = 0;
 
 	void BindGraphicsPipeline(VkCommandBuffer graphicsCmdBuffer) const noexcept;
-
-protected:
-	[[nodiscard]]
-	virtual std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) const noexcept = 0;
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
