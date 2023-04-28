@@ -33,6 +33,7 @@ namespace Terra {
 	std::unique_ptr<CameraManager> cameraManager;
 	std::shared_ptr<ISharedDataContainer> sharedData;
 	std::unique_ptr<RenderEngine> renderEngine;
+	std::unique_ptr<VkDeviceExtensionLoader> deviceExtensionLoader;
 
 	namespace Resources {
 		std::unique_ptr<DeviceMemory> gpuOnlyMemory;

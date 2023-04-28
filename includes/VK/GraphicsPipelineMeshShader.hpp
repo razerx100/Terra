@@ -16,6 +16,9 @@ public:
 
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 
+	static void AddRequiredExtensionFunctions() noexcept;
+	static void RetrieveExtensionFunctions();
+
 private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineMS(
@@ -36,5 +39,8 @@ private:
 private:
 	VkPipelineLayout m_graphicsLayout;
 	std::vector<ModelDetails> m_modelDetails;
+
+	static inline PFN_vkCmdDrawMeshTasksEXT s_vkCmdDrawMeshTasksEXT = nullptr;
+	static constexpr const char* s_DrawMeshTasksName = "vkCmdDrawMeshTasksEXT";
 };
 #endif

@@ -3,6 +3,8 @@
 #include <exception>
 #include <string>
 
+using namespace std::string_literals;
+
 class Exception : public std::exception {
 public:
 	Exception(const std::string& errorType, const std::string& errorMessage) noexcept;

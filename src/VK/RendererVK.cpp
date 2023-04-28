@@ -44,6 +44,14 @@ RendererVK::RendererVK(
 	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
 	VkQueueFamilyMananger queFamilyMan = Terra::device->GetQueueFamilyManager();
 
+	m_objectManager.CreateObject(Terra::deviceExtensionLoader, 0u);
+
+	// Add required Extension Function names
+
+	Terra::deviceExtensionLoader->QueryFunctionPTRs(logicalDevice);
+
+	// Load Extension Functions into required classes
+
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 
 	Terra::InitResources(m_objectManager, physicalDevice, logicalDevice);

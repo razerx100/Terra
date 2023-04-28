@@ -1,5 +1,8 @@
 #include <GraphicsPipelineMeshShader.hpp>
 #include <VkShader.hpp>
+#include <Exception.hpp>
+
+#include <Terra.hpp>
 
 void GraphicsPipelineMeshShader::ConfigureGraphicsPipeline(
 	const std::wstring& fragmentShader
@@ -28,7 +31,7 @@ void GraphicsPipelineMeshShader::DrawModels(VkCommandBuffer graphicsCmdBuffer) c
 			graphicsCmdBuffer, m_graphicsLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
 			pushConstantSize, &modelDetail.modelIndex
 		);
-		vkCmdDrawMeshTasksEXT(graphicsCmdBuffer, modelDetail.meshletCount, 1u, 1u);
+		s_vkCmdDrawMeshTasksEXT(graphicsCmdBuffer, modelDetail.meshletCount, 1u, 1u);
 	}
 }
 
@@ -65,4 +68,19 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	);
 
 	return pso;
+}
+
+void GraphicsPipelineMeshShader::AddRequiredExtensionFunctions() noexcept {
+	Terra::deviceExtensionLoader->AddFunctionPTR(s_DrawMeshTasksName);
+}
+
+void GraphicsPipelineMeshShader::RetrieveExtensionFunctions() {
+	Terra::deviceExtensionLoader->GetFunctionPointer(
+		s_DrawMeshTasksName, s_vkCmdDrawMeshTasksEXT
+	);
+
+	if (!s_vkCmdDrawMeshTasksEXT)
+		throw Exception(
+			"Function Retrieval Error", "Couldn't load the function "s + s_DrawMeshTasksName
+		);
 }

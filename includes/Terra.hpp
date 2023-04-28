@@ -17,6 +17,7 @@
 #include <UploadContainer.hpp>
 #include <ObjectManager.hpp>
 #include <VkHelperFunctions.hpp>
+#include <VkExtensionLoader.hpp>
 
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
@@ -48,6 +49,7 @@ namespace Terra {
 	extern std::unique_ptr<CameraManager> cameraManager;
 	extern std::shared_ptr<ISharedDataContainer> sharedData;
 	extern std::unique_ptr<RenderEngine> renderEngine;
+	extern std::unique_ptr<VkDeviceExtensionLoader> deviceExtensionLoader;
 
 	namespace Resources {
 		extern std::unique_ptr<DeviceMemory> gpuOnlyMemory;
