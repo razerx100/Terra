@@ -24,6 +24,7 @@ public:
 
 	void CreateBuffers(VkDevice device) noexcept;
 	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
+	void AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept;
 	void BindResourceToMemory(VkDevice device) const noexcept;
 
 	template<bool modelWithNoBB>

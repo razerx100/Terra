@@ -8,6 +8,7 @@
 
 #include <Terra.hpp>
 #include <RenderEngineVertexShader.hpp>
+#include <RenderEngineMeshShader.hpp>
 
 namespace Terra {
 	std::shared_ptr<IThreadPool> threadPool;
@@ -119,7 +120,9 @@ namespace Terra {
 			break;
 		}
 		case RenderEngineType::MeshDraw: {
-			throw Exception("No Support", "Mesh Shader is not supported yet.");
+			om.CreateObject<RenderEngineMeshShader>(
+				renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
+			);
 			break;
 		}
 		}

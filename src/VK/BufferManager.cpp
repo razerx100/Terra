@@ -76,6 +76,11 @@ void BufferManager::AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& model
 		CheckLightSourceAndAddOpaque(std::move(models[index]));
 }
 
+void BufferManager::AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept {
+	for (size_t index = 0u; index < std::size(meshletModels); ++index)
+		CheckLightSourceAndAddOpaque(std::move(meshletModels[index].model));
+}
+
 void BufferManager::UpdateCameraData(
 	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
 ) const noexcept {

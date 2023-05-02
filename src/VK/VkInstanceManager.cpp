@@ -35,7 +35,7 @@ void VkInstanceManager::CheckExtensionSupport() const {
 
 		if (!found)
 			throw Exception("Vulkan Extension Error",
-				std::string("The extension ") + requiredExtension + " isn't supported."
+				"The extension "s + requiredExtension + " isn't supported."
 			);
 	}
 }
@@ -57,9 +57,7 @@ void VkInstanceManager::CheckLayerSupport() const {
 				break;
 			}
 
-		assert(
-			found && (std::string("The layer ") + requiredLayer + " isn't supported.").c_str()
-		);
+		assert(found && ("The layer "s + requiredLayer + " isn't supported.").c_str());
 	}
 }
 

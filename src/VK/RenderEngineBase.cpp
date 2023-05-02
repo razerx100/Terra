@@ -100,3 +100,42 @@ void RenderEngineBase::CreateDepthBuffer(
 void RenderEngineBase::CleanUpDepthBuffer() noexcept {
 	m_depthBuffer.CleanUp();
 }
+
+void RenderEngineBase::ExecutePreRenderStage(
+	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
+) {
+	ExecutePreGraphicsStage(graphicsCmdBuffer, frameIndex);
+}
+
+RenderEngineBase::WaitSemaphoreData RenderEngineBase::GetWaitSemaphores(
+) const noexcept {
+	static VkSemaphore waitSemaphores[1]{};
+	waitSemaphores[0] = Terra::graphicsSyncObjects->GetFrontSemaphore();
+
+	static VkPipelineStageFlags waitStages[] = {
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	};
+
+	return { waitSemaphores, waitStages };
+}
+
+void RenderEngineBase::AddGVerticesAndIndices(
+	[[maybe_unused]] VkDevice device, [[maybe_unused]] std::vector<Vertex>&& gVertices,
+	[[maybe_unused]] std::vector<std::uint32_t>&& gIndices
+) noexcept {}
+
+void RenderEngineBase::RecordModelDataSet(
+	[[maybe_unused]] const std::vector<std::shared_ptr<IModel>>& models,
+	[[maybe_unused]] const std::wstring& fragmentShader
+) noexcept {}
+
+void RenderEngineBase::AddMeshletModelSet(
+	[[maybe_unused]] std::vector<MeshletModel>& meshletModels,
+	[[maybe_unused]] const std::wstring& pixelShader
+) noexcept {}
+
+void RenderEngineBase::AddGVerticesAndPrimIndices(
+	[[maybe_unused]] VkDevice device, [[maybe_unused]] std::vector<Vertex>&& gVertices,
+	[[maybe_unused]] std::vector<std::uint32_t>&& gVerticesIndices,
+	[[maybe_unused]] std::vector<std::uint32_t>&& gPrimIndices
+) noexcept {}

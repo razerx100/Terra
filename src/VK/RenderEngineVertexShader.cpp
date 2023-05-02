@@ -64,13 +64,16 @@ std::unique_ptr<PipelineLayout> RenderEngineVertexShader::CreateGraphicsPipeline
 	return pipelineLayout;
 }
 
-#pragma warning(push)
-#pragma warning(disable: 4100)
-void RenderEngineVertexShader::_bindResourcesToMemory(VkDevice device) {}
-void RenderEngineVertexShader::_recordCopy(VkCommandBuffer transferBuffer) noexcept {}
+void RenderEngineVertexShader::_bindResourcesToMemory(
+	[[maybe_unused]] VkDevice device
+) {}
+void RenderEngineVertexShader::_recordCopy(
+	[[maybe_unused]] VkCommandBuffer transferBuffer
+) noexcept {}
 void RenderEngineVertexShader::_releaseUploadResources() noexcept {}
-void RenderEngineVertexShader::_releaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {}
-#pragma warning(pop)
+void RenderEngineVertexShader::_releaseOwnership(
+	[[maybe_unused]] VkCommandBuffer transferCmdBuffer
+) noexcept {}
 
 // Indirect Draw
 RenderEngineIndirectDraw::RenderEngineIndirectDraw(Args& arguments)
@@ -206,12 +209,6 @@ void RenderEngineIndirectDraw::ExecuteComputeStage(size_t frameIndex) {
 RenderEngineIndividualDraw::RenderEngineIndividualDraw(Args& arguments)
 	: RenderEngineVertexShader{ arguments.device.value(), arguments.queueIndices.value() } {}
 
-void RenderEngineIndividualDraw::ExecutePreRenderStage(
-	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
-) {
-	ExecutePreGraphicsStage(graphicsCmdBuffer, frameIndex);
-}
-
 void RenderEngineIndividualDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
@@ -269,16 +266,4 @@ void RenderEngineIndividualDraw::RecordModelArguments(
 
 		m_modelArguments.emplace_back(arguments);
 	}
-}
-
-RenderEngineBase::WaitSemaphoreData RenderEngineIndividualDraw::GetWaitSemaphores(
-) const noexcept {
-	static VkSemaphore waitSemaphores[1]{};
-	waitSemaphores[0] = Terra::graphicsSyncObjects->GetFrontSemaphore();
-
-	static VkPipelineStageFlags waitStages[] = {
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-	};
-
-	return { waitSemaphores, waitStages };
 }

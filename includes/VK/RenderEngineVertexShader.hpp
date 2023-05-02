@@ -73,6 +73,7 @@ private:
 
 	void ExecuteComputeStage(size_t frameIndex);
 
+	[[nodiscard]]
 	WaitSemaphoreData GetWaitSemaphores() const noexcept override;
 
 	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndirectDraw>;
@@ -93,7 +94,6 @@ public:
 public:
 	RenderEngineIndividualDraw(Args& arguments);
 
-	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void ConstructPipelines() final;
 	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
@@ -103,8 +103,6 @@ public:
 	) noexcept final;
 
 private:
-	WaitSemaphoreData GetWaitSemaphores() const noexcept override;
-
 	void RecordModelArguments(const std::vector<std::shared_ptr<IModel>>& models) noexcept;
 
 	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndividualDraw>;

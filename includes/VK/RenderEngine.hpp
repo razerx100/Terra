@@ -14,9 +14,7 @@ public:
 	RenderEngine() noexcept;
 	virtual ~RenderEngine() = default;
 
-	virtual void ExecutePreRenderStage(
-		VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
-	) = 0;
+	virtual void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
 	virtual void ExecutePostRenderStage() = 0;
@@ -35,10 +33,17 @@ public:
 	virtual void AddGVerticesAndIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 	) noexcept = 0;
-
 	virtual void RecordModelDataSet(
 		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 	) noexcept = 0;
+	virtual void AddMeshletModelSet(
+		std::vector<MeshletModel>& meshletModels, const std::wstring& pixelShader
+	) noexcept = 0;
+	virtual void AddGVerticesAndPrimIndices(
+		VkDevice device, std::vector<Vertex>&& gVertices,
+		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
+	) noexcept = 0;
+
 	virtual void BindResourcesToMemory(VkDevice device) = 0;
 	virtual void RecordCopy(VkCommandBuffer transferBuffer) noexcept = 0;
 	virtual void ReleaseUploadResources() noexcept = 0;
@@ -48,6 +53,8 @@ public:
 	virtual void CreateBuffers(VkDevice device) noexcept;
 	virtual void CopyData() noexcept;
 	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept;
+	virtual void AddRequiredExtensionFunctions() noexcept;
+	virtual void RetrieveExtensionFunctions();
 
 	[[nodiscard]]
 	virtual VkImageView GetDepthImageView() const noexcept = 0;

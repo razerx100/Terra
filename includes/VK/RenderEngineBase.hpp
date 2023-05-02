@@ -14,12 +14,27 @@ class RenderEngineBase : public RenderEngine {
 public:
 	RenderEngineBase(VkDevice device) noexcept;
 
+	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) override;
 	void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void ExecutePostRenderStage() final;
 	void CreateRenderPass(VkDevice device, VkFormat swapchainFormat) final;
 	void CreateDepthBuffer(VkDevice device, std::uint32_t width, std::uint32_t height) final;
 	void ResizeViewportAndScissor(std::uint32_t width, std::uint32_t height) noexcept final;
 	void CleanUpDepthBuffer() noexcept final;
+
+	void AddGVerticesAndIndices(
+		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
+	) noexcept override;
+	void RecordModelDataSet(
+		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
+	) noexcept override;
+	void AddMeshletModelSet(
+		std::vector<MeshletModel>& meshletModels, const std::wstring& pixelShader
+	) noexcept override;
+	void AddGVerticesAndPrimIndices(
+		VkDevice device, std::vector<Vertex>&& gVertices,
+		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
+	) noexcept override;
 
 	[[nodiscard]]
 	VkImageView GetDepthImageView() const noexcept final;
@@ -39,7 +54,8 @@ protected:
 
 	using WaitSemaphoreData = std::pair<std::span<VkSemaphore>, std::span<VkPipelineStageFlags>>;
 
-	virtual WaitSemaphoreData GetWaitSemaphores() const noexcept = 0;
+	[[nodiscard]]
+	virtual WaitSemaphoreData GetWaitSemaphores() const noexcept;
 
 	template<std::derived_from<GraphicsPipelineBase> Pipeline>
 	void CreateGraphicsPipelines(

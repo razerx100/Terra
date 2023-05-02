@@ -46,12 +46,6 @@ RendererVK::RendererVK(
 
 	m_objectManager.CreateObject(Terra::deviceExtensionLoader, 0u);
 
-	// Add required Extension Function names
-
-	Terra::deviceExtensionLoader->QueryFunctionPTRs(logicalDevice);
-
-	// Load Extension Functions into required classes
-
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 
 	Terra::InitResources(m_objectManager, physicalDevice, logicalDevice);
@@ -110,6 +104,12 @@ RendererVK::RendererVK(
 
 	m_objectManager.CreateObject(Terra::cameraManager, 0u);
 	Terra::cameraManager->SetSceneResolution(width, height);
+
+	Terra::renderEngine->AddRequiredExtensionFunctions();
+
+	Terra::deviceExtensionLoader->QueryFunctionPTRs(logicalDevice);
+
+	Terra::renderEngine->RetrieveExtensionFunctions();
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
@@ -126,7 +126,8 @@ void RendererVK::AddModelSet(
 void RendererVK::AddMeshletModelSet(
 	std::vector<MeshletModel>&& meshletModels, const std::wstring& pixelShader
 ) {
-
+	Terra::renderEngine->AddMeshletModelSet(meshletModels, pixelShader);
+	Terra::bufferManager->AddOpaqueModels(std::move(meshletModels));
 }
 
 void RendererVK::AddModelInputs(
@@ -141,7 +142,10 @@ void RendererVK::AddModelInputs(
 	std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gVerticesIndices,
 	std::vector<std::uint32_t>&& gPrimIndices
 ) {
-
+	Terra::renderEngine->AddGVerticesAndPrimIndices(
+		Terra::device->GetLogicalDevice(), std::move(gVertices), std::move(gVerticesIndices),
+		std::move(gPrimIndices)
+	);
 }
 
 void RendererVK::Update() {

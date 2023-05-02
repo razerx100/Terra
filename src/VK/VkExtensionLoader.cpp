@@ -6,8 +6,6 @@ void VkDeviceExtensionLoader::AddFunctionPTR(const std::string& name) noexcept{
 }
 
 void VkDeviceExtensionLoader::QueryFunctionPTRs(VkDevice device) noexcept {
-	for (auto& [name, ptr] : m_functionPtrMap) {
-		PFN_vkVoidFunction queryResult = vkGetDeviceProcAddr(device, name.c_str());
-		ptr = queryResult;
-	}
+	for (auto& [name, ptr] : m_functionPtrMap)
+		ptr = vkGetDeviceProcAddr(device, name.c_str());
 }
