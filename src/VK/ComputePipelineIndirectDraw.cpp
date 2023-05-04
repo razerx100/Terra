@@ -102,6 +102,12 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_commandBuffer.SetMemoryOffsetAndType(device);
 
+	Terra::Resources::uploadContainer->AddMemory(
+		std::data(m_indirectCommands),
+		sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands),
+		m_commandBuffer.GetFirstUploadMemoryOffset()
+	);
+
 	for (auto& argumentBuffer : m_argumentBuffers) {
 		argumentBuffer.CreateResource(
 			device, commandBufferSize, 1u,
@@ -212,12 +218,6 @@ void ComputePipelineIndirectDraw::RecordIndirectArguments(
 }
 
 void ComputePipelineIndirectDraw::CopyData() noexcept {
-	Terra::Resources::uploadContainer->AddMemory(
-		std::data(m_indirectCommands),
-		sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands),
-		m_commandBuffer.GetFirstUploadMemoryOffset()
-	);
-
 	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
 	// copy the culling data to the buffer.
 	std::uint8_t* cullingBufferPtr =
