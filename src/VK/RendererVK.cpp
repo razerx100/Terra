@@ -97,7 +97,7 @@ RendererVK::RendererVK(
 	m_objectManager.CreateObject(
 		Terra::bufferManager,
 		{ logicalDevice,  bufferCount,queFamilyMan.GetComputeAndGraphicsIndices(),
-			modelDataNoBB
+			modelDataNoBB, meshShader
 		},
 		1u
 	);

@@ -57,16 +57,18 @@ void TextureStorage::BindMemories(VkDevice device) {
 }
 
 void TextureStorage::SetDescriptorLayouts() const noexcept {
-	DescriptorInfo descInfo{};
-	descInfo.bindingSlot = 2u;
-	descInfo.descriptorCount = static_cast<std::uint32_t>(std::size(m_textures));
-	descInfo.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	DescriptorInfo descInfo{
+		.bindingSlot = 0u,
+		.descriptorCount = static_cast<std::uint32_t>(std::size(m_textures)),
+		.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+	};
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
 
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.sampler = m_textureSampler;
+	VkDescriptorImageInfo imageInfo{
+		.sampler = m_textureSampler,
+		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	};
 
 	for (auto& texture : m_textures) {
 		imageInfo.imageView = texture.GetImageView();

@@ -10,18 +10,23 @@ BufferManager::BufferManager(Args& arguments)
 	m_fragmentDataBuffer{ arguments.device.value() },
 	m_bufferCount{ arguments.bufferCount.value() },
 	m_queueIndices{ arguments.queueIndices.value() },
-	m_modelDataNoBB{ arguments.modelDataNoBB.value() } {}
+	m_modelDataNoBB{ arguments.modelDataNoBB.value() },
+	m_meshShader{ arguments.meshShader.value() } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	// Camera
 	static constexpr size_t cameraBufferSize = sizeof(DirectX::XMMATRIX) * 2u;
 
+	const VkShaderStageFlagBits vertexType
+		= m_meshShader ? VK_SHADER_STAGE_MESH_BIT_EXT : VK_SHADER_STAGE_VERTEX_BIT;
+
 	auto resolvedIndices = ResolveQueueIndices(m_queueIndices.compute, m_queueIndices.graphics);
 
-	CreateBufferComputeAndGraphics(
+	CreateBufferComputeAndVertex(
 		device, m_cameraBuffer, static_cast<VkDeviceSize>(cameraBufferSize),
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		{ .bindingSlot = 0u, .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER }, resolvedIndices
+		{ .bindingSlot = 4u, .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER }, resolvedIndices,
+		vertexType
 	);
 
 	// Model
@@ -30,37 +35,38 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 		m_modelDataNoBB ? sizeof(ModelBufferNoBB) : sizeof(ModelBuffer);
 	const size_t modelBufferSize = modelBufferStride * modelCount;
 
-	CreateBufferComputeAndGraphics(
+	CreateBufferComputeAndVertex(
 		device, m_modelBuffers, static_cast<VkDeviceSize>(modelBufferSize),
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		{ .bindingSlot = 1u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }, resolvedIndices
+		{ .bindingSlot = 5u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }, resolvedIndices,
+		vertexType
 	);
 
 	// Material
 	const size_t materialBufferSize = sizeof(MaterialBuffer) * modelCount;
 
-	CreateBufferGraphics(
+	CreateBufferFragment(
 		device, m_materialBuffers, static_cast<VkDeviceSize>(materialBufferSize),
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		{ .bindingSlot = 3u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }
+		{ .bindingSlot = 1u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }
 	);
 
 	// Light
 	const size_t lightBufferSize = sizeof(LightBuffer) * std::size(m_lightModelIndices);
 
-	CreateBufferGraphics(
+	CreateBufferFragment(
 		device, m_lightBuffers, static_cast<VkDeviceSize>(lightBufferSize),
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		{ .bindingSlot = 4u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }
+		{ .bindingSlot = 2u, .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER }
 	);
 
 	// Fragment Data
 	static constexpr size_t fragmentDataBufferSize = sizeof(FragmentData);
 
-	CreateBufferGraphics(
+	CreateBufferFragment(
 		device, m_fragmentDataBuffer, static_cast<VkDeviceSize>(fragmentDataBufferSize),
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		{ .bindingSlot = 5u, .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER }
+		{ .bindingSlot = 3u, .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER }
 	);
 }
 
@@ -135,25 +141,24 @@ void BufferManager::BindResourceToMemory(VkDevice device) const noexcept {
 	m_fragmentDataBuffer.BindResourceToMemory(device);
 }
 
-void BufferManager::CreateBufferComputeAndGraphics(
+void BufferManager::CreateBufferComputeAndVertex(
 	VkDevice device, VkResourceView& buffer, VkDeviceSize bufferSize,
 	VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo,
-	const std::vector<std::uint32_t>& resolvedQueueIndices
+	const std::vector<std::uint32_t>& resolvedQueueIndices,
+	VkShaderStageFlagBits vertexShaderType
 ) const noexcept {
 	buffer.CreateResource(device, bufferSize, m_bufferCount, bufferType, resolvedQueueIndices);
 	buffer.SetMemoryOffsetAndType(device, MemoryType::cpuWrite);
 
 	auto bufferInfos = buffer.GetDescBufferInfoSplit(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddBuffersSplit(
-		descInfo, bufferInfos, VK_SHADER_STAGE_VERTEX_BIT
-	);
+	Terra::graphicsDescriptorSet->AddBuffersSplit(descInfo, bufferInfos, vertexShaderType);
 	Terra::computeDescriptorSet->AddBuffersSplit(
 		descInfo, std::move(bufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 }
 
-void BufferManager::CreateBufferGraphics(
+void BufferManager::CreateBufferFragment(
 	VkDevice device, VkResourceView& buffer, VkDeviceSize bufferSize,
 	VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo
 ) const noexcept {

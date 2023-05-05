@@ -142,7 +142,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	// Culling Buffer
 	DescriptorInfo cullingDescInfo{
-		.bindingSlot = 5u,
+		.bindingSlot = 0u,
 		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
 	};
 
@@ -154,7 +154,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	// Input Buffer
 	DescriptorInfo inputDescInfo{
-		.bindingSlot = 2u,
+		.bindingSlot = 1u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
@@ -166,7 +166,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	// Output Buffer
 	DescriptorInfo outputDescInfo{
-		.bindingSlot = 3u,
+		.bindingSlot = 2u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
@@ -180,7 +180,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	// Counter Buffer
 	DescriptorInfo counterDescInfo{
-		.bindingSlot = 4u,
+		.bindingSlot = 3u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 	auto counterBufferInfos = VkResourceView::GetDescBufferInfoSplit(

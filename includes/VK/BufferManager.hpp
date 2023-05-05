@@ -17,6 +17,7 @@ public:
 		std::optional<std::uint32_t> bufferCount;
 		std::optional<QueueIndicesCG> queueIndices;
 		std::optional<bool> modelDataNoBB;
+		std::optional<bool> meshShader;
 	};
 
 public:
@@ -95,12 +96,13 @@ private:
 		VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
 	) const noexcept;
 
-	void CreateBufferComputeAndGraphics(
+	void CreateBufferComputeAndVertex(
 		VkDevice device, VkResourceView& buffer, VkDeviceSize bufferSize,
 		VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo,
-		const std::vector<std::uint32_t>& resolvedQueueIndices
+		const std::vector<std::uint32_t>& resolvedQueueIndices,
+		VkShaderStageFlagBits vertexShaderType
 	) const noexcept;
-	void CreateBufferGraphics(
+	void CreateBufferFragment(
 		VkDevice device, VkResourceView& buffer, VkDeviceSize bufferSize,
 		VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo
 	) const noexcept;
@@ -191,5 +193,6 @@ private:
 	QueueIndicesCG m_queueIndices;
 	std::vector<size_t> m_lightModelIndices;
 	bool m_modelDataNoBB;
+	bool m_meshShader;
 };
 #endif
