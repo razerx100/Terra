@@ -35,11 +35,11 @@ std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLa
 }
 
 void RenderEngineMeshShader::AddMeshletModelSet(
-	std::vector<MeshletModel>& meshletModels, const std::wstring& pixelShader
+	std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineMeshShader>();
 
-	graphicsPipeline->ConfigureGraphicsPipeline(pixelShader);
+	graphicsPipeline->ConfigureGraphicsPipeline(fragmentShader);
 
 	static std::uint32_t modelCount = 0u;
 

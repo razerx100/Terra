@@ -24,7 +24,7 @@ public:
 	void RetrieveExtensionFunctions() override;
 
 	void AddMeshletModelSet(
-		std::vector<MeshletModel>& meshletModels, const std::wstring& pixelShader
+		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
 	) noexcept override;
 	void AddGVerticesAndPrimIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices,

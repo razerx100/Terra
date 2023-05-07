@@ -124,9 +124,9 @@ void RendererVK::AddModelSet(
 }
 
 void RendererVK::AddMeshletModelSet(
-	std::vector<MeshletModel>&& meshletModels, const std::wstring& pixelShader
+	std::vector<MeshletModel>&& meshletModels, const std::wstring& fragmentShader
 ) {
-	Terra::renderEngine->AddMeshletModelSet(meshletModels, pixelShader);
+	Terra::renderEngine->AddMeshletModelSet(meshletModels, fragmentShader + L".spv");
 	Terra::bufferManager->AddOpaqueModels(std::move(meshletModels));
 }
 

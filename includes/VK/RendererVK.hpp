@@ -36,7 +36,7 @@ public:
 		std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
 	) override;
 	void AddMeshletModelSet(
-		std::vector<MeshletModel>&& meshletModels, const std::wstring& pixelShader
+		std::vector<MeshletModel>&& meshletModels, const std::wstring& fragmentShader
 	) override;
 	void AddModelInputs(
 		std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices

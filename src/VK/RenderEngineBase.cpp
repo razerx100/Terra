@@ -131,7 +131,7 @@ void RenderEngineBase::RecordModelDataSet(
 
 void RenderEngineBase::AddMeshletModelSet(
 	[[maybe_unused]] std::vector<MeshletModel>& meshletModels,
-	[[maybe_unused]] const std::wstring& pixelShader
+	[[maybe_unused]] const std::wstring& fragmentShader
 ) noexcept {}
 
 void RenderEngineBase::AddGVerticesAndPrimIndices(

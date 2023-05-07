@@ -42,10 +42,10 @@ public:
 	) = 0; // Returns the index of the texture in its Resource Heap
 
 	virtual void AddModelSet(
-		std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& pixelShader
+		std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
 	) = 0;
 	virtual void AddMeshletModelSet(
-		std::vector<MeshletModel>&& meshletModels, const std::wstring& pixelShader
+		std::vector<MeshletModel>&& meshletModels, const std::wstring& fragmentShader
 	) = 0;
 	virtual void AddModelInputs(
 		std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
