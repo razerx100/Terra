@@ -139,7 +139,7 @@ void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 	m_meshletBuffer.SetMemoryOffsetAndType(device);
 
 	DescriptorInfo meshletDescInfo{
-		.bindingSlot = 3u,
+		.bindingSlot = 9u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 

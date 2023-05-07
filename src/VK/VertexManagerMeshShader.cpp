@@ -18,9 +18,9 @@ void VertexManagerMeshShader::AddGVerticesAndPrimIndices(
 	);
 	ConfigureBuffer(device, std::move(gPrimIndices), m_gPrimIndices, m_primIndicesBuffer);
 
-	AddDescriptors(m_vertexBuffer, 0u);
-	AddDescriptors(m_vertexIndicesBuffer, 1u);
-	AddDescriptors(m_primIndicesBuffer, 2u);
+	AddDescriptors(m_vertexBuffer, 6u);
+	AddDescriptors(m_vertexIndicesBuffer, 7u);
+	AddDescriptors(m_primIndicesBuffer, 8u);
 }
 
 UploadContainer* VertexManagerMeshShader::GetUploadContainer() noexcept {
