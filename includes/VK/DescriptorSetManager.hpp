@@ -125,5 +125,4 @@ private:
 		std::vector<VkDescriptorImageInfo> m_imageInfos;
 	};
 };
-
 #endif

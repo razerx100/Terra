@@ -27,9 +27,24 @@ public:
 	void BindResourceToMemory(VkDevice device) const noexcept;
 
 private:
+	struct GLSLVertex {
+		DirectX::XMFLOAT4 position;
+		DirectX::XMFLOAT4 normal;
+		DirectX::XMFLOAT2 uv;
+	};
+
+private:
 	void AddDescriptors(
 		VkUploadableBufferResourceView& buffer, std::uint32_t bindingSlot
 	) const noexcept;
+	static void Float3ToFloat4(
+		const DirectX::XMFLOAT3& input, DirectX::XMFLOAT4& output
+	) noexcept;
+
+	[[nodiscard]]
+	static std::vector<GLSLVertex> TransformVertices(
+		const std::vector<Vertex>& vertices
+	) noexcept;
 
 	template<typename T>
 	static void ConfigureBuffer(
@@ -61,7 +76,7 @@ private:
 	VkUploadableBufferResourceView m_vertexBuffer;
 	VkUploadableBufferResourceView m_vertexIndicesBuffer;
 	VkUploadableBufferResourceView m_primIndicesBuffer;
-	std::vector<Vertex> m_gVertices;
+	std::vector<GLSLVertex> m_gVertices;
 	std::vector<std::uint32_t> m_gVerticesIndices;
 	std::vector<std::uint32_t> m_gPrimIndices;
 };

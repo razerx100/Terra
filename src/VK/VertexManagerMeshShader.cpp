@@ -12,7 +12,9 @@ void VertexManagerMeshShader::AddGVerticesAndPrimIndices(
 	VkDevice device, std::vector<Vertex>&& gVertices,
 	std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
 ) noexcept {
-	ConfigureBuffer(device, std::move(gVertices), m_gVertices, m_vertexBuffer);
+	std::vector<GLSLVertex> glslVertices = TransformVertices(gVertices);
+
+	ConfigureBuffer(device, std::move(glslVertices), m_gVertices, m_vertexBuffer);
 	ConfigureBuffer(
 		device, std::move(gVerticesIndices), m_gVerticesIndices, m_vertexIndicesBuffer
 	);
@@ -65,7 +67,7 @@ void VertexManagerMeshShader::ReleaseUploadResources() noexcept {
 	m_vertexIndicesBuffer.CleanUpUploadResource();
 	m_primIndicesBuffer.CleanUpUploadResource();
 
-	m_gVertices = std::vector<Vertex>{};
+	m_gVertices = std::vector<GLSLVertex>{};
 	m_gVerticesIndices = std::vector<std::uint32_t>{};
 	m_gPrimIndices = std::vector<std::uint32_t>{};
 }
@@ -89,4 +91,26 @@ void VertexManagerMeshShader::AddDescriptors(
 	Terra::graphicsDescriptorSet->AddBuffersSplit(
 		descInfo, std::move(bufferInfo), VK_SHADER_STAGE_MESH_BIT_EXT
 	);
+}
+
+void VertexManagerMeshShader::Float3ToFloat4(
+	const DirectX::XMFLOAT3& input, DirectX::XMFLOAT4& output
+) noexcept {
+	output.x = input.x;
+	output.y = input.y;
+	output.z = input.z;
+}
+
+std::vector<VertexManagerMeshShader::GLSLVertex> VertexManagerMeshShader::TransformVertices(
+	const std::vector<Vertex>& vertices
+) noexcept {
+	std::vector<GLSLVertex> glslVertices{ std::size(vertices) };
+
+	for (size_t index = 0u; index < std::size(vertices); ++index) {
+		Float3ToFloat4(vertices[index].position, glslVertices[index].position);
+		Float3ToFloat4(vertices[index].normal, glslVertices[index].normal);
+		glslVertices[index].uv = vertices[index].uv;
+	}
+
+	return glslVertices;
 }
