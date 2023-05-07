@@ -138,6 +138,10 @@ void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_meshletBuffer.SetMemoryOffsetAndType(device);
 
+	Terra::Resources::uploadContainer->AddMemory(
+		std::data(m_meshlets), meshletBufferSize, m_meshletBuffer.GetFirstUploadMemoryOffset()
+	);
+
 	DescriptorInfo meshletDescInfo{
 		.bindingSlot = 9u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
