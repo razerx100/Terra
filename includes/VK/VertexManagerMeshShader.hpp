@@ -33,7 +33,7 @@ private:
 		DirectX::XMFLOAT3 normal;
 		float padding1;
 		DirectX::XMFLOAT2 uv;
-		float padding[2];
+		float padding3[2];
 	};
 
 private:
