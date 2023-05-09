@@ -93,22 +93,14 @@ void VertexManagerMeshShader::AddDescriptors(
 	);
 }
 
-void VertexManagerMeshShader::Float3ToFloat4(
-	const DirectX::XMFLOAT3& input, DirectX::XMFLOAT4& output
-) noexcept {
-	output.x = input.x;
-	output.y = input.y;
-	output.z = input.z;
-}
-
 std::vector<VertexManagerMeshShader::GLSLVertex> VertexManagerMeshShader::TransformVertices(
 	const std::vector<Vertex>& vertices
 ) noexcept {
 	std::vector<GLSLVertex> glslVertices{ std::size(vertices) };
 
 	for (size_t index = 0u; index < std::size(vertices); ++index) {
-		Float3ToFloat4(vertices[index].position, glslVertices[index].position);
-		Float3ToFloat4(vertices[index].normal, glslVertices[index].normal);
+		glslVertices[index].position = vertices[index].position;
+		glslVertices[index].normal = vertices[index].normal;
 		glslVertices[index].uv = vertices[index].uv;
 	}
 

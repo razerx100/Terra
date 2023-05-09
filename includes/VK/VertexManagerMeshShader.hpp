@@ -28,18 +28,18 @@ public:
 
 private:
 	struct GLSLVertex {
-		DirectX::XMFLOAT4 position;
-		DirectX::XMFLOAT4 normal;
+		DirectX::XMFLOAT3 position;
+		float padding0;
+		DirectX::XMFLOAT3 normal;
+		float padding1;
 		DirectX::XMFLOAT2 uv;
+		float padding[2];
 	};
 
 private:
 	void AddDescriptors(
 		VkUploadableBufferResourceView& buffer, std::uint32_t bindingSlot
 	) const noexcept;
-	static void Float3ToFloat4(
-		const DirectX::XMFLOAT3& input, DirectX::XMFLOAT4& output
-	) noexcept;
 
 	[[nodiscard]]
 	static std::vector<GLSLVertex> TransformVertices(
