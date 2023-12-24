@@ -10,149 +10,263 @@
 #include <RenderEngineVertexShader.hpp>
 #include <RenderEngineMeshShader.hpp>
 
-namespace Terra {
-	std::shared_ptr<IThreadPool> threadPool;
-	std::unique_ptr<DebugLayerManager> debugLayer;
-	std::unique_ptr<VKCommandBuffer> graphicsCmdBuffer;
-	std::unique_ptr<VKCommandBuffer> transferCmdBuffer;
-	std::unique_ptr<VKCommandBuffer> computeCmdBuffer;
-	std::unique_ptr<VkSyncObjects> graphicsSyncObjects;
-	std::unique_ptr<VkSyncObjects> transferSyncObjects;
-	std::unique_ptr<VkSyncObjects> computeSyncObjects;
-	std::unique_ptr<VkCommandQueue> graphicsQueue;
-	std::unique_ptr<VkCommandQueue> transferQueue;
-	std::unique_ptr<VkCommandQueue> computeQueue;
-	std::unique_ptr<VkDeviceManager> device;
-	std::unique_ptr<VkInstanceManager> vkInstance;
-	std::unique_ptr<SwapChainManager> swapChain;
-	std::unique_ptr<IDisplayManager> display;
-	std::unique_ptr<ISurfaceManager> surface;
-	std::unique_ptr<BufferManager> bufferManager;
-	std::unique_ptr<DescriptorSetManager> graphicsDescriptorSet;
-	std::unique_ptr<DescriptorSetManager> computeDescriptorSet;
-	std::unique_ptr<TextureStorage> textureStorage;
-	std::unique_ptr<CameraManager> cameraManager;
-	std::shared_ptr<ISharedDataContainer> sharedData;
-	std::unique_ptr<RenderEngine> renderEngine;
-	std::unique_ptr<VkDeviceExtensionLoader> deviceExtensionLoader;
+// Resources
+Terra::Resources::Resources()
+	: m_gpuOnlyMemory{ nullptr }, m_uploadMemory{ nullptr }, m_cpuWriteMemory{ nullptr },
+m_uploadContainer{ nullptr }
+{}
 
-	namespace Resources {
-		std::unique_ptr<DeviceMemory> gpuOnlyMemory;
-		std::unique_ptr<DeviceMemory> uploadMemory;
-		std::unique_ptr<DeviceMemory> cpuWriteMemory;
-		std::unique_ptr<UploadContainer> uploadContainer;
-	}
+void Terra::Resources::Init(
+	ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, IThreadPool& threadPool
+)
+{
+	om.CreateObject(
+		m_cpuWriteMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	);
+	om.CreateObject(
+		m_uploadMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	);
+	om.CreateObject(
+		m_gpuOnlyMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+	om.CreateObject(m_uploadContainer, 0u, threadPool);
+}
 
-	void SetThreadPool(
-		ObjectManager& om, std::shared_ptr<IThreadPool>&& threadPoolArg
-	) noexcept {
-		om.CreateObject(threadPool, std::move(threadPoolArg), 0u);
-	}
+// Queue
+Terra::Queue::Queue() : m_queue{ nullptr }, m_cmdBuffer{ nullptr }, m_syncObjects{ nullptr } {}
 
-	void InitGraphicsQueue(
-		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
-		std::uint32_t bufferCount
-	) {
-		om.CreateObject(graphicsQueue, { queue }, 1u);
-		om.CreateObject(graphicsCmdBuffer, { logicalDevice, queueIndex, bufferCount }, 1u);
-		om.CreateObject(graphicsSyncObjects, { logicalDevice, bufferCount, true }, 1u);
-	}
+void InitGraphicsQueue(
+	VkQueue vkQueue, VkDevice logicalDevice, std::uint32_t queueIndex,
+	std::uint32_t bufferCount, ObjectManager& om, Terra::Queue& queue
+)
+{
+	om.CreateObject(queue.m_queue, 1u, vkQueue);
+	om.CreateObject(queue.m_cmdBuffer, 1u, logicalDevice, queueIndex, bufferCount);
+	om.CreateObject(queue.m_syncObjects, 1u, logicalDevice, bufferCount, true);
+}
 
-	void InitTransferQueue(
-		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex
-	) {
-		om.CreateObject(transferQueue, { queue }, 1u);
-		om.CreateObject(
-			transferCmdBuffer, { .device = logicalDevice, .queueIndex = queueIndex }, 1u
-		);
-		om.CreateObject(transferSyncObjects, { .device = logicalDevice }, 1u);
-	}
+void InitTransferQueue(
+	VkQueue vkQueue, VkDevice logicalDevice, std::uint32_t queueIndex,
+	ObjectManager& om, Terra::Queue& queue
+)
+{
+	om.CreateObject(queue.m_queue, 1u, vkQueue);
+	om.CreateObject(queue.m_cmdBuffer, 1u, logicalDevice, queueIndex);
+	om.CreateObject(queue.m_syncObjects, 1u, logicalDevice);
+}
 
-	void InitComputeQueue(
-		ObjectManager& om, VkQueue queue, VkDevice logicalDevice, std::uint32_t queueIndex,
-		std::uint32_t bufferCount
-	) {
-		om.CreateObject(computeQueue, { queue }, 1u);
-		om.CreateObject(computeCmdBuffer, { logicalDevice, queueIndex, bufferCount }, 1u);
-		om.CreateObject(computeSyncObjects, { logicalDevice, bufferCount, true }, 1u);
-	}
+// Terra Instance
+static std::unique_ptr<Terra> sTerra;
 
-	void InitDisplay(ObjectManager& om) {
+Terra::Terra(Terra&& other) noexcept
+	: m_appName{ std::move(other.m_appName) }, m_objectManager{ std::move(other.m_objectManager) },
+	m_display{ std::move(other.m_display) }, m_vkInstance{ std::move(other.m_vkInstance) }
+#ifdef _DEBUG
+	, m_debugLayer{ std::move(other.m_debugLayer) }
+#endif
+	, m_surface{ std::move(other.m_surface) }, m_device{ std::move(other.m_device) }
+	, m_deviceExtensionLoader{ std::move(other.m_deviceExtensionLoader) }
+	, m_res{ std::move(other.m_res) }, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
+	, m_computeQueue{ std::move(other.m_computeQueue) }
+	, m_transferQueue{ std::move(other.m_transferQueue) }, m_swapChain{ std::move(other.m_swapChain) }
+	, m_graphicsDescriptorSet{ std::move(other.m_graphicsDescriptorSet) }
+	, m_computeDescriptorSet{ std::move(other.m_computeDescriptorSet) }
+	, m_renderEngine{ std::move(other.m_renderEngine) }
+	, m_textureStorage{ std::move(other.m_textureStorage) }
+	, m_bufferManager{ std::move(other.m_bufferManager) }
+	, m_cameraManager{ std::move(other.m_cameraManager) }
+{}
+
+Terra& Terra::operator=(Terra&& other) noexcept
+{
+	m_appName               = std::move(other.m_appName);
+	m_objectManager         = std::move(other.m_objectManager);
+	m_display               = std::move(other.m_display);
+	m_vkInstance            = std::move(other.m_vkInstance);
+#ifdef _DEBUG
+	m_debugLayer            = std::move(other.m_debugLayer);
+#endif
+	m_surface               = std::move(other.m_surface);
+	m_device                = std::move(other.m_device);
+	m_deviceExtensionLoader = std::move(other.m_deviceExtensionLoader);
+	m_res                   = std::move(other.m_res);
+	m_graphicsQueue         = std::move(other.m_graphicsQueue);
+	m_computeQueue          = std::move(other.m_computeQueue);
+	m_transferQueue         = std::move(other.m_transferQueue);
+	m_swapChain             = std::move(other.m_swapChain);
+	m_graphicsDescriptorSet = std::move(other.m_graphicsDescriptorSet);
+	m_computeDescriptorSet  = std::move(other.m_computeDescriptorSet);
+	m_renderEngine          = std::move(other.m_renderEngine);
+	m_textureStorage        = std::move(other.m_textureStorage);
+	m_bufferManager         = std::move(other.m_bufferManager);
+	m_cameraManager         = std::move(other.m_cameraManager);
+
+	return *this;
+}
+
+Terra::Terra(
+	std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
+	std::uint32_t width, std::uint32_t height,
+	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	RenderEngineType engineType
+) : m_appName{ std::move(appName) }, m_objectManager{}, m_display{ nullptr }, m_vkInstance{ nullptr }
+#ifdef _DEBUG
+	, m_debugLayer{ nullptr }
+#endif
+	, m_surface{ nullptr }, m_device{ nullptr }, m_deviceExtensionLoader{ nullptr }, m_res{}
+	, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}, m_swapChain{ nullptr }
+	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
+	, m_textureStorage{ nullptr }, m_bufferManager{ nullptr }, m_cameraManager{ nullptr }
+{
+	InitDisplay();
+
+	m_objectManager.CreateObject(m_vkInstance, 5u, m_appName);
+
+	Instance().AddExtensionNames(Display().GetRequiredExtensions()).CreateInstance();
+	VkInstance vkInstance = Instance().GetVKInstance();
+
+#if _DEBUG
+	m_objectManager.CreateObject(m_debugLayer, 4u, vkInstance);
+#endif
+
+	InitSurface(vkInstance, windowHandle, moduleHandle);
+
+	m_objectManager.CreateObject(m_device, 3u);
+
+	const bool meshShader = engineType == RenderEngineType::MeshDraw;
+
+	if (meshShader)
+		Device().AddExtensionName("VK_EXT_mesh_shader");
+
+	const VkSurfaceKHR vkSurface = Surface().GetSurface();
+	Device().FindPhysicalDevice(vkInstance, vkSurface).CreateLogicalDevice(meshShader);
+
+	const VkDevice logicalDevice             = Device().GetLogicalDevice();
+	const VkPhysicalDevice physicalDevice    = Device().GetPhysicalDevice();
+	const VkQueueFamilyMananger queFamilyMan = Device().GetQueueFamilyManager();
+
+	m_objectManager.CreateObject(m_deviceExtensionLoader, 0u);
+
+	_vkResourceView::SetBufferAlignments(physicalDevice);
+
+	m_res.Init(m_objectManager, physicalDevice, logicalDevice, threadPool);
+
+	InitQueues(logicalDevice, bufferCount, queFamilyMan);
+
+	SwapChainManager::Args swapArguments{
+		.device       = logicalDevice,
+		.surface      = vkSurface,
+		.surfaceInfo  = QuerySurfaceCapabilities(physicalDevice, vkSurface),
+		.width        = width,
+		.height       = height,
+		.bufferCount  = bufferCount,
+		// Graphics and Present queues should be the same
+		.presentQueue = queFamilyMan.GetQueue(GraphicsQueue)
+	};
+
+	m_objectManager.CreateObject(m_swapChain, 1u, swapArguments);
+
+	m_objectManager.CreateObject(m_graphicsDescriptorSet, 1u, logicalDevice, bufferCount);
+	m_objectManager.CreateObject(m_computeDescriptorSet, 1u, logicalDevice, bufferCount);
+
+	InitRenderEngine(logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices());
+
+	m_objectManager.CreateObject(
+		m_textureStorage, 1u,
+		logicalDevice, physicalDevice, queFamilyMan.GetTransferAndGraphicsIndices()
+	);
+
+	const bool modelDataNoBB = (engineType == RenderEngineType::IndirectDraw ? false : true);
+
+	m_objectManager.CreateObject(
+		m_bufferManager, 1u,
+		logicalDevice,  bufferCount,queFamilyMan.GetComputeAndGraphicsIndices(), modelDataNoBB,
+		meshShader, sharedContainer
+	);
+
+	m_objectManager.CreateObject(m_cameraManager, 0u, sharedContainer);
+}
+
+Terra& Terra::Get() { return *sTerra; }
+
+void Terra::Init(
+	std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
+	std::uint32_t width, std::uint32_t height,
+	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	RenderEngineType engineType
+)
+{
+	sTerra = std::make_unique<Terra>(
+		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool, sharedContainer,
+		engineType
+	);
+}
+
+void Terra::InitDisplay()
+{
 #ifdef TERRA_WIN32
-		om.CreateObject<DisplayManagerWin32>(display, 3u);
+		m_objectManager.CreateObject<IDisplayManager, DisplayManagerWin32>(m_display, 3u);
 #else
-		objectManager.CreateObject<DisplayManagerVK>(display, 3u);
+		m_objectManager.CreateObject<IDisplayManager, DisplayManagerVK>(m_display, 3u);
 #endif
-	}
+}
 
-	void InitSurface(
-		ObjectManager& om, VkInstance instance, void* windowHandle, void* moduleHandle
-	) {
+void Terra::InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle)
+{
 #ifdef TERRA_WIN32
-		om.CreateObject<SurfaceManagerWin32>(
-			surface, { instance, windowHandle, moduleHandle }, 3u
+		m_objectManager.CreateObject<ISurfaceManager, SurfaceManagerWin32>(
+			m_surface, 3u, instance, windowHandle, moduleHandle
 		);
 #endif
-	}
+}
 
-	void InitDescriptorSets(
-		ObjectManager& om, VkDevice logicalDevice, std::uint32_t bufferCount
-	) {
-		om.CreateObject(graphicsDescriptorSet, { logicalDevice, bufferCount }, 1u);
-		om.CreateObject(computeDescriptorSet, { logicalDevice, bufferCount }, 1u);
-	}
+void Terra::InitQueues(
+	VkDevice device, std::uint32_t bufferCount, const VkQueueFamilyMananger& queFamily
+)
+{
+	using enum QueueType;
 
-	void InitRenderEngine(
-		ObjectManager& om, VkDevice logicalDevice, RenderEngineType engineType,
-		std::uint32_t bufferCount, QueueIndices3 queueIndices
-	) {
-		switch (engineType) {
-		case RenderEngineType::IndirectDraw: {
-			om.CreateObject<RenderEngineIndirectDraw>(
-				renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
-				);
-			break;
-		}
-		case RenderEngineType::IndividualDraw: {
-			om.CreateObject<RenderEngineIndividualDraw>(
-				renderEngine, { logicalDevice, queueIndices }, 1u
-				);
-			break;
-		}
-		case RenderEngineType::MeshDraw: {
-			om.CreateObject<RenderEngineMeshShader>(
-				renderEngine, { logicalDevice, bufferCount, queueIndices }, 1u
-			);
-			break;
-		}
-		}
-	}
+	InitGraphicsQueue(
+		queFamily.GetQueue(GraphicsQueue), device, queFamily.GetIndex(GraphicsQueue), bufferCount,
+		m_objectManager, m_graphicsQueue
+	);
+	InitGraphicsQueue(
+		queFamily.GetQueue(ComputeQueue), device, queFamily.GetIndex(ComputeQueue), bufferCount,
+		m_objectManager, m_computeQueue
+	);
+	InitTransferQueue(
+		queFamily.GetQueue(TransferQueue), device, queFamily.GetIndex(TransferQueue), m_objectManager,
+		m_transferQueue
+	);
+}
 
-	void SetSharedData(
-		ObjectManager& om, std::shared_ptr<ISharedDataContainer>&& sharedDataArg
-	) noexcept {
-		om.CreateObject(sharedData, std::move(sharedDataArg), 0u);
-	}
-
-	void InitResources(
-		ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice
-	) {
-		om.CreateObject(
-			Resources::cpuWriteMemory,
-			{ logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-			2u
+void Terra::InitRenderEngine(
+	VkDevice device, RenderEngineType engineType, std::uint32_t bufferCount, QueueIndices3 queueIndices
+)
+{
+	switch (engineType)
+	{
+	case RenderEngineType::IndirectDraw:
+	{
+		m_objectManager.CreateObject<RenderEngine, RenderEngineIndirectDraw>(
+			m_renderEngine, 1u, device, bufferCount, queueIndices
 		);
-		om.CreateObject(
-			Resources::uploadMemory,
-			{ logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-			2u
+		break;
+	}
+	case RenderEngineType::MeshDraw:
+	{
+		m_objectManager.CreateObject<RenderEngine, RenderEngineMeshShader>(
+			m_renderEngine, 1u, device, bufferCount, queueIndices
 		);
-		om.CreateObject(
-			Resources::gpuOnlyMemory,
-			{ logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-			2u
+		break;
+	}
+	case RenderEngineType::IndividualDraw:
+	default:
+	{
+		m_objectManager.CreateObject<RenderEngine, RenderEngineIndividualDraw>(
+			m_renderEngine, 1u, device, queueIndices
 		);
-
-		om.CreateObject(Resources::uploadContainer, 0u);
+		break;
+	}
 	}
 }

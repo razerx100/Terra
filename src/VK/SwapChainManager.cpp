@@ -2,21 +2,21 @@
 #include <VkResourceViews.hpp>
 
 SwapChainManager::SwapChainManager(const Args& arguments)
-	: m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ arguments.device.value() },
+	: m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ arguments.device },
 	m_swapchainFormat{}, m_swapchainExtent{},
-	m_swapchainImages{ arguments.bufferCount.value(), VK_NULL_HANDLE },
-	m_swapchainImageViews{ arguments.bufferCount.value(), VK_NULL_HANDLE },
-	m_frameBuffers{ arguments.bufferCount.value(), VK_NULL_HANDLE },
-	m_presentQueue{ arguments.presentQueue.value() },
-	m_surfaceInfo{ arguments.surfaceInfo.value() }, m_nextImageIndex{ 0u } {
+	m_swapchainImages{ arguments.bufferCount, VK_NULL_HANDLE },
+	m_swapchainImageViews{ arguments.bufferCount, VK_NULL_HANDLE },
+	m_frameBuffers{ arguments.bufferCount, VK_NULL_HANDLE },
+	m_presentQueue{ arguments.presentQueue },
+	m_surfaceInfo{ arguments.surfaceInfo }, m_nextImageIndex{ 0u } {
 
 	SwapChainManagerCreateInfo swapCreateInfo{
-		.device = arguments.device.value(),
-		.surface = arguments.surface.value(),
-		.surfaceInfo = arguments.surfaceInfo.value(),
-		.width = arguments.width.value(),
-		.height = arguments.height.value(),
-		.bufferCount = arguments.bufferCount.value()
+		.device      = arguments.device,
+		.surface     = arguments.surface,
+		.surfaceInfo = arguments.surfaceInfo,
+		.width       = arguments.width,
+		.height      = arguments.height,
+		.bufferCount = arguments.bufferCount
 	};
 
 	auto surfaceFormat = ChooseSurfaceFormat(m_surfaceInfo.formats);

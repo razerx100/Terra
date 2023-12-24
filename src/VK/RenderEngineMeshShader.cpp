@@ -2,14 +2,10 @@
 
 #include <Terra.hpp>
 
-RenderEngineMeshShader::RenderEngineMeshShader(const Args& arguments)
-	: RenderEngineBase{ arguments.device.value() },
-	m_vertexManager{
-		arguments.device.value(), arguments.bufferCount.value(),
-		arguments.queueIndices.value()
-	}, m_meshletBuffer{ arguments.device.value() },
-	m_queueIndicesTG{ arguments.queueIndices.value() },
-	m_bufferCount{ arguments.bufferCount.value() } {}
+RenderEngineMeshShader::RenderEngineMeshShader(
+	VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
+) : RenderEngineBase{ device }, m_vertexManager{ device, bufferCount, queueIndices },
+	m_meshletBuffer{ device }, m_queueIndicesTG{ queueIndices }, m_bufferCount{ bufferCount } {}
 
 void RenderEngineMeshShader::AddRequiredExtensionFunctions() noexcept {
 	GraphicsPipelineMeshShader::AddRequiredExtensionFunctions();
@@ -72,14 +68,14 @@ void RenderEngineMeshShader::AddGVerticesAndPrimIndices(
 }
 
 void RenderEngineMeshShader::ConstructPipelines() {
-	VkDevice device = Terra::device->GetLogicalDevice();
+	VkDevice device = Terra::Get().Device().GetLogicalDevice();
 
 	ConstructGraphicsPipelineLayout(device);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 }
 
 void RenderEngineMeshShader::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	Terra::bufferManager->Update<true>(frameIndex);
+	Terra::Get().Buffers().Update<true>(frameIndex);
 }
 
 void RenderEngineMeshShader::RecordDrawCommands(
@@ -138,7 +134,7 @@ void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_meshletBuffer.SetMemoryOffsetAndType(device);
 
-	Terra::Resources::uploadContainer->AddMemory(
+	Terra::Get().Res().UploadCont().AddMemory(
 		std::data(m_meshlets), meshletBufferSize, m_meshletBuffer.GetFirstUploadMemoryOffset()
 	);
 
@@ -149,7 +145,7 @@ void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 
 	auto meshletBufferInfos = m_meshletBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddBuffersSplit(
+	Terra::Get().GraphicsDesc().AddBuffersSplit(
 		meshletDescInfo, std::move(meshletBufferInfos), VK_SHADER_STAGE_MESH_BIT_EXT
 	);
 }

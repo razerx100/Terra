@@ -12,7 +12,7 @@ VkDeviceManager::~VkDeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-void VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
+VkDeviceManager& VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
 	std::uint32_t deviceCount = 0u;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -30,6 +30,8 @@ void VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surfa
 		m_queueFamilyManager.SetQueueFamilyInfo(suitableDevice, surface);
 		m_physicalDevice = suitableDevice;
 	}
+
+	return *this;
 }
 
 VkPhysicalDevice VkDeviceManager::SelectPhysicalDevice(

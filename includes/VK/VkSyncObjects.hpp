@@ -3,18 +3,11 @@
 #include <vulkan/vulkan.hpp>
 #include <VKFence.hpp>
 #include <VKSemaphore.hpp>
-#include <optional>
 
-class VkSyncObjects {
+class VkSyncObjects
+{
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-		std::optional<std::uint32_t> bufferCount = 1u;
-		std::optional<bool> signaledFence = false;
-	};
-
-public:
-	VkSyncObjects(const Args& arguments);
+	VkSyncObjects(VkDevice device, std::uint32_t bufferCount = 1u, bool signaledFence = false);
 
 	void ResetFrontFence() const noexcept;
 	void WaitForFrontFence() const noexcept;

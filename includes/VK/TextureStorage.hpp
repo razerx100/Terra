@@ -4,18 +4,13 @@
 #include <atomic>
 #include <VkResourceViews.hpp>
 #include <VkQueueFamilyManager.hpp>
-#include <optional>
 
-class TextureStorage {
+class TextureStorage
+{
 public:
-	struct Args {
-		std::optional<VkDevice> logicalDevice;
-		std::optional<VkPhysicalDevice> physicalDevice;
-		std::optional<QueueIndicesTG> queueIndices;
-	};
-
-public:
-	TextureStorage(const Args& arguments);
+	TextureStorage(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, QueueIndicesTG queueIndices
+	);
 	~TextureStorage() noexcept;
 
 	size_t AddTexture(

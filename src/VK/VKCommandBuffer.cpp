@@ -1,12 +1,8 @@
 #include <VKCommandBuffer.hpp>
 
-VKCommandBuffer::VKCommandBuffer(const Args& arguments)
-	: m_deviceRef{ arguments.device.value() },
-	m_commandBuffers{ arguments.bufferCount.value(), VK_NULL_HANDLE } {
-
-	std::uint32_t queueIndex = arguments.queueIndex.value();
-	std::uint32_t bufferCount = arguments.bufferCount.value();
-
+VKCommandBuffer::VKCommandBuffer(VkDevice device, std::uint32_t queueIndex, std::uint32_t bufferCount)
+	: m_deviceRef{ device }, m_commandBuffers{ bufferCount, VK_NULL_HANDLE }
+{
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = queueIndex;

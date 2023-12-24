@@ -7,134 +7,63 @@ RendererVK::RendererVK(
 	const char* appName,
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	std::uint32_t bufferCount, RenderEngineType engineType
-) : m_appName{appName}, m_width{ width }, m_height{ height } {
+	std::uint32_t bufferCount,
+	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	RenderEngineType engineType
+) : m_width{ width }, m_height{ height } {
 
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
 
-	Terra::InitDisplay(m_objectManager);
-
-	m_objectManager.CreateObject(Terra::vkInstance, { appName }, 5u);
-	Terra::vkInstance->AddExtensionNames(Terra::display->GetRequiredExtensions());
-	Terra::vkInstance->CreateInstance();
-
-	VkInstance vkInstance = Terra::vkInstance->GetVKInstance();
-
-#ifdef _DEBUG
-	m_objectManager.CreateObject(Terra::debugLayer, { vkInstance }, 4u);
-#endif
-
-#ifdef TERRA_WIN32
-	Terra::InitSurface(m_objectManager, vkInstance, windowHandle, moduleHandle);
-#endif
-
-	m_objectManager.CreateObject(Terra::device, 3u);
-
-	VkSurfaceKHR vkSurface = Terra::surface->GetSurface();
-	const bool meshShader = engineType == RenderEngineType::MeshDraw;
-
-	if (meshShader)
-		Terra::device->AddExtensionName("VK_EXT_mesh_shader");
-
-	Terra::device->FindPhysicalDevice(vkInstance, vkSurface);
-	Terra::device->CreateLogicalDevice(meshShader);
-
-	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
-	VkPhysicalDevice physicalDevice = Terra::device->GetPhysicalDevice();
-	VkQueueFamilyMananger queFamilyMan = Terra::device->GetQueueFamilyManager();
-
-	m_objectManager.CreateObject(Terra::deviceExtensionLoader, 0u);
-
-	_vkResourceView::SetBufferAlignments(physicalDevice);
-
-	Terra::InitResources(m_objectManager, physicalDevice, logicalDevice);
-
-	Terra::InitGraphicsQueue(
-		m_objectManager, queFamilyMan.GetQueue(GraphicsQueue), logicalDevice,
-		queFamilyMan.GetIndex(GraphicsQueue), bufferCount
+	Terra::Init(
+		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool, sharedContainer,
+		engineType
 	);
+	Terra& terra = Terra::Get();
 
-	Terra::InitTransferQueue(
-		m_objectManager, queFamilyMan.GetQueue(TransferQueue), logicalDevice,
-		queFamilyMan.GetIndex(TransferQueue)
-	);
+	const VkDevice device = terra.Device().GetLogicalDevice();
 
-	Terra::InitComputeQueue(
-		m_objectManager, queFamilyMan.GetQueue(ComputeQueue), logicalDevice,
-		queFamilyMan.GetIndex(ComputeQueue), bufferCount
-	);
+	terra.Engine().ResizeViewportAndScissor(width, height);
+	terra.Engine().CreateRenderPass(device, terra.Swapchain().GetSwapFormat());
 
-	SwapChainManager::Args swapArguments{
-		.device = logicalDevice,
-		.surface = vkSurface,
-		.surfaceInfo = QuerySurfaceCapabilities(physicalDevice, vkSurface),
-		.width = width,
-		.height = height,
-		.bufferCount = bufferCount,
-		// Graphics and Present queues should be the same
-		.presentQueue = queFamilyMan.GetQueue(GraphicsQueue)
-	};
+	terra.Camera().SetSceneResolution(width, height);
 
-	m_objectManager.CreateObject(Terra::swapChain, swapArguments, 1u);
+	terra.Engine().AddRequiredExtensionFunctions();
 
-	Terra::InitDescriptorSets(m_objectManager, logicalDevice, bufferCount);
+	terra.DeviceExtensionLoader().QueryFunctionPTRs(device);
 
-	Terra::InitRenderEngine(
-		m_objectManager, logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices()
-	);
-	Terra::renderEngine->ResizeViewportAndScissor(width, height);
-	Terra::renderEngine->CreateRenderPass(logicalDevice, Terra::swapChain->GetSwapFormat());
-
-	m_objectManager.CreateObject(
-		Terra::textureStorage, {
-			logicalDevice, physicalDevice, queFamilyMan.GetTransferAndGraphicsIndices()
-		}, 1u
-	);
-
-	const bool modelDataNoBB = engineType == RenderEngineType::IndirectDraw ? false : true;
-
-	m_objectManager.CreateObject(
-		Terra::bufferManager,
-		{ logicalDevice,  bufferCount,queFamilyMan.GetComputeAndGraphicsIndices(),
-			modelDataNoBB, meshShader
-		},
-		1u
-	);
-
-	m_objectManager.CreateObject(Terra::cameraManager, 0u);
-	Terra::cameraManager->SetSceneResolution(width, height);
-
-	Terra::renderEngine->AddRequiredExtensionFunctions();
-
-	Terra::deviceExtensionLoader->QueryFunctionPTRs(logicalDevice);
-
-	Terra::renderEngine->RetrieveExtensionFunctions();
+	terra.Engine().RetrieveExtensionFunctions();
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
-	Terra::renderEngine->SetBackgroundColour(colourVector);
+	Terra::Get().Engine().SetBackgroundColour(colourVector);
 }
 
 void RendererVK::AddModelSet(
 	std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
 ) {
-	Terra::renderEngine->RecordModelDataSet(models, fragmentShader + L".spv");
-	Terra::bufferManager->AddOpaqueModels(std::move(models));
+	Terra& terra = Terra::Get();
+
+	terra.Engine().RecordModelDataSet(models, fragmentShader + L".spv");
+	terra.Buffers().AddOpaqueModels(std::move(models));
 }
 
 void RendererVK::AddMeshletModelSet(
 	std::vector<MeshletModel>&& meshletModels, const std::wstring& fragmentShader
 ) {
-	Terra::renderEngine->AddMeshletModelSet(meshletModels, fragmentShader + L".spv");
-	Terra::bufferManager->AddOpaqueModels(std::move(meshletModels));
+	Terra& terra = Terra::Get();
+
+	terra.Engine().AddMeshletModelSet(meshletModels, fragmentShader + L".spv");
+	terra.Buffers().AddOpaqueModels(std::move(meshletModels));
 }
 
 void RendererVK::AddModelInputs(
 	std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 ) {
-	Terra::renderEngine->AddGVerticesAndIndices(
-		Terra::device->GetLogicalDevice(), std::move(gVertices), std::move(gIndices)
+	Terra& terra = Terra::Get();
+
+	terra.Engine().AddGVerticesAndIndices(
+		terra.Device().GetLogicalDevice(), std::move(gVertices), std::move(gIndices)
 	);
 }
 
@@ -142,29 +71,37 @@ void RendererVK::AddModelInputs(
 	std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gVerticesIndices,
 	std::vector<std::uint32_t>&& gPrimIndices
 ) {
-	Terra::renderEngine->AddGVerticesAndPrimIndices(
-		Terra::device->GetLogicalDevice(), std::move(gVertices), std::move(gVerticesIndices),
+	Terra& terra = Terra::Get();
+
+	terra.Engine().AddGVerticesAndPrimIndices(
+		terra.Device().GetLogicalDevice(), std::move(gVertices), std::move(gVerticesIndices),
 		std::move(gPrimIndices)
 	);
 }
 
 void RendererVK::Update() {
-	Terra::swapChain->AcquireNextImageIndex(Terra::graphicsSyncObjects->GetFrontSemaphore());
-	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
+	Terra& terra = Terra::Get();
 
-	Terra::renderEngine->UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
+	terra.Swapchain().AcquireNextImageIndex(terra.Graphics().SyncObj().GetFrontSemaphore());
+	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
+
+	terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
 }
 
 void RendererVK::Render() {
-	const size_t imageIndex = Terra::swapChain->GetNextImageIndex();
-	const VkCommandBuffer graphicsCommandBuffer = Terra::graphicsCmdBuffer->GetCommandBuffer(
+	Terra& terra = Terra::Get();
+
+	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
+	const VkCommandBuffer graphicsCommandBuffer = terra.Graphics().CmdBuffer().GetCommandBuffer(
 		imageIndex
 	);
 
-	Terra::renderEngine->ExecutePreRenderStage(graphicsCommandBuffer, imageIndex);
-	Terra::renderEngine->RecordDrawCommands(graphicsCommandBuffer, imageIndex);
-	Terra::renderEngine->Present(graphicsCommandBuffer, imageIndex);
-	Terra::renderEngine->ExecutePostRenderStage();
+	RenderEngine& engine = terra.Engine();
+
+	engine.ExecutePreRenderStage(graphicsCommandBuffer, imageIndex);
+	engine.RecordDrawCommands(graphicsCommandBuffer, imageIndex);
+	engine.Present(graphicsCommandBuffer, imageIndex);
+	engine.ExecutePostRenderStage();
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
@@ -172,169 +109,180 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 		m_width = width;
 		m_height = height;
 
-		VkDevice device = Terra::device->GetLogicalDevice();
+		Terra& terra = Terra::Get();
+
+		const VkDevice device = terra.Device().GetLogicalDevice();
 
 		vkDeviceWaitIdle(device);
 
-		Terra::renderEngine->CleanUpDepthBuffer();
-		Terra::renderEngine->CreateDepthBuffer(device, width, height);
+		RenderEngine& engine = terra.Engine();
 
-		VkSurfaceFormatKHR surfaceFormat = Terra::swapChain->GetSurfaceFormat();
-		bool hasSwapFormatChanged = Terra::swapChain->HasSurfaceFormatChanged(surfaceFormat);
+		engine.CleanUpDepthBuffer();
+		engine.CreateDepthBuffer(device, width, height);
+
+		SwapChainManager& swapchain = terra.Swapchain();
+
+		VkSurfaceFormatKHR surfaceFormat = swapchain.GetSurfaceFormat();
+		bool hasSwapFormatChanged = swapchain.HasSurfaceFormatChanged(surfaceFormat);
 
 		if (hasSwapFormatChanged)
-			Terra::renderEngine->CreateRenderPass(
-				Terra::device->GetLogicalDevice(), Terra::swapChain->GetSwapFormat()
+			engine.CreateRenderPass(
+				terra.Device().GetLogicalDevice(), swapchain.GetSwapFormat()
 			);
 
-		Terra::swapChain->ResizeSwapchain(
-			device, Terra::surface->GetSurface(), width, height,
-			Terra::renderEngine->GetRenderPass(), Terra::renderEngine->GetDepthImageView(),
+		swapchain.ResizeSwapchain(
+			device, terra.Surface().GetSurface(), width, height,
+			engine.GetRenderPass(), engine.GetDepthImageView(),
 			surfaceFormat
 		);
 
-		Terra::renderEngine->ResizeViewportAndScissor(width, height);
+		engine.ResizeViewportAndScissor(width, height);
 
-		Terra::cameraManager->SetSceneResolution(width, height);
+		terra.Camera().SetSceneResolution(width, height);
 	}
 }
 
 Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
-	auto [width, height] = Terra::display->GetDisplayResolution(
-		Terra::device->GetPhysicalDevice(), 0u
+	Terra& terra = Terra::Get();
+
+	IDisplayManager::Resolution resolution = terra.Display().GetDisplayResolution(
+		terra.Device().GetPhysicalDevice(), 0u
 	);
 
-	return { width, height };
+	return { resolution.first, resolution.second };
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
-	Terra::renderEngine->SetShaderPath(path);
+	Terra::Get().Engine().SetShaderPath(path);
 }
 
-void RendererVK::ProcessData() {
-	VkDevice logicalDevice = Terra::device->GetLogicalDevice();
+void RendererVK::ProcessData()
+{
+	Terra& terra = Terra::Get();
+
+	const VkDevice logicalDevice = terra.Device().GetLogicalDevice();
+
+	BufferManager& buffers = terra.Buffers();
+	RenderEngine& engine = terra.Engine();
 
 	// Create Buffers
-	Terra::bufferManager->CreateBuffers(logicalDevice);
-	Terra::renderEngine->CreateBuffers(logicalDevice);
+	buffers.CreateBuffers(logicalDevice);
+	engine.CreateBuffers(logicalDevice);
+
+	DeviceMemory& gpuMem = terra.Res().GPU();
+	DeviceMemory& cpuMem = terra.Res().CPU();
+	DeviceMemory& uploadMem = terra.Res().Upload();
 
 	// Allocate Memory
-	Terra::Resources::gpuOnlyMemory->AllocateMemory(logicalDevice);
-	Terra::Resources::uploadMemory->AllocateMemory(logicalDevice);
-	Terra::Resources::cpuWriteMemory->AllocateMemory(logicalDevice);
+	gpuMem.AllocateMemory(logicalDevice);
+	uploadMem.AllocateMemory(logicalDevice);
+	cpuMem.AllocateMemory(logicalDevice);
 
 	// Map cpu memories
-	Terra::Resources::uploadMemory->MapMemoryToCPU(logicalDevice);
-	Terra::Resources::cpuWriteMemory->MapMemoryToCPU(logicalDevice);
+	uploadMem.MapMemoryToCPU(logicalDevice);
+	cpuMem.MapMemoryToCPU(logicalDevice);
 
 	// Set Upload Memory Start
-	Terra::Resources::uploadContainer->SetMemoryStart(
-		Terra::Resources::uploadMemory->GetMappedCPUPtr()
-	);
+	UploadContainer& uploadContainer = terra.Res().UploadCont();
+	uploadContainer.SetMemoryStart(uploadMem.GetMappedCPUPtr());
 
 	// Bind Buffers to memory
-	Terra::bufferManager->BindResourceToMemory(logicalDevice);
-	Terra::renderEngine->BindResourcesToMemory(logicalDevice);
-	Terra::textureStorage->BindMemories(logicalDevice);
+	buffers.BindResourceToMemory(logicalDevice);
+	engine.BindResourcesToMemory(logicalDevice);
+	terra.Texture().BindMemories(logicalDevice);
 
-	Terra::renderEngine->CreateDepthBuffer(logicalDevice, m_width, m_height);
-	Terra::swapChain->CreateFramebuffers(
-		logicalDevice,
-		Terra::renderEngine->GetRenderPass(), Terra::renderEngine->GetDepthImageView(),
-		m_width, m_height
+	engine.CreateDepthBuffer(logicalDevice, m_width, m_height);
+	terra.Swapchain().CreateFramebuffers(
+		logicalDevice, engine.GetRenderPass(), engine.GetDepthImageView(), m_width, m_height
 	);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;
 
-	Terra::Resources::uploadContainer->CopyData(works);
-	Terra::renderEngine->CopyData();
+	uploadContainer.CopyData(works);
+	engine.CopyData();
 
 	while (works != 0u);
 
 	// Upload to GPU
-	Terra::transferCmdBuffer->ResetFirstBuffer();
-	const VkCommandBuffer transferCmdBuffer = Terra::transferCmdBuffer->GetFirstCommandBuffer();
+	VKCommandBuffer& transferCmdBuffer = terra.Transfer().CmdBuffer();
+	transferCmdBuffer.ResetFirstBuffer();
+	const VkCommandBuffer vkTransferCmdBuffer = transferCmdBuffer.GetFirstCommandBuffer();
 
-	Terra::renderEngine->RecordCopy(transferCmdBuffer);
-	Terra::textureStorage->RecordUploads(transferCmdBuffer);
+	TextureStorage& textures = terra.Texture();
+	engine.RecordCopy(vkTransferCmdBuffer);
+	textures.RecordUploads(vkTransferCmdBuffer);
 
-	Terra::textureStorage->ReleaseOwnerships(transferCmdBuffer);
-	Terra::renderEngine->ReleaseOwnership(transferCmdBuffer);
+	textures.ReleaseOwnerships(vkTransferCmdBuffer);
+	engine.ReleaseOwnership(vkTransferCmdBuffer);
 
-	Terra::transferCmdBuffer->CloseFirstBuffer();
+	transferCmdBuffer.CloseFirstBuffer();
 
-	Terra::transferQueue->SubmitCommandBuffer(
-		transferCmdBuffer, Terra::transferSyncObjects->GetFrontFence()
-	);
-	Terra::transferSyncObjects->WaitForFrontFence();
-	Terra::transferSyncObjects->ResetFrontFence();
+	VkCommandQueue& transferQueue = terra.Transfer().Que();
+	VkSyncObjects& transferSync = terra.Transfer().SyncObj();
+
+	transferQueue.SubmitCommandBuffer(vkTransferCmdBuffer, transferSync.GetFrontFence());
+	transferSync.WaitForFrontFence();
+	transferSync.ResetFrontFence();
 
 	// Transition Images to Fragment Optimal
-	Terra::graphicsCmdBuffer->ResetFirstBuffer();
+	VKCommandBuffer& graphicsCmdBuffer = terra.Graphics().CmdBuffer();
+	graphicsCmdBuffer.ResetFirstBuffer();
 
-	const VkCommandBuffer graphicsCmdBuffer = Terra::graphicsCmdBuffer->GetFirstCommandBuffer();
+	const VkCommandBuffer vkGraphicsCmdBuffer = graphicsCmdBuffer.GetFirstCommandBuffer();
 
-	Terra::textureStorage->AcquireOwnerShips(graphicsCmdBuffer);
-	Terra::renderEngine->AcquireOwnerShipGraphics(graphicsCmdBuffer);
+	textures.AcquireOwnerShips(vkGraphicsCmdBuffer);
+	engine.AcquireOwnerShipGraphics(vkGraphicsCmdBuffer);
 
-	Terra::textureStorage->TransitionImages(graphicsCmdBuffer);
+	textures.TransitionImages(vkGraphicsCmdBuffer);
 
-	Terra::graphicsCmdBuffer->CloseFirstBuffer();
+	graphicsCmdBuffer.CloseFirstBuffer();
 
-	Terra::graphicsQueue->SubmitCommandBuffer(
-		graphicsCmdBuffer, Terra::graphicsSyncObjects->GetFrontFence()
-	);
-	Terra::graphicsSyncObjects->WaitForFrontFence();
-	Terra::graphicsSyncObjects->ResetFrontFence();
+	VkSyncObjects& graphicsSync = terra.Graphics().SyncObj();
+
+	terra.Graphics().Que().SubmitCommandBuffer(vkGraphicsCmdBuffer, graphicsSync.GetFrontFence());
+	graphicsSync.WaitForFrontFence();
+	graphicsSync.ResetFrontFence();
 
 	// Compute
-	Terra::computeCmdBuffer->ResetFirstBuffer();
+	VKCommandBuffer& computeCmdBuffer = terra.Compute().CmdBuffer();
+	computeCmdBuffer.ResetFirstBuffer();
 
-	const VkCommandBuffer computeCmdBuffer = Terra::computeCmdBuffer->GetFirstCommandBuffer();
+	const VkCommandBuffer vkComputeCmdBuffer = computeCmdBuffer.GetFirstCommandBuffer();
 
-	Terra::renderEngine->AcquireOwnerShipCompute(computeCmdBuffer);
+	engine.AcquireOwnerShipCompute(vkComputeCmdBuffer);
 
-	Terra::computeCmdBuffer->CloseFirstBuffer();
+	computeCmdBuffer.CloseFirstBuffer();
 
-	Terra::computeQueue->SubmitCommandBuffer(
-		computeCmdBuffer, Terra::computeSyncObjects->GetFrontFence()
-	);
-	Terra::computeSyncObjects->WaitForFrontFence();
-	Terra::computeSyncObjects->ResetFrontFence();
+	VkSyncObjects& computeSync = terra.Compute().SyncObj();
 
-	Terra::textureStorage->SetDescriptorLayouts();
+	terra.Compute().Que().SubmitCommandBuffer(vkComputeCmdBuffer, computeSync.GetFrontFence());
+	computeSync.WaitForFrontFence();
+	computeSync.ResetFrontFence();
 
-	Terra::graphicsDescriptorSet->CreateDescriptorSets(logicalDevice);
-	Terra::computeDescriptorSet->CreateDescriptorSets(logicalDevice);
+	textures.SetDescriptorLayouts();
 
-	Terra::renderEngine->ConstructPipelines();
+	terra.GraphicsDesc().CreateDescriptorSets(logicalDevice);
+	terra.ComputeDesc().CreateDescriptorSets(logicalDevice);
+
+	engine.ConstructPipelines();
 
 	// Cleanup Upload Buffers
-	Terra::Resources::uploadContainer.reset();
-	Terra::renderEngine->ReleaseUploadResources();
-	Terra::textureStorage->ReleaseUploadBuffers();
-	Terra::Resources::uploadMemory.reset();
+	engine.ReleaseUploadResources();
+	textures.ReleaseUploadBuffers();
+	terra.Res().ResetUpload();
 }
 
 size_t RendererVK::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
-	return Terra::textureStorage->AddTexture(
-		Terra::device->GetLogicalDevice(), std::move(textureData), width, height
+	Terra& terra = Terra::Get();
+
+	return terra.Texture().AddTexture(
+		terra.Device().GetLogicalDevice(), std::move(textureData), width, height
 	);
 }
 
-void RendererVK::SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept {
-	Terra::SetThreadPool(m_objectManager, std::move(threadPoolArg));
-}
-
-void RendererVK::SetSharedDataContainer(
-	std::shared_ptr<ISharedDataContainer> sharedData
-) noexcept {
-	Terra::SetSharedData(m_objectManager, std::move(sharedData));
-}
-
 void RendererVK::WaitForAsyncTasks() {
-	vkDeviceWaitIdle(Terra::device->GetLogicalDevice());
+	vkDeviceWaitIdle(Terra::Get().Device().GetLogicalDevice());
 }

@@ -10,7 +10,7 @@ public:
 	VkDeviceManager() noexcept;
 	~VkDeviceManager() noexcept;
 
-	void FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
+	VkDeviceManager& FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 	void CreateLogicalDevice(bool meshShader);
 	void AddExtensionName(const char* name) noexcept;
 	void AddExtensionNames(const std::vector<const char*>& names) noexcept;

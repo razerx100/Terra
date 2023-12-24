@@ -6,22 +6,17 @@
 #include <VkResourceViews.hpp>
 #include <DescriptorSetManager.hpp>
 #include <VkQueueFamilyManager.hpp>
-#include <optional>
 
 #include <IModel.hpp>
+#include <ISharedDataContainer.hpp>
 
-class BufferManager {
+class BufferManager
+{
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-		std::optional<std::uint32_t> bufferCount;
-		std::optional<QueueIndicesCG> queueIndices;
-		std::optional<bool> modelDataNoBB;
-		std::optional<bool> meshShader;
-	};
-
-public:
-	BufferManager(Args& arguments);
+	BufferManager(
+		VkDevice device, std::uint32_t bufferCount, QueueIndicesCG queueIndices, bool modelDataNoBB,
+		bool meshShader, ISharedDataContainer& sharedData
+	);
 
 	void CreateBuffers(VkDevice device) noexcept;
 	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
@@ -194,5 +189,6 @@ private:
 	std::vector<size_t> m_lightModelIndices;
 	bool m_modelDataNoBB;
 	bool m_meshShader;
+	ISharedDataContainer& m_sharedData;
 };
 #endif

@@ -1,7 +1,6 @@
 #include <VkCommandQueue.hpp>
 
-VkCommandQueue::VkCommandQueue(const Args& arguments)
-	: m_commandQueue{ arguments.queue.value() } {}
+VkCommandQueue::VkCommandQueue(VkQueue queue) : m_commandQueue{ queue } {}
 
 void VkCommandQueue::SubmitCommandBuffer(
 	VkCommandBuffer commandBuffer, VkFence fence

@@ -5,8 +5,8 @@
 #include <DebugLayerManager.hpp>
 #include <Exception.hpp>
 
-VkInstanceManager::VkInstanceManager(Args& arguments)
-	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(arguments.appName.value()) } {}
+VkInstanceManager::VkInstanceManager(std::string_view appName)
+	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) } {}
 
 VkInstanceManager::~VkInstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);
@@ -61,16 +61,18 @@ void VkInstanceManager::CheckLayerSupport() const {
 	}
 }
 
-void VkInstanceManager::AddExtensionNames(
+VkInstanceManager& VkInstanceManager::AddExtensionNames(
 	const std::vector<const char*>& extensionNames
 ) noexcept {
 	std::ranges::copy(extensionNames, std::back_inserter(m_extensionNames));
+
+	return *this;
 }
 
 void VkInstanceManager::CreateInstance() {
 	VkApplicationInfo appInfo{
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-		.pApplicationName = m_appName.c_str(),
+		.pApplicationName = std::data(m_appName),
 		.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u),
 		.pEngineName = "Terra",
 		.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u),

@@ -1,9 +1,8 @@
 #include <UploadContainer.hpp>
 #include <cstring>
 
-#include <Terra.hpp>
-
-UploadContainer::UploadContainer() noexcept : m_dstMemoryStart{ nullptr } {}
+UploadContainer::UploadContainer(IThreadPool& threadPool) noexcept
+	: m_memoryRefInfos{}, m_dstMemoryStart{ nullptr }, m_threadPool{ threadPool } {}
 
 void UploadContainer::SetMemoryStart(std::uint8_t* dstMemoryStart) noexcept {
 	m_dstMemoryStart = dstMemoryStart;
@@ -24,7 +23,7 @@ void UploadContainer::AddMemory(
 void UploadContainer::CopyData(std::atomic_size_t& workCount) noexcept {
 	++workCount;
 
-	Terra::threadPool->SubmitWork(
+	m_threadPool.SubmitWork(
 		[&] {
 			for (size_t index = 0u; index < std::size(m_memoryRefInfos); ++index)
 				CopyMem(m_memoryRefInfos[index]);

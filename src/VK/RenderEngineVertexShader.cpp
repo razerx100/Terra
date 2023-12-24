@@ -76,12 +76,10 @@ void RenderEngineVertexShader::_releaseOwnership(
 ) noexcept {}
 
 // Indirect Draw
-RenderEngineIndirectDraw::RenderEngineIndirectDraw(Args& arguments)
-	: RenderEngineVertexShader{ arguments.device.value(), arguments.queueIndices.value() },
-	m_computePipeline{
-		arguments.device.value(), arguments.bufferCount.value(),
-		arguments.queueIndices.value()
-	} {}
+RenderEngineIndirectDraw::RenderEngineIndirectDraw(
+	VkDevice device, std::uint32_t bufferCount, QueueIndices3 queueIndices
+) : RenderEngineVertexShader{ device, queueIndices },
+	m_computePipeline{ device, bufferCount, queueIndices } {}
 
 void RenderEngineIndirectDraw::ExecutePreRenderStage(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
@@ -109,21 +107,23 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 }
 
 void RenderEngineIndirectDraw::ConstructPipelines() {
-	VkDevice device = Terra::device->GetLogicalDevice();
+	Terra& terra = Terra::Get();
+
+	VkDevice device = terra.Device().GetLogicalDevice();
 
 	ConstructGraphicsPipelineLayout(device);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 
-	DescriptorSetManager const* descManager = Terra::computeDescriptorSet.get();
+	DescriptorSetManager& descManager = terra.ComputeDesc();
 
 	m_computePipeline.CreateComputePipelineLayout(
-		device, descManager->GetDescriptorSetCount(), descManager->GetDescriptorSetLayouts()
+		device, descManager.GetDescriptorSetCount(), descManager.GetDescriptorSetLayouts()
 	);
 	m_computePipeline.CreateComputePipeline(device, m_shaderPath);
 }
 
 void RenderEngineIndirectDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	Terra::bufferManager->Update<false>(frameIndex);
+	Terra::Get().Buffers().Update<false>(frameIndex);
 }
 
 void RenderEngineIndirectDraw::RecordModelDataSet(
@@ -147,8 +147,8 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 RenderEngineBase::WaitSemaphoreData RenderEngineIndirectDraw::GetWaitSemaphores(
 ) const noexcept {
 	static VkSemaphore waitSemaphores[2]{};
-	waitSemaphores[0] = Terra::computeSyncObjects->GetFrontSemaphore();
-	waitSemaphores[1] = Terra::graphicsSyncObjects->GetFrontSemaphore();
+	waitSemaphores[0] = Terra::Get().Compute().SyncObj().GetFrontSemaphore();
+	waitSemaphores[1] = Terra::Get().Graphics().SyncObj().GetFrontSemaphore();
 
 	static VkPipelineStageFlags waitStages[] = {
 		VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
@@ -189,25 +189,26 @@ void RenderEngineIndirectDraw::_releaseOwnership(VkCommandBuffer transferCmdBuff
 }
 
 void RenderEngineIndirectDraw::ExecuteComputeStage(size_t frameIndex) {
-	Terra::computeCmdBuffer->ResetBuffer(frameIndex);
+	Terra::Queue& compute = Terra::Get().Compute();
+	VKCommandBuffer& computeCmdBuffer = compute.CmdBuffer();
 
-	const VkCommandBuffer computeCommandBuffer = Terra::computeCmdBuffer->GetCommandBuffer(
+	computeCmdBuffer.ResetBuffer(frameIndex);
+
+	const VkCommandBuffer vkComputeCommandBuffer = computeCmdBuffer.GetCommandBuffer(
 		frameIndex
 	);
 
-	m_computePipeline.ResetCounterBuffer(computeCommandBuffer, frameIndex);
-	m_computePipeline.BindComputePipeline(computeCommandBuffer, frameIndex);
-	m_computePipeline.DispatchCompute(computeCommandBuffer);
+	m_computePipeline.ResetCounterBuffer(vkComputeCommandBuffer, frameIndex);
+	m_computePipeline.BindComputePipeline(vkComputeCommandBuffer, frameIndex);
+	m_computePipeline.DispatchCompute(vkComputeCommandBuffer);
 
-	Terra::computeCmdBuffer->CloseBuffer(frameIndex);
-	Terra::computeQueue->SubmitCommandBuffer(
-		computeCommandBuffer, Terra::computeSyncObjects->GetFrontSemaphore()
-	);
+	computeCmdBuffer.CloseBuffer(frameIndex);
+	compute.Que().SubmitCommandBuffer(vkComputeCommandBuffer, compute.SyncObj().GetFrontSemaphore());
 }
 
 // Individual Draw
-RenderEngineIndividualDraw::RenderEngineIndividualDraw(Args& arguments)
-	: RenderEngineVertexShader{ arguments.device.value(), arguments.queueIndices.value() } {}
+RenderEngineIndividualDraw::RenderEngineIndividualDraw(VkDevice device, QueueIndicesTG queueIndices)
+	: RenderEngineVertexShader{ device, queueIndices } {}
 
 void RenderEngineIndividualDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
@@ -225,14 +226,14 @@ void RenderEngineIndividualDraw::RecordDrawCommands(
 }
 
 void RenderEngineIndividualDraw::ConstructPipelines() {
-	VkDevice device = Terra::device->GetLogicalDevice();
+	VkDevice device = Terra::Get().Device().GetLogicalDevice();
 
 	ConstructGraphicsPipelineLayout(device);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 }
 
 void RenderEngineIndividualDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	Terra::bufferManager->Update<true>(frameIndex);
+	Terra::Get().Buffers().Update<true>(frameIndex);
 }
 
 void RenderEngineIndividualDraw::RecordModelDataSet(

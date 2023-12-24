@@ -3,18 +3,19 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <VkHelperFunctions.hpp>
-#include <optional>
 
-class SwapChainManager {
+class SwapChainManager
+{
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-		std::optional<VkSurfaceKHR> surface;
-		std::optional<SurfaceInfo> surfaceInfo;
-		std::optional<std::uint32_t> width;
-		std::optional<std::uint32_t> height;
-		std::optional<std::uint32_t> bufferCount;
-		std::optional<VkQueue> presentQueue;
+	struct Args
+	{
+		VkDevice      device;
+		VkSurfaceKHR  surface;
+		SurfaceInfo   surfaceInfo;
+		std::uint32_t width;
+		std::uint32_t height;
+		std::uint32_t bufferCount;
+		VkQueue       presentQueue;
 	};
 
 public:

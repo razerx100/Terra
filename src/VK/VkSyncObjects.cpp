@@ -1,11 +1,7 @@
 #include <VkSyncObjects.hpp>
 
-VkSyncObjects::VkSyncObjects(const Args& arguments)
-	: m_fences{
-		arguments.device.value(), arguments.bufferCount.value(), arguments.signaledFence.value()
-	},
-	m_semaphores{ arguments.device.value(), arguments.bufferCount.value() } {}
-
+VkSyncObjects::VkSyncObjects(VkDevice device, std::uint32_t bufferCount, bool signaledFence)
+	: m_fences{ device, bufferCount, signaledFence }, m_semaphores{ device, bufferCount } {}
 
 void VkSyncObjects::ResetFrontFence() const noexcept {
 	m_fences.ResetFrontFence();

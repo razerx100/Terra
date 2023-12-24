@@ -10,30 +10,35 @@ RenderEngineBase::RenderEngineBase(VkDevice device) noexcept
 void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) {
 	vkCmdEndRenderPass(graphicsCmdBuffer);
 
-	Terra::graphicsCmdBuffer->CloseBuffer(frameIndex);
+	Terra::Queue& graphics = Terra::Get().Graphics();
+
+	graphics.CmdBuffer().CloseBuffer(frameIndex);
 
 	const auto& waitSemaphores = GetWaitSemaphores();
 	static auto semaphoreCount = static_cast<std::uint32_t>(std::size(waitSemaphores.first));
 
-	Terra::graphicsQueue->SubmitCommandBuffer(
-		graphicsCmdBuffer, Terra::graphicsSyncObjects->GetFrontFence(),
+	graphics.Que().SubmitCommandBuffer(
+		graphicsCmdBuffer, graphics.SyncObj().GetFrontFence(),
 		semaphoreCount, std::data(waitSemaphores.first), std::data(waitSemaphores.second)
 	);
-	Terra::swapChain->PresentImage(static_cast<std::uint32_t>(frameIndex));
+	Terra::Get().Swapchain().PresentImage(static_cast<std::uint32_t>(frameIndex));
 }
 
 void RenderEngineBase::ExecutePostRenderStage() {
-	Terra::graphicsSyncObjects->AdvanceSyncObjectsInQueue();
-	Terra::computeSyncObjects->AdvanceSemaphoreInQueue();
+	VkSyncObjects& graphicsSync = Terra::Get().Graphics().SyncObj();
 
-	Terra::graphicsSyncObjects->WaitForFrontFence();
-	Terra::graphicsSyncObjects->ResetFrontFence();
+	graphicsSync.AdvanceSyncObjectsInQueue();
+	Terra::Get().Compute().SyncObj().AdvanceSemaphoreInQueue();
+
+	graphicsSync.WaitForFrontFence();
+	graphicsSync.ResetFrontFence();
 }
 
 void RenderEngineBase::ExecutePreGraphicsStage(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
-	Terra::graphicsCmdBuffer->ResetBuffer(frameIndex);
+	Terra& terra = Terra::Get();
+	terra.Graphics().CmdBuffer().ResetBuffer(frameIndex);
 
 	vkCmdSetViewport(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetViewportRef());
 	vkCmdSetScissor(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetScissorRef());
@@ -42,11 +47,13 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 	clearValues[0].color = m_backgroundColour;
 	clearValues[1].depthStencil = { 1.f, 0 };
 
+	SwapChainManager& swapchain = terra.Swapchain();
+
 	VkRenderPassBeginInfo renderPassInfo{
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 		.renderPass = GetRenderPass(),
-		.framebuffer = Terra::swapChain->GetFramebuffer(frameIndex),
-		.renderArea = { VkOffset2D{ 0, 0 }, Terra::swapChain->GetSwapExtent() },
+		.framebuffer = swapchain.GetFramebuffer(frameIndex),
+		.renderArea = { VkOffset2D{ 0, 0 }, swapchain.GetSwapExtent() },
 		.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues)),
 		.pClearValues = std::data(clearValues)
 	};
@@ -55,17 +62,17 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 }
 
 void RenderEngineBase::ConstructGraphicsPipelineLayout(VkDevice device) {
-	DescriptorSetManager const* descManager = Terra::graphicsDescriptorSet.get();
+	DescriptorSetManager& descManager = Terra::Get().GraphicsDesc();
 
 	m_graphicsPipelineLayout = CreateGraphicsPipelineLayout(
-		device, descManager->GetDescriptorSetCount(), descManager->GetDescriptorSetLayouts()
+		device, descManager.GetDescriptorSetCount(), descManager.GetDescriptorSetLayouts()
 	);
 }
 
 void RenderEngineBase::BindGraphicsDescriptorSets(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
-	VkDescriptorSet descSets[] = { Terra::graphicsDescriptorSet->GetDescriptorSet(frameIndex) };
+	VkDescriptorSet descSets[] = { Terra::Get().GraphicsDesc().GetDescriptorSet(frameIndex) };
 	vkCmdBindDescriptorSets(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_graphicsPipelineLayout->GetLayout(), 0u, 1u,
@@ -110,7 +117,7 @@ void RenderEngineBase::ExecutePreRenderStage(
 RenderEngineBase::WaitSemaphoreData RenderEngineBase::GetWaitSemaphores(
 ) const noexcept {
 	static VkSemaphore waitSemaphores[1]{};
-	waitSemaphores[0] = Terra::graphicsSyncObjects->GetFrontSemaphore();
+	waitSemaphores[0] = Terra::Get().Graphics().SyncObj().GetFrontSemaphore();
 
 	static VkPipelineStageFlags waitStages[] = {
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT

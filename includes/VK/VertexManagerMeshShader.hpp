@@ -60,7 +60,7 @@ private:
 
 		buffer.SetMemoryOffsetAndType(device);
 
-		GetUploadContainer()->AddMemory(
+		GetUploadContainer().AddMemory(
 			std::data(input), bufferSize, buffer.GetFirstUploadMemoryOffset()
 		);
 
@@ -68,7 +68,7 @@ private:
 	}
 
 	[[nodiscard]]
-	static UploadContainer* GetUploadContainer() noexcept;
+	static UploadContainer& GetUploadContainer() noexcept;
 
 private:
 	std::uint32_t m_bufferCount;

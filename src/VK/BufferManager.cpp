@@ -4,14 +4,13 @@
 #include <BufferManager.hpp>
 #include <Terra.hpp>
 
-BufferManager::BufferManager(Args& arguments)
-	: m_cameraBuffer{ arguments.device.value() }, m_modelBuffers{ arguments.device.value() },
-	m_materialBuffers{ arguments.device.value() }, m_lightBuffers{ arguments.device.value() },
-	m_fragmentDataBuffer{ arguments.device.value() },
-	m_bufferCount{ arguments.bufferCount.value() },
-	m_queueIndices{ arguments.queueIndices.value() },
-	m_modelDataNoBB{ arguments.modelDataNoBB.value() },
-	m_meshShader{ arguments.meshShader.value() } {}
+BufferManager::BufferManager(
+	VkDevice device, std::uint32_t bufferCount, QueueIndicesCG queueIndices, bool modelDataNoBB,
+	bool meshShader, ISharedDataContainer& sharedData
+) : m_cameraBuffer{ device }, m_modelBuffers{ device }, m_materialBuffers{ device },
+	m_lightBuffers{ device }, m_fragmentDataBuffer{ device }, m_bufferCount{ bufferCount },
+	m_queueIndices{ queueIndices }, m_modelDataNoBB{ modelDataNoBB }, m_meshShader{ meshShader },
+	m_sharedData{ sharedData } {}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	// Camera
@@ -90,9 +89,7 @@ void BufferManager::AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) n
 void BufferManager::UpdateCameraData(
 	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
 ) const noexcept {
-	Terra::cameraManager->CopyData(
-		cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(bufferIndex)
-	);
+	Terra::Get().Camera().CopyData(cpuMemoryStart + m_cameraBuffer.GetMemoryOffset(bufferIndex));
 }
 
 void BufferManager::UpdateLightData(
@@ -152,8 +149,8 @@ void BufferManager::CreateBufferComputeAndVertex(
 
 	auto bufferInfos = buffer.GetDescBufferInfoSplit(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddBuffersSplit(descInfo, bufferInfos, vertexShaderType);
-	Terra::computeDescriptorSet->AddBuffersSplit(
+	Terra::Get().GraphicsDesc().AddBuffersSplit(descInfo, bufferInfos, vertexShaderType);
+	Terra::Get().ComputeDesc().AddBuffersSplit(
 		descInfo, std::move(bufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 }
@@ -167,15 +164,15 @@ void BufferManager::CreateBufferFragment(
 
 	auto bufferInfos = buffer.GetDescBufferInfoSplit(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddBuffersSplit(
+	Terra::Get().GraphicsDesc().AddBuffersSplit(
 		descInfo, bufferInfos, VK_SHADER_STAGE_FRAGMENT_BIT
 	);
 }
 
 DirectX::XMMATRIX BufferManager::GetViewMatrix() const noexcept {
-	return Terra::sharedData->GetViewMatrix();
+	return m_sharedData.GetViewMatrix();
 }
 
 std::uint8_t* BufferManager::GetCPUWriteStartMemory() const noexcept {
-	return Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
+	return Terra::Get().Res().CPU().GetMappedCPUPtr();
 }

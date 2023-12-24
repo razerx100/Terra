@@ -29,12 +29,14 @@ _vkResourceView& _vkResourceView::operator=(_vkResourceView&& resourceView) noex
 void _vkResourceView::BindResourceToMemory(VkDevice device) const noexcept {
 	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
 
+	Terra::Resources& res = Terra::Get().Res();
+
 	if (m_resourceType == MemoryType::upload)
-		resourceMemoryStart = Terra::Resources::uploadMemory->GetMemoryHandle();
+		resourceMemoryStart = res.Upload().GetMemoryHandle();
 	else if (m_resourceType == MemoryType::cpuWrite)
-		resourceMemoryStart = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
+		resourceMemoryStart = res.CPU().GetMemoryHandle();
 	else if (m_resourceType == MemoryType::gpuOnly)
-		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
+		resourceMemoryStart = res.GPU().GetMemoryHandle();
 
 	vkBindBufferMemory(
 		device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffsetStart
@@ -45,16 +47,18 @@ void _vkResourceView::SetMemoryOffsetAndType(VkDevice device, MemoryType type) n
 	const auto memoryReq = GetMemoryRequirements(device);
 	m_resourceType = type;
 
+	Terra::Resources& res = Terra::Get().Res();
+
 	if (type == MemoryType::upload)
-		m_memoryOffsetStart = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(
+		m_memoryOffsetStart = res.Upload().ReserveSizeAndGetOffset(
 			memoryReq
 		);
 	else if (type == MemoryType::cpuWrite)
-		m_memoryOffsetStart = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(
+		m_memoryOffsetStart = res.CPU().ReserveSizeAndGetOffset(
 			memoryReq
 		);
 	else if (type == MemoryType::gpuOnly)
-		m_memoryOffsetStart = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(
+		m_memoryOffsetStart = res.GPU().ReserveSizeAndGetOffset(
 			memoryReq
 		);
 }
@@ -278,12 +282,14 @@ void VkImageResourceView::SetMemoryOffsetAndType(VkDevice device, MemoryType typ
 	const auto memoryReq = GetMemoryRequirements(device);
 	m_resourceType = type;
 
+	Terra::Resources& res = Terra::Get().Res();
+
 	if (type == MemoryType::upload)
-		m_memoryOffset = Terra::Resources::uploadMemory->ReserveSizeAndGetOffset(memoryReq);
+		m_memoryOffset = res.Upload().ReserveSizeAndGetOffset(memoryReq);
 	else if (type == MemoryType::cpuWrite)
-		m_memoryOffset = Terra::Resources::cpuWriteMemory->ReserveSizeAndGetOffset(memoryReq);
+		m_memoryOffset = res.CPU().ReserveSizeAndGetOffset(memoryReq);
 	else if (type == MemoryType::gpuOnly)
-		m_memoryOffset = Terra::Resources::gpuOnlyMemory->ReserveSizeAndGetOffset(memoryReq);
+		m_memoryOffset = res.GPU().ReserveSizeAndGetOffset(memoryReq);
 }
 
 void VkImageResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType type) noexcept {
@@ -294,12 +300,14 @@ void VkImageResourceView::SetMemoryOffsetAndType(VkDeviceSize offset, MemoryType
 void VkImageResourceView::BindResourceToMemory(VkDevice device) const noexcept {
 	VkDeviceMemory resourceMemoryStart = VK_NULL_HANDLE;
 
+	Terra::Resources& res = Terra::Get().Res();
+
 	if (m_resourceType == MemoryType::upload)
-		resourceMemoryStart = Terra::Resources::uploadMemory->GetMemoryHandle();
+		resourceMemoryStart = res.Upload().GetMemoryHandle();
 	else if (m_resourceType == MemoryType::cpuWrite)
-		resourceMemoryStart = Terra::Resources::cpuWriteMemory->GetMemoryHandle();
+		resourceMemoryStart = res.CPU().GetMemoryHandle();
 	else if (m_resourceType == MemoryType::gpuOnly)
-		resourceMemoryStart = Terra::Resources::gpuOnlyMemory->GetMemoryHandle();
+		resourceMemoryStart = res.GPU().GetMemoryHandle();
 
 	vkBindImageMemory(
 		device, m_resource.GetResource(), resourceMemoryStart, m_memoryOffset

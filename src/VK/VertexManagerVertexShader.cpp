@@ -18,7 +18,9 @@ void VertexManagerVertexShader::AddGVerticesAndIndices(
 
 	m_gVertexBuffer.SetMemoryOffsetAndType(device);
 
-	Terra::Resources::uploadContainer->AddMemory(
+	UploadContainer& uploadContainer = Terra::Get().Res().UploadCont();
+
+	uploadContainer.AddMemory(
 		std::data(gVertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
 	);
 
@@ -34,7 +36,7 @@ void VertexManagerVertexShader::AddGVerticesAndIndices(
 
 	m_gIndexBuffer.SetMemoryOffsetAndType(device);
 
-	Terra::Resources::uploadContainer->AddMemory(
+	uploadContainer.AddMemory(
 		std::data(gIndices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
 	);
 

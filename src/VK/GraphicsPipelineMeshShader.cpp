@@ -71,11 +71,11 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 }
 
 void GraphicsPipelineMeshShader::AddRequiredExtensionFunctions() noexcept {
-	Terra::deviceExtensionLoader->AddFunctionPTR(s_DrawMeshTasksName);
+	Terra::Get().DeviceExtensionLoader().AddFunctionPTR(s_DrawMeshTasksName);
 }
 
 void GraphicsPipelineMeshShader::RetrieveExtensionFunctions() {
-	Terra::deviceExtensionLoader->GetFunctionPointer(
+	Terra::Get().DeviceExtensionLoader().GetFunctionPointer(
 		s_DrawMeshTasksName, s_vkCmdDrawMeshTasksEXT
 	);
 

@@ -17,10 +17,10 @@ static std::unordered_map<std::uint32_t, const char*> messageTypes{
 	{VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT, "NOTHING"}
 };
 
-DebugLayerManager::DebugLayerManager(const Args& arguments)
-	: m_debugMessenger{ VK_NULL_HANDLE }, m_pInstanceRef{ arguments.instance.value() } {
-
-	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+DebugLayerManager::DebugLayerManager(VkInstance instance)
+	: m_debugMessenger{ VK_NULL_HANDLE }, m_pInstanceRef{ instance }
+{
+	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 	PopulateDebugMessengerCreateInfo(createInfo);
 
 	CreateDebugUtilsMessengerEXT(m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger);

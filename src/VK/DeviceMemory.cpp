@@ -4,12 +4,11 @@
 #include <VkHelperFunctions.hpp>
 
 // Device memory
-DeviceMemory::DeviceMemory(const Args& argument)
-	: m_deviceRef{ argument.logicalDevice.value() }, m_bufferMemory{ VK_NULL_HANDLE },
-	m_memoryTypeIndex{ FindMemoryTypeIndex(
-		argument.physicalDevice.value(), argument.memoryType.value()
-	) },
-	m_totalSize{ 0u }, m_memoryType{ argument.memoryType.value() }, m_mappedCPUPtr{ nullptr } {}
+DeviceMemory::DeviceMemory(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkMemoryPropertyFlagBits memoryType
+) : m_deviceRef{ logicalDevice }, m_bufferMemory{ VK_NULL_HANDLE },
+	m_memoryTypeIndex{ FindMemoryTypeIndex(physicalDevice, memoryType) },
+	m_totalSize{ 0u }, m_memoryType{ memoryType }, m_mappedCPUPtr{ nullptr } {}
 
 DeviceMemory::DeviceMemory(DeviceMemory&& deviceMemory) noexcept :
 	m_deviceRef{ deviceMemory.m_deviceRef }, m_bufferMemory{ deviceMemory.m_bufferMemory },

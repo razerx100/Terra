@@ -3,14 +3,11 @@
 
 #include <Terra.hpp>
 
-TextureStorage::TextureStorage(const Args& arguments)
-	: m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ arguments.logicalDevice.value() },
-	m_queueIndices{ arguments.queueIndices.value() } {
-
-	CreateSampler(
-		arguments.logicalDevice.value(), arguments.physicalDevice.value(), &m_textureSampler,
-		true
-	);
+TextureStorage::TextureStorage(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, QueueIndicesTG queueIndices
+) : m_textureSampler{ VK_NULL_HANDLE }, m_deviceRef{ logicalDevice }, m_queueIndices{ queueIndices }
+{
+	CreateSampler(logicalDevice, physicalDevice, &m_textureSampler, true);
 }
 
 TextureStorage::~TextureStorage() noexcept {
@@ -31,7 +28,7 @@ size_t TextureStorage::AddTexture(
 
 	texture.SetMemoryOffsetAndType(device);
 
-	Terra::Resources::uploadContainer->AddMemory(
+	Terra::Get().Res().UploadCont().AddMemory(
 		textureDataHandle.get(), width * height * 4u, texture.GetFirstUploadMemoryOffset()
 	);
 
@@ -76,7 +73,7 @@ void TextureStorage::SetDescriptorLayouts() const noexcept {
 		imageInfos.emplace_back(imageInfo);
 	}
 
-	Terra::graphicsDescriptorSet->AddImagesContiguous(
+	Terra::Get().GraphicsDesc().AddImagesContiguous(
 		descInfo, std::move(imageInfos), VK_SHADER_STAGE_FRAGMENT_BIT
 	);
 }

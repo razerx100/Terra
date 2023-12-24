@@ -2,16 +2,11 @@
 #define VK_COMMAND_QUEUE_HPP_
 #include <vulkan/vulkan.hpp>
 #include <VKCommandBuffer.hpp>
-#include <optional>
 
-class VkCommandQueue {
+class VkCommandQueue
+{
 public:
-	struct Args {
-		std::optional<VkQueue> queue;
-	};
-
-public:
-	VkCommandQueue(const Args& arguments);
+	VkCommandQueue(VkQueue queue);
 
 	void SubmitCommandBuffer(VkCommandBuffer commandBuffer, VkFence fence) const noexcept;
 	void SubmitCommandBuffer(

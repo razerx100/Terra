@@ -4,7 +4,6 @@
 #include <vector>
 #include <GraphicsPipelineVertexShader.hpp>
 #include <VertexManagerVertexShader.hpp>
-#include <optional>
 
 #include <RenderEngineBase.hpp>
 #include <ComputePipelineIndirectDraw.hpp>
@@ -42,16 +41,10 @@ private:
 	QueueIndicesTG m_queueIndices;
 };
 
-class RenderEngineIndirectDraw final : public RenderEngineVertexShader {
+class RenderEngineIndirectDraw final : public RenderEngineVertexShader
+{
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-		std::optional<std::uint32_t> bufferCount;
-		std::optional<QueueIndices3> queueIndices;
-	};
-
-public:
-	RenderEngineIndirectDraw(Args& arguments);
+	RenderEngineIndirectDraw(VkDevice device, std::uint32_t bufferCount, QueueIndices3 queueIndices);
 
 	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
@@ -84,15 +77,10 @@ private:
 	std::vector<GraphicsPipeline> m_graphicsPipelines;
 };
 
-class RenderEngineIndividualDraw final : public RenderEngineVertexShader {
+class RenderEngineIndividualDraw final : public RenderEngineVertexShader
+{
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-		std::optional<QueueIndicesTG> queueIndices;
-	};
-
-public:
-	RenderEngineIndividualDraw(Args& arguments);
+	RenderEngineIndividualDraw(VkDevice device, QueueIndicesTG queueIndices);
 
 	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void ConstructPipelines() final;

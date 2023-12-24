@@ -2,17 +2,19 @@
 #define RENDERER_VK_HPP_
 #include <vulkan/vulkan.hpp>
 #include <string>
-#include <ObjectManager.hpp>
+#include <IThreadPool.hpp>
 
 #include <Renderer.hpp>
+#include <ISharedDataContainer.hpp>
 
 class RendererVK final : public Renderer {
 public:
 	RendererVK(
 		const char* appName,
 		void* windowHandle, void* moduleHandle,
-		std::uint32_t width, std::uint32_t height,
-		std::uint32_t bufferCount, RenderEngineType engineType
+		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
+		IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+		RenderEngineType engineType
 	);
 
 	void Resize(std::uint32_t width, std::uint32_t height) override;
@@ -20,12 +22,8 @@ public:
 	[[nodiscard]]
 	Resolution GetFirstDisplayCoordinates() const override;
 
-	void SetThreadPool(std::shared_ptr<IThreadPool> threadPoolArg) noexcept override;
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept override;
 	void SetShaderPath(const wchar_t* path) noexcept override;
-	void SetSharedDataContainer(
-		std::shared_ptr<ISharedDataContainer> sharedData
-	) noexcept override;
 
 	[[nodiscard]]
 	size_t AddTexture(
@@ -52,10 +50,7 @@ public:
 	void ProcessData() override;
 
 private:
-	const std::string m_appName;
-
 	std::uint32_t m_width;
 	std::uint32_t m_height;
-	ObjectManager m_objectManager;
 };
 #endif

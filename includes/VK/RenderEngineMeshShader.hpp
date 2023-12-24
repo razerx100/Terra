@@ -7,18 +7,11 @@
 #include <GraphicsPipelineMeshShader.hpp>
 #include <VertexManagerMeshShader.hpp>
 #include <VkResourceViews.hpp>
-#include <optional>
 
-class RenderEngineMeshShader : public RenderEngineBase {
+class RenderEngineMeshShader : public RenderEngineBase
+{
 public:
-	struct Args {
-		std::optional<VkDevice> device;
-		std::optional<std::uint32_t> bufferCount;
-		std::optional<QueueIndicesTG> queueIndices;
-	};
-
-public:
-	RenderEngineMeshShader(const Args&  arguments);
+	RenderEngineMeshShader(VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices);
 
 	void AddRequiredExtensionFunctions() noexcept override;
 	void RetrieveExtensionFunctions() override;

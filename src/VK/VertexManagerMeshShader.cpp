@@ -25,8 +25,8 @@ void VertexManagerMeshShader::AddGVerticesAndPrimIndices(
 	AddDescriptors(m_primIndicesBuffer, 8u);
 }
 
-UploadContainer* VertexManagerMeshShader::GetUploadContainer() noexcept {
-	return Terra::Resources::uploadContainer.get();
+UploadContainer& VertexManagerMeshShader::GetUploadContainer() noexcept {
+	return Terra::Get().Res().UploadCont();
 }
 
 void VertexManagerMeshShader::AcquireOwnerShips(VkCommandBuffer graphicsCmdBuffer) noexcept{
@@ -88,7 +88,7 @@ void VertexManagerMeshShader::AddDescriptors(
 
 	auto bufferInfo = buffer.GetDescBufferInfoSpread(m_bufferCount);
 
-	Terra::graphicsDescriptorSet->AddBuffersSplit(
+	Terra::Get().GraphicsDesc().AddBuffersSplit(
 		descInfo, std::move(bufferInfo), VK_SHADER_STAGE_MESH_BIT_EXT
 	);
 }

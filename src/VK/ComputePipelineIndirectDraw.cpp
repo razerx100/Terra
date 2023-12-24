@@ -72,7 +72,7 @@ void ComputePipelineIndirectDraw::BindComputePipeline(
 		m_computePipeline->GetPipeline()
 	);
 
-	VkDescriptorSet descSets[] = { Terra::computeDescriptorSet->GetDescriptorSet(frameIndex) };
+	VkDescriptorSet descSets[] = { Terra::Get().ComputeDesc().GetDescriptorSet(frameIndex)};
 	vkCmdBindDescriptorSets(
 		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
 		m_computePipelineLayout->GetLayout(), 0u, 1u,
@@ -102,7 +102,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 	);
 	m_commandBuffer.SetMemoryOffsetAndType(device);
 
-	Terra::Resources::uploadContainer->AddMemory(
+	Terra::Get().Res().UploadCont().AddMemory(
 		std::data(m_indirectCommands),
 		sizeof(VkDrawIndexedIndirectCommand) * std::size(m_indirectCommands),
 		m_commandBuffer.GetFirstUploadMemoryOffset()
@@ -148,7 +148,9 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	auto cullingBufferInfos = m_cullDataBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
-	Terra::computeDescriptorSet->AddBuffersSplit(
+	DescriptorSetManager& computeDesc = Terra::Get().ComputeDesc();
+
+	computeDesc.AddBuffersSplit(
 		cullingDescInfo, std::move(cullingBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
@@ -160,7 +162,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 
 	auto inputBufferInfos = m_commandBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
-	Terra::computeDescriptorSet->AddBuffersSplit(
+	computeDesc.AddBuffersSplit(
 		inputDescInfo, std::move(inputBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
@@ -174,7 +176,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		m_bufferCount, m_argumentBuffers
 	);
 
-	Terra::computeDescriptorSet->AddBuffersSplit(
+	computeDesc.AddBuffersSplit(
 		outputDescInfo, std::move(outputBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 
@@ -187,7 +189,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		m_bufferCount, m_counterBuffers
 	);
 
-	Terra::computeDescriptorSet->AddBuffersSplit(
+	computeDesc.AddBuffersSplit(
 		counterDescInfo, std::move(counterBufferInfos), VK_SHADER_STAGE_COMPUTE_BIT
 	);
 }
@@ -218,7 +220,7 @@ void ComputePipelineIndirectDraw::RecordIndirectArguments(
 }
 
 void ComputePipelineIndirectDraw::CopyData() noexcept {
-	std::uint8_t* uploadMemoryStart = Terra::Resources::uploadMemory->GetMappedCPUPtr();
+	std::uint8_t* uploadMemoryStart = Terra::Get().Res().Upload().GetMappedCPUPtr();
 	// copy the culling data to the buffer.
 	std::uint8_t* cullingBufferPtr =
 		uploadMemoryStart + m_cullDataBuffer.GetFirstUploadMemoryOffset();
@@ -256,7 +258,7 @@ void ComputePipelineIndirectDraw::CopyData() noexcept {
 	}
 
 	// copy zero to counter buffer
-	std::uint8_t* cpuWriteMemoryStart = Terra::Resources::cpuWriteMemory->GetMappedCPUPtr();
+	std::uint8_t* cpuWriteMemoryStart = Terra::Get().Res().CPU().GetMappedCPUPtr();
 
 	std::uint8_t* counterCPUPtr =
 		cpuWriteMemoryStart + m_counterResetBuffer.GetFirstMemoryOffset();

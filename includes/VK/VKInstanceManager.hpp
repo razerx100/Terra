@@ -3,19 +3,14 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <string>
-#include <optional>
 
-class VkInstanceManager {
+class VkInstanceManager
+{
 public:
-	struct Args {
-		std::optional<std::string> appName;
-	};
-
-public:
-	VkInstanceManager(Args& arguments);
+	VkInstanceManager(std::string_view appName);
 	~VkInstanceManager() noexcept;
 
-	void AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
+	VkInstanceManager& AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
 	void CreateInstance();
 
 	[[nodiscard]]
@@ -27,7 +22,7 @@ private:
 
 private:
 	VkInstance m_vkInstance;
-	std::string m_appName;
+	std::string_view m_appName;
 
 	std::vector<const char*> m_extensionNames = {
 		"VK_KHR_surface"
