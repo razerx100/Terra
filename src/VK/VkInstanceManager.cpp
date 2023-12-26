@@ -17,6 +17,8 @@ VkInstance VkInstanceManager::GetVKInstance() const noexcept {
 }
 
 void VkInstanceManager::CheckExtensionSupport() const {
+	using namespace std::string_literals;
+
 	std::uint32_t extensionCount = 0u;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
@@ -41,6 +43,8 @@ void VkInstanceManager::CheckExtensionSupport() const {
 }
 
 void VkInstanceManager::CheckLayerSupport() const {
+	using namespace std::string_literals;
+
 	std::uint32_t layerCount = 0u;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 

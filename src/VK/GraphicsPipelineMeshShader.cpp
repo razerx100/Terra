@@ -75,6 +75,8 @@ void GraphicsPipelineMeshShader::AddRequiredExtensionFunctions() noexcept {
 }
 
 void GraphicsPipelineMeshShader::RetrieveExtensionFunctions() {
+	using namespace std::string_literals;
+
 	Terra::Get().DeviceExtensionLoader().GetFunctionPointer(
 		s_DrawMeshTasksName, s_vkCmdDrawMeshTasksEXT
 	);
