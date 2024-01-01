@@ -1,7 +1,8 @@
 #ifndef VK_RESOURCES_HPP_
 #define VK_RESOURCES_HPP_
 #include <vulkan/vulkan.hpp>
-#include <vector>
+#include <queue>
+#include <VkAllocator.hpp>
 
 template<typename ResourceType>
 class VkBaseResource {
@@ -14,22 +15,6 @@ public:
 protected:
 	VkBaseResource() noexcept : m_resource{ VK_NULL_HANDLE } {}
 	VkBaseResource(ResourceType resource) noexcept : m_resource{ resource } {}
-
-	template<typename CreateInfo>
-	static void ConfigureBufferQueueAccess(
-		const std::vector<std::uint32_t>& queueFamilyIndices, CreateInfo& bufferInfo
-	) noexcept {
-		std::uint32_t queueIndicesSize =
-			static_cast<std::uint32_t>(std::size(queueFamilyIndices));
-
-		if (queueIndicesSize > 1u) {
-			bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-			bufferInfo.queueFamilyIndexCount = queueIndicesSize;
-			bufferInfo.pQueueFamilyIndices = std::data(queueFamilyIndices);
-		}
-		else
-			bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	}
 
 protected:
 	ResourceType m_resource;
@@ -81,5 +66,63 @@ public:
 
 private:
 	VkDevice m_deviceRef;
+};
+
+// Newer ones
+class Resource
+{
+public:
+	Resource(MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType);
+	~Resource() noexcept;
+
+	[[nodiscard]]
+	inline VkDeviceSize Size() const noexcept { return m_allocationInfo.size; }
+	[[nodiscard]]
+	inline VkDeviceSize Offset() const noexcept { return m_allocationInfo.gpuOffset; }
+	[[nodiscard]]
+	inline std::uint8_t* CPUHandle() const noexcept { return m_allocationInfo.cpuOffset; }
+
+protected:
+	MemoryManager&                  m_memoryManager;
+	MemoryManager::MemoryAllocation m_allocationInfo;
+	VkMemoryPropertyFlagBits        m_resourceType;
+};
+
+class Buffer : public Resource
+{
+public:
+	Buffer(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType);
+	~Buffer() noexcept;
+
+	void Create(
+		VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
+		const std::vector<std::uint32_t>& queueFamilyIndices
+	);
+
+	[[nodiscard]]
+	inline VkBuffer Get() const noexcept { return m_buffer; }
+
+private:
+	VkBuffer m_buffer;
+	VkDevice m_device;
+};
+
+class Texture : public Resource
+{
+public:
+	Texture(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType);
+	~Texture() noexcept;
+
+	void Create(
+		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+	);
+
+	[[nodiscard]]
+	inline VkImage Get() const noexcept { return m_image; }
+
+private:
+	VkImage  m_image;
+	VkDevice m_device;
 };
 #endif

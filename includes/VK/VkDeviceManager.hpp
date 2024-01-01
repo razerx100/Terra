@@ -47,7 +47,8 @@ private:
 	VkPhysicalDevice m_physicalDevice;
 	VkDevice m_logicalDevice;
 	std::vector<const char*> m_extensionNames = {
-		"VK_KHR_swapchain"
+		"VK_KHR_swapchain",
+		"VK_EXT_memory_budget"
 	};
 	VkQueueFamilyMananger m_queueFamilyManager;
 

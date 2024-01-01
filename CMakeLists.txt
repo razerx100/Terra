@@ -56,3 +56,19 @@ endif()
 if(PROJECT_IS_TOP_LEVEL)
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 endif()
+
+include(FetchContent)
+
+message(STATUS "Fetching Callisto....")
+
+FetchContent_Declare(
+    Callisto
+    GIT_REPOSITORY https://github.com/razerx100/Callisto.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(Callisto)
+
+message(STATUS "Fetched Callisto")
+
+target_link_libraries(${PROJECT_NAME} PUBLIC Callisto)

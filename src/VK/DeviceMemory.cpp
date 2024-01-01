@@ -1,7 +1,37 @@
 #include <DeviceMemory.hpp>
 #include <cstdint>
 #include <ranges>
-#include <VkHelperFunctions.hpp>
+#include <concepts>
+
+template<std::integral Integer>
+[[nodiscard]]
+static constexpr Integer Align(Integer address, Integer alignment) noexcept {
+	const auto _address = static_cast<size_t>(address);
+	const auto _alignment = static_cast<size_t>(alignment);
+	return static_cast<Integer>((_address + (_alignment - 1u)) & ~(_alignment - 1u));
+}
+
+static std::uint32_t FindMemoryTypeIndex(
+	VkPhysicalDevice physicalDevice, VkMemoryPropertyFlags propertiesToCheck
+) noexcept
+{
+	VkPhysicalDeviceMemoryProperties memoryProp{};
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProp);
+
+	for (std::uint32_t index = 0u; index < memoryProp.memoryTypeCount; ++index)
+	{
+		// Check if the memory type with current index support the required properties flags
+		const bool propertiesMatch =
+			(memoryProp.memoryTypes[index].propertyFlags & propertiesToCheck)
+			== propertiesToCheck;
+
+		if (propertiesMatch)
+			return index;
+	}
+
+	return 0u;
+}
+
 
 // Device memory
 DeviceMemory::DeviceMemory(
@@ -51,25 +81,6 @@ VkDeviceMemory DeviceMemory::GetMemoryHandle() const noexcept {
 	return m_bufferMemory;
 }
 
-std::uint32_t DeviceMemory::FindMemoryTypeIndex(
-	VkPhysicalDevice physicalDevice, VkMemoryPropertyFlags propertiesToCheck
-) noexcept {
-	VkPhysicalDeviceMemoryProperties memoryProp{};
-	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProp);
-
-	for (std::uint32_t index = 0u; index < memoryProp.memoryTypeCount; ++index) {
-		// Check if the memory type with current index support the required properties flags
-		const bool propertiesMatch =
-			(memoryProp.memoryTypes[index].propertyFlags & propertiesToCheck)
-			== propertiesToCheck;
-
-		if (propertiesMatch)
-			return index;
-	}
-
-	return 0u;
-}
-
 bool DeviceMemory::CheckMemoryType(const VkMemoryRequirements& memoryReq) const noexcept {
 	return memoryReq.memoryTypeBits & (1u << m_memoryTypeIndex);
 }
@@ -86,7 +97,7 @@ VkDeviceSize DeviceMemory::ReserveSizeAndGetOffset(
 
 void DeviceMemory::MapMemoryToCPU(VkDevice device) {
 	assert(
-		m_memoryType == VK_MEMORY_PROPERTY_HOST_COHERENT_BIT && "Memory isn't CPU accessable."
+		m_memoryType & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT && "Memory isn't CPU accessable."
 	);
 
 	vkMapMemory(
@@ -97,4 +108,35 @@ void DeviceMemory::MapMemoryToCPU(VkDevice device) {
 
 std::uint8_t* DeviceMemory::GetMappedCPUPtr() const noexcept {
 	return m_mappedCPUPtr;
+}
+
+// DeviceMemory2
+DeviceMemory2::DeviceMemory2(
+	VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryType type
+) : m_device{ device }, m_memory{ VK_NULL_HANDLE }, m_size{ 0u }, m_mappedCPUMemory{ nullptr }
+	, m_memoryTypeIndex{ typeIndex }, m_memoryType{ type }
+{
+	Allocate(size);
+}
+
+DeviceMemory2::~DeviceMemory2() noexcept
+{
+	vkFreeMemory(m_device, m_memory, nullptr);
+}
+
+void DeviceMemory2::Allocate(VkDeviceSize size)
+{
+	VkMemoryAllocateInfo allocInfo{
+		.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize  = size,
+		.memoryTypeIndex = m_memoryTypeIndex
+	};
+
+	vkAllocateMemory(m_device, &allocInfo, nullptr, &m_memory);
+	m_size = size;
+
+	if (m_memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+		vkMapMemory(
+			m_device, m_memory, 0u, VK_WHOLE_SIZE, 0u, reinterpret_cast<void**>(&m_mappedCPUMemory)
+		);
 }
