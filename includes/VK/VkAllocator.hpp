@@ -88,8 +88,8 @@ public:
 private:
 	struct MemoryType
 	{
-		std::uint32_t index;
-		VkMemoryType  type;
+		std::uint32_t            index;
+		VkMemoryPropertyFlagBits type;
 	};
 
 private:

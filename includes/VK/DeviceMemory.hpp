@@ -41,7 +41,9 @@ private:
 class DeviceMemory2
 {
 public:
-	DeviceMemory2(VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryType type);
+	DeviceMemory2(
+		VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryPropertyFlagBits type
+	);
 	~DeviceMemory2() noexcept;
 
 	[[nodiscard]]
@@ -53,7 +55,7 @@ public:
 	[[nodiscard]]
 	inline std::uint32_t TypeIndex() const noexcept { return m_memoryTypeIndex; }
 	[[nodiscard]]
-	inline VkMemoryType Type() const noexcept { return m_memoryType; }
+	inline VkMemoryPropertyFlagBits Type() const noexcept { return m_memoryType; }
 
 private:
 	void Allocate(VkDeviceSize size);
@@ -64,7 +66,7 @@ private:
 	VkDeviceSize             m_size;
 	std::uint8_t*            m_mappedCPUMemory;
 	std::uint32_t            m_memoryTypeIndex;
-	VkMemoryType             m_memoryType;
+	VkMemoryPropertyFlagBits m_memoryType;
 
 public:
 	DeviceMemory2(const DeviceMemory2&) = delete;

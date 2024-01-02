@@ -136,7 +136,7 @@ std::optional<MemoryManager::MemoryType> MemoryManager::GetMemoryType(
 				memBudget.heapBudget[heapIndex] - memBudget.heapUsage[heapIndex];
 
 			if (currentAvailableMemory >= size)
-				return MemoryType{ static_cast<std::uint32_t>(index), memType };
+				return MemoryType{ static_cast<std::uint32_t>(index), memoryType };
 		}
 	}
 

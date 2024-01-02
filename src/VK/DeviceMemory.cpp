@@ -112,7 +112,7 @@ std::uint8_t* DeviceMemory::GetMappedCPUPtr() const noexcept {
 
 // DeviceMemory2
 DeviceMemory2::DeviceMemory2(
-	VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryType type
+	VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryPropertyFlagBits type
 ) : m_device{ device }, m_memory{ VK_NULL_HANDLE }, m_size{ 0u }, m_mappedCPUMemory{ nullptr }
 	, m_memoryTypeIndex{ typeIndex }, m_memoryType{ type }
 {
@@ -135,7 +135,7 @@ void DeviceMemory2::Allocate(VkDeviceSize size)
 	vkAllocateMemory(m_device, &allocInfo, nullptr, &m_memory);
 	m_size = size;
 
-	if (m_memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+	if (m_memoryType & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
 		vkMapMemory(
 			m_device, m_memory, 0u, VK_WHOLE_SIZE, 0u, reinterpret_cast<void**>(&m_mappedCPUMemory)
 		);
