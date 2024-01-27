@@ -6,7 +6,13 @@ if(MSVC)
     file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
 endif()
 
-add_library(TerraLib SHARED
+if(ADD_TEST_TERRA)
+    set(LIBRARY_TYPE STATIC)
+else()
+    set(LIBRARY_TYPE SHARED)
+endif()
+
+add_library(TerraLib ${LIBRARY_TYPE}
     ${SRC} ${SRCOPT}
 )
 
