@@ -312,8 +312,14 @@ void MemoryManager::Deallocate(
 		allocator.Deallocate(allocation.gpuOffset, allocation.size, allocation.alignment);
 
 		// Check if the allocator is fully empty and isn't the last allocator.
-		// If so deallocate the empty allocator.
-		if (std::size(allocators) > 1u && allocator.Size() == allocator.AvailableSize())
+		// If so deallocate the empty allocator. Only deallocate CPU accessible allocators
+		// if they are empty.
+		const bool eraseCondition =
+			isCPUAccessible
+			&& std::size(allocators) > 1u
+			&& allocator.Size() == allocator.AvailableSize();
+
+		if (eraseCondition)
 		{
 			std::queue<std::uint16_t>& availableIndices
 				= isCPUAccessible ? m_availableCPUIndices : m_availableGPUIndices;
