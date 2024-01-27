@@ -311,8 +311,9 @@ void MemoryManager::Deallocate(
 		VkAllocator& allocator = *result;
 		allocator.Deallocate(allocation.gpuOffset, allocation.size, allocation.alignment);
 
-		// Check if the allocator is fully empty. If so deallocate the empty allocator.
-		if (allocator.Size() == allocator.AvailableSize())
+		// Check if the allocator is fully empty and isn't the last allocator.
+		// If so deallocate the empty allocator.
+		if (std::size(allocators) > 1u && allocator.Size() == allocator.AvailableSize())
 		{
 			std::queue<std::uint16_t>& availableIndices
 				= isCPUAccessible ? m_availableCPUIndices : m_availableGPUIndices;
