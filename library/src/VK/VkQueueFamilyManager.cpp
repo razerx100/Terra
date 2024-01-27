@@ -246,15 +246,31 @@ std::optional<VkQueueFamilyMananger::FamilyInfo> VkQueueFamilyMananger::QueryQue
 			}
 		}
 
-	for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+	if (surface != VK_NULL_HANDLE)
+	{
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
 			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
 
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
-			&& CheckPresentSupport(device, surface, index)
-			&& queueFamily.queueCount >= 1) {
-			ConfigureQueue(familyInfo, graphics, queueFamily, index, GraphicsQueue);
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT
+				&& CheckPresentSupport(device, surface, index)
+				&& queueFamily.queueCount >= 1) {
+				ConfigureQueue(familyInfo, graphics, queueFamily, index, GraphicsQueue);
 
-			break;
+				break;
+			}
+		}
+	}
+	else
+	{
+		for (size_t index = 0u; index < std::size(queueFamilies); ++index) {
+			VkQueueFamilyProperties& queueFamily = queueFamilies[index];
+
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamily.queueCount >= 1)
+			{
+				ConfigureQueue(familyInfo, graphics, queueFamily, index, GraphicsQueue);
+
+				break;
+			}
 		}
 	}
 
@@ -312,4 +328,15 @@ void VkQueueFamilyMananger::QueueCreateInfo::SetQueueCreateInfo(
 std::vector<VkDeviceQueueCreateInfo> VkQueueFamilyMananger::QueueCreateInfo::GetDeviceQueueCreateInfo(
 ) const noexcept {
 	return m_queueCreateInfo;
+}
+
+bool VkQueueFamilyMananger::CheckPresentSupport(
+	VkPhysicalDevice device, VkSurfaceKHR surface, size_t index
+) noexcept {
+	VkBool32 presentSupport = false;
+	vkGetPhysicalDeviceSurfaceSupportKHR(
+		device, static_cast<std::uint32_t>(index), surface, &presentSupport
+	);
+
+	return presentSupport;
 }

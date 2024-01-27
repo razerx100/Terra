@@ -39,17 +39,6 @@ void CreateSampler(
 	vkCreateSampler(logicalDevice, &createInfo, nullptr, sampler);
 }
 
-bool CheckPresentSupport(
-	VkPhysicalDevice device, VkSurfaceKHR surface, size_t index
-) noexcept {
-	VkBool32 presentSupport = false;
-	vkGetPhysicalDeviceSurfaceSupportKHR(
-		device, static_cast<std::uint32_t>(index), surface, &presentSupport
-	);
-
-	return presentSupport;
-}
-
 SurfaceInfo QuerySurfaceCapabilities(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept {

@@ -88,6 +88,11 @@ private:
 		VkQueueFamilyProperties& queueFamily, size_t index, QueueType queueType
 	) noexcept;
 
+	[[nodiscard]]
+	static bool CheckPresentSupport(
+		VkPhysicalDevice device, VkSurfaceKHR surface, size_t index
+	) noexcept;
+
 private:
 	QueueIndices3 m_queueIndices;
 	VkQueue m_graphicsQueue;

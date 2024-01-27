@@ -22,11 +22,6 @@ void CreateSampler(
 );
 
 [[nodiscard]]
-bool CheckPresentSupport(
-	VkPhysicalDevice device, VkSurfaceKHR surface, size_t index
-) noexcept;
-
-[[nodiscard]]
 SurfaceInfo QuerySurfaceCapabilities(
 	VkPhysicalDevice device, VkSurfaceKHR surface
 ) noexcept;

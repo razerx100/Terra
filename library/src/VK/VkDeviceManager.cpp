@@ -145,8 +145,11 @@ bool VkDeviceManager::IsDeviceSuitable(
 	if (!CheckDeviceExtensionSupport(device))
 		return false;
 
-	if (!QuerySurfaceCapabilities(device, surface).IsCapable())
-		return false;
+	if (surface != VK_NULL_HANDLE)
+	{
+		if (!QuerySurfaceCapabilities(device, surface).IsCapable())
+			return false;
+	}
 
 	if (!DoesDeviceSupportFeatures(device))
 		return false;
