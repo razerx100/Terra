@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.21)
 file(GLOB_RECURSE SRC src/*.cc)
 
 add_executable(TerraTest
-    ${SRC} ${SRCOPT}
+    ${SRC}
 )
 
 target_include_directories(TerraTest PRIVATE ${TERRA_PRIVATE_INCLUDES})

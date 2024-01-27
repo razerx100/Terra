@@ -3,7 +3,6 @@
 #include <cmath>
 #include <algorithm>
 #include <Exception.hpp>
-#include <VkHelperFunctions.hpp>
 
 [[nodiscard]]
 static VkMemoryRequirements GetMemoryRequirements(VkDevice device, VkBuffer buffer) noexcept
@@ -24,8 +23,8 @@ static VkMemoryRequirements GetMemoryRequirements(VkDevice device, VkImage image
 }
 
 // VkAllocator
-VkAllocator::VkAllocator(DeviceMemory2&& memory, size_t id)
-	: m_memory{ std::move(memory) }, m_allocator{ 0u, m_memory.Size() }, m_id{ id } {}
+VkAllocator::VkAllocator(DeviceMemory2&& memory, std::uint16_t id)
+	: m_memory{ std::move(memory) }, m_allocator{ 0u, m_memory.Size(), 256_B }, m_id{ id } {}
 
 std::optional<VkDeviceSize> VkAllocator::Allocate(const VkMemoryRequirements& memoryReq) noexcept
 {
@@ -62,10 +61,13 @@ std::optional<VkDeviceSize> VkAllocator::AllocateImage(
 	return allocationStart;
 }
 
-void VkAllocator::Deallocate(VkDeviceSize startingAddress, VkDeviceSize bufferSize) noexcept
+void VkAllocator::Deallocate(
+	VkDeviceSize startingAddress, VkDeviceSize bufferSize, VkDeviceSize alignment
+) noexcept
 {
 	m_allocator.Deallocate(
-		static_cast<size_t>(startingAddress), static_cast<size_t>(bufferSize)
+		static_cast<size_t>(startingAddress), static_cast<size_t>(bufferSize),
+		static_cast<size_t>(alignment)
 	);
 }
 
@@ -105,7 +107,8 @@ MemoryManager::MemoryManager(
 	}
 }
 
-DeviceMemory2 MemoryManager::CreateMemory(VkDeviceSize size, MemoryType memoryType) const {
+DeviceMemory2 MemoryManager::CreateMemory(VkDeviceSize size, MemoryType memoryType) const
+{
 	return DeviceMemory2{ m_logicalDevice, size, memoryType.index, memoryType.type };
 }
 
@@ -217,8 +220,9 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 				MemoryAllocation allocation{
 					.gpuOffset   = offset,
 					.cpuOffset   = cpuOffset,
-					.memoryID    = allocator.GetID(),
-					.size        = bufferSize
+					.size        = bufferSize,
+					.alignment   = memoryReq.alignment,
+					.memoryID    = allocator.GetID()
 				};
 
 				return allocation;
@@ -264,8 +268,9 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 			MemoryAllocation allocation{
 				.gpuOffset   = offset,
 				.cpuOffset   = cpuOffset,
-				.memoryID    = allocator.GetID(),
-				.size        = bufferSize
+				.size        = bufferSize,
+				.alignment   = memoryReq.alignment,
+				.memoryID    = allocator.GetID()
 			};
 
 			allocators.emplace_back(std::move(allocator));
@@ -304,12 +309,12 @@ void MemoryManager::Deallocate(
 	if (result != std::end(allocators))
 	{
 		VkAllocator& allocator = *result;
-		allocator.Deallocate(allocation.gpuOffset, allocation.size);
+		allocator.Deallocate(allocation.gpuOffset, allocation.size, allocation.alignment);
 
 		// Check if the allocator is fully empty. If so deallocate the empty allocator.
 		if (allocator.Size() == allocator.AvailableSize())
 		{
-			std::queue<size_t>& availableIndices
+			std::queue<std::uint16_t>& availableIndices
 				= isCPUAccessible ? m_availableCPUIndices : m_availableGPUIndices;
 
 			availableIndices.push(allocator.GetID());
@@ -318,15 +323,15 @@ void MemoryManager::Deallocate(
 	}
 }
 
-size_t MemoryManager::GetID(bool cpu) noexcept
+std::uint16_t MemoryManager::GetID(bool cpu) noexcept
 {
 	std::vector<VkAllocator>& allocators = cpu ? m_cpuAllocators : m_gpuAllocators;
-	std::queue<size_t>& availableIndices = cpu ? m_availableCPUIndices : m_availableGPUIndices;
+	std::queue<std::uint16_t>& availableIndices = cpu ? m_availableCPUIndices : m_availableGPUIndices;
 
 	if (std::empty(availableIndices))
-		availableIndices.push(std::size(allocators));
+		availableIndices.push(static_cast<std::uint16_t>(std::size(allocators)));
 
-	const size_t ID = availableIndices.front();
+	const std::uint16_t ID = availableIndices.front();
 	availableIndices.pop();
 
 	return ID;

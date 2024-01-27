@@ -1,6 +1,6 @@
 #ifndef VK_ALLOCATOR_HPP_
 #define VK_ALLOCATOR_HPP_
-#include <MemoryTree.hpp>
+#include <Buddy.hpp>
 #include <DeviceMemory.hpp>
 #include <optional>
 #include <queue>
@@ -8,7 +8,7 @@
 class VkAllocator
 {
 public:
-	VkAllocator(DeviceMemory2&& memory, size_t id);
+	VkAllocator(DeviceMemory2&& memory, std::uint16_t id);
 
 	[[nodiscard]]
 	// Returns false if there is not enough memory.
@@ -21,10 +21,12 @@ public:
 		VkDevice device, const VkMemoryRequirements& memoryReq, VkImage image
 	) noexcept;
 
-	void Deallocate(VkDeviceSize startingAddress, VkDeviceSize bufferSize) noexcept;
+	void Deallocate(
+		VkDeviceSize startingAddress, VkDeviceSize bufferSize, VkDeviceSize alignment
+	) noexcept;
 
 	[[nodiscard]]
-	inline size_t GetID() const noexcept { return m_id; }
+	inline std::uint16_t GetID() const noexcept { return m_id; }
 
 	[[nodiscard]]
 	inline VkDeviceSize Size() const noexcept { return m_memory.Size(); }
@@ -40,8 +42,8 @@ private:
 
 private:
 	DeviceMemory2 m_memory;
-	MemoryTree    m_allocator;
-	size_t        m_id;
+	Buddy         m_allocator;
+	std::uint16_t m_id;
 
 public:
 	VkAllocator(const VkAllocator&) = delete;
@@ -68,8 +70,9 @@ public:
 	{
 		VkDeviceSize  gpuOffset;
 		std::uint8_t* cpuOffset;
-		std::size_t   memoryID;
 		VkDeviceSize  size;
+		VkDeviceSize  alignment;
+		std::uint16_t memoryID;
 	};
 
 public:
@@ -114,15 +117,15 @@ private:
 	MemoryAllocation Allocate(T resource, VkMemoryPropertyFlagBits memoryType);
 
 	[[nodiscard]]
-	size_t GetID(bool cpu) noexcept;
+	std::uint16_t GetID(bool cpu) noexcept;
 
 private:
-	VkDevice                 m_logicalDevice;
-	VkPhysicalDevice         m_physicalDevice;
-	std::vector<VkAllocator> m_cpuAllocators;
-	std::vector<VkAllocator> m_gpuAllocators;
-	std::queue<size_t>       m_availableGPUIndices;
-	std::queue<size_t>       m_availableCPUIndices;
+	VkDevice                  m_logicalDevice;
+	VkPhysicalDevice          m_physicalDevice;
+	std::vector<VkAllocator>  m_cpuAllocators;
+	std::vector<VkAllocator>  m_gpuAllocators;
+	std::queue<std::uint16_t> m_availableGPUIndices;
+	std::queue<std::uint16_t> m_availableCPUIndices;
 
 public:
 	MemoryManager(const MemoryManager&) = delete;
