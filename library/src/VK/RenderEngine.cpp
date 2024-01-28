@@ -9,9 +9,6 @@ void RenderEngine::AcquireOwnerShipCompute(
 void RenderEngine::CreateBuffers([[maybe_unused]] VkDevice device) noexcept {}
 void RenderEngine::CopyData() noexcept {}
 
-void RenderEngine::AddRequiredExtensionFunctions() noexcept {}
-void RenderEngine::RetrieveExtensionFunctions() {}
-
 void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
 	m_backgroundColour = {
 			{colourVector[0], colourVector[1], colourVector[2], colourVector[3]}

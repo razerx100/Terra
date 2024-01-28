@@ -2,6 +2,7 @@
 #define GRAPHICS_PIPELINE_MESH_SHADER_HPP_
 #include <vector>
 #include <GraphicsPipelineBase.hpp>
+#include <VkExtensionManager.hpp>
 
 class GraphicsPipelineMeshShader : public GraphicsPipelineBase {
 public:
@@ -15,9 +16,6 @@ public:
 	) noexcept;
 
 	void DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept;
-
-	static void AddRequiredExtensionFunctions() noexcept;
-	static void RetrieveExtensionFunctions();
 
 private:
 	[[nodiscard]]
@@ -40,7 +38,14 @@ private:
 	VkPipelineLayout m_graphicsLayout;
 	std::vector<ModelDetails> m_modelDetails;
 
-	static inline PFN_vkCmdDrawMeshTasksEXT s_vkCmdDrawMeshTasksEXT = nullptr;
-	static constexpr const char* s_DrawMeshTasksName = "vkCmdDrawMeshTasksEXT";
+	static constexpr std::array s_requiredExtensions
+	{
+		DeviceExtension::VkExtMeshShader
+	};
+
+public:
+	[[nodiscard]]
+	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
+	{ return s_requiredExtensions; }
 };
 #endif

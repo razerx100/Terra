@@ -53,8 +53,6 @@ public:
 	virtual void CreateBuffers(VkDevice device) noexcept;
 	virtual void CopyData() noexcept;
 	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept;
-	virtual void AddRequiredExtensionFunctions() noexcept;
-	virtual void RetrieveExtensionFunctions();
 
 	[[nodiscard]]
 	virtual VkImageView GetDepthImageView() const noexcept = 0;

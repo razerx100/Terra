@@ -23,6 +23,8 @@ void GraphicsPipelineMeshShader::AddModelDetails(
 }
 
 void GraphicsPipelineMeshShader::DrawModels(VkCommandBuffer graphicsCmdBuffer) const noexcept {
+	using MS = VkDeviceExtension::VkExtMeshShader;
+
 	for (const auto& modelDetail : m_modelDetails) {
 		static constexpr std::uint32_t pushConstantSize =
 			static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
@@ -31,7 +33,8 @@ void GraphicsPipelineMeshShader::DrawModels(VkCommandBuffer graphicsCmdBuffer) c
 			graphicsCmdBuffer, m_graphicsLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
 			pushConstantSize, &modelDetail.modelIndex
 		);
-		s_vkCmdDrawMeshTasksEXT(graphicsCmdBuffer, modelDetail.meshletCount, 1u, 1u);
+
+		MS::vkCmdDrawMeshTasksEXT(graphicsCmdBuffer, modelDetail.meshletCount, 1u, 1u);
 	}
 }
 
@@ -68,21 +71,4 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	);
 
 	return pso;
-}
-
-void GraphicsPipelineMeshShader::AddRequiredExtensionFunctions() noexcept {
-	Terra::Get().DeviceExtensionLoader().AddFunctionPTR(s_DrawMeshTasksName);
-}
-
-void GraphicsPipelineMeshShader::RetrieveExtensionFunctions() {
-	using namespace std::string_literals;
-
-	Terra::Get().DeviceExtensionLoader().GetFunctionPointer(
-		s_DrawMeshTasksName, s_vkCmdDrawMeshTasksEXT
-	);
-
-	if (!s_vkCmdDrawMeshTasksEXT)
-		throw Exception(
-			"Function Retrieval Error", "Couldn't load the function "s + s_DrawMeshTasksName
-		);
 }

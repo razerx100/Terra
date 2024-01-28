@@ -7,14 +7,6 @@ RenderEngineMeshShader::RenderEngineMeshShader(
 ) : RenderEngineBase{ device }, m_vertexManager{ device, bufferCount, queueIndices },
 	m_meshletBuffer{ device }, m_queueIndicesTG{ queueIndices }, m_bufferCount{ bufferCount } {}
 
-void RenderEngineMeshShader::AddRequiredExtensionFunctions() noexcept {
-	GraphicsPipelineMeshShader::AddRequiredExtensionFunctions();
-}
-
-void RenderEngineMeshShader::RetrieveExtensionFunctions() {
-	GraphicsPipelineMeshShader::RetrieveExtensionFunctions();
-}
-
 std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLayout(
 	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
 ) const noexcept {

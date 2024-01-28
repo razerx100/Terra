@@ -1,19 +1,36 @@
 #ifndef VK_EXTENSION_MANAGER_HPP_
 #define	VK_EXTENSION_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
+#include <bitset>
+#include <vector>
+#include <array>
 
 enum class DeviceExtension
 {
-	VkExtMeshShader
+	VkExtMeshShader,
+	VkKhrSwapchain,
+	VkExtMemoryBudget,
+	None
 };
 
 class VkDeviceExtensionManager
 {
 public:
 	void AddExtension(DeviceExtension extension) noexcept;
+
+	template<size_t Count>
+	void AddExtensions(const std::array<DeviceExtension, Count>& extensions) noexcept
+	{
+		for (const DeviceExtension extension : extensions)
+			AddExtension(extension);
+	}
+
 	void PopulateExtensionFunctions(VkDevice device) const noexcept;
 
-	std::vector<const char*> GetExtensionNames() const noexcept;
+	[[nodiscard]]
+	bool IsExtensionActive(DeviceExtension extension) const noexcept;
+	[[nodiscard]]
+	const std::vector<const char*>& GetExtensionNames() const noexcept;
 
 private:
 	template<typename T>
@@ -27,10 +44,11 @@ private:
 	static void PopulateVkExtMeshShader(VkDevice device) noexcept;
 
 private:
-	std::vector<DeviceExtension> m_extentions;
+	std::bitset<static_cast<size_t>(DeviceExtension::None)> m_extensions;
+	std::vector<const char*>                                m_extensionNames;
 };
 
-namespace VkExtension
+namespace VkDeviceExtension
 {
 	class VkExtMeshShader
 	{
@@ -61,9 +79,9 @@ namespace VkExtension
 		}
 
 	private:
-		inline static PFN_vkCmdDrawMeshTasksEXT s_vkCmdDrawMeshTasksEXT = nullptr;
+		inline static PFN_vkCmdDrawMeshTasksEXT s_vkCmdDrawMeshTasksEXT                           = nullptr;
 		inline static PFN_vkCmdDrawMeshTasksIndirectCountEXT s_vkCmdDrawMeshTasksIndirectCountEXT = nullptr;
-		inline static PFN_vkCmdDrawMeshTasksIndirectEXT s_vkCmdDrawMeshTasksIndirectEXT = nullptr;
+		inline static PFN_vkCmdDrawMeshTasksIndirectEXT s_vkCmdDrawMeshTasksIndirectEXT           = nullptr;
 	};
 }
 #endif

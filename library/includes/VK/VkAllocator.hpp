@@ -4,6 +4,8 @@
 #include <DeviceMemory.hpp>
 #include <optional>
 #include <queue>
+#include <array>
+#include <VkExtensionManager.hpp>
 
 class VkAllocator
 {
@@ -127,6 +129,11 @@ private:
 	std::queue<std::uint16_t> m_availableGPUIndices;
 	std::queue<std::uint16_t> m_availableCPUIndices;
 
+	static constexpr std::array s_requiredExtensions
+	{
+		DeviceExtension::VkExtMemoryBudget
+	};
+
 public:
 	MemoryManager(const MemoryManager&) = delete;
 	MemoryManager& operator=(const MemoryManager&) = delete;
@@ -149,5 +156,9 @@ public:
 
 		return *this;
 	}
+
+	[[nodiscard]]
+	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
+	{ return s_requiredExtensions; }
 };
 #endif

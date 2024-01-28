@@ -6,7 +6,7 @@
 
 VkDeviceManager::VkDeviceManager() noexcept
 	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE },
-	m_queueFamilyManager{} {}
+	m_queueFamilyManager{}, m_extensionManager{} {}
 
 VkDeviceManager::~VkDeviceManager() noexcept {
 	vkDestroyDevice(m_logicalDevice, nullptr);
@@ -61,14 +61,6 @@ VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
 	return VK_NULL_HANDLE;
 }
 
-void VkDeviceManager::AddExtensionName(const char* name) noexcept {
-	m_extensionNames.emplace_back(name);
-}
-
-void VkDeviceManager::AddExtensionNames(const std::vector<const char*>& names) noexcept {
-	std::ranges::copy(names, std::back_inserter(m_extensionNames));
-}
-
 void VkDeviceManager::CreateLogicalDevice(bool meshShader) {
 	VkQueueFamilyMananger::QueueCreateInfo queueCreateInfo =
 		m_queueFamilyManager.GetQueueCreateInfo();
@@ -79,16 +71,21 @@ void VkDeviceManager::CreateLogicalDevice(bool meshShader) {
 	if (meshShader)
 		deviceFeatures.ActivateMeshShader();
 
-	VkDeviceCreateInfo createInfo{
-		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pNext = deviceFeatures.GetDeviceFeatures2(),
-		.queueCreateInfoCount = static_cast<std::uint32_t>(std::size(vkDeviceQueueCreateInfo)),
-		.pQueueCreateInfos = std::data(vkDeviceQueueCreateInfo),
-		.enabledExtensionCount = static_cast<std::uint32_t>(std::size(m_extensionNames)),
-		.ppEnabledExtensionNames = std::data(m_extensionNames)
+	const std::vector<const char*>& extensionNames = m_extensionManager.GetExtensionNames();
+
+	VkDeviceCreateInfo createInfo
+	{
+		.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.pNext                   = deviceFeatures.GetDeviceFeatures2(),
+		.queueCreateInfoCount    = static_cast<std::uint32_t>(std::size(vkDeviceQueueCreateInfo)),
+		.pQueueCreateInfos       = std::data(vkDeviceQueueCreateInfo),
+		.enabledExtensionCount   = static_cast<std::uint32_t>(std::size(extensionNames)),
+		.ppEnabledExtensionNames = std::data(extensionNames)
 	};
 
 	vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice);
+
+	m_extensionManager.PopulateExtensionFunctions(m_logicalDevice);
 
 	m_queueFamilyManager.CreateQueues(m_logicalDevice);
 }
@@ -123,7 +120,8 @@ bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
 		device, nullptr, &extensionCount, std::data(availableExtensions)
 	);
 
-	for (const char* requiredExtension : m_extensionNames) {
+	for (const char* requiredExtension : m_extensionManager.GetExtensionNames())
+	{
 		bool found = false;
 		for (const VkExtensionProperties& extension : availableExtensions)
 			if (std::strcmp(requiredExtension, extension.extensionName) == 0) {

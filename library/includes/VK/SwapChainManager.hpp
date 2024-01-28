@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <VkHelperFunctions.hpp>
+#include <VkExtensionManager.hpp>
 
 class SwapChainManager
 {
@@ -88,5 +89,15 @@ private:
 	VkQueue m_presentQueue;
 	SurfaceInfo m_surfaceInfo;
 	size_t m_nextImageIndex;
+
+	static constexpr std::array s_requiredExtensions
+	{
+		DeviceExtension::VkKhrSwapchain
+	};
+
+public:
+	[[nodiscard]]
+	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
+	{ return s_requiredExtensions; }
 };
 #endif

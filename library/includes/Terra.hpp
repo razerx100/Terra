@@ -17,7 +17,6 @@
 #include <UploadContainer.hpp>
 #include <ObjectManager.hpp>
 #include <VkHelperFunctions.hpp>
-#include <VkExtensionLoader.hpp>
 
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
@@ -59,8 +58,6 @@ public:
 #endif
 	inline ISurfaceManager& Surface() noexcept { return *m_surface; }
 	inline VkDeviceManager& Device() noexcept { return *m_device; }
-	inline VkDeviceExtensionLoader& DeviceExtensionLoader() noexcept
-	{ return *m_deviceExtensionLoader; }
 	inline Resources& Res() noexcept { return m_res; }
 	inline Queue& Graphics() noexcept { return m_graphicsQueue; }
 	inline Queue& Compute() noexcept { return m_computeQueue; }
@@ -186,7 +183,6 @@ private:
 #endif
 	std::unique_ptr<ISurfaceManager>         m_surface;
 	std::unique_ptr<VkDeviceManager>         m_device;
-	std::unique_ptr<VkDeviceExtensionLoader> m_deviceExtensionLoader;
 	Resources                                m_res;
 	Queue                                    m_graphicsQueue;
 	Queue                                    m_computeQueue;

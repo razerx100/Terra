@@ -27,12 +27,6 @@ RendererVK::RendererVK(
 	terra.Engine().CreateRenderPass(device, terra.Swapchain().GetSwapFormat());
 
 	terra.Camera().SetSceneResolution(width, height);
-
-	terra.Engine().AddRequiredExtensionFunctions();
-
-	terra.DeviceExtensionLoader().QueryFunctionPTRs(device);
-
-	terra.Engine().RetrieveExtensionFunctions();
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {

@@ -4,6 +4,7 @@
 #include <vector>
 #include <optional>
 #include <VkQueueFamilyManager.hpp>
+#include <VkExtensionManager.hpp>
 
 class VkDeviceManager {
 public:
@@ -12,11 +13,13 @@ public:
 
 	VkDeviceManager& FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 	void CreateLogicalDevice(bool meshShader);
-	void AddExtensionName(const char* name) noexcept;
-	void AddExtensionNames(const std::vector<const char*>& names) noexcept;
 
 	[[nodiscard]]
 	VkQueueFamilyMananger GetQueueFamilyManager() const noexcept;
+
+	[[nodiscard]]
+	inline VkDeviceExtensionManager& ExtensionManager() noexcept
+	{ return m_extensionManager; }
 
 	[[nodiscard]]
 	VkPhysicalDevice GetPhysicalDevice() const noexcept;
@@ -46,11 +49,8 @@ private:
 private:
 	VkPhysicalDevice m_physicalDevice;
 	VkDevice m_logicalDevice;
-	std::vector<const char*> m_extensionNames = {
-		"VK_KHR_swapchain",
-		"VK_EXT_memory_budget"
-	};
 	VkQueueFamilyMananger m_queueFamilyManager;
+	VkDeviceExtensionManager m_extensionManager;
 
 private:
 	class DeviceFeatures {

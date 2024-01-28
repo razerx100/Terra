@@ -65,7 +65,6 @@ Terra::Terra(Terra&& other) noexcept
 	, m_debugLayer{ std::move(other.m_debugLayer) }
 #endif
 	, m_surface{ std::move(other.m_surface) }, m_device{ std::move(other.m_device) }
-	, m_deviceExtensionLoader{ std::move(other.m_deviceExtensionLoader) }
 	, m_res{ std::move(other.m_res) }, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
 	, m_computeQueue{ std::move(other.m_computeQueue) }
 	, m_transferQueue{ std::move(other.m_transferQueue) }, m_swapChain{ std::move(other.m_swapChain) }
@@ -88,7 +87,6 @@ Terra& Terra::operator=(Terra&& other) noexcept
 #endif
 	m_surface               = std::move(other.m_surface);
 	m_device                = std::move(other.m_device);
-	m_deviceExtensionLoader = std::move(other.m_deviceExtensionLoader);
 	m_res                   = std::move(other.m_res);
 	m_graphicsQueue         = std::move(other.m_graphicsQueue);
 	m_computeQueue          = std::move(other.m_computeQueue);
@@ -113,7 +111,7 @@ Terra::Terra(
 #ifdef _DEBUG
 	, m_debugLayer{ nullptr }
 #endif
-	, m_surface{ nullptr }, m_device{ nullptr }, m_deviceExtensionLoader{ nullptr }, m_res{}
+	, m_surface{ nullptr }, m_device{ nullptr }, m_res{}
 	, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}, m_swapChain{ nullptr }
 	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
 	, m_textureStorage{ nullptr }, m_bufferManager{ nullptr }, m_cameraManager{ nullptr }
@@ -135,17 +133,22 @@ Terra::Terra(
 
 	const bool meshShader = engineType == RenderEngineType::MeshDraw;
 
-	if (meshShader)
-		Device().AddExtensionName("VK_EXT_mesh_shader");
+	// Add Device extensions.
+	{
+		VkDeviceExtensionManager& extensionManager = Device().ExtensionManager();
 
+		extensionManager.AddExtensions(SwapChainManager::GetRequiredExtensions());
+		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
+
+		if (meshShader)
+			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());
+	}
 	const VkSurfaceKHR vkSurface = Surface().GetSurface();
 	Device().FindPhysicalDevice(vkInstance, vkSurface).CreateLogicalDevice(meshShader);
 
 	const VkDevice logicalDevice             = Device().GetLogicalDevice();
 	const VkPhysicalDevice physicalDevice    = Device().GetPhysicalDevice();
 	const VkQueueFamilyMananger queFamilyMan = Device().GetQueueFamilyManager();
-
-	m_objectManager.CreateObject(m_deviceExtensionLoader, 0u);
 
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 

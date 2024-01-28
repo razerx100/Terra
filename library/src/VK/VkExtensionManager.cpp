@@ -5,37 +5,37 @@
 // Extension Manager
 static std::array extensionNameMap
 {
-	"VK_EXT_mesh_shader"
+	"VK_EXT_mesh_shader",
+	"VK_KHR_swapchain",
+	"VK_EXT_memory_budget"
 };
 
 void VkDeviceExtensionManager::AddExtension(DeviceExtension extension) noexcept
 {
-	m_extentions.emplace_back(extension);
+	const auto extensionIndex = static_cast<size_t>(extension);
+	m_extensions.set(extensionIndex);
+	m_extensionNames.emplace_back(extensionNameMap.at(extensionIndex));
 }
 
 void VkDeviceExtensionManager::PopulateExtensionFunctions(VkDevice device) const noexcept
 {
-	for (const auto extension : m_extentions)
-	{
-		if (extension == DeviceExtension::VkExtMeshShader)
-			PopulateVkExtMeshShader(device);
-	}
+	if (m_extensions.test(static_cast<size_t>(DeviceExtension::VkExtMeshShader)))
+		PopulateVkExtMeshShader(device);
 }
 
-std::vector<const char*> VkDeviceExtensionManager::GetExtensionNames() const noexcept
+const std::vector<const char*>& VkDeviceExtensionManager::GetExtensionNames() const noexcept
 {
-	std::vector<const char*> extensionNames{};
-	extensionNames.reserve(std::size(m_extentions));
+	return m_extensionNames;
+}
 
-	for (const auto extension : m_extentions)
-		extensionNames.emplace_back(extensionNameMap.at(static_cast<size_t>(extension)));
-
-	return extensionNames;
+bool VkDeviceExtensionManager::IsExtensionActive(DeviceExtension extension) const noexcept
+{
+	return m_extensions.test(static_cast<size_t>(extension));
 }
 
 void VkDeviceExtensionManager::PopulateVkExtMeshShader(VkDevice device) noexcept
 {
-	using namespace VkExtension;
+	using namespace VkDeviceExtension;
 
 	PopulateFunctionPointer(device, "vkCmdDrawMeshTasksEXT", VkExtMeshShader::s_vkCmdDrawMeshTasksEXT);
 	PopulateFunctionPointer(

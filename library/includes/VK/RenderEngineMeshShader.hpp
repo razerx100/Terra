@@ -13,9 +13,6 @@ class RenderEngineMeshShader : public RenderEngineBase
 public:
 	RenderEngineMeshShader(VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices);
 
-	void AddRequiredExtensionFunctions() noexcept override;
-	void RetrieveExtensionFunctions() override;
-
 	void AddMeshletModelSet(
 		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
 	) noexcept override;
