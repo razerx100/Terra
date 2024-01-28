@@ -17,7 +17,3 @@ IDisplayManager::Resolution DisplayManagerVK::GetDisplayResolution(
 
 	return { width, height };
 }
-
-const std::vector<const char*>& DisplayManagerVK::GetRequiredExtensions() const noexcept {
-	return m_requiredExtensions;
-}

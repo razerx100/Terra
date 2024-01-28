@@ -2,6 +2,7 @@
 #define I_DISPLAY_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <VkExtensionManager.hpp>
 
 class IDisplayManager {
 public:
@@ -10,7 +11,7 @@ public:
 	virtual ~IDisplayManager() = default;
 
 	[[nodiscard]]
-	virtual const std::vector<const char*>& GetRequiredExtensions() const noexcept = 0;
+	virtual const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept = 0;
 	[[nodiscard]]
 	virtual Resolution GetDisplayResolution(
 		VkPhysicalDevice gpu, std::uint32_t displayIndex

@@ -11,8 +11,11 @@ public:
 	VkInstanceManager(std::string_view appName);
 	~VkInstanceManager() noexcept;
 
-	VkInstanceManager& AddExtensionNames(const std::vector<const char*>& extensionNames) noexcept;
 	void CreateInstance(CoreVersion version);
+
+	[[nodiscard]]
+	inline VkInstanceExtensionManager& ExtensionManager() noexcept
+	{ return m_extensionManager; }
 
 	[[nodiscard]]
 	VkInstance GetVKInstance() const noexcept;
@@ -27,13 +30,11 @@ private:
 	static std::uint32_t GetCoreVersion(CoreVersion version) noexcept;
 
 private:
-	VkInstance       m_vkInstance;
-	std::string_view m_appName;
-	CoreVersion      m_coreVersion;
+	VkInstance                 m_vkInstance;
+	std::string_view           m_appName;
+	CoreVersion                m_coreVersion;
+	VkInstanceExtensionManager m_extensionManager;
 
-	std::vector<const char*> m_extensionNames = {
-		"VK_KHR_surface"
-	};
 	std::vector<const char*> m_validationLayersNames = {
 		"VK_LAYER_KHRONOS_validation"
 	};

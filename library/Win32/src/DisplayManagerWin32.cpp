@@ -5,10 +5,6 @@ DisplayManagerWin32::DisplayManagerWin32() {
 	CreateDXGIFactory2(0u, __uuidof(IDXGIFactory1), &m_pFactory);
 }
 
-const std::vector<const char*>& DisplayManagerWin32::GetRequiredExtensions() const noexcept {
-	return m_requiredExtensions;
-}
-
 IDisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
 	VkPhysicalDevice gpu, std::uint32_t displayIndex
 ) const {

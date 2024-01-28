@@ -117,19 +117,31 @@ Terra::Terra(
 	, m_textureStorage{ nullptr }, m_bufferManager{ nullptr }, m_cameraManager{ nullptr }
 {
 	InitDisplay();
+	InitSurface();
 
 	m_objectManager.CreateObject(m_vkInstance, 5u, m_appName);
 
 	const CoreVersion coreVersion = CoreVersion::V1_3;
 
-	Instance().AddExtensionNames(Display().GetRequiredExtensions()).CreateInstance(coreVersion);
+	// Add Instance extensions.
+	{
+		VkInstanceExtensionManager& extensionManager = Instance().ExtensionManager();
+
+#if _DEBUG
+		extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
+#endif
+		extensionManager.AddExtensions(Display().GetRequiredExtensions());
+		extensionManager.AddExtensions(Surface().GetRequiredExtensions());
+	}
+
+	Instance().CreateInstance(coreVersion);
 	VkInstance vkInstance = Instance().GetVKInstance();
 
 #if _DEBUG
 	m_objectManager.CreateObject(m_debugLayer, 4u, vkInstance);
 #endif
 
-	InitSurface(vkInstance, windowHandle, moduleHandle);
+	Surface().CreateSurface(vkInstance, windowHandle, moduleHandle);
 
 	m_objectManager.CreateObject(m_device, 3u);
 
@@ -216,12 +228,10 @@ void Terra::InitDisplay()
 #endif
 }
 
-void Terra::InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle)
+void Terra::InitSurface()
 {
 #ifdef TERRA_WIN32
-		m_objectManager.CreateObject<ISurfaceManager, SurfaceManagerWin32>(
-			m_surface, 3u, instance, windowHandle, moduleHandle
-		);
+		m_objectManager.CreateObject<ISurfaceManager, SurfaceManagerWin32>(m_surface, 3u);
 #endif
 }
 

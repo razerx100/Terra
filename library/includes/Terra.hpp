@@ -75,7 +75,7 @@ public:
 
 private:
 	void InitDisplay();
-	void InitSurface(VkInstance instance, void* windowHandle, void* moduleHandle);
+	void InitSurface();
 	void InitQueues(
 		VkDevice device, std::uint32_t bufferCount, const VkQueueFamilyMananger& queFamily
 	);

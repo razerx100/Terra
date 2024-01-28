@@ -14,26 +14,78 @@ enum class DeviceExtension
 	None
 };
 
-class VkDeviceExtensionManager
+enum class InstanceExtension
+{
+	VkExtDebugUtils,
+	VkKhrWin32Surface,
+	VkKhrDisplay,
+	VkKhrExternalMemoryCapabilities,
+	None
+};
+
+template<typename ExtensionType>
+class VkExtensionManager
 {
 public:
-	void AddExtension(DeviceExtension extension) noexcept;
+	virtual ~VkExtensionManager() = default;
+
+	void AddExtension(ExtensionType extension) noexcept
+	{
+		const auto extensionIndex = static_cast<size_t>(extension);
+		m_extensions.set(extensionIndex);
+		AddExtensionName(extensionIndex);
+	}
 
 	template<size_t Count>
-	void AddExtensions(const std::array<DeviceExtension, Count>& extensions) noexcept
+	void AddExtensions(const std::array<ExtensionType, Count>& extensions) noexcept
 	{
-		for (const DeviceExtension extension : extensions)
+		for (const ExtensionType extension : extensions)
 			AddExtension(extension);
 	}
 
-	void PopulateExtensionFunctions(VkDevice device) const noexcept;
+	void AddExtensions(const std::vector<ExtensionType>& extensions) noexcept
+	{
+		for (const ExtensionType extension : extensions)
+			AddExtension(extension);
+	}
 
 	[[nodiscard]]
-	bool IsExtensionActive(DeviceExtension extension) const noexcept;
+	bool IsExtensionActive(ExtensionType extension) const noexcept
+	{
+		return m_extensions.test(static_cast<size_t>(extension));
+	}
 	[[nodiscard]]
-	const std::vector<const char*>& GetExtensionNames() const noexcept;
+	const std::vector<const char*>& GetExtensionNames() const noexcept
+	{ return m_extensionNames; }
 	[[nodiscard]]
-	std::vector<DeviceExtension> GetActiveExtensions() const noexcept;
+	std::vector<ExtensionType> GetActiveExtensions() const noexcept
+	{
+		std::vector<ExtensionType> activeExtensions{};
+
+		const auto extensionCount = static_cast<size_t>(ExtensionType::None);
+
+		for (size_t index = 0u; index < extensionCount; ++index)
+			if (m_extensions.test(index))
+				activeExtensions.emplace_back(static_cast<ExtensionType>(index));
+
+		return activeExtensions;
+	}
+
+protected:
+	virtual void AddExtensionName(size_t extensionIndex) noexcept = 0;
+
+protected:
+	std::bitset<static_cast<size_t>(ExtensionType::None)> m_extensions;
+	std::vector<const char*>                              m_extensionNames;
+};
+
+class VkDeviceExtensionManager : public VkExtensionManager<DeviceExtension>
+{
+public:
+	void PopulateExtensionFunctions(VkDevice device) const noexcept;
+
+private:
+	void AddExtensionName(size_t extensionIndex) noexcept override;
 
 private:
 	template<typename T>
@@ -46,10 +98,26 @@ private:
 private:
 	static void PopulateVkExtMeshShader(VkDevice device) noexcept;
 	static void PopulateVkExtDescriptorBuffer(VkDevice device) noexcept;
+};
+
+class VkInstanceExtensionManager : public VkExtensionManager<InstanceExtension>
+{
+public:
+	void PopulateExtensionFunctions(VkInstance instance) const noexcept;
 
 private:
-	std::bitset<static_cast<size_t>(DeviceExtension::None)> m_extensions;
-	std::vector<const char*>                                m_extensionNames;
+	void AddExtensionName(size_t extensionIndex) noexcept override;
+
+private:
+	template<typename T>
+	static void PopulateFunctionPointer(
+		VkInstance instance, const char* functionName, T& functionPtr
+	) noexcept {
+		functionPtr = reinterpret_cast<T>(vkGetInstanceProcAddr(instance, functionName));
+	}
+
+private:
+	static void PopulateVkExtDebugUtils(VkInstance instance) noexcept;
 };
 
 namespace VkDeviceExtension
@@ -188,6 +256,94 @@ namespace VkDeviceExtension
 			s_vkGetSamplerOpaqueCaptureDescriptorDataEXT = nullptr;
 		inline static PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT
 			s_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT = nullptr;
+	};
+}
+
+namespace VkInstanceExtension
+{
+	class VkExtDebugUtils
+	{
+		friend class VkInstanceExtensionManager;
+	public:
+		static void vkCmdBeginDebugUtilsLabelEXT(
+			VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo
+		)
+		{
+			s_vkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+		}
+		static void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
+		{
+			s_vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+		}
+		static void vkCmdInsertDebugUtilsLabelEXT(
+			VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo
+		)
+		{
+			s_vkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+		}
+		static void vkCreateDebugUtilsMessengerEXT(
+			VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+			const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger
+		)
+		{
+			s_vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+		}
+		static void vkDestroyDebugUtilsMessengerEXT(
+			VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+			const VkAllocationCallbacks* pAllocator
+		)
+		{
+			s_vkDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+		}
+		static void vkQueueBeginDebugUtilsLabelEXT(
+			VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo
+		)
+		{
+			s_vkQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+		}
+		static void vkQueueEndDebugUtilsLabelEXT(VkQueue queue)
+		{
+			s_vkQueueEndDebugUtilsLabelEXT(queue);
+		}
+		static void vkQueueInsertDebugUtilsLabelEXT(
+			VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo
+		)
+		{
+			s_vkQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+		}
+		static void vkSetDebugUtilsObjectNameEXT(
+			VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo
+		)
+		{
+			s_vkSetDebugUtilsObjectNameEXT(device, pNameInfo);
+		}
+		static void vkSetDebugUtilsObjectTagEXT(
+			VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo
+		)
+		{
+			s_vkSetDebugUtilsObjectTagEXT(device, pTagInfo);
+		}
+		static void vkSubmitDebugUtilsMessageEXT(
+			VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData
+		)
+		{
+			s_vkSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
+		}
+
+	private:
+		inline static PFN_vkCmdBeginDebugUtilsLabelEXT s_vkCmdBeginDebugUtilsLabelEXT       = nullptr;
+		inline static PFN_vkCmdEndDebugUtilsLabelEXT s_vkCmdEndDebugUtilsLabelEXT           = nullptr;
+		inline static PFN_vkCmdInsertDebugUtilsLabelEXT s_vkCmdInsertDebugUtilsLabelEXT     = nullptr;
+		inline static PFN_vkCreateDebugUtilsMessengerEXT s_vkCreateDebugUtilsMessengerEXT   = nullptr;
+		inline static PFN_vkDestroyDebugUtilsMessengerEXT s_vkDestroyDebugUtilsMessengerEXT = nullptr;
+		inline static PFN_vkQueueBeginDebugUtilsLabelEXT s_vkQueueBeginDebugUtilsLabelEXT   = nullptr;
+		inline static PFN_vkQueueEndDebugUtilsLabelEXT s_vkQueueEndDebugUtilsLabelEXT       = nullptr;
+		inline static PFN_vkQueueInsertDebugUtilsLabelEXT s_vkQueueInsertDebugUtilsLabelEXT = nullptr;
+		inline static PFN_vkSetDebugUtilsObjectNameEXT s_vkSetDebugUtilsObjectNameEXT       = nullptr;
+		inline static PFN_vkSetDebugUtilsObjectTagEXT s_vkSetDebugUtilsObjectTagEXT         = nullptr;
+		inline static PFN_vkSubmitDebugUtilsMessageEXT s_vkSubmitDebugUtilsMessageEXT       = nullptr;
 	};
 }
 #endif

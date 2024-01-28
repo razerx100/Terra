@@ -23,38 +23,15 @@ DebugLayerManager::DebugLayerManager(VkInstance instance)
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 	PopulateDebugMessengerCreateInfo(createInfo);
 
-	CreateDebugUtilsMessengerEXT(m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger);
+	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
+
+	DebugUtil::vkCreateDebugUtilsMessengerEXT(m_pInstanceRef, &createInfo, nullptr, &m_debugMessenger);
 }
 
 DebugLayerManager::~DebugLayerManager() noexcept {
-	DestroyDebugUtilsMessengerEXT(m_pInstanceRef, m_debugMessenger, nullptr);
-}
+	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
 
-VkResult DebugLayerManager::CreateDebugUtilsMessengerEXT(
-	VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-	const VkAllocationCallbacks* pAllocator,
-	VkDebugUtilsMessengerEXT* pDebugMessenger
-) noexcept {
-	auto function =
-		reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>
-		(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-
-	if (function)
-		return function(instance, pCreateInfo, pAllocator, pDebugMessenger);
-	else
-		return VK_ERROR_EXTENSION_NOT_PRESENT;
-}
-
-void DebugLayerManager::DestroyDebugUtilsMessengerEXT(
-	VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-	const VkAllocationCallbacks* pAllocator
-) noexcept {
-	auto function =
-		reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>
-		(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-
-	if (function)
-		function(instance, debugMessenger, pAllocator);
+	DebugUtil::vkDestroyDebugUtilsMessengerEXT(m_pInstanceRef, m_debugMessenger, nullptr);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(

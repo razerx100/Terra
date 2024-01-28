@@ -2,21 +2,14 @@
 #include <Exception.hpp>
 #include <array>
 
-// Extension Manager
-static std::array extensionNameMap
+// Device extension names.
+static std::array deviceExtensionNameMap
 {
 	"VK_EXT_mesh_shader",
 	"VK_KHR_swapchain",
 	"VK_EXT_memory_budget",
 	"VK_EXT_descriptor_buffer"
 };
-
-void VkDeviceExtensionManager::AddExtension(DeviceExtension extension) noexcept
-{
-	const auto extensionIndex = static_cast<size_t>(extension);
-	m_extensions.set(extensionIndex);
-	m_extensionNames.emplace_back(extensionNameMap.at(extensionIndex));
-}
 
 void VkDeviceExtensionManager::PopulateExtensionFunctions(VkDevice device) const noexcept
 {
@@ -27,30 +20,71 @@ void VkDeviceExtensionManager::PopulateExtensionFunctions(VkDevice device) const
 		PopulateVkExtDescriptorBuffer(device);
 }
 
-const std::vector<const char*>& VkDeviceExtensionManager::GetExtensionNames() const noexcept
+void VkDeviceExtensionManager::AddExtensionName(size_t extensionIndex) noexcept
 {
-	return m_extensionNames;
+	m_extensionNames.emplace_back(deviceExtensionNameMap.at(extensionIndex));
 }
 
-bool VkDeviceExtensionManager::IsExtensionActive(DeviceExtension extension) const noexcept
+// Instance extension names.
+static std::array instanceExtensionNameMap
 {
-	return m_extensions.test(static_cast<size_t>(extension));
+	"VK_EXT_debug_utils",
+	"VK_KHR_win32_surface",
+	"VK_KHR_display",
+	"VK_KHR_external_memory_capabilities"
+};
+
+void VkInstanceExtensionManager::PopulateExtensionFunctions(VkInstance instance) const noexcept
+{
+	if (m_extensions.test(static_cast<size_t>(InstanceExtension::VkExtDebugUtils)))
+		PopulateVkExtDebugUtils(instance);
 }
 
-std::vector<DeviceExtension> VkDeviceExtensionManager::GetActiveExtensions() const noexcept
+void VkInstanceExtensionManager::AddExtensionName(size_t extensionIndex) noexcept
 {
-	std::vector<DeviceExtension> activeExtensions{};
-
-	const auto extensionCount = static_cast<size_t>(DeviceExtension::None);
-
-	for (size_t index = 0u; index < extensionCount; ++index)
-		if (m_extensions.test(index))
-			activeExtensions.emplace_back(static_cast<DeviceExtension>(index));
-
-	return activeExtensions;
+	m_extensionNames.emplace_back(instanceExtensionNameMap.at(extensionIndex));
 }
 
 // Boring function pointer population functions
+void VkInstanceExtensionManager::PopulateVkExtDebugUtils(VkInstance instance) noexcept
+{
+	using namespace VkInstanceExtension;
+
+	PopulateFunctionPointer(
+		instance, "vkCmdBeginDebugUtilsLabelEXT", VkExtDebugUtils::s_vkCmdBeginDebugUtilsLabelEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkCmdEndDebugUtilsLabelEXT", VkExtDebugUtils::s_vkCmdEndDebugUtilsLabelEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkCmdInsertDebugUtilsLabelEXT", VkExtDebugUtils::s_vkCmdInsertDebugUtilsLabelEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkCreateDebugUtilsMessengerEXT", VkExtDebugUtils::s_vkCreateDebugUtilsMessengerEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkDestroyDebugUtilsMessengerEXT", VkExtDebugUtils::s_vkDestroyDebugUtilsMessengerEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkQueueBeginDebugUtilsLabelEXT", VkExtDebugUtils::s_vkQueueBeginDebugUtilsLabelEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkQueueEndDebugUtilsLabelEXT", VkExtDebugUtils::s_vkQueueEndDebugUtilsLabelEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkQueueInsertDebugUtilsLabelEXT", VkExtDebugUtils::s_vkQueueInsertDebugUtilsLabelEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkSetDebugUtilsObjectNameEXT", VkExtDebugUtils::s_vkSetDebugUtilsObjectNameEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkSetDebugUtilsObjectTagEXT", VkExtDebugUtils::s_vkSetDebugUtilsObjectTagEXT
+	);
+	PopulateFunctionPointer(
+		instance, "vkSubmitDebugUtilsMessageEXT", VkExtDebugUtils::s_vkSubmitDebugUtilsMessageEXT
+	);
+}
+
 void VkDeviceExtensionManager::PopulateVkExtMeshShader(VkDevice device) noexcept
 {
 	using namespace VkDeviceExtension;

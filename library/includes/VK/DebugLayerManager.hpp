@@ -2,6 +2,7 @@
 #define DEBUG_LAYER_MANAGER_HPP_
 #include <vulkan/vulkan.h>
 #include <string>
+#include <VkExtensionManager.hpp>
 
 void PopulateDebugMessengerCreateInfo(
 	VkDebugUtilsMessengerCreateInfoEXT& createInfo
@@ -12,17 +13,6 @@ class DebugLayerManager
 public:
 	DebugLayerManager(VkInstance instance);
 	~DebugLayerManager() noexcept;
-
-	static VkResult CreateDebugUtilsMessengerEXT(
-		VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-		const VkAllocationCallbacks* pAllocator,
-		VkDebugUtilsMessengerEXT* pDebugMessenger
-	) noexcept;
-
-	static void DestroyDebugUtilsMessengerEXT(
-		VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-		const VkAllocationCallbacks* pAllocator
-	) noexcept;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -36,6 +26,16 @@ private:
 
 private:
 	VkDebugUtilsMessengerEXT m_debugMessenger;
-	VkInstance m_pInstanceRef;
+	VkInstance               m_pInstanceRef;
+
+	static constexpr std::array s_requiredExtensions
+	{
+		InstanceExtension::VkExtDebugUtils
+	};
+
+public:
+	[[nodiscard]]
+	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
+	{ return s_requiredExtensions; }
 };
 #endif

@@ -5,16 +5,19 @@
 class DisplayManagerVK final : public IDisplayManager {
 public:
 	[[nodiscard]]
-	const std::vector<const char*>& GetRequiredExtensions() const noexcept override;
-	[[nodiscard]]
 	Resolution GetDisplayResolution(
 		VkPhysicalDevice gpu, std::uint32_t displayIndex
 	) const override;
 
 private:
-	const std::vector<const char*> m_requiredExtensions = {
-		"VK_KHR_display"
+	inline static const std::vector<InstanceExtension> s_requiredExtensions
+	{
+		InstanceExtension::VkKhrDisplay
 	};
-};
 
+public:
+	[[nodiscard]]
+	const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept override
+	{ return s_requiredExtensions; }
+};
 #endif

@@ -7,7 +7,7 @@
 
 VkInstanceManager::VkInstanceManager(std::string_view appName)
 	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) },
-	m_coreVersion{ CoreVersion::V1_0 } {}
+	m_coreVersion{ CoreVersion::V1_0 }, m_extensionManager{} {}
 
 VkInstanceManager::~VkInstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);
@@ -28,7 +28,8 @@ void VkInstanceManager::CheckExtensionSupport() const {
 		nullptr, &extensionCount, std::data(extensions)
 	);
 
-	for (const char* requiredExtension : m_extensionNames) {
+	for (const char* requiredExtension : m_extensionManager.GetExtensionNames())
+	{
 		bool found = false;
 		for (const VkExtensionProperties& extension : extensions)
 			if (std::strcmp(requiredExtension, extension.extensionName) == 0) {
@@ -66,14 +67,6 @@ void VkInstanceManager::CheckLayerSupport() const {
 	}
 }
 
-VkInstanceManager& VkInstanceManager::AddExtensionNames(
-	const std::vector<const char*>& extensionNames
-) noexcept {
-	std::ranges::copy(extensionNames, std::back_inserter(m_extensionNames));
-
-	return *this;
-}
-
 void VkInstanceManager::CreateInstance(CoreVersion version)
 {
 	m_coreVersion = version;
@@ -100,14 +93,13 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-	if (enableValidationLayers) {
+	if (enableValidationLayers)
+	{
 		CheckLayerSupport();
 		createInfo.enabledLayerCount = static_cast<std::uint32_t>(
 			std::size(m_validationLayersNames)
 			);
 		createInfo.ppEnabledLayerNames = std::data(m_validationLayersNames);
-
-		m_extensionNames.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 		PopulateDebugMessengerCreateInfo(debugCreateInfo);
 		createInfo.pNext =
@@ -118,15 +110,11 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 		createInfo.pNext = nullptr;
 	}
 
-#ifdef TERRA_WIN32
-	m_extensionNames.emplace_back("VK_KHR_win32_surface");
-#endif
+	const std::vector<const char*>& extensionNames = m_extensionManager.GetExtensionNames();
 
 	CheckExtensionSupport();
-	createInfo.enabledExtensionCount = static_cast<std::uint32_t>(
-		std::size(m_extensionNames)
-		);
-	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
+	createInfo.enabledExtensionCount   = static_cast<std::uint32_t>(std::size(extensionNames));
+	createInfo.ppEnabledExtensionNames = std::data(extensionNames);
 
 	vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
 }

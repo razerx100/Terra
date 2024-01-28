@@ -48,9 +48,9 @@ private:
 	) const noexcept;
 
 private:
-	VkPhysicalDevice m_physicalDevice;
-	VkDevice m_logicalDevice;
-	VkQueueFamilyMananger m_queueFamilyManager;
+	VkPhysicalDevice         m_physicalDevice;
+	VkDevice                 m_logicalDevice;
+	VkQueueFamilyMananger    m_queueFamilyManager;
 	VkDeviceExtensionManager m_extensionManager;
 };
 #endif

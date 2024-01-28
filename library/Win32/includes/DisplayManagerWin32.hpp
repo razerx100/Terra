@@ -11,8 +11,6 @@ public:
 	DisplayManagerWin32();
 
 	[[nodiscard]]
-	const std::vector<const char*>& GetRequiredExtensions() const noexcept override;
-	[[nodiscard]]
 	Resolution GetDisplayResolution(
 		VkPhysicalDevice gpu, std::uint32_t displayIndex
 	) const override;
@@ -26,11 +24,17 @@ private:
 	void GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) const;
 
 private:
-	const std::vector<const char*> m_requiredExtensions = {
-		"VK_KHR_external_memory_capabilities"
+	ComPtr<IDXGIFactory1> m_pFactory;
+
+	inline static const std::vector<InstanceExtension> s_requiredExtensions
+	{
+		InstanceExtension::VkKhrExternalMemoryCapabilities
 	};
 
-	ComPtr<IDXGIFactory1> m_pFactory;
+public:
+	[[nodiscard]]
+	const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept override
+	{ return s_requiredExtensions; }
 };
 
 #endif
