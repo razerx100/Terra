@@ -37,6 +37,19 @@ bool VkDeviceExtensionManager::IsExtensionActive(DeviceExtension extension) cons
 	return m_extensions.test(static_cast<size_t>(extension));
 }
 
+std::vector<DeviceExtension> VkDeviceExtensionManager::GetActiveExtensions() const noexcept
+{
+	std::vector<DeviceExtension> activeExtensions{};
+
+	const auto extensionCount = static_cast<size_t>(DeviceExtension::None);
+
+	for (size_t index = 0u; index < extensionCount; ++index)
+		if (m_extensions.test(index))
+			activeExtensions.emplace_back(static_cast<DeviceExtension>(index));
+
+	return activeExtensions;
+}
+
 // Boring function pointer population functions
 void VkDeviceExtensionManager::PopulateVkExtMeshShader(VkDevice device) noexcept
 {

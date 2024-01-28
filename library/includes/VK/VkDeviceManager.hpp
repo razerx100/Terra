@@ -5,6 +5,7 @@
 #include <optional>
 #include <VkQueueFamilyManager.hpp>
 #include <VkExtensionManager.hpp>
+#include <VkFeatureManager.hpp>
 
 class VkDeviceManager {
 public:
@@ -12,7 +13,7 @@ public:
 	~VkDeviceManager() noexcept;
 
 	VkDeviceManager& FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
-	void CreateLogicalDevice(bool meshShader);
+	void CreateLogicalDevice(CoreVersion coreVersion);
 
 	[[nodiscard]]
 	VkQueueFamilyMananger GetQueueFamilyManager() const noexcept;
@@ -51,23 +52,5 @@ private:
 	VkDevice m_logicalDevice;
 	VkQueueFamilyMananger m_queueFamilyManager;
 	VkDeviceExtensionManager m_extensionManager;
-
-private:
-	class DeviceFeatures {
-	public:
-		DeviceFeatures() noexcept;
-
-		void ActivateMeshShader() noexcept;
-		[[nodiscard]]
-		VkPhysicalDeviceFeatures2 const* GetDeviceFeatures2() const noexcept;
-
-	private:
-		VkPhysicalDeviceMeshShaderFeaturesEXT m_deviceMeshFeatures;
-		VkPhysicalDeviceVulkan13Features m_deviceFeaturesvk1_3;
-		VkPhysicalDeviceVulkan12Features m_deviceFeaturesvk1_2;
-		VkPhysicalDeviceVulkan11Features m_deviceFeaturesvk1_1;
-		VkPhysicalDeviceFeatures m_deviceFeatures1;
-		VkPhysicalDeviceFeatures2 m_deviceFeatures2;
-	};
 };
 #endif

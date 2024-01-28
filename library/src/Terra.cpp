@@ -120,7 +120,9 @@ Terra::Terra(
 
 	m_objectManager.CreateObject(m_vkInstance, 5u, m_appName);
 
-	Instance().AddExtensionNames(Display().GetRequiredExtensions()).CreateInstance();
+	const CoreVersion coreVersion = CoreVersion::V1_3;
+
+	Instance().AddExtensionNames(Display().GetRequiredExtensions()).CreateInstance(coreVersion);
 	VkInstance vkInstance = Instance().GetVKInstance();
 
 #if _DEBUG
@@ -144,7 +146,7 @@ Terra::Terra(
 			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());
 	}
 	const VkSurfaceKHR vkSurface = Surface().GetSurface();
-	Device().FindPhysicalDevice(vkInstance, vkSurface).CreateLogicalDevice(meshShader);
+	Device().FindPhysicalDevice(vkInstance, vkSurface).CreateLogicalDevice(coreVersion);
 
 	const VkDevice logicalDevice             = Device().GetLogicalDevice();
 	const VkPhysicalDevice physicalDevice    = Device().GetPhysicalDevice();

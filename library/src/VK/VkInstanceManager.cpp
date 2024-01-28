@@ -6,7 +6,8 @@
 #include <Exception.hpp>
 
 VkInstanceManager::VkInstanceManager(std::string_view appName)
-	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) } {}
+	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) },
+	m_coreVersion{ CoreVersion::V1_0 } {}
 
 VkInstanceManager::~VkInstanceManager() noexcept {
 	vkDestroyInstance(m_vkInstance, nullptr);
@@ -73,14 +74,17 @@ VkInstanceManager& VkInstanceManager::AddExtensionNames(
 	return *this;
 }
 
-void VkInstanceManager::CreateInstance() {
+void VkInstanceManager::CreateInstance(CoreVersion version)
+{
+	m_coreVersion = version;
+
 	VkApplicationInfo appInfo{
-		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-		.pApplicationName = std::data(m_appName),
+		.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pApplicationName   = std::data(m_appName),
 		.applicationVersion = VK_MAKE_VERSION(1u, 0u, 0u),
-		.pEngineName = "Terra",
-		.engineVersion = VK_MAKE_VERSION(1u, 0u, 0u),
-		.apiVersion = VK_API_VERSION_1_3
+		.pEngineName        = "Terra",
+		.engineVersion      = VK_MAKE_VERSION(1u, 0u, 0u),
+		.apiVersion         = GetCoreVersion(version)
 	};
 
 	VkInstanceCreateInfo createInfo{
@@ -125,4 +129,20 @@ void VkInstanceManager::CreateInstance() {
 	createInfo.ppEnabledExtensionNames = std::data(m_extensionNames);
 
 	vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
+}
+
+std::uint32_t VkInstanceManager::GetCoreVersion(CoreVersion version) noexcept
+{
+	std::uint32_t coreVersion = 0u;
+
+	if (version == CoreVersion::V1_0)
+		coreVersion = VK_API_VERSION_1_0;
+	else if (version == CoreVersion::V1_1)
+		coreVersion = VK_API_VERSION_1_1;
+	else if (version == CoreVersion::V1_2)
+		coreVersion = VK_API_VERSION_1_2;
+	else if (version == CoreVersion::V1_3)
+		coreVersion = VK_API_VERSION_1_3;
+
+	return coreVersion;
 }

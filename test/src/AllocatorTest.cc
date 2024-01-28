@@ -7,8 +7,6 @@
 
 namespace Constants
 {
-	constexpr std::uint32_t width  = 1920u;
-	constexpr std::uint32_t height = 1920u;
 	constexpr const char* appName  = "TerraTest";
 }
 
@@ -25,12 +23,14 @@ protected:
 
 void AllocatorTest::SetUpTestSuite()
 {
+	const CoreVersion coreVersion = CoreVersion::V1_3;
+
 	s_instanceManager = std::make_unique<VkInstanceManager>(Constants::appName);
-	s_instanceManager->CreateInstance();
+	s_instanceManager->CreateInstance(coreVersion);
 	VkInstance vkInstance = s_instanceManager->GetVKInstance();
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
-	s_deviceManager->FindPhysicalDevice(vkInstance, VK_NULL_HANDLE).CreateLogicalDevice(false);
+	s_deviceManager->FindPhysicalDevice(vkInstance, VK_NULL_HANDLE).CreateLogicalDevice(coreVersion);
 }
 
 void AllocatorTest::TearDownTestSuite()

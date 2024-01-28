@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <Exception.hpp>
 #include <VkHelperFunctions.hpp>
+#include <VkFeatureManager.hpp>
 
 VkDeviceManager::VkDeviceManager() noexcept
 	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE },
@@ -61,15 +62,20 @@ VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
 	return VK_NULL_HANDLE;
 }
 
-void VkDeviceManager::CreateLogicalDevice(bool meshShader) {
+void VkDeviceManager::CreateLogicalDevice(CoreVersion coreVersion)
+{
 	VkQueueFamilyMananger::QueueCreateInfo queueCreateInfo =
 		m_queueFamilyManager.GetQueueCreateInfo();
 
 	auto vkDeviceQueueCreateInfo = queueCreateInfo.GetDeviceQueueCreateInfo();
 
-	DeviceFeatures deviceFeatures{};
-	if (meshShader)
-		deviceFeatures.ActivateMeshShader();
+	VkFeatureManager deviceFeatures{};
+	{
+		const std::vector<DeviceExtension> activeExtensions = m_extensionManager.GetActiveExtensions();
+		for (DeviceExtension extension : activeExtensions)
+			deviceFeatures.SetExtensionFeatures(extension);
+	}
+	deviceFeatures.SetCoreFeatures(coreVersion);
 
 	const std::vector<const char*>& extensionNames = m_extensionManager.GetExtensionNames();
 
@@ -173,50 +179,4 @@ bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const n
 	return features2.features.samplerAnisotropy
 		&& indexingFeatures.descriptorBindingPartiallyBound
 		&& indexingFeatures.runtimeDescriptorArray;
-}
-
-// Device Features
-VkDeviceManager::DeviceFeatures::DeviceFeatures() noexcept
-	: m_deviceMeshFeatures{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT
-	},
-	m_deviceFeaturesvk1_3{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
-		.pNext = &m_deviceMeshFeatures,
-		.synchronization2 = VK_TRUE
-	},
-	m_deviceFeaturesvk1_2{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-		.pNext = &m_deviceFeaturesvk1_3,
-		.drawIndirectCount = VK_TRUE,
-		.descriptorIndexing = VK_TRUE,
-		.shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-		.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
-		.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
-		.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-		.runtimeDescriptorArray = VK_TRUE
-	},
-	m_deviceFeaturesvk1_1{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
-		.pNext = &m_deviceFeaturesvk1_2,
-		.shaderDrawParameters = VK_TRUE
-	},
-	m_deviceFeatures1{
-		.multiDrawIndirect = VK_TRUE,
-		.drawIndirectFirstInstance = VK_TRUE,
-		.samplerAnisotropy = VK_TRUE
-	},
-	m_deviceFeatures2{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-		.pNext = &m_deviceFeaturesvk1_1,
-		.features = m_deviceFeatures1
-	} {}
-
-void VkDeviceManager::DeviceFeatures::ActivateMeshShader() noexcept {
-	m_deviceMeshFeatures.meshShader =  VK_TRUE;
-}
-
-VkPhysicalDeviceFeatures2 const* VkDeviceManager::DeviceFeatures::GetDeviceFeatures2(
-) const noexcept {
-	return &m_deviceFeatures2;
 }

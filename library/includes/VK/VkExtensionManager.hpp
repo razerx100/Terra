@@ -32,6 +32,8 @@ public:
 	bool IsExtensionActive(DeviceExtension extension) const noexcept;
 	[[nodiscard]]
 	const std::vector<const char*>& GetExtensionNames() const noexcept;
+	[[nodiscard]]
+	std::vector<DeviceExtension> GetActiveExtensions() const noexcept;
 
 private:
 	template<typename T>
