@@ -117,6 +117,8 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	createInfo.ppEnabledExtensionNames = std::data(extensionNames);
 
 	vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
+
+	m_extensionManager.PopulateExtensionFunctions(m_vkInstance);
 }
 
 std::uint32_t VkInstanceManager::GetCoreVersion(CoreVersion version) noexcept
