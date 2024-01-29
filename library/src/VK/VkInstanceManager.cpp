@@ -2,14 +2,17 @@
 #include <ranges>
 #include <algorithm>
 #include <VkInstanceManager.hpp>
-#include <DebugLayerManager.hpp>
 #include <Exception.hpp>
 
 VkInstanceManager::VkInstanceManager(std::string_view appName)
 	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) },
-	m_coreVersion{ CoreVersion::V1_0 }, m_extensionManager{} {}
+	m_coreVersion{ CoreVersion::V1_0 }, m_extensionManager{}, m_debugLayer{} {}
 
-VkInstanceManager::~VkInstanceManager() noexcept {
+VkInstanceManager::~VkInstanceManager() noexcept
+{
+#ifdef _DEBUG
+	m_debugLayer.DestroyDebugCallbacks();
+#endif
 	vkDestroyInstance(m_vkInstance, nullptr);
 }
 
@@ -44,29 +47,6 @@ void VkInstanceManager::CheckExtensionSupport() const {
 	}
 }
 
-void VkInstanceManager::CheckLayerSupport() const {
-	using namespace std::string_literals;
-
-	std::uint32_t layerCount = 0u;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-	std::vector<VkLayerProperties> availableLayers(layerCount);
-	vkEnumerateInstanceLayerProperties(
-		&layerCount, std::data(availableLayers)
-	);
-
-	for (const char* requiredLayer : m_validationLayersNames) {
-		bool found = false;
-		for (const VkLayerProperties& layer : availableLayers)
-			if (std::strcmp(requiredLayer, layer.layerName) == 0) {
-				found = true;
-				break;
-			}
-
-		assert(found && ("The layer "s + requiredLayer + " isn't supported.").c_str());
-	}
-}
-
 void VkInstanceManager::CreateInstance(CoreVersion version)
 {
 	m_coreVersion = version;
@@ -81,34 +61,33 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	};
 
 	VkInstanceCreateInfo createInfo{
-		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.pApplicationInfo = &appInfo
 	};
 
 #ifdef _DEBUG
-	const bool enableValidationLayers = true;
-#else
-	const bool enableValidationLayers = false;
-#endif
+	m_extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
 
+	const bool allValidationLayerSupported = m_debugLayer.CheckLayerSupport();
+
+	// I suppose you need put one of these struct in the pNext chain for each callback.
+	// Need to fix that later.
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-	if (enableValidationLayers)
+	if (allValidationLayerSupported)
 	{
-		CheckLayerSupport();
-		createInfo.enabledLayerCount = static_cast<std::uint32_t>(
-			std::size(m_validationLayersNames)
-			);
-		createInfo.ppEnabledLayerNames = std::data(m_validationLayersNames);
+		debugCreateInfo = m_debugLayer.GetDebugCallbackMessengerCreateInfo();
 
-		PopulateDebugMessengerCreateInfo(debugCreateInfo);
-		createInfo.pNext =
-			reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
+		const std::vector<const char*>& validationLayers   = m_debugLayer.GetActiveLayerNames();
+
+		createInfo.enabledLayerCount                       = static_cast<std::uint32_t>(std::size(validationLayers));
+		createInfo.ppEnabledLayerNames                     = std::data(validationLayers);
+		createInfo.pNext                                   = &debugCreateInfo; // This line is required
+		// for callbacks only. Not putting a callback function will cause the instance to be not
+		// created.
 	}
-	else {
-		createInfo.enabledLayerCount = 0u;
-		createInfo.pNext = nullptr;
-	}
+	// else log that all of the validation layers aren't supported. Maybe even mention which one.
+#endif
 
 	const std::vector<const char*>& extensionNames = m_extensionManager.GetExtensionNames();
 
@@ -119,6 +98,11 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	vkCreateInstance(&createInfo, nullptr, &m_vkInstance);
 
 	m_extensionManager.PopulateExtensionFunctions(m_vkInstance);
+
+#ifdef _DEBUG
+	if (allValidationLayerSupported)
+		m_debugLayer.CreateDebugCallbacks(m_vkInstance);
+#endif
 }
 
 std::uint32_t VkInstanceManager::GetCoreVersion(CoreVersion version) noexcept

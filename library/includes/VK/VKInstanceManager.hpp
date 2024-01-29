@@ -1,9 +1,9 @@
 #ifndef VK_INSTANCE_MANAGER_HPP_
 #define VK_INSTANCE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
-#include <vector>
 #include <string>
 #include <VkFeatureManager.hpp>
+#include <DebugLayerManager.hpp>
 
 class VkInstanceManager
 {
@@ -14,8 +14,11 @@ public:
 	void CreateInstance(CoreVersion version);
 
 	[[nodiscard]]
-	inline VkInstanceExtensionManager& ExtensionManager() noexcept
+	VkInstanceExtensionManager& ExtensionManager() noexcept
 	{ return m_extensionManager; }
+	[[nodiscard]]
+	DebugLayerManager& DebugLayers() noexcept
+	{ return m_debugLayer; }
 
 	[[nodiscard]]
 	VkInstance GetVKInstance() const noexcept;
@@ -34,9 +37,31 @@ private:
 	std::string_view           m_appName;
 	CoreVersion                m_coreVersion;
 	VkInstanceExtensionManager m_extensionManager;
+	DebugLayerManager          m_debugLayer;
 
-	std::vector<const char*> m_validationLayersNames = {
-		"VK_LAYER_KHRONOS_validation"
-	};
+public:
+	VkInstanceManager(const VkInstanceManager&) = delete;
+	VkInstanceManager& operator=(const VkInstanceManager&) = delete;
+
+	VkInstanceManager(VkInstanceManager&& other) noexcept
+		: m_vkInstance{ other.m_vkInstance }, m_appName{ std::move(other.m_appName) },
+		m_coreVersion{ other.m_coreVersion }, m_extensionManager{ std::move(other.m_extensionManager) },
+		m_debugLayer{ std::move(other.m_debugLayer) }
+	{
+		other.m_vkInstance = VK_NULL_HANDLE;
+	}
+
+	VkInstanceManager& operator=(VkInstanceManager&& other) noexcept
+	{
+		m_vkInstance       = other.m_vkInstance;
+		m_appName          = std::move(other.m_appName);
+		m_coreVersion      = other.m_coreVersion;
+		m_extensionManager = std::move(other.m_extensionManager);
+		m_debugLayer       = std::move(other.m_debugLayer);
+
+		other.m_vkInstance = VK_NULL_HANDLE;
+
+		return *this;
+	}
 };
 #endif

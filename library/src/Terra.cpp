@@ -61,9 +61,6 @@ static std::unique_ptr<Terra> sTerra;
 Terra::Terra(Terra&& other) noexcept
 	: m_appName{ std::move(other.m_appName) }, m_objectManager{ std::move(other.m_objectManager) },
 	m_display{ std::move(other.m_display) }, m_vkInstance{ std::move(other.m_vkInstance) }
-#ifdef _DEBUG
-	, m_debugLayer{ std::move(other.m_debugLayer) }
-#endif
 	, m_surface{ std::move(other.m_surface) }, m_device{ std::move(other.m_device) }
 	, m_res{ std::move(other.m_res) }, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
 	, m_computeQueue{ std::move(other.m_computeQueue) }
@@ -82,9 +79,6 @@ Terra& Terra::operator=(Terra&& other) noexcept
 	m_objectManager         = std::move(other.m_objectManager);
 	m_display               = std::move(other.m_display);
 	m_vkInstance            = std::move(other.m_vkInstance);
-#ifdef _DEBUG
-	m_debugLayer            = std::move(other.m_debugLayer);
-#endif
 	m_surface               = std::move(other.m_surface);
 	m_device                = std::move(other.m_device);
 	m_res                   = std::move(other.m_res);
@@ -108,9 +102,6 @@ Terra::Terra(
 	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 	RenderEngineType engineType
 ) : m_appName{ std::move(appName) }, m_objectManager{}, m_display{ nullptr }, m_vkInstance{ nullptr }
-#ifdef _DEBUG
-	, m_debugLayer{ nullptr }
-#endif
 	, m_surface{ nullptr }, m_device{ nullptr }, m_res{}
 	, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}, m_swapChain{ nullptr }
 	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
@@ -127,19 +118,12 @@ Terra::Terra(
 	{
 		VkInstanceExtensionManager& extensionManager = Instance().ExtensionManager();
 
-#if _DEBUG
-		extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
-#endif
 		extensionManager.AddExtensions(Display().GetRequiredExtensions());
 		extensionManager.AddExtensions(Surface().GetRequiredExtensions());
 	}
 
 	Instance().CreateInstance(coreVersion);
 	VkInstance vkInstance = Instance().GetVKInstance();
-
-#if _DEBUG
-	m_objectManager.CreateObject(m_debugLayer, 4u, vkInstance);
-#endif
 
 	Surface().CreateSurface(vkInstance, windowHandle, moduleHandle);
 

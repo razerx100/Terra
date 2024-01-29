@@ -27,6 +27,7 @@ template<typename ExtensionType>
 class VkExtensionManager
 {
 public:
+	VkExtensionManager() = default;
 	virtual ~VkExtensionManager() = default;
 
 	void AddExtension(ExtensionType extension) noexcept
@@ -61,6 +62,7 @@ public:
 	std::vector<ExtensionType> GetActiveExtensions() const noexcept
 	{
 		std::vector<ExtensionType> activeExtensions{};
+		activeExtensions.reserve(std::size(m_extensionNames));
 
 		const auto extensionCount = static_cast<size_t>(ExtensionType::None);
 
@@ -77,11 +79,28 @@ protected:
 protected:
 	std::bitset<static_cast<size_t>(ExtensionType::None)> m_extensions;
 	std::vector<const char*>                              m_extensionNames;
+
+public:
+	VkExtensionManager(const VkExtensionManager&) = delete;
+	VkExtensionManager& operator=(const VkExtensionManager&) = delete;
+
+	VkExtensionManager(VkExtensionManager&& other) noexcept
+		: m_extensions{ std::move(other.m_extensions) },
+		m_extensionNames{ std::move(other.m_extensionNames) } {}
+
+	VkExtensionManager& operator=(VkExtensionManager&& other) noexcept
+	{
+		m_extensions     = std::move(other.m_extensions);
+		m_extensionNames = std::move(other.m_extensionNames);
+
+		return *this;
+	}
 };
 
 class VkDeviceExtensionManager : public VkExtensionManager<DeviceExtension>
 {
 public:
+	VkDeviceExtensionManager() = default;
 	void PopulateExtensionFunctions(VkDevice device) const noexcept;
 
 private:
@@ -98,11 +117,26 @@ private:
 private:
 	static void PopulateVkExtMeshShader(VkDevice device) noexcept;
 	static void PopulateVkExtDescriptorBuffer(VkDevice device) noexcept;
+
+public:
+	VkDeviceExtensionManager(const VkDeviceExtensionManager&) = delete;
+	VkDeviceExtensionManager& operator=(const VkDeviceExtensionManager&) = delete;
+
+	VkDeviceExtensionManager(VkDeviceExtensionManager&& other) noexcept
+		: VkExtensionManager{ std::move(other) } {}
+
+	VkDeviceExtensionManager& operator=(VkDeviceExtensionManager&& other) noexcept
+	{
+		VkExtensionManager::operator=(std::move(other));
+
+		return *this;
+	}
 };
 
 class VkInstanceExtensionManager : public VkExtensionManager<InstanceExtension>
 {
 public:
+	VkInstanceExtensionManager() = default;
 	void PopulateExtensionFunctions(VkInstance instance) const noexcept;
 
 private:
@@ -118,6 +152,20 @@ private:
 
 private:
 	static void PopulateVkExtDebugUtils(VkInstance instance) noexcept;
+
+public:
+	VkInstanceExtensionManager(const VkInstanceExtensionManager&) = delete;
+	VkInstanceExtensionManager& operator=(const VkInstanceExtensionManager&) = delete;
+
+	VkInstanceExtensionManager(VkInstanceExtensionManager&& other) noexcept
+		: VkExtensionManager{ std::move(other) } {}
+
+	VkInstanceExtensionManager& operator=(VkInstanceExtensionManager&& other) noexcept
+	{
+		VkExtensionManager::operator=(std::move(other));
+
+		return *this;
+	}
 };
 
 namespace VkDeviceExtension

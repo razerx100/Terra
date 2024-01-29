@@ -2,7 +2,6 @@
 #define TERRA_HPP_
 #include <IThreadPool.hpp>
 #include <Renderer.hpp>
-#include <DebugLayerManager.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkSyncObjects.hpp>
 #include <VkDeviceManager.hpp>
@@ -53,9 +52,6 @@ public:
 
 	inline IDisplayManager& Display() noexcept { return *m_display; }
 	inline VkInstanceManager& Instance() noexcept { return *m_vkInstance; }
-#ifdef _DEBUG
-	inline DebugLayerManager& DebugLayer() noexcept { return *m_debugLayer; }
-#endif
 	inline ISurfaceManager& Surface() noexcept { return *m_surface; }
 	inline VkDeviceManager& Device() noexcept { return *m_device; }
 	inline Resources& Res() noexcept { return m_res; }
@@ -178,9 +174,6 @@ private:
 	ObjectManager                            m_objectManager;
 	std::unique_ptr<IDisplayManager>         m_display;
 	std::unique_ptr<VkInstanceManager>       m_vkInstance;
-#ifdef _DEBUG
-	std::unique_ptr<DebugLayerManager>       m_debugLayer;
-#endif
 	std::unique_ptr<ISurfaceManager>         m_surface;
 	std::unique_ptr<VkDeviceManager>         m_device;
 	Resources                                m_res;
