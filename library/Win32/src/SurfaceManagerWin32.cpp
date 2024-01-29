@@ -10,6 +10,8 @@ SurfaceManagerWin32::~SurfaceManagerWin32() noexcept {
 
 void SurfaceManagerWin32::CreateSurface(VkInstance instance, void* windowHandle, void* moduleHandle)
 {
+	m_pInstanceRef = instance;
+
 	VkWin32SurfaceCreateInfoKHR createInfo{
 		.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
 		.hinstance = static_cast<HINSTANCE>(moduleHandle),
