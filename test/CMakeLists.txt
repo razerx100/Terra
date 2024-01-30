@@ -30,8 +30,6 @@ endif()
 
 FetchContent_MakeAvailable(googletest)
 
-enable_testing()
-
 find_package(Vulkan REQUIRED)
 
 target_link_libraries(TerraTest PRIVATE
