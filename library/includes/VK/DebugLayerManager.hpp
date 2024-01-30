@@ -13,7 +13,7 @@ enum class ValidationLayer
 
 enum class DebugCallbackType
 {
-	standardOut,
+	standardError,
 	FileOut
 };
 
@@ -29,23 +29,15 @@ public:
 	void CreateDebugCallbacks(VkInstance instance);
 	void DestroyDebugCallbacks() noexcept;
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData
-	);
-
 	[[nodiscard]]
-	VkDebugUtilsMessengerCreateInfoEXT GetDebugCallbackMessengerCreateInfo() const noexcept;
+	VkDebugUtilsMessengerCreateInfoEXT GetDebugCallbackMessengerCreateInfo(
+		DebugCallbackType type
+	) const noexcept;
 	[[nodiscard]]
 	const std::vector<const char*>& GetActiveLayerNames() const noexcept
 	{ return m_layers; }
 	[[nodiscard]]
 	bool CheckLayerSupport() const noexcept;
-
-private:
-	static std::string GenerateMessageType(std::uint32_t typeFlag) noexcept;
 
 private:
 	std::vector<VkDebugUtilsMessengerEXT> m_debugMessengers;
@@ -82,5 +74,30 @@ public:
 	[[nodiscard]]
 	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
 	{ return s_requiredExtensions; }
+
+private:
+	[[nodiscard]]
+	static std::string VKAPI_CALL GenerateMessageType(std::uint32_t typeFlag) noexcept;
+	[[nodiscard]]
+	static std::string VKAPI_CALL FormatDebugMessage(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData
+	);
+
+public:
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallbackErrorTxt(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData
+	);
+
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallbackStdError(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData
+	);
 };
 #endif

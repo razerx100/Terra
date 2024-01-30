@@ -1,7 +1,9 @@
 #include <DebugLayerManager.hpp>
 #include <fstream>
+#include <iostream>
 #include <unordered_map>
 #include <array>
+#include <format>
 
 static constexpr std::array validationLayersNames
 {
@@ -33,23 +35,31 @@ void DebugLayerManager::DestroyDebugCallbacks() noexcept
 {
 	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
 
-
 	for (VkDebugUtilsMessengerEXT debugMessenger : m_debugMessengers)
 		DebugUtil::vkDestroyDebugUtilsMessengerEXT(m_pInstanceRef, debugMessenger, nullptr);
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallback(
+std::string VKAPI_CALL DebugLayerManager::FormatDebugMessage(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData
+)
+{
+	return std::format(
+		"Type : {}    Severity : {}    ID : {}.\nDescription : {}.\n",
+		GenerateMessageType(messageType), messageSeverities[messageSeverity],
+		pCallbackData->pMessageIdName, pCallbackData->pMessage
+	);
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackErrorTxt(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void*/* pUserData */
 ) {
 	std::ofstream log("ErrorLog.txt", std::ios_base::app | std::ios_base::out);
-	log << "Type : " << GenerateMessageType(messageType) << "    "
-		<< "Severity : " << messageSeverities[messageSeverity] << "    "
-		<< "ID : " << pCallbackData->pMessageIdName << "\n"
-		<< "Description : " << pCallbackData->pMessage << "    "
-		<< std::endl;
+	log << FormatDebugMessage(messageSeverity, messageType, pCallbackData);
 
 	return VK_FALSE;
 }
@@ -62,7 +72,7 @@ void DebugLayerManager::CreateDebugCallbacks(VkInstance instance)
 
 	for (DebugCallbackType type : m_callbackTypes)
 	{
-		VkDebugUtilsMessengerCreateInfoEXT createInfo = GetDebugCallbackMessengerCreateInfo();
+		VkDebugUtilsMessengerCreateInfoEXT createInfo = GetDebugCallbackMessengerCreateInfo(type);
 
 		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
@@ -84,7 +94,7 @@ void DebugLayerManager::AddValidationLayer(ValidationLayer layer) noexcept
 	m_layers.emplace_back(validationLayersNames.at(static_cast<size_t>(layer)));
 }
 
-std::string DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept {
+std::string VKAPI_CALL DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept {
 	std::string messageTypeDescription;
 	for (std::uint32_t index = 0u; index < 3u; ++index) {
 		const std::uint32_t flagIndex = 1u << index;
@@ -98,6 +108,7 @@ std::string DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexc
 }
 
 VkDebugUtilsMessengerCreateInfoEXT DebugLayerManager::GetDebugCallbackMessengerCreateInfo(
+	DebugCallbackType type
 ) const noexcept {
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -107,9 +118,14 @@ VkDebugUtilsMessengerCreateInfoEXT DebugLayerManager::GetDebugCallbackMessengerC
 		.messageType =
 		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-		.pfnUserCallback = DebugLayerManager::DebugCallback
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
 	};
+
+
+	if (type == DebugCallbackType::FileOut)
+		createInfo.pfnUserCallback = DebugLayerManager::DebugCallbackErrorTxt;
+	else
+		createInfo.pfnUserCallback = DebugLayerManager::DebugCallbackStdError;
 
 	return createInfo;
 }
@@ -143,3 +159,14 @@ bool DebugLayerManager::CheckLayerSupport() const noexcept
 	return true;
 }
 
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackStdError(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	void*/* pUserData */
+)
+{
+	std::cerr << FormatDebugMessage(messageSeverity, messageType, pCallbackData);
+
+	return VK_FALSE;
+}

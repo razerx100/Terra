@@ -50,5 +50,29 @@ private:
 	T                                  m_baseStruct;
 	std::shared_ptr<void>              m_lastInChain;
 	std::vector<std::shared_ptr<void>> m_chainedStructs;
+
+public:
+	VkStructChain(const VkStructChain& other) noexcept
+		: m_baseStruct{ other.m_baseStruct }, m_lastInChain{ other.m_lastInChain },
+		m_chainedStructs{ other.m_chainedStructs } {}
+	VkStructChain& operator=(const VkStructChain& other) noexcept
+	{
+		m_baseStruct     = other.m_baseStruct;
+		m_lastInChain    = other.m_lastInChain;
+		m_chainedStructs = other.m_chainedStructs;
+
+		return *this;
+	}
+	VkStructChain(VkStructChain&& other) noexcept
+		: m_baseStruct{ other.m_baseStruct }, m_lastInChain{ std::move(other.m_lastInChain) },
+		m_chainedStructs{ std::move(other.m_chainedStructs) } {}
+	VkStructChain& operator=(VkStructChain&& other) noexcept
+	{
+		m_baseStruct     = other.m_baseStruct;
+		m_lastInChain    = std::move(other.m_lastInChain);
+		m_chainedStructs = std::move(other.m_chainedStructs);
+
+		return *this;
+	}
 };
 #endif

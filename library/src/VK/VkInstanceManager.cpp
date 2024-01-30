@@ -66,25 +66,26 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	};
 
 #ifdef _DEBUG
-	m_extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
-
 	const bool allValidationLayerSupported = m_debugLayer.CheckLayerSupport();
 
-	// I suppose you need put one of these struct in the pNext chain for each callback.
-	// Need to fix that later.
+	// Since a debugCallback can only be created after an instance has been created,
+	// if someone wants to have a callback for the creation of the instance, they need
+	// to pass in a VkDebugUtilsMessengerCreateInfoEXT in the pNext.
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
 	if (allValidationLayerSupported)
 	{
-		debugCreateInfo = m_debugLayer.GetDebugCallbackMessengerCreateInfo();
+		m_extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
+
+		debugCreateInfo = m_debugLayer.GetDebugCallbackMessengerCreateInfo(
+			DebugCallbackType::standardError
+		);
 
 		const std::vector<const char*>& validationLayers   = m_debugLayer.GetActiveLayerNames();
 
 		createInfo.enabledLayerCount                       = static_cast<std::uint32_t>(std::size(validationLayers));
 		createInfo.ppEnabledLayerNames                     = std::data(validationLayers);
-		createInfo.pNext                                   = &debugCreateInfo; // This line is required
-		// for callbacks only. Not putting a callback function will cause the instance to be not
-		// created.
+		createInfo.pNext                                   = &debugCreateInfo;
 	}
 	// else log that all of the validation layers aren't supported. Maybe even mention which one.
 #endif
