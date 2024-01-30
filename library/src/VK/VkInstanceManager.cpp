@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <VkInstanceManager.hpp>
 #include <Exception.hpp>
+#include <format>
 
 VkInstanceManager::VkInstanceManager(std::string_view appName)
 	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) },
@@ -20,9 +21,8 @@ VkInstance VkInstanceManager::GetVKInstance() const noexcept {
 	return m_vkInstance;
 }
 
-void VkInstanceManager::CheckExtensionSupport() const {
-	using namespace std::string_literals;
-
+std::optional<std::string_view> VkInstanceManager::CheckExtensionSupport() const noexcept
+{
 	std::uint32_t extensionCount = 0u;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
@@ -41,10 +41,10 @@ void VkInstanceManager::CheckExtensionSupport() const {
 			}
 
 		if (!found)
-			throw Exception("Vulkan Extension Error",
-				"The extension "s + requiredExtension + " isn't supported."
-			);
+			return requiredExtension;
 	}
+
+	return {};
 }
 
 void VkInstanceManager::CreateInstance(CoreVersion version)
@@ -66,33 +66,34 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	};
 
 #ifdef _DEBUG
-	const bool allValidationLayerSupported = m_debugLayer.CheckLayerSupport();
+	if (auto notSupportedLayer = m_debugLayer.CheckLayerSupport(); notSupportedLayer)
+		throw Exception("Vulkan DebugLayer Error",
+			std::format("The debug layer {} isn't supported.", *notSupportedLayer)
+		); // Maybe I should replace this with a warning if I ever a decent logging system.
+
+	m_extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
 
 	// Since a debugCallback can only be created after an instance has been created,
 	// if someone wants to have a callback for the creation of the instance, they need
 	// to pass in a VkDebugUtilsMessengerCreateInfoEXT in the pNext.
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-	if (allValidationLayerSupported)
-	{
-		m_extensionManager.AddExtensions(DebugLayerManager::GetRequiredExtensions());
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo
+		= m_debugLayer.GetDebugCallbackMessengerCreateInfo(DebugCallbackType::standardError);
 
-		debugCreateInfo = m_debugLayer.GetDebugCallbackMessengerCreateInfo(
-			DebugCallbackType::standardError
-		);
+	const std::vector<const char*>& validationLayers = m_debugLayer.GetActiveLayerNames();
 
-		const std::vector<const char*>& validationLayers   = m_debugLayer.GetActiveLayerNames();
-
-		createInfo.enabledLayerCount                       = static_cast<std::uint32_t>(std::size(validationLayers));
-		createInfo.ppEnabledLayerNames                     = std::data(validationLayers);
-		createInfo.pNext                                   = &debugCreateInfo;
-	}
-	// else log that all of the validation layers aren't supported. Maybe even mention which one.
+	createInfo.enabledLayerCount   = static_cast<std::uint32_t>(std::size(validationLayers));
+	createInfo.ppEnabledLayerNames = std::data(validationLayers);
+	createInfo.pNext               = &debugCreateInfo;
 #endif
 
 	const std::vector<const char*>& extensionNames = m_extensionManager.GetExtensionNames();
 
-	CheckExtensionSupport();
+	if (auto notSupportedExtension = CheckExtensionSupport(); notSupportedExtension)
+		throw Exception("Vulkan Extension Error",
+			std::format("The Instance Extension {} isn't supported.", *notSupportedExtension)
+		);
+
 	createInfo.enabledExtensionCount   = static_cast<std::uint32_t>(std::size(extensionNames));
 	createInfo.ppEnabledExtensionNames = std::data(extensionNames);
 
@@ -101,8 +102,7 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	m_extensionManager.PopulateExtensionFunctions(m_vkInstance);
 
 #ifdef _DEBUG
-	if (allValidationLayerSupported)
-		m_debugLayer.CreateDebugCallbacks(m_vkInstance);
+	m_debugLayer.CreateDebugCallbacks(m_vkInstance);
 #endif
 }
 

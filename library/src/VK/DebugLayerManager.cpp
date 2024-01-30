@@ -130,10 +130,8 @@ VkDebugUtilsMessengerCreateInfoEXT DebugLayerManager::GetDebugCallbackMessengerC
 	return createInfo;
 }
 
-bool DebugLayerManager::CheckLayerSupport() const noexcept
+std::optional<std::string_view> DebugLayerManager::CheckLayerSupport() const noexcept
 {
-	using namespace std::string_literals;
-
 	std::uint32_t layerCount = 0u;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
@@ -153,10 +151,10 @@ bool DebugLayerManager::CheckLayerSupport() const noexcept
 			}
 
 		if (!found)
-			return false;
+			return requiredLayer;
 	}
 
-	return true;
+	return {};
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackStdError(

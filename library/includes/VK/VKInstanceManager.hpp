@@ -2,6 +2,7 @@
 #define VK_INSTANCE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <string>
+#include <optional>
 #include <VkFeatureManager.hpp>
 #include <DebugLayerManager.hpp>
 
@@ -26,8 +27,10 @@ public:
 	CoreVersion GetCoreVersion() const noexcept;
 
 private:
-	void CheckExtensionSupport() const;
-	void CheckLayerSupport() const;
+	[[nodiscard]]
+	// Returns empty if all of the extensions are supported. If an extension isn't supported
+	// returns its name.
+	std::optional<std::string_view> CheckExtensionSupport() const noexcept;
 
 	[[nodiscard]]
 	static std::uint32_t GetCoreVersion(CoreVersion version) noexcept;

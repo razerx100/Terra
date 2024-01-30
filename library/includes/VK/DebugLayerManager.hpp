@@ -5,6 +5,7 @@
 #include <VkExtensionManager.hpp>
 #include <array>
 #include <vector>
+#include <optional>
 
 enum class ValidationLayer
 {
@@ -37,7 +38,9 @@ public:
 	const std::vector<const char*>& GetActiveLayerNames() const noexcept
 	{ return m_layers; }
 	[[nodiscard]]
-	bool CheckLayerSupport() const noexcept;
+	// Returns empty if all of the layers are supported. If a layer isn't supported
+	// returns its name.
+	std::optional<std::string_view> CheckLayerSupport() const noexcept;
 
 private:
 	std::vector<VkDebugUtilsMessengerEXT> m_debugMessengers;
