@@ -70,23 +70,30 @@ void DebugLayerManager::CreateDebugCallbacks(VkInstance instance)
 
 	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
 
-	for (DebugCallbackType type : m_callbackTypes)
+	const auto callbackTypeCount = static_cast<size_t>(DebugCallbackType::None);
+
+	for (size_t index = 0u; index < callbackTypeCount; ++index)
 	{
-		VkDebugUtilsMessengerCreateInfoEXT createInfo = GetDebugCallbackMessengerCreateInfo(type);
+		if (m_callbackTypes.test(index))
+		{
+			VkDebugUtilsMessengerCreateInfoEXT createInfo = GetDebugCallbackMessengerCreateInfo(
+				static_cast<DebugCallbackType>(index)
+			);
 
-		VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+			VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
-		DebugUtil::vkCreateDebugUtilsMessengerEXT(
-			m_pInstanceRef, &createInfo, nullptr, &debugMessenger
-		);
+			DebugUtil::vkCreateDebugUtilsMessengerEXT(
+				m_pInstanceRef, &createInfo, nullptr, &debugMessenger
+			);
 
-		m_debugMessengers.emplace_back(debugMessenger);
+			m_debugMessengers.emplace_back(debugMessenger);
+		}
 	}
 }
 
 void DebugLayerManager::AddDebugCallback(DebugCallbackType type) noexcept
 {
-	m_callbackTypes.emplace_back(type);
+	m_callbackTypes.set(static_cast<size_t>(type));
 }
 
 void DebugLayerManager::AddValidationLayer(ValidationLayer layer) noexcept
@@ -120,7 +127,6 @@ VkDebugUtilsMessengerCreateInfoEXT DebugLayerManager::GetDebugCallbackMessengerC
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
 	};
-
 
 	if (type == DebugCallbackType::FileOut)
 		createInfo.pfnUserCallback = DebugLayerManager::DebugCallbackErrorTxt;

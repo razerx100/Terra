@@ -6,6 +6,7 @@
 #include <array>
 #include <vector>
 #include <optional>
+#include <bitset>
 
 enum class ValidationLayer
 {
@@ -15,7 +16,8 @@ enum class ValidationLayer
 enum class DebugCallbackType
 {
 	standardError,
-	FileOut
+	FileOut,
+	None
 };
 
 class DebugLayerManager
@@ -43,10 +45,10 @@ public:
 	std::optional<std::string_view> CheckLayerSupport() const noexcept;
 
 private:
-	std::vector<VkDebugUtilsMessengerEXT> m_debugMessengers;
-	std::vector<DebugCallbackType>        m_callbackTypes;
-	VkInstance                            m_pInstanceRef;
-	std::vector<const char*>              m_layers;
+	std::vector<VkDebugUtilsMessengerEXT>                     m_debugMessengers;
+	std::bitset<static_cast<size_t>(DebugCallbackType::None)> m_callbackTypes;
+	VkInstance                                                m_pInstanceRef;
+	std::vector<const char*>                                  m_layers;
 
 public:
 	DebugLayerManager(const DebugLayerManager&) = delete;

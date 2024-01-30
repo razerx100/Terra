@@ -122,6 +122,10 @@ Terra::Terra(
 		extensionManager.AddExtensions(Surface().GetRequiredExtensions());
 	}
 
+#ifdef _DEBUG
+	Instance().DebugLayers().AddDebugCallback(DebugCallbackType::FileOut);
+#endif
+
 	Instance().CreateInstance(coreVersion);
 	VkInstance vkInstance = Instance().GetVKInstance();
 
