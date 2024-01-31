@@ -69,6 +69,7 @@ void VkFeatureManager::Set1_2CoreFeatures() noexcept
 	v1_2Features.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
 	v1_2Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
 	v1_2Features.runtimeDescriptorArray                        = VK_TRUE;
+	v1_2Features.bufferDeviceAddress                           = VK_TRUE;
 
 	m_deviceFeatures2.AddToChain(std::move(pV1_2Features));
 }

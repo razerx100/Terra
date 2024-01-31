@@ -126,8 +126,14 @@ DeviceMemory2::~DeviceMemory2() noexcept
 
 void DeviceMemory2::Allocate(VkDeviceSize size)
 {
+	VkMemoryAllocateFlagsInfo flagsInfo{
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+		.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT
+	};
+
 	VkMemoryAllocateInfo allocInfo{
 		.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext           = &flagsInfo,
 		.allocationSize  = size,
 		.memoryTypeIndex = m_memoryTypeIndex
 	};

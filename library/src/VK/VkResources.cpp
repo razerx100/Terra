@@ -157,6 +157,16 @@ void Buffer::Create(
 	m_allocationInfo = m_memoryManager.AllocateBuffer(m_buffer, m_resourceType);
 }
 
+VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
+{
+	VkBufferDeviceAddressInfo testBufferInfo{
+		.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+		.buffer = m_buffer
+	};
+
+	return vkGetBufferDeviceAddress(m_device, &testBufferInfo);
+}
+
 // Texture
 Texture::Texture(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: Resource{ memoryManager, memoryType }, m_image{ VK_NULL_HANDLE }, m_device{ device } {}

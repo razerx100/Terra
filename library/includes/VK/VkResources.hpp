@@ -78,7 +78,7 @@ public:
 	[[nodiscard]]
 	inline VkDeviceSize Size() const noexcept { return m_allocationInfo.size; }
 	[[nodiscard]]
-	inline VkDeviceSize Offset() const noexcept { return m_allocationInfo.gpuOffset; }
+	inline VkDeviceSize GpuRelativeOffset() const noexcept { return m_allocationInfo.gpuOffset; }
 	[[nodiscard]]
 	inline std::uint8_t* CPUHandle() const noexcept { return m_allocationInfo.cpuOffset; }
 
@@ -101,6 +101,8 @@ public:
 
 	[[nodiscard]]
 	inline VkBuffer Get() const noexcept { return m_buffer; }
+	[[nodiscard]]
+	VkDeviceAddress GpuPhysicalAddress() const noexcept;
 
 private:
 	VkBuffer m_buffer;
