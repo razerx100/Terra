@@ -86,16 +86,46 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 
 		// Memory requirement for Set Layout
 		VkDeviceSize layoutSizeInBytes = 0u;
+		VkDeviceSize layoutOffset      = 0u;
 
 		DescBuffer::vkGetDescriptorSetLayoutSizeEXT(logicalDevice, descLayout, &layoutSizeInBytes);
 
-		VkDescriptorDataEXT descData{};
+		DescBuffer::vkGetDescriptorSetLayoutBindingOffsetEXT(
+			logicalDevice, descLayout, 0u, &layoutOffset
+		);
+
+		MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+		Buffer testBuffer{ logicalDevice, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		testBuffer.Create(
+			logicalDevice, 2_KB,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+			{}
+		);
+
+		VkDeviceAddress testBufferAddress = testBuffer.GpuPhysicalAddress();
+
+		VkDescriptorAddressInfoEXT storageBufferInfo{
+			.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+			.address = testBufferAddress,
+			.range   = 2_KB
+		};
+
+		VkDescriptorDataEXT descData{ .pStorageBuffer = &storageBufferInfo };
 		VkDescriptorGetInfoEXT getInfo{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
 			.type  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 			.data  = descData
 		};
-		//DescBuffer::vkGetDescriptorEXT(logicalDevice, &getInfo, )
+
+		Buffer descBuffer{ logicalDevice, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+		descBuffer.Create(
+			logicalDevice, layoutSizeInBytes, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, {}
+		);
+
+		DescBuffer::vkGetDescriptorEXT(logicalDevice, &getInfo, descBufferProperties.storageBufferDescriptorSize, descBuffer.CPUHandle());
+
+		VkDescriptorBufferBindingInfoEXT bindingInfo{};
 
 		vkDestroyDescriptorSetLayout(logicalDevice, descLayout, nullptr);
 	}
