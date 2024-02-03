@@ -141,6 +141,7 @@ Terra::Terra(
 
 		extensionManager.AddExtensions(SwapChainManager::GetRequiredExtensions());
 		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
+		// Need to add DescriptorBuffer
 
 		if (meshShader)
 			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());

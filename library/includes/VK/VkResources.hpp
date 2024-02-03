@@ -72,7 +72,7 @@ private:
 class Resource
 {
 public:
-	Resource(MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType);
+	Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
 	~Resource() noexcept;
 
 	[[nodiscard]]
@@ -83,19 +83,39 @@ public:
 	inline std::uint8_t* CPUHandle() const noexcept { return m_allocationInfo.cpuOffset; }
 
 protected:
-	MemoryManager&                  m_memoryManager;
+	MemoryManager*                  m_memoryManager;
 	MemoryManager::MemoryAllocation m_allocationInfo;
 	VkMemoryPropertyFlagBits        m_resourceType;
+
+public:
+	Resource(const Resource&) = delete;
+	Resource& operator=(const Resource&) = delete;
+
+	Resource(Resource&& other) noexcept
+		: m_memoryManager{ other.m_memoryManager }, m_allocationInfo{ other.m_allocationInfo },
+		m_resourceType{ other.m_resourceType }
+	{
+		other.m_memoryManager = nullptr;
+	}
+	Resource& operator=(Resource&& other) noexcept
+	{
+		m_memoryManager  = other.m_memoryManager;
+		m_allocationInfo = other.m_allocationInfo;
+		m_resourceType   = other.m_resourceType;
+		other.m_memoryManager = nullptr;
+
+		return *this;
+	}
 };
 
 class Buffer : public Resource
 {
 public:
-	Buffer(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType);
+	Buffer(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
 	~Buffer() noexcept;
 
 	void Create(
-		VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
+		VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 
@@ -107,16 +127,35 @@ public:
 private:
 	VkBuffer m_buffer;
 	VkDevice m_device;
+
+public:
+	Buffer(const Buffer&) = delete;
+	Buffer& operator=(const Buffer&) = delete;
+
+	Buffer(Buffer&& other) noexcept
+		: Resource{ std::move(other) }, m_buffer{ other.m_buffer }, m_device{ other.m_device }
+	{
+		other.m_buffer = VK_NULL_HANDLE;
+	}
+	Buffer& operator=(Buffer&& other) noexcept
+	{
+		Resource::operator=(std::move(other));
+		m_buffer       = other.m_buffer;
+		m_device       = other.m_device;
+		other.m_buffer = VK_NULL_HANDLE;
+
+		return *this;
+	}
 };
 
 class Texture : public Resource
 {
 public:
-	Texture(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType);
+	Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
 	~Texture() noexcept;
 
 	void Create(
-		VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+		std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 
@@ -126,5 +165,24 @@ public:
 private:
 	VkImage  m_image;
 	VkDevice m_device;
+
+public:
+	Texture(const Texture&) = delete;
+	Texture& operator=(const Texture&) = delete;
+
+	Texture(Texture&& other) noexcept
+		: Resource{ std::move(other) }, m_image{ other.m_image }, m_device{ other.m_device }
+	{
+		other.m_image = VK_NULL_HANDLE;
+	}
+	Texture& operator=(Texture&& other) noexcept
+	{
+		Resource::operator=(std::move(other));
+		m_image       = other.m_image;
+		m_device      = other.m_device;
+		other.m_image = VK_NULL_HANDLE;
+
+		return *this;
+	}
 };
 #endif

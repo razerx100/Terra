@@ -1,4 +1,5 @@
 #include <VkResources.hpp>
+#include <Exception.hpp>
 
 // Static functions
 template<typename CreateInfo>
@@ -122,16 +123,17 @@ VkMemoryRequirements VkImageResource::GetMemoryRequirements(VkDevice device) con
 }
 
 // Resource
-Resource::Resource(MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType)
+Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: m_memoryManager{ memoryManager }, m_allocationInfo{}, m_resourceType{ memoryType } {}
 
 Resource::~Resource() noexcept
 {
-	m_memoryManager.Deallocate(m_allocationInfo, m_resourceType);
+	if (m_memoryManager)
+		m_memoryManager->Deallocate(m_allocationInfo, m_resourceType);
 }
 
 // Buffer
-Buffer::Buffer(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType)
+Buffer::Buffer(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: Resource{ memoryManager, memoryType }, m_buffer{ VK_NULL_HANDLE }, m_device{ device } {}
 
 Buffer::~Buffer() noexcept
@@ -140,21 +142,24 @@ Buffer::~Buffer() noexcept
 }
 
 void Buffer::Create(
-	VkDevice device, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
+	VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
 	const std::vector<std::uint32_t>& queueFamilyIndices
 ) {
 	VkBufferCreateInfo createInfo
 	{
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.size  = bufferSize,
-		.usage = usageFlags
+		.usage = usageFlags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
 	};
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 
-	vkCreateBuffer(device, &createInfo, nullptr, &m_buffer);
+	vkCreateBuffer(m_device, &createInfo, nullptr, &m_buffer);
 
-	m_allocationInfo = m_memoryManager.AllocateBuffer(m_buffer, m_resourceType);
+	if (m_memoryManager)
+		m_allocationInfo = m_memoryManager->AllocateBuffer(m_buffer, m_resourceType);
+	else
+		throw Exception("MemoryManager Exception", "Memory manager unavailable.");
 }
 
 VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
@@ -168,7 +173,7 @@ VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
 }
 
 // Texture
-Texture::Texture(VkDevice device, MemoryManager& memoryManager, VkMemoryPropertyFlagBits memoryType)
+Texture::Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: Resource{ memoryManager, memoryType }, m_image{ VK_NULL_HANDLE }, m_device{ device } {}
 
 Texture::~Texture() noexcept
@@ -176,9 +181,8 @@ Texture::~Texture() noexcept
 	vkDestroyImage(m_device, m_image, nullptr);
 }
 
-
 void Texture::Create(
-	VkDevice device, std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 	VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 ) {
 	VkExtent3D extent
@@ -199,13 +203,16 @@ void Texture::Create(
 		.arrayLayers   = 1u,
 		.samples       = VK_SAMPLE_COUNT_1_BIT,
 		.tiling        = VK_IMAGE_TILING_OPTIMAL,
-		.usage         = usageFlags,
+		.usage         = usageFlags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 
-	vkCreateImage(device, &createInfo, nullptr, &m_image);
+	vkCreateImage(m_device, &createInfo, nullptr, &m_image);
 
-	m_allocationInfo = m_memoryManager.AllocateImage(m_image, m_resourceType);
+	if (m_memoryManager)
+		m_allocationInfo = m_memoryManager->AllocateImage(m_image, m_resourceType);
+	else
+		throw Exception("MemoryManager Exception", "Memory manager unavailable.");
 }
