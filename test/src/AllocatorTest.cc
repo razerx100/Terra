@@ -47,8 +47,8 @@ TEST_F(AllocatorTest, VkAllocatorTest)
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 2_MB, 200_KB };
 
 	{
-		Buffer buffer{ logicalDevice, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
-		buffer.Create(logicalDevice, 1_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+		Buffer buffer{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		buffer.Create(1_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 
 		EXPECT_NE(buffer.Get(), VK_NULL_HANDLE) << "Buffer wasn't initialised";
 		EXPECT_EQ(buffer.CPUHandle(), nullptr) << "CPU Pointer isn't null.";
