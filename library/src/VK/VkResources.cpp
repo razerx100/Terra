@@ -174,7 +174,9 @@ VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
 
 // Texture
 Texture::Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
-	: Resource{ memoryManager, memoryType }, m_image{ VK_NULL_HANDLE }, m_device{ device } {}
+	: Resource{ memoryManager, memoryType }, m_image{ VK_NULL_HANDLE }, m_device{ device },
+	m_format{ VK_FORMAT_UNDEFINED }
+{}
 
 Texture::~Texture() noexcept
 {
@@ -203,9 +205,11 @@ void Texture::Create(
 		.arrayLayers   = 1u,
 		.samples       = VK_SAMPLE_COUNT_1_BIT,
 		.tiling        = VK_IMAGE_TILING_OPTIMAL,
-		.usage         = usageFlags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+		.usage         = usageFlags,
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
+
+	m_format = imageFormat;
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 

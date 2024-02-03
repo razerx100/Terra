@@ -65,7 +65,7 @@ void VkDescriptorBuffer::CreateBuffer(const std::vector<std::uint32_t>& queueFam
 	m_descriptorBuffer.Create(totalLayoutSizeInBytes, m_bufferFlags, queueFamilyIndices);
 }
 
-void VkDescriptorBuffer::GetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept
+void VkDescriptorBuffer::SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept
 {
 	VkPhysicalDeviceProperties2 physicalDeviceProp2{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,

@@ -76,5 +76,5 @@ TEST_F(BufferTest, VkSamplerTest)
 		.MagFilter(VK_FILTER_NEAREST);
 
 	VKSampler sampler1{ logicalDevice };
-	sampler1.CreateSampler(createInfoBuilder.GetPtr());
+	sampler1.CreateSampler(createInfoBuilder.Get());
 }

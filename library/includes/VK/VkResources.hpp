@@ -99,9 +99,9 @@ public:
 	}
 	Resource& operator=(Resource&& other) noexcept
 	{
-		m_memoryManager  = other.m_memoryManager;
-		m_allocationInfo = other.m_allocationInfo;
-		m_resourceType   = other.m_resourceType;
+		m_memoryManager       = other.m_memoryManager;
+		m_allocationInfo      = other.m_allocationInfo;
+		m_resourceType        = other.m_resourceType;
 		other.m_memoryManager = nullptr;
 
 		return *this;
@@ -160,18 +160,22 @@ public:
 	);
 
 	[[nodiscard]]
-	inline VkImage Get() const noexcept { return m_image; }
+	VkImage Get() const noexcept { return m_image; }
+	[[nodiscard]]
+	VkFormat Format() const noexcept { return m_format; }
 
 private:
 	VkImage  m_image;
 	VkDevice m_device;
+	VkFormat m_format;
 
 public:
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 
 	Texture(Texture&& other) noexcept
-		: Resource{ std::move(other) }, m_image{ other.m_image }, m_device{ other.m_device }
+		: Resource{ std::move(other) }, m_image{ other.m_image }, m_device{ other.m_device },
+		m_format{ other.m_format }
 	{
 		other.m_image = VK_NULL_HANDLE;
 	}
@@ -180,6 +184,7 @@ public:
 		Resource::operator=(std::move(other));
 		m_image       = other.m_image;
 		m_device      = other.m_device;
+		m_format      = other.m_format;
 		other.m_image = VK_NULL_HANDLE;
 
 		return *this;

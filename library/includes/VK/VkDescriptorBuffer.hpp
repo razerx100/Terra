@@ -59,7 +59,7 @@ public:
 
 	void CreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
 
-	static void GetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept;
+	static void SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept;
 
 	[[nodiscard]]
 	VkDeviceAddress GpuPhysicalAddress() const noexcept
