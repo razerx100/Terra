@@ -1,5 +1,9 @@
 #include <VkDescriptorBuffer.hpp>
 
+VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorInfo{
+	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT
+};
+
 DescriptorSetLayout::~DescriptorSetLayout() noexcept
 {
 	vkDestroyDescriptorSetLayout(m_device, m_layout, nullptr);
@@ -65,7 +69,7 @@ void VkDescriptorBuffer::GetDescriptorBufferInfo(VkPhysicalDevice physicalDevice
 {
 	VkPhysicalDeviceProperties2 physicalDeviceProp2{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-		.pNext = &m_descriptorInfo
+		.pNext = &s_descriptorInfo
 	};
 
 	vkGetPhysicalDeviceProperties2(physicalDevice, &physicalDeviceProp2);
