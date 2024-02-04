@@ -4,6 +4,7 @@
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
 #include <VkDescriptorBuffer.hpp>
+#include <VkTextureView.hpp>
 
 namespace Constants
 {
@@ -56,19 +57,67 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 	{
 		MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
 
-		Buffer testBuffer{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
-		testBuffer.Create(2_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+		Buffer testStorage{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		testStorage.Create(2_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 
-		Buffer testBuffer1{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
-		testBuffer1.Create(2_KB, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, {});
+		Buffer testUniform{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		testUniform.Create(2_KB, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, {});
+
+		Buffer testTexel{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		testTexel.Create(2_KB, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, {});
 
 		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
-		descBuffer.GetDescriptorBufferInfo(physicalDevice);
+		descBuffer.SetDescriptorBufferInfo(physicalDevice);
 		descBuffer.AddLayout(0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.AddLayout(1u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddLayout(
+			2u, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
 		descBuffer.CreateBuffer();
 
-		descBuffer.AddStorageBufferDescriptor(testBuffer, 0u, 0u);
-		descBuffer.AddUniformBufferDescriptor(testBuffer1, 1u, 0u);
+		descBuffer.AddStorageBufferDescriptor(testStorage, 0u, 0u);
+		descBuffer.AddUniformBufferDescriptor(testUniform, 1u, 0u);
+		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, 0u, VK_FORMAT_R8G8B8A8_UINT);
+	}
+
+	{
+		MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+		VkSamplerCreateInfoBuilder samplerCreateInfo{};
+
+		VKSampler sampler{ logicalDevice };
+		sampler.CreateSampler(samplerCreateInfo.GetPtr());
+
+		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
+		descBuffer.SetDescriptorBufferInfo(physicalDevice);
+		descBuffer.AddLayout(
+			0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+		descBuffer.AddLayout(1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddLayout(2u, VK_DESCRIPTOR_TYPE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddLayout(3u, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.CreateBuffer();
+
+		VkTextureView textureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		textureView.CreateView(
+			200u, 200u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+			VK_IMAGE_VIEW_TYPE_2D, {}
+		);
+		VkTextureView storageView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		storageView.CreateView(
+			200u, 200u, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+			VK_IMAGE_VIEW_TYPE_2D, {}
+		);
+
+		descBuffer.AddCombinedImageDescriptor(
+			textureView.GetView(), sampler.Get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+		);
+		descBuffer.AddSampledImageDescriptor(
+			textureView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
+		);
+		descBuffer.AddSamplerDescriptor(sampler.Get(), 2u, 0u);
+		descBuffer.AddStorageImageDescriptor(
+			storageView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u, 0u
+		);
 	}
 }
