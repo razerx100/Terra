@@ -78,3 +78,28 @@ TEST_F(BufferTest, VkSamplerTest)
 	VKSampler sampler1{ logicalDevice };
 	sampler1.CreateSampler(createInfoBuilder.Get());
 }
+
+TEST_F(BufferTest, TextureTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	Texture testTexture{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+	testTexture.Create(1280u, 720u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, {});
+}
+
+TEST_F(BufferTest, TextureViewTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	VkTextureView testTextureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+	testTextureView.CreateView(
+		1280u, 720u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+		VK_IMAGE_VIEW_TYPE_2D, {}
+	);
+}
