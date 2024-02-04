@@ -143,6 +143,58 @@ private:
 		);
 	}
 
+	template<VkDescriptorType type>
+	void AddImageToDescriptor(
+		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex,
+		size_t descIndex
+	) {
+		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
+
+		VkDescriptorImageInfo imageInfo{ .imageLayout = imageLayout };
+
+		VkDescriptorDataEXT descData{};
+		size_t descriptorSize = 0u;
+
+		if constexpr (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+		{
+			imageInfo.sampler              = sampler;
+			imageInfo.imageView            = imageView;
+
+			descData.pCombinedImageSampler = &imageInfo;
+			descriptorSize                 = s_descriptorInfo.combinedImageSamplerDescriptorSize;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+		{
+			imageInfo.imageView    = imageView;
+
+			descData.pStorageImage = &imageInfo;
+			descriptorSize         = s_descriptorInfo.storageImageDescriptorSize;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+		{
+			imageInfo.imageView    = imageView;
+
+			descData.pSampledImage = &imageInfo;
+			descriptorSize         = s_descriptorInfo.sampledImageDescriptorSize;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+		{
+			descData.pSampler = &sampler;
+			descriptorSize    = s_descriptorInfo.samplerDescriptorSize;
+		}
+
+		VkDescriptorGetInfoEXT getInfo{
+			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+			.type  = type,
+			.data  = descData
+		};
+
+		DescBuffer::vkGetDescriptorEXT(
+			m_device, &getInfo, descriptorSize,
+			m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(layoutIndex) + descriptorSize * descIndex
+		);
+	}
+
 public:
 	void AddStorageBufferDescriptor(const Buffer& buffer, size_t layoutIndex, size_t descIndex)
 	{
@@ -164,6 +216,37 @@ public:
 	) {
 		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
 			buffer, layoutIndex, descIndex, texelFormat
+		);
+	}
+	void AddCombinedImageDescriptor(
+		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex,
+		size_t descIndex
+	)
+	{
+		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+			imageView, sampler, imageLayout, layoutIndex, descIndex
+		);
+	}
+	void AddSampledImageDescriptor(
+		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex, size_t descIndex
+	)
+	{
+		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex, descIndex
+		);
+	}
+	void AddStorageImageDescriptor(
+		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex, size_t descIndex
+	)
+	{
+		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
+			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex, descIndex
+		);
+	}
+	void AddSamplerDescriptor(VkSampler sampler, size_t layoutIndex, size_t descIndex)
+	{
+		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
+			VK_NULL_HANDLE, sampler, VK_IMAGE_LAYOUT_UNDEFINED, layoutIndex, descIndex
 		);
 	}
 

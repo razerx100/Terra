@@ -64,6 +64,17 @@ VkTextureView::~VkTextureView() noexcept
 void VkTextureView::CreateView(
 	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 	VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
+	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices
+) {
+	CreateView(
+		width, height, imageFormat, textureUsageFlags, aspectFlags, imageType,
+		0u, 1u, queueFamilyIndices
+	);
+}
+
+void VkTextureView::CreateView(
+	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+	VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 	VkImageViewType imageType, std::uint32_t mipLevel, std::uint32_t mipLevelCount,
 	const std::vector<std::uint32_t>& queueFamilyIndices
 ) {

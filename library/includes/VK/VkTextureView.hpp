@@ -17,6 +17,11 @@ public:
 		VkImageViewType imageType, std::uint32_t mipLevel, std::uint32_t mipLevelCount,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+	void CreateView(
+		std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+		VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
+		VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices
+	);
 
 	[[nodiscard]]
 	const Texture& GetTexture() const noexcept { return m_texture; }
@@ -156,6 +161,9 @@ public:
 
 	void CreateSampler(const VkSamplerCreateInfo* createInfo);
 	void CreateSampler(const VkSamplerCreateInfo& createInfo);
+
+	[[nodiscard]]
+	VkSampler Get() const noexcept { return m_sampler; }
 
 private:
 	VkDevice  m_device;
