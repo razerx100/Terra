@@ -35,5 +35,23 @@ private:
 
 private:
 	VkStructChain<VkPhysicalDeviceFeatures2> m_deviceFeatures2;
+
+public:
+	VkFeatureManager(const VkFeatureManager& other) noexcept
+		: m_deviceFeatures2{ other.m_deviceFeatures2 } {}
+	VkFeatureManager& operator=(const VkFeatureManager& other) noexcept
+	{
+		m_deviceFeatures2 = other.m_deviceFeatures2;
+
+		return *this;
+	}
+	VkFeatureManager(VkFeatureManager&& other) noexcept
+		: m_deviceFeatures2{ std::move(other.m_deviceFeatures2) } {}
+	VkFeatureManager& operator=(VkFeatureManager&& other) noexcept
+	{
+		m_deviceFeatures2 = std::move(other.m_deviceFeatures2);
+
+		return *this;
+	}
 };
 #endif
