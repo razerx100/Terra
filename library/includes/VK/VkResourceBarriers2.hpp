@@ -4,12 +4,59 @@
 #include <array>
 #include <cassert>
 
+class BufferBarrierBuilder
+{
+public:
+	BufferBarrierBuilder() : m_barrier{ .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 } {};
+
+	BufferBarrierBuilder& Buffer(VkBuffer buffer, VkDeviceSize size, VkDeviceSize offset) noexcept
+	{
+		m_barrier.buffer = buffer;
+		m_barrier.size   = size;
+		m_barrier.offset = offset;
+
+		return *this;
+	}
+
+	BufferBarrierBuilder& QueueIndices(std::uint32_t srcIndex, std::uint32_t dstIndex) noexcept
+	{
+		m_barrier.srcQueueFamilyIndex = srcIndex;
+		m_barrier.dstQueueFamilyIndex = dstIndex;
+
+		return *this;
+	}
+
+	BufferBarrierBuilder& AccessMasks(VkAccessFlagBits2 src, VkAccessFlagBits2 dst) noexcept
+	{
+		m_barrier.srcAccessMask = src;
+		m_barrier.dstAccessMask = dst;
+
+		return *this;
+	}
+
+	BufferBarrierBuilder& StageMasks(
+		VkPipelineStageFlagBits2 src, VkPipelineStageFlagBits2 dst
+	) noexcept {
+		m_barrier.srcStageMask = src;
+		m_barrier.dstStageMask = dst;
+
+		return *this;
+	}
+
+	[[nodiscard]]
+	VkBufferMemoryBarrier2 Get() const noexcept { return m_barrier; }
+
+private:
+	VkBufferMemoryBarrier2 m_barrier;
+};
+
 template<std::uint32_t barrierCount = 1u>
 class VkBufferBarrier2 {
 public:
 	VkBufferBarrier2() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
 
-	void RecordBarriers(VkCommandBuffer commandBuffer) noexcept {
+	void RecordBarriers(VkCommandBuffer commandBuffer) noexcept
+	{
 		VkDependencyInfo dependencyInfo{
 			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.dependencyFlags = 0u,
@@ -20,51 +67,46 @@ public:
 		vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
 	}
 
-	[[nodiscard]]
-	VkBufferBarrier2& AddExecutionBarrier(
-		VkBuffer buffer,
-		VkDeviceSize bufferSize, VkDeviceSize bufferOffset,
-		VkAccessFlagBits2 srcAccess, VkAccessFlagBits2 dstAccess,
-		VkPipelineStageFlagBits2 srcStage, VkPipelineStageFlagBits2 dstStage
-	) noexcept {
-		return AddMemoryBarrier(
-			buffer, bufferSize, bufferOffset,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			srcAccess, dstAccess, srcStage, dstStage
-		);
-	}
-
-	[[nodiscard]]
-	VkBufferBarrier2& AddMemoryBarrier(
-		VkBuffer buffer, VkDeviceSize bufferSize, VkDeviceSize bufferOffset,
-		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
-		VkAccessFlagBits2 srcAccess, VkAccessFlagBits2 dstAccess,
-		VkPipelineStageFlagBits2 srcStage, VkPipelineStageFlagBits2 dstStage
-	) noexcept {
+	VkBufferBarrier2& AddMemoryBarrier(const VkBufferMemoryBarrier2& barrier)
+	{
 		assert(m_currentIndex < barrierCount && "Barrier Count exceeded.");
-
-		VkBufferMemoryBarrier2 barrier{
-			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-			.srcStageMask = srcStage,
-			.srcAccessMask = srcAccess,
-			.dstStageMask = dstStage,
-			.dstAccessMask = dstAccess,
-			.srcQueueFamilyIndex = srcQueueFamilyIndex,
-			.dstQueueFamilyIndex = dstQueueFamilyIndex,
-			.buffer = buffer,
-			.offset = bufferOffset,
-			.size = bufferSize
-		};
 
 		m_barriers[m_currentIndex] = barrier;
 		++m_currentIndex;
 
 		return *this;
 	}
+	VkBufferBarrier2& AddMemoryBarrier(const BufferBarrierBuilder& barrier)
+	{
+		return AddMemoryBarrier(barrier.Get());
+	}
 
 private:
-	size_t m_currentIndex;
+	size_t                                           m_currentIndex;
 	std::array<VkBufferMemoryBarrier2, barrierCount> m_barriers;
+
+public:
+	VkBufferBarrier2(const VkBufferBarrier2& other) noexcept
+		: m_currentIndex{ other.m_currentIndex }, m_barriers{ other.m_barriers } {}
+
+	VkBufferBarrier2& operator=(const VkBufferBarrier2& other) noexcept
+	{
+		m_currentIndex = other.m_currentIndex;
+		m_barriers     = other.m_barriers;
+
+		return *this;
+	}
+
+	VkBufferBarrier2(VkBufferBarrier2&& other) noexcept
+		: m_currentIndex{ other.m_currentIndex }, m_barriers{ std::move(other.m_barriers) } {}
+
+	VkBufferBarrier2& operator=(VkBufferBarrier2&& other) noexcept
+	{
+		m_currentIndex = other.m_currentIndex;
+		m_barriers     = std::move(other.m_barriers);
+
+		return *this;
+	}
 };
 
 template<std::uint32_t barrierCount = 1u>

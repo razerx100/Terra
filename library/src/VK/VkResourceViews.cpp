@@ -91,11 +91,12 @@ void _vkResourceView::ReleaseOwnerShip(
 ) noexcept {
 	// Destination doesn't matter in release but needs to be there because of the limitation in
 	// Synchronization1 system
-	VkBufferBarrier2().AddMemoryBarrier(
-		m_resource.GetResource(), m_bufferSize, 0u,
-		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE,
-		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE
+	VkBufferBarrier2{}.AddMemoryBarrier(
+		BufferBarrierBuilder{}
+		.Buffer(m_resource.GetResource(), m_bufferSize, 0u)
+		.QueueIndices(oldOwnerQueueIndex, newOwnerQueueIndex)
+		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
+		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
 	).RecordBarriers(transferCmdBuffer);
 }
 
@@ -106,11 +107,12 @@ void _vkResourceView::AcquireOwnership(
 ) noexcept {
 	// Source doesn't matter in acquire but needs to be there because of the limitation in
 	// Synchronization1 system
-	VkBufferBarrier2().AddMemoryBarrier(
-		m_resource.GetResource(), m_bufferSize, 0u,
-		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_NONE, destinationAccess,
-		VK_PIPELINE_STAGE_NONE, destinationStage
+	VkBufferBarrier2{}.AddMemoryBarrier(
+		BufferBarrierBuilder{}
+		.Buffer(m_resource.GetResource(), m_bufferSize, 0u)
+		.QueueIndices(oldOwnerQueueIndex, newOwnerQueueIndex)
+		.AccessMasks(VK_ACCESS_NONE, destinationAccess)
+		.StageMasks(VK_PIPELINE_STAGE_NONE, destinationStage)
 	).RecordBarriers(cmdBuffer);
 }
 
