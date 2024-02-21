@@ -376,11 +376,12 @@ void VkImageResourceView::RecordCopy(
 	copyRegion.imageOffset = imageOffset;
 	copyRegion.imageExtent = imageExtent;
 
-	VkImageBarrier2().AddExecutionBarrier(
-		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
-		VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT
+	VkImageBarrier2{}.AddMemoryBarrier(
+		ImageBarrierBuilder{}
+		.Image(m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT)
+		.Layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		.AccessMasks(VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT)
+		.StageMasks(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT)
 	).RecordBarriers(transferCmdBuffer);
 
 	vkCmdCopyBufferToImage(
@@ -396,12 +397,13 @@ void VkImageResourceView::ReleaseOwnerShip(
 ) noexcept {
 	// Destination doesn't matter in release but needs to be there because of the limitation
 	// in Synchronization1 system
-	VkImageBarrier2().AddMemoryBarrier(
-		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
-		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE
+	VkImageBarrier2{}.AddMemoryBarrier(
+		ImageBarrierBuilder{}
+		.Image(m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT)
+		.QueueIndices(oldOwnerQueueIndex, newOwnerQueueIndex)
+		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
+		.Layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
 	).RecordBarriers(transferCmdBuffer);
 }
 
@@ -413,11 +415,12 @@ void VkImageResourceView::AcquireOwnership(
 	// Source doesn't matter in acquire but needs to be there because of the limitation in
 	// Synchronization1 system
 	VkImageBarrier2().AddMemoryBarrier(
-		m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
-		oldOwnerQueueIndex, newOwnerQueueIndex,
-		VK_ACCESS_NONE, destinationAccess,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_PIPELINE_STAGE_NONE, destinationStage
+		ImageBarrierBuilder{}
+		.Image(m_resource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT)
+		.QueueIndices(oldOwnerQueueIndex, newOwnerQueueIndex)
+		.AccessMasks(VK_ACCESS_NONE, destinationAccess)
+		.Layouts(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.StageMasks(VK_PIPELINE_STAGE_NONE, destinationStage)
 	).RecordBarriers(cmdBuffer);
 }
 
@@ -534,11 +537,12 @@ void VkUploadableImageResourceView::CreateImageView(
 }
 
 void VkUploadableImageResourceView::TransitionImageLayout(VkCommandBuffer cmdBuffer) noexcept {
-	VkImageBarrier2().AddExecutionBarrier(
-		m_gpuResource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+	VkImageBarrier2().AddMemoryBarrier(
+		ImageBarrierBuilder{}
+		.Image(m_gpuResource.GetResource(), VK_IMAGE_ASPECT_COLOR_BIT)
+		.Layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT)
+		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
 	).RecordBarriers(cmdBuffer);
 }
 
