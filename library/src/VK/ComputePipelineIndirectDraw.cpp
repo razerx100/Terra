@@ -1,5 +1,5 @@
 #include <VkShader.hpp>
-#include <VkResourceBarriers.hpp>
+#include <VkResourceBarriers2.hpp>
 
 #include <ComputePipelineIndirectDraw.hpp>
 #include <Terra.hpp>
@@ -322,13 +322,15 @@ void ComputePipelineIndirectDraw::ResetCounterBuffer(
 		);
 	}
 
-	VkBufferBarrier().AddExecutionBarrier(
-		counterBuffer.GetResource(), counterBuffer.GetSubBufferSize(),
-		counterBuffer.GetFirstSubAllocationOffset(), VK_ACCESS_TRANSFER_WRITE_BIT,
-		VK_ACCESS_SHADER_READ_BIT
-	).RecordBarriers(
-		computeCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
-	);
+	VkBufferBarrier2{}.AddMemoryBarrier(
+		BufferBarrierBuilder{}
+		.Buffer(
+			counterBuffer.GetResource(), counterBuffer.GetSubBufferSize(),
+			counterBuffer.GetFirstSubAllocationOffset()
+		)
+		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT)
+		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+	).RecordBarriers(computeCmdBuffer);
 }
 
 std::uint32_t ComputePipelineIndirectDraw::GetCurrentModelCount() const noexcept {
