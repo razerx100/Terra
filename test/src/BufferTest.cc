@@ -102,4 +102,6 @@ TEST_F(BufferTest, TextureViewTest)
 		1280u, 720u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
 		VK_IMAGE_VIEW_TYPE_2D, {}
 	);
+
+	VkTextureView testMoveTextureView = std::move(testTextureView);
 }
