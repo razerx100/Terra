@@ -55,35 +55,14 @@ void VKSampler::CreateSampler(const VkSamplerCreateInfo& createInfo)
 	CreateSampler(&createInfo);
 }
 
-// Texture View
-VkTextureView::~VkTextureView() noexcept
+// VKImageView
+VKImageView::~VKImageView() noexcept
 {
 	vkDestroyImageView(m_device, m_imageView, nullptr);
 }
 
-void VkTextureView::CreateView(
-	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-	VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
-	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices
-) {
-	CreateView(
-		width, height, imageFormat, textureUsageFlags, aspectFlags, imageType,
-		0u, 1u, queueFamilyIndices
-	);
-}
-
-void VkTextureView::CreateView(
-	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-	VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
-	VkImageViewType imageType, std::uint32_t mipLevel, std::uint32_t mipLevelCount,
-	const std::vector<std::uint32_t>& queueFamilyIndices
-) {
-	m_texture.Create(width, height, imageFormat, textureUsageFlags, queueFamilyIndices);
-	CreateImageView(aspectFlags, imageType, mipLevel, mipLevelCount);
-}
-
-void VkTextureView::CreateImageView(
-	VkImageAspectFlags aspectFlags, VkImageViewType imageType,
+void VKImageView::CreateView(
+	VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
 	std::uint32_t mipLevel, std::uint32_t mipLevelCount
 ) {
 	VkComponentMapping componentMapping{
@@ -102,12 +81,25 @@ void VkTextureView::CreateImageView(
 
 	VkImageViewCreateInfo createInfo{
 		.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.image            = m_texture.Get(),
+		.image            = image,
 		.viewType         = imageType,
-		.format           = m_texture.Format(),
+		.format           = imageFormat,
 		.components       = componentMapping,
 		.subresourceRange = subresourceRange
 	};
 
 	vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView);
+}
+
+// Texture View
+void VkTextureView::CreateView(
+	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+	VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
+	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
+	std::uint32_t mipLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
+) {
+	m_texture.Create(width, height, imageFormat, textureUsageFlags, queueFamilyIndices);
+	m_imageView.CreateView(
+		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
+	);
 }
