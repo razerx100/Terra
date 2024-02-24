@@ -2,11 +2,19 @@ cmake_minimum_required(VERSION 3.21)
 
 file(GLOB_RECURSE SRC src/*.cc)
 
+if(MSVC)
+    file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
+endif()
+
 add_executable(TerraTest
-    ${SRC}
+    ${SRC} ${SRCOPT}
 )
 
-target_include_directories(TerraTest PRIVATE ${TERRA_PRIVATE_INCLUDES})
+if(MSVC)
+    target_include_directories(TerraTest PRIVATE ${TERRA_PRIVATE_INCLUDES} Win32/)
+else()
+    target_include_directories(TerraTest PRIVATE ${TERRA_PRIVATE_INCLUDES})
+endif()
 
 unset(TERRA_PRIVATE_INCLUDES)
 
