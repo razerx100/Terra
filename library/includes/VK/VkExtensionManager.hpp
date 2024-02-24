@@ -17,6 +17,7 @@ enum class DeviceExtension
 enum class InstanceExtension
 {
 	VkExtDebugUtils,
+	VkKhrSurface,
 	VkKhrWin32Surface,
 	VkKhrDisplay,
 	VkKhrExternalMemoryCapabilities,

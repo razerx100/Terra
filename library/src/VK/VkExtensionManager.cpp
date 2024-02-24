@@ -29,6 +29,7 @@ void VkDeviceExtensionManager::AddExtensionName(size_t extensionIndex) noexcept
 static std::array instanceExtensionNameMap
 {
 	"VK_EXT_debug_utils",
+	"VK_KHR_surface",
 	"VK_KHR_win32_surface",
 	"VK_KHR_display",
 	"VK_KHR_external_memory_capabilities"
