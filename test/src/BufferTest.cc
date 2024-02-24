@@ -19,8 +19,8 @@ protected:
 	static void TearDownTestSuite();
 
 protected:
-	inline static std::unique_ptr<VkInstanceManager>   s_instanceManager;
-	inline static std::unique_ptr<VkDeviceManager>     s_deviceManager;
+	inline static std::unique_ptr<VkInstanceManager> s_instanceManager;
+	inline static std::unique_ptr<VkDeviceManager>   s_deviceManager;
 };
 
 void BufferTest::SetUpTestSuite()
@@ -30,6 +30,7 @@ void BufferTest::SetUpTestSuite()
 	s_instanceManager = std::make_unique<VkInstanceManager>(Constants::appName);
 	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::standardError);
 	s_instanceManager->CreateInstance(coreVersion);
+
 	VkInstance vkInstance = s_instanceManager->GetVKInstance();
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
