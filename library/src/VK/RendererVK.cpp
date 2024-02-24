@@ -125,7 +125,7 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 			);
 
 		swapchain.ResizeSwapchain(
-			device, terra.Surface().GetSurface(), width, height,
+			device, terra.Surface().Get(), width, height,
 			engine.GetRenderPass(), engine.GetDepthImageView(),
 			surfaceFormat
 		);

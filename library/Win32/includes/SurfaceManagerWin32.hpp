@@ -8,10 +8,10 @@ public:
 	SurfaceManagerWin32();
 	~SurfaceManagerWin32() noexcept override;
 
-	void CreateSurface(VkInstance instance, void* windowHandle, void* moduleHandle) override;
+	void Create(VkInstance instance, void* windowHandle, void* moduleHandle) override;
 
 	[[nodiscard]]
-	VkSurfaceKHR GetSurface() const noexcept override { return m_surface; }
+	VkSurfaceKHR Get() const noexcept override { return m_surface; }
 
 private:
 	VkSurfaceKHR m_surface;
@@ -19,6 +19,7 @@ private:
 
 	inline static const std::vector<InstanceExtension> s_requiredExtensions
 	{
+		InstanceExtension::VkKhrSurface,
 		InstanceExtension::VkKhrWin32Surface
 	};
 

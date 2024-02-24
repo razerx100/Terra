@@ -10,7 +10,7 @@ SurfaceManagerWin32::~SurfaceManagerWin32() noexcept
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 }
 
-void SurfaceManagerWin32::CreateSurface(VkInstance instance, void* windowHandle, void* moduleHandle)
+void SurfaceManagerWin32::Create(VkInstance instance, void* windowHandle, void* moduleHandle)
 {
 	m_instance = instance;
 

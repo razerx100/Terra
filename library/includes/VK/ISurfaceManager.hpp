@@ -9,10 +9,10 @@ class ISurfaceManager
 public:
 	virtual ~ISurfaceManager() = default;
 
-	virtual void CreateSurface(VkInstance instance, void* windowHandle, void* moduleHandle) = 0;
+	virtual void Create(VkInstance instance, void* windowHandle, void* moduleHandle) = 0;
 
 	[[nodiscard]]
-	virtual VkSurfaceKHR GetSurface() const noexcept = 0;
+	virtual VkSurfaceKHR Get() const noexcept = 0;
 	[[nodiscard]]
 	virtual const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept = 0;
 };

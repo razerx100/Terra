@@ -129,7 +129,7 @@ Terra::Terra(
 	Instance().CreateInstance(coreVersion);
 	VkInstance vkInstance = Instance().GetVKInstance();
 
-	Surface().CreateSurface(vkInstance, windowHandle, moduleHandle);
+	Surface().Create(vkInstance, windowHandle, moduleHandle);
 
 	m_objectManager.CreateObject(m_device, 3u);
 
@@ -146,7 +146,7 @@ Terra::Terra(
 		if (meshShader)
 			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());
 	}
-	const VkSurfaceKHR vkSurface = Surface().GetSurface();
+	const VkSurfaceKHR vkSurface = Surface().Get();
 	Device().FindPhysicalDevice(vkInstance, vkSurface).CreateLogicalDevice(coreVersion);
 
 	const VkDevice logicalDevice             = Device().GetLogicalDevice();
