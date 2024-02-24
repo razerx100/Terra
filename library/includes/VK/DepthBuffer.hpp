@@ -16,12 +16,10 @@ public:
 	const Texture& GetTexture() const noexcept { return m_depthImage.GetTexture(); }
 
 	[[nodiscard]]
-	static VkFormat GetDepthFormat() noexcept { return DEPTHFORMAT; }
+	VkFormat GetFormat() noexcept { return m_depthImage.GetTexture().Format(); }
 
 private:
 	VkTextureView m_depthImage;
-
-	static constexpr VkFormat DEPTHFORMAT = VK_FORMAT_D32_SFLOAT;
 
 public:
 	DepthBuffer(const DepthBuffer&) = delete;
