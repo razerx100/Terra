@@ -20,7 +20,6 @@ public:
 	void CreateRenderPass(VkDevice device, VkFormat swapchainFormat) final;
 	void CreateDepthBuffer(VkDevice device, std::uint32_t width, std::uint32_t height) final;
 	void ResizeViewportAndScissor(std::uint32_t width, std::uint32_t height) noexcept final;
-	void CleanUpDepthBuffer() noexcept final;
 
 	void AddGVerticesAndIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
@@ -77,6 +76,6 @@ private:
 	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
 	VKRenderPass m_renderPass;
 	ViewportAndScissorManager m_viewportAndScissor;
-	DepthBuffer m_depthBuffer;
+	//DepthBuffer m_depthBuffer;
 };
 #endif

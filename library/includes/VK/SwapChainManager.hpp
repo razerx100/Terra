@@ -4,6 +4,7 @@
 #include <memory>
 #include <VkHelperFunctions.hpp>
 #include <VkExtensionManager.hpp>
+#include <VkTextureView.hpp>
 
 class SwapChainManager
 {

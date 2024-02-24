@@ -130,7 +130,8 @@ bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
 	{
 		bool found = false;
 		for (const VkExtensionProperties& extension : availableExtensions)
-			if (std::strcmp(requiredExtension, extension.extensionName) == 0) {
+			if (std::strcmp(requiredExtension, extension.extensionName) == 0)
+			{
 				found = true;
 				break;
 			}

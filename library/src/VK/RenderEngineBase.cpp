@@ -3,9 +3,7 @@
 #include <Terra.hpp>
 
 RenderEngineBase::RenderEngineBase(VkDevice device) noexcept
-	: m_renderPass{ device }, m_depthBuffer{ device } {
-	m_depthBuffer.AllocateForMaxResolution(device, 7680u, 4320u);
-}
+	: m_renderPass{ device } {} // m_depthBuffer{ device } {}
 
 void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) {
 	vkCmdEndRenderPass(graphicsCmdBuffer);
@@ -81,11 +79,12 @@ void RenderEngineBase::BindGraphicsDescriptorSets(
 }
 
 void RenderEngineBase::CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
-	m_renderPass.CreateRenderPass(device, swapchainFormat, m_depthBuffer.GetDepthFormat());
+	m_renderPass.CreateRenderPass(device, swapchainFormat, DepthBuffer::GetDepthFormat());
 }
 
 VkImageView RenderEngineBase::GetDepthImageView() const noexcept {
-	return m_depthBuffer.GetDepthImageView();
+	//return m_depthBuffer.GetDepthImageView();
+	return VK_NULL_HANDLE;
 }
 
 VkRenderPass RenderEngineBase::GetRenderPass() const noexcept {
@@ -101,11 +100,7 @@ void RenderEngineBase::ResizeViewportAndScissor(
 void RenderEngineBase::CreateDepthBuffer(
 	VkDevice device, std::uint32_t width, std::uint32_t height
 ) {
-	m_depthBuffer.CreateDepthBuffer(device, width, height);
-}
-
-void RenderEngineBase::CleanUpDepthBuffer() noexcept {
-	m_depthBuffer.CleanUp();
+	//m_depthBuffer.CreateDepthBuffer(device, width, height);
 }
 
 void RenderEngineBase::ExecutePreRenderStage(

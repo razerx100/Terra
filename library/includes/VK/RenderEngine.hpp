@@ -28,7 +28,6 @@ public:
 	virtual void CreateDepthBuffer(
 		VkDevice device, std::uint32_t width, std::uint32_t height
 	) = 0;
-	virtual void CleanUpDepthBuffer() noexcept = 0;
 
 	virtual void AddGVerticesAndIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices

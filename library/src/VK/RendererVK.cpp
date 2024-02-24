@@ -111,8 +111,8 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		RenderEngine& engine = terra.Engine();
 
-		engine.CleanUpDepthBuffer();
 		engine.CreateDepthBuffer(device, width, height);
+		// depthBufer = std::move(DepthBuffer{}); // Do something like this
 
 		SwapChainManager& swapchain = terra.Swapchain();
 
