@@ -1,99 +1,90 @@
 #include <VKRenderPass.hpp>
+#include <ranges>
+#include <algorithm>
 
+// RenderPass builder
+RenderPassBuilder& RenderPassBuilder::AddColourAttachment(VkFormat format) noexcept
+{
+	m_colourAttachmentRefs.emplace_back(
+		VkAttachmentReference{
+			.attachment = static_cast<std::uint32_t>(std::size(m_attachments)),
+			.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		}
+	);
+	m_attachments.emplace_back(GetColourAttachment(format));
+
+	m_subpassDependency.dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	return *this;
+}
+
+RenderPassBuilder& RenderPassBuilder::AddDepthAttachment(VkFormat format) noexcept
+{
+	m_depthAttachmentRefs.emplace_back(
+		VkAttachmentReference{
+			.attachment = static_cast<std::uint32_t>(std::size(m_attachments)),
+			.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		}
+	);
+	m_attachments.emplace_back(GetDepthAttachment(format));
+
+	m_subpassDependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	return *this;
+}
+
+RenderPassBuilder& RenderPassBuilder::Build() noexcept
+{
+	m_subpassDesc.colorAttachmentCount    = static_cast<std::uint32_t>(
+		std::size(m_colourAttachmentRefs)
+	);
+	m_subpassDesc.pColorAttachments       = std::data(m_colourAttachmentRefs);
+	m_subpassDesc.pDepthStencilAttachment = std::data(m_depthAttachmentRefs);
+
+	m_createInfo.attachmentCount = static_cast<std::uint32_t>(std::size(m_attachments));
+	m_createInfo.pAttachments    = std::data(m_attachments);
+
+	return *this;
+}
+
+VkAttachmentDescription RenderPassBuilder::GetColourAttachment(VkFormat format) noexcept
+{
+	return VkAttachmentDescription{
+		.format         = format,
+		.samples        = VK_SAMPLE_COUNT_1_BIT,
+		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+	};
+}
+
+VkAttachmentDescription RenderPassBuilder::GetDepthAttachment(VkFormat format) noexcept
+{
+	return VkAttachmentDescription{
+		.format         = format,
+		.samples        = VK_SAMPLE_COUNT_1_BIT,
+		.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	};
+}
+
+// RenderPass
 VKRenderPass::VKRenderPass(VkDevice device) noexcept
-	: m_deviceRef{ device }, m_renderPass{ VK_NULL_HANDLE } {}
+	: m_device{ device }, m_renderPass{ VK_NULL_HANDLE } {}
 
-VKRenderPass::~VKRenderPass() noexcept {
-	vkDestroyRenderPass(m_deviceRef, m_renderPass, nullptr);
+VKRenderPass::~VKRenderPass() noexcept
+{
+	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 }
 
-VkRenderPass VKRenderPass::GetRenderPass() const noexcept {
-	return m_renderPass;
-}
-
-void VKRenderPass::CreateRenderPass(
-	VkDevice device, VkFormat swapchainFormat, VkFormat depthFormat
-) {
-	VkAttachmentReference colourAttachmentRef{
-		.attachment = 0u,
-		.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-	};
-
-	VkAttachmentReference depthAttachmentRef{
-		.attachment = 1u,
-		.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-	};
-
-	VkSubpassDescription subpassDesc{
-		.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-		.colorAttachmentCount = 1u,
-		.pColorAttachments = &colourAttachmentRef,
-		.pDepthStencilAttachment = &depthAttachmentRef
-	};
-
-	VkSubpassDependency subpassDependency{
-		.srcSubpass = VK_SUBPASS_EXTERNAL,
-		.dstSubpass = 0u,
-		.srcStageMask =
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-		| VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-		.dstStageMask =
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-		| VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-		.srcAccessMask = 0u,
-		.dstAccessMask =
-		VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-		| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
-	};
-
-	VkAttachmentDescription colourAttachment = GetColourAttachment(swapchainFormat);
-	VkAttachmentDescription depthAttachment = GetDepthAttachment(depthFormat);
-
-	VkAttachmentDescription attachments[] { colourAttachment, depthAttachment };
-
-	VkRenderPassCreateInfo createInfo{
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-		.attachmentCount = static_cast<std::uint32_t>(std::size(attachments)),
-		.pAttachments = attachments,
-		.subpassCount = 1u,
-		.pSubpasses = &subpassDesc,
-		.dependencyCount = 1u,
-		.pDependencies = &subpassDependency
-	};
-
-	vkCreateRenderPass(device, &createInfo, nullptr, &m_renderPass);
-}
-
-VkAttachmentDescription VKRenderPass::GetColourAttachment(
-	VkFormat colourFormat
-) const noexcept {
-	VkAttachmentDescription colourAttachment{
-		.format = colourFormat,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-	};
-
-	return colourAttachment;
-}
-
-VkAttachmentDescription VKRenderPass::GetDepthAttachment(
-	VkFormat depthFormat
-) const noexcept {
-	VkAttachmentDescription depthAttachment{
-		.format = depthFormat,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-	};
-
-	return depthAttachment;
+void VKRenderPass::Create(const RenderPassBuilder& renderPassBuilder)
+{
+	vkCreateRenderPass(m_device, renderPassBuilder.Get(), nullptr, &m_renderPass);
 }

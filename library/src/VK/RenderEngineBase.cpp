@@ -79,7 +79,11 @@ void RenderEngineBase::BindGraphicsDescriptorSets(
 }
 
 void RenderEngineBase::CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
-	m_renderPass.CreateRenderPass(device, swapchainFormat, DepthBuffer::GetDepthFormat());
+	m_renderPass.Create(
+		RenderPassBuilder{}
+		.AddColourAttachment(swapchainFormat)
+		.Build()
+	);
 }
 
 VkImageView RenderEngineBase::GetDepthImageView() const noexcept {
@@ -88,7 +92,7 @@ VkImageView RenderEngineBase::GetDepthImageView() const noexcept {
 }
 
 VkRenderPass RenderEngineBase::GetRenderPass() const noexcept {
-	return m_renderPass.GetRenderPass();
+	return m_renderPass.Get();
 }
 
 void RenderEngineBase::ResizeViewportAndScissor(
