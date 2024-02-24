@@ -4,7 +4,8 @@
 #include <vector>
 #include <VkExtensionManager.hpp>
 
-class ISurfaceManager {
+class ISurfaceManager
+{
 public:
 	virtual ~ISurfaceManager() = default;
 

@@ -4,7 +4,8 @@
 #include <vector>
 #include <VkExtensionManager.hpp>
 
-class IDisplayManager {
+class IDisplayManager
+{
 public:
 	using Resolution = std::pair<std::uint64_t, std::uint64_t>;
 
