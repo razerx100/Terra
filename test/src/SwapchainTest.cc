@@ -74,7 +74,9 @@ void SwapchainTest::SetUpTestSuite()
 		extensionManager.AddExtensions(SwapChainManager::GetRequiredExtensions());
 	}
 
-	s_deviceManager->FindPhysicalDevice(vkInstance, surface).CreateLogicalDevice(coreVersion);
+	s_deviceManager->SetDeviceFeatures(coreVersion)
+		.FindPhysicalDevice(vkInstance, surface)
+		.CreateLogicalDevice();
 }
 
 void SwapchainTest::TearDownTestSuite()

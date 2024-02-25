@@ -18,8 +18,8 @@ protected:
 	static void TearDownTestSuite();
 
 protected:
-	inline static std::unique_ptr<VkInstanceManager>   s_instanceManager;
-	inline static std::unique_ptr<VkDeviceManager>     s_deviceManager;
+	inline static std::unique_ptr<VkInstanceManager> s_instanceManager;
+	inline static std::unique_ptr<VkDeviceManager>   s_deviceManager;
 };
 
 void DescriptorBufferTest::SetUpTestSuite()
@@ -38,7 +38,9 @@ void DescriptorBufferTest::SetUpTestSuite()
 		extensionManager.AddExtension(DeviceExtension::VkExtDescriptorBuffer);
 	}
 
-	s_deviceManager->FindPhysicalDevice(vkInstance, VK_NULL_HANDLE).CreateLogicalDevice(coreVersion);
+	s_deviceManager->SetDeviceFeatures(coreVersion)
+		.FindPhysicalDevice(vkInstance, VK_NULL_HANDLE)
+		.CreateLogicalDevice();
 }
 
 void DescriptorBufferTest::TearDownTestSuite()

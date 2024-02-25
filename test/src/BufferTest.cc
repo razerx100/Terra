@@ -35,7 +35,9 @@ void BufferTest::SetUpTestSuite()
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
 
-	s_deviceManager->FindPhysicalDevice(vkInstance, VK_NULL_HANDLE).CreateLogicalDevice(coreVersion);
+	s_deviceManager->SetDeviceFeatures(coreVersion)
+		.FindPhysicalDevice(vkInstance, VK_NULL_HANDLE)
+		.CreateLogicalDevice();
 }
 
 void BufferTest::TearDownTestSuite()

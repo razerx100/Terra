@@ -19,8 +19,8 @@ protected:
 	static void TearDownTestSuite();
 
 protected:
-	inline static std::unique_ptr<VkInstanceManager>   s_instanceManager;
-	inline static std::unique_ptr<VkDeviceManager>     s_deviceManager;
+	inline static std::unique_ptr<VkInstanceManager> s_instanceManager;
+	inline static std::unique_ptr<VkDeviceManager>   s_deviceManager;
 };
 
 void StagingBufferTest::SetUpTestSuite()
@@ -34,7 +34,9 @@ void StagingBufferTest::SetUpTestSuite()
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
 
-	s_deviceManager->FindPhysicalDevice(vkInstance, VK_NULL_HANDLE).CreateLogicalDevice(coreVersion);
+	s_deviceManager->SetDeviceFeatures(coreVersion)
+		.FindPhysicalDevice(vkInstance, VK_NULL_HANDLE)
+		.CreateLogicalDevice();
 }
 
 void StagingBufferTest::TearDownTestSuite()
