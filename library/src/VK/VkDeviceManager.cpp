@@ -5,12 +5,14 @@
 #include <VkHelperFunctions.hpp>
 #include <VkFeatureManager.hpp>
 
-VkDeviceManager::VkDeviceManager() noexcept
+VkDeviceManager::VkDeviceManager()
 	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE },
-	m_queueFamilyManager{}, m_extensionManager{} {}
+	m_queueFamilyManager{}, m_extensionManager{}, m_featureManager{} {}
 
-VkDeviceManager::~VkDeviceManager() noexcept {
-	vkDestroyDevice(m_logicalDevice, nullptr);
+VkDeviceManager::~VkDeviceManager() noexcept
+{
+	if (m_logicalDevice)
+		vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
 VkDeviceManager& VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
@@ -62,27 +64,30 @@ VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
 	return VK_NULL_HANDLE;
 }
 
-void VkDeviceManager::CreateLogicalDevice(CoreVersion coreVersion)
+VkDeviceManager& VkDeviceManager::SetDeviceFeatures(CoreVersion coreVersion)
+{
+	const std::vector<DeviceExtension> activeExtensions = m_extensionManager.GetActiveExtensions();
+	for (DeviceExtension extension : activeExtensions)
+		m_featureManager.SetExtensionFeatures(extension);
+
+	m_featureManager.SetCoreFeatures(coreVersion);
+
+	return *this;
+}
+
+void VkDeviceManager::CreateLogicalDevice()
 {
 	VkQueueFamilyMananger::QueueCreateInfo queueCreateInfo =
 		m_queueFamilyManager.GetQueueCreateInfo();
 
 	auto vkDeviceQueueCreateInfo = queueCreateInfo.GetDeviceQueueCreateInfo();
 
-	VkFeatureManager deviceFeatures{};
-	{
-		const std::vector<DeviceExtension> activeExtensions = m_extensionManager.GetActiveExtensions();
-		for (DeviceExtension extension : activeExtensions)
-			deviceFeatures.SetExtensionFeatures(extension);
-	}
-	deviceFeatures.SetCoreFeatures(coreVersion);
-
 	const std::vector<const char*>& extensionNames = m_extensionManager.GetExtensionNames();
 
 	VkDeviceCreateInfo createInfo
 	{
 		.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pNext                   = deviceFeatures.GetDeviceFeatures2(),
+		.pNext                   = m_featureManager.GetDeviceFeatures2(),
 		.queueCreateInfoCount    = static_cast<std::uint32_t>(std::size(vkDeviceQueueCreateInfo)),
 		.pQueueCreateInfos       = std::data(vkDeviceQueueCreateInfo),
 		.enabledExtensionCount   = static_cast<std::uint32_t>(std::size(extensionNames)),
@@ -94,6 +99,8 @@ void VkDeviceManager::CreateLogicalDevice(CoreVersion coreVersion)
 	m_extensionManager.PopulateExtensionFunctions(m_logicalDevice);
 
 	m_queueFamilyManager.CreateQueues(m_logicalDevice);
+
+	m_featureManager.ClearFeatureChecks();
 }
 
 bool VkDeviceManager::CheckDeviceType(
@@ -105,19 +112,8 @@ bool VkDeviceManager::CheckDeviceType(
 	return deviceProperty.deviceType == deviceType;
 }
 
-VkPhysicalDevice VkDeviceManager::GetPhysicalDevice() const noexcept {
-	return m_physicalDevice;
-}
-
-VkDevice VkDeviceManager::GetLogicalDevice() const noexcept {
-	return m_logicalDevice;
-}
-
-VkQueueFamilyMananger VkDeviceManager::GetQueueFamilyManager() const noexcept {
-	return m_queueFamilyManager;
-}
-
-bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const noexcept {
+bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const noexcept
+{
 	std::uint32_t extensionCount = 0;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -165,19 +161,7 @@ bool VkDeviceManager::IsDeviceSuitable(
 	return true;
 }
 
-bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept {
-	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES
-	};
-
-	VkPhysicalDeviceFeatures2 features2{
-		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-		.pNext = &indexingFeatures
-	};
-
-	vkGetPhysicalDeviceFeatures2(device, &features2);
-
-	return features2.features.samplerAnisotropy
-		&& indexingFeatures.descriptorBindingPartiallyBound
-		&& indexingFeatures.runtimeDescriptorArray;
+bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept
+{
+	return m_featureManager.CheckFeatureSupport(device);
 }

@@ -147,7 +147,10 @@ Terra::Terra(
 			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());
 	}
 	const VkSurfaceKHR vkSurface = Surface().Get();
-	Device().FindPhysicalDevice(vkInstance, vkSurface).CreateLogicalDevice(coreVersion);
+	Device()
+		.SetDeviceFeatures(coreVersion)
+		.FindPhysicalDevice(vkInstance, vkSurface)
+		.CreateLogicalDevice();
 
 	const VkDevice logicalDevice             = Device().GetLogicalDevice();
 	const VkPhysicalDevice physicalDevice    = Device().GetPhysicalDevice();

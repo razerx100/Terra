@@ -40,11 +40,11 @@ public:
 	}
 
 	[[nodiscard]]
-	const T* GetPtr() const noexcept
-	{ return &m_baseStruct; }
+	const T* GetPtr() const noexcept { return &m_baseStruct; }
 	[[nodiscard]]
-	T& Get() noexcept
-	{ return m_baseStruct; }
+	T& Get() noexcept { return m_baseStruct; }
+	[[nodiscard]]
+	const T& Get() const noexcept { return m_baseStruct; }
 
 private:
 	T                                  m_baseStruct;
