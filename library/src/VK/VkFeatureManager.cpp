@@ -68,6 +68,7 @@ void VkFeatureManager::Set1_2CoreFeatures() noexcept
 	v1_2Features.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
 	v1_2Features.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
 	v1_2Features.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+	v1_2Features.descriptorBindingPartiallyBound               = VK_TRUE;
 	v1_2Features.runtimeDescriptorArray                        = VK_TRUE;
 	v1_2Features.bufferDeviceAddress                           = VK_TRUE;
 
