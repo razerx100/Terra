@@ -2,9 +2,47 @@
 #define SWAPCHAIN_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
+#include <span>
 #include <VkHelperFunctions.hpp>
 #include <VkExtensionManager.hpp>
 #include <VkTextureView.hpp>
+
+class VKFramebuffer
+{
+public:
+	VKFramebuffer(VkDevice device) : m_device{ device }, m_framebuffer{ VK_NULL_HANDLE } {}
+	~VKFramebuffer() noexcept;
+
+	void Create(
+		VkRenderPass renderPass, std::uint32_t width, std::uint32_t height,
+		std::span<VkImageView> attachments
+	);
+
+	[[nodiscard]]
+	VkFramebuffer Get() const noexcept { return m_framebuffer; }
+
+private:
+	VkDevice      m_device;
+	VkFramebuffer m_framebuffer;
+
+public:
+	VKFramebuffer(const VKFramebuffer&) = delete;
+	VKFramebuffer& operator=(const VKFramebuffer&) = delete;
+
+	VKFramebuffer(VKFramebuffer&& other) noexcept
+		: m_device{ other.m_device }, m_framebuffer{ other.m_framebuffer }
+	{
+		other.m_framebuffer = VK_NULL_HANDLE;
+	}
+	VKFramebuffer& operator=(VKFramebuffer&& other) noexcept
+	{
+		m_device            = other.m_device;
+		m_framebuffer       = other.m_framebuffer;
+		other.m_framebuffer = VK_NULL_HANDLE;
+
+		return *this;
+	}
+};
 
 class SwapChainManager
 {
@@ -33,7 +71,10 @@ public:
 	[[nodiscard]]
 	size_t GetNextImageIndex() const noexcept;
 	[[nodiscard]]
-	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept;
+	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept
+	{
+		return m_frameBuffers.at(imageIndex).Get();
+	}
 	[[nodiscard]]
 	bool HasSurfaceFormatChanged(const VkSurfaceFormatKHR& surfaceFormat) const noexcept;
 	[[nodiscard]]
@@ -85,8 +126,8 @@ private:
 	VkFormat m_swapchainFormat;
 	VkExtent2D m_swapchainExtent;
 	std::vector<VkImage> m_swapchainImages;
-	std::vector<VkImageView> m_swapchainImageViews;
-	std::vector<VkFramebuffer> m_frameBuffers;
+	std::vector<VKImageView>   m_swapchainImageViews;
+	std::vector<VKFramebuffer> m_frameBuffers;
 	VkQueue m_presentQueue;
 	SurfaceInfo m_surfaceInfo;
 	size_t m_nextImageIndex;

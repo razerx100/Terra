@@ -1,14 +1,40 @@
 #include <SwapChainManager.hpp>
-#include <VkResourceViews.hpp>
 
+// Framebuffer
+VKFramebuffer::~VKFramebuffer() noexcept
+{
+	vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
+}
+
+void VKFramebuffer::Create(
+	VkRenderPass renderPass, std::uint32_t width, std::uint32_t height,
+	std::span<VkImageView> attachments
+) {
+	VkFramebufferCreateInfo frameBufferInfo
+	{
+		.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+		.renderPass      = renderPass,
+		.attachmentCount = static_cast<std::uint32_t>(std::size(attachments)),
+		.pAttachments    = std::data(attachments),
+		.width           = width,
+		.height          = height,
+		.layers          = 1u
+	};
+
+	vkCreateFramebuffer(m_device, &frameBufferInfo, nullptr, &m_framebuffer);
+}
+
+// Swapchain Manager
 SwapChainManager::SwapChainManager(const Args& arguments)
 	: m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ arguments.device },
 	m_swapchainFormat{}, m_swapchainExtent{},
 	m_swapchainImages{ arguments.bufferCount, VK_NULL_HANDLE },
-	m_swapchainImageViews{ arguments.bufferCount, VK_NULL_HANDLE },
-	m_frameBuffers{ arguments.bufferCount, VK_NULL_HANDLE },
+	m_swapchainImageViews{}, m_frameBuffers{},
 	m_presentQueue{ arguments.presentQueue },
-	m_surfaceInfo{ arguments.surfaceInfo }, m_nextImageIndex{ 0u } {
+	m_surfaceInfo{ arguments.surfaceInfo }, m_nextImageIndex{ 0u }
+{
+	m_swapchainImageViews.reserve(arguments.bufferCount);
+	m_frameBuffers.reserve(arguments.bufferCount);
 
 	SwapChainManagerCreateInfo swapCreateInfo{
 		.device      = arguments.device,
@@ -25,7 +51,8 @@ SwapChainManager::SwapChainManager(const Args& arguments)
 	CreateImageViews(m_deviceRef);
 }
 
-SwapChainManager::~SwapChainManager() noexcept {
+SwapChainManager::~SwapChainManager() noexcept
+{
 	CleanUpSwapchain();
 }
 
@@ -72,14 +99,12 @@ size_t SwapChainManager::GetNextImageIndex() const noexcept {
 	return m_nextImageIndex;
 }
 
-void SwapChainManager::CreateImageViews(VkDevice device) {
-	m_swapchainImageViews.resize(std::size(m_swapchainImages));
-
-	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
-		VkImageResourceView::_createImageView(
-			device, m_swapchainImages[index],
-			&m_swapchainImageViews[index], m_swapchainFormat,
-			VK_IMAGE_ASPECT_COLOR_BIT
+void SwapChainManager::CreateImageViews(VkDevice device)
+{
+	for (size_t index = 0u; index < std::size(m_swapchainImages); ++index)
+		m_swapchainImageViews.emplace_back(device).CreateView(
+			m_swapchainImages.at(index), m_swapchainFormat, VK_IMAGE_ASPECT_COLOR_BIT,
+			VK_IMAGE_VIEW_TYPE_2D
 		);
 }
 
@@ -103,10 +128,6 @@ void SwapChainManager::PresentImage(std::uint32_t imageIndex) const noexcept {
 	presentInfo.pResults = nullptr;
 
 	vkQueuePresentKHR(m_presentQueue, &presentInfo);
-}
-
-VkFramebuffer SwapChainManager::GetFramebuffer(size_t imageIndex) const noexcept {
-	return m_frameBuffers[imageIndex];
 }
 
 void SwapChainManager::ResizeSwapchain(
@@ -179,8 +200,9 @@ void SwapChainManager::CreateSwapchain(
 	vkCreateSwapchainKHR(swapCreateInfo.device, &createInfo, nullptr, &m_swapchain);
 }
 
-void SwapChainManager::QueryImages() {
-	std::uint32_t imageCount;
+void SwapChainManager::QueryImages()
+{
+	std::uint32_t imageCount = 0u;
 	vkGetSwapchainImagesKHR(m_deviceRef, m_swapchain, &imageCount, nullptr);
 	m_swapchainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(
@@ -188,12 +210,10 @@ void SwapChainManager::QueryImages() {
 	);
 }
 
-void SwapChainManager::CleanUpSwapchain() noexcept {
-	for (VkFramebuffer framebuffer : m_frameBuffers)
-		vkDestroyFramebuffer(m_deviceRef, framebuffer, nullptr);
-
-	for (VkImageView imageView : m_swapchainImageViews)
-		vkDestroyImageView(m_deviceRef, imageView, nullptr);
+void SwapChainManager::CleanUpSwapchain() noexcept
+{
+	m_frameBuffers.clear();
+	m_swapchainImageViews.clear();
 
 	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
 }
@@ -202,21 +222,10 @@ void SwapChainManager::CreateFramebuffers(
 	VkDevice device, VkRenderPass renderPass, VkImageView depthImageView, std::uint32_t width,
 	std::uint32_t height
 ) {
-	m_frameBuffers.resize(std::size(m_swapchainImageViews));
+	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
+	{
+		VkImageView attachments[] = { m_swapchainImageViews.at(index).Get(), depthImageView};
 
-	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index) {
-		VkImageView attachments[] = { m_swapchainImageViews[index], depthImageView };
-
-		VkFramebufferCreateInfo frameBufferInfo{
-			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-			.renderPass = renderPass,
-			.attachmentCount = static_cast<std::uint32_t>(std::size(attachments)),
-			.pAttachments = attachments,
-			.width = width,
-			.height = height,
-			.layers = 1u
-		};
-
-		vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &m_frameBuffers[index]);
+		m_frameBuffers.emplace_back(device).Create(renderPass, width, height, attachments);
 	}
 }

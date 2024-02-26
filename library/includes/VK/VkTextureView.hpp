@@ -10,7 +10,7 @@ public:
 
 	void CreateView(
 		VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
-		std::uint32_t mipLevel, std::uint32_t mipLevelCount
+		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 
 	[[nodiscard]]
