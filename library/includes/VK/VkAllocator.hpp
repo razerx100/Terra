@@ -28,15 +28,15 @@ public:
 	) noexcept;
 
 	[[nodiscard]]
-	inline std::uint16_t GetID() const noexcept { return m_id; }
+	std::uint16_t GetID() const noexcept { return m_id; }
 
 	[[nodiscard]]
-	inline VkDeviceSize Size() const noexcept { return m_memory.Size(); }
+	VkDeviceSize Size() const noexcept { return m_memory.Size(); }
 	[[nodiscard]]
-	inline VkDeviceSize AvailableSize() const noexcept
+	VkDeviceSize AvailableSize() const noexcept
 	{ return static_cast<VkDeviceSize>(m_allocator.AvailableSize()); }
 	[[nodiscard]]
-	inline std::uint8_t* GetCPUStart() const noexcept { return m_memory.CPUMemory(); }
+	std::uint8_t* GetCPUStart() const noexcept { return m_memory.CPUMemory(); }
 
 private:
 	[[nodiscard]]

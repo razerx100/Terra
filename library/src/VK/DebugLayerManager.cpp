@@ -26,7 +26,7 @@ static std::unordered_map<std::uint32_t, const char*> messageTypes{
 };
 
 DebugLayerManager::DebugLayerManager()
-	: m_debugMessengers{}, m_callbackTypes{}, m_pInstanceRef{VK_NULL_HANDLE}, m_layers{}
+	: m_debugMessengers{}, m_callbackTypes{}, m_instance{ VK_NULL_HANDLE }, m_layers{}
 {
 	AddValidationLayer(ValidationLayer::VkLayerKhronosValidation);
 }
@@ -36,7 +36,7 @@ void DebugLayerManager::DestroyDebugCallbacks() noexcept
 	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
 
 	for (VkDebugUtilsMessengerEXT debugMessenger : m_debugMessengers)
-		DebugUtil::vkDestroyDebugUtilsMessengerEXT(m_pInstanceRef, debugMessenger, nullptr);
+		DebugUtil::vkDestroyDebugUtilsMessengerEXT(m_instance, debugMessenger, nullptr);
 }
 
 std::string VKAPI_CALL DebugLayerManager::FormatDebugMessage(
@@ -66,7 +66,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackErrorTxt(
 
 void DebugLayerManager::CreateDebugCallbacks(VkInstance instance)
 {
-	m_pInstanceRef = instance;
+	m_instance = instance;
 
 	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
 
@@ -83,7 +83,7 @@ void DebugLayerManager::CreateDebugCallbacks(VkInstance instance)
 			VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
 			DebugUtil::vkCreateDebugUtilsMessengerEXT(
-				m_pInstanceRef, &createInfo, nullptr, &debugMessenger
+				m_instance, &createInfo, nullptr, &debugMessenger
 			);
 
 			m_debugMessengers.emplace_back(debugMessenger);

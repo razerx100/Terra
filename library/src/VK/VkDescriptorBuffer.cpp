@@ -6,6 +6,11 @@ VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorIn
 
 DescriptorSetLayout::~DescriptorSetLayout() noexcept
 {
+	SelfDestruct();
+}
+
+void DescriptorSetLayout::SelfDestruct() noexcept
+{
 	vkDestroyDescriptorSetLayout(m_device, m_layout, nullptr);
 }
 

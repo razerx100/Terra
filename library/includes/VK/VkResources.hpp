@@ -76,11 +76,14 @@ public:
 	~Resource() noexcept;
 
 	[[nodiscard]]
-	inline VkDeviceSize Size() const noexcept { return m_allocationInfo.size; }
+	VkDeviceSize Size() const noexcept { return m_allocationInfo.size; }
 	[[nodiscard]]
-	inline VkDeviceSize GpuRelativeOffset() const noexcept { return m_allocationInfo.gpuOffset; }
+	VkDeviceSize GpuRelativeOffset() const noexcept { return m_allocationInfo.gpuOffset; }
 	[[nodiscard]]
-	inline std::uint8_t* CPUHandle() const noexcept { return m_allocationInfo.cpuOffset; }
+	std::uint8_t* CPUHandle() const noexcept { return m_allocationInfo.cpuOffset; }
+
+private:
+	void SelfDestruct() noexcept;
 
 protected:
 	MemoryManager*                  m_memoryManager;
@@ -99,6 +102,8 @@ public:
 	}
 	Resource& operator=(Resource&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_memoryManager       = other.m_memoryManager;
 		m_allocationInfo      = other.m_allocationInfo;
 		m_resourceType        = other.m_resourceType;
@@ -120,9 +125,12 @@ public:
 	);
 
 	[[nodiscard]]
-	inline VkBuffer Get() const noexcept { return m_buffer; }
+	VkBuffer Get() const noexcept { return m_buffer; }
 	[[nodiscard]]
 	VkDeviceAddress GpuPhysicalAddress() const noexcept;
+
+private:
+	void SelfDestruct() noexcept;
 
 private:
 	VkBuffer m_buffer;
@@ -140,6 +148,9 @@ public:
 	Buffer& operator=(Buffer&& other) noexcept
 	{
 		Resource::operator=(std::move(other));
+
+		SelfDestruct();
+
 		m_buffer       = other.m_buffer;
 		m_device       = other.m_device;
 		other.m_buffer = VK_NULL_HANDLE;
@@ -165,6 +176,9 @@ public:
 	VkFormat Format() const noexcept { return m_format; }
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	VkImage  m_image;
 	VkDevice m_device;
 	VkFormat m_format;
@@ -182,6 +196,9 @@ public:
 	Texture& operator=(Texture&& other) noexcept
 	{
 		Resource::operator=(std::move(other));
+
+		SelfDestruct();
+
 		m_image       = other.m_image;
 		m_device      = other.m_device;
 		m_format      = other.m_format;

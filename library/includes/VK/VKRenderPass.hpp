@@ -98,6 +98,9 @@ public:
 	VkRenderPass Get() const noexcept { return m_renderPass; }
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	VkDevice     m_device;
 	VkRenderPass m_renderPass;
 
@@ -112,6 +115,8 @@ public:
 	}
 	VKRenderPass& operator=(VKRenderPass&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_device           = other.m_device;
 		m_renderPass       = other.m_renderPass;
 		other.m_renderPass = VK_NULL_HANDLE;

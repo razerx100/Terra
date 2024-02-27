@@ -14,7 +14,13 @@ VkInstanceManager::~VkInstanceManager() noexcept
 #ifdef _DEBUG
 	m_debugLayer.DestroyDebugCallbacks();
 #endif
-	vkDestroyInstance(m_vkInstance, nullptr);
+	SelfDestruct();
+}
+
+void VkInstanceManager::SelfDestruct() noexcept
+{
+	if (m_vkInstance)
+		vkDestroyInstance(m_vkInstance, nullptr);
 }
 
 VkInstance VkInstanceManager::GetVKInstance() const noexcept {

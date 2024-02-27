@@ -4,6 +4,11 @@
 // VK Semaphore
 VKSemaphore::~VKSemaphore() noexcept
 {
+	SelfDestruct();
+}
+
+void VKSemaphore::SelfDestruct() noexcept
+{
 	vkDestroySemaphore(m_device, m_syncObj, nullptr);
 }
 
@@ -16,6 +21,11 @@ void VKSemaphore::Create()
 
 // VK Fence
 VKFence::~VKFence() noexcept
+{
+	SelfDestruct();
+}
+
+void VKFence::SelfDestruct() noexcept
 {
 	vkDestroyFence(m_device, m_syncObj, nullptr);
 }

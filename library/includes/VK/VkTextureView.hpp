@@ -17,6 +17,9 @@ public:
 	VkImageView Get() const noexcept { return m_imageView; }
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	VkDevice    m_device;
 	VkImageView m_imageView;
 
@@ -31,6 +34,7 @@ public:
 	}
 	VKImageView& operator=(VKImageView&& other) noexcept
 	{
+		SelfDestruct();
 
 		m_device          = other.m_device;
 		m_imageView       = other.m_imageView;
@@ -187,6 +191,9 @@ public:
 	VkSampler Get() const noexcept { return m_sampler; }
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	VkDevice  m_device;
 	VkSampler m_sampler;
 
@@ -200,6 +207,8 @@ public:
 	}
 	VKSampler& operator=(VKSampler&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_device        = other.m_device;
 		m_sampler       = other.m_sampler;
 		other.m_sampler = VK_NULL_HANDLE;

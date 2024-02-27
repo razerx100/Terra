@@ -128,6 +128,11 @@ Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memory
 
 Resource::~Resource() noexcept
 {
+	SelfDestruct();
+}
+
+void Resource::SelfDestruct() noexcept
+{
 	if (m_memoryManager)
 		m_memoryManager->Deallocate(m_allocationInfo, m_resourceType);
 }
@@ -137,6 +142,11 @@ Buffer::Buffer(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFl
 	: Resource{ memoryManager, memoryType }, m_buffer{ VK_NULL_HANDLE }, m_device{ device } {}
 
 Buffer::~Buffer() noexcept
+{
+	SelfDestruct();
+}
+
+void Buffer::SelfDestruct() noexcept
 {
 	vkDestroyBuffer(m_device, m_buffer, nullptr);
 }
@@ -179,6 +189,11 @@ Texture::Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryProperty
 {}
 
 Texture::~Texture() noexcept
+{
+	SelfDestruct();
+}
+
+void Texture::SelfDestruct() noexcept
 {
 	vkDestroyImage(m_device, m_image, nullptr);
 }

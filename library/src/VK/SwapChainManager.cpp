@@ -3,6 +3,11 @@
 // Framebuffer
 VKFramebuffer::~VKFramebuffer() noexcept
 {
+	SelfDestruct();
+}
+
+void VKFramebuffer::SelfDestruct() noexcept
+{
 	vkDestroyFramebuffer(m_device, m_framebuffer, nullptr);
 }
 

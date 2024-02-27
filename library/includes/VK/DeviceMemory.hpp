@@ -47,18 +47,20 @@ public:
 	~DeviceMemory2() noexcept;
 
 	[[nodiscard]]
-	inline VkDeviceSize Size() const noexcept { return m_size; }
+	VkDeviceSize Size() const noexcept { return m_size; }
 	[[nodiscard]]
-	inline VkDeviceMemory Memory() const noexcept { return m_memory; }
+	VkDeviceMemory Memory() const noexcept { return m_memory; }
 	[[nodiscard]]
-	inline std::uint8_t* CPUMemory() const noexcept { return m_mappedCPUMemory; }
+	std::uint8_t* CPUMemory() const noexcept { return m_mappedCPUMemory; }
 	[[nodiscard]]
-	inline std::uint32_t TypeIndex() const noexcept { return m_memoryTypeIndex; }
+	std::uint32_t TypeIndex() const noexcept { return m_memoryTypeIndex; }
 	[[nodiscard]]
-	inline VkMemoryPropertyFlagBits Type() const noexcept { return m_memoryType; }
+	VkMemoryPropertyFlagBits Type() const noexcept { return m_memoryType; }
 
 private:
 	void Allocate(VkDeviceSize size);
+
+	void SelfDestruct() noexcept;
 
 private:
 	VkDevice                 m_device;
@@ -72,7 +74,7 @@ public:
 	DeviceMemory2(const DeviceMemory2&) = delete;
 	DeviceMemory2& operator=(const DeviceMemory2&) = delete;
 
-	inline DeviceMemory2(DeviceMemory2&& other) noexcept
+	DeviceMemory2(DeviceMemory2&& other) noexcept
 		: m_device{ other.m_device }, m_memory{ other.m_memory }, m_size{ other.m_size },
 		m_mappedCPUMemory{ other.m_mappedCPUMemory }, m_memoryTypeIndex{ other.m_memoryTypeIndex },
 		m_memoryType{ other.m_memoryType }
@@ -80,8 +82,11 @@ public:
 		other.m_memory = VK_NULL_HANDLE; // Otherwise the dtor will destroy it.
 	}
 
-	inline DeviceMemory2& operator=(DeviceMemory2&& other) noexcept
+	DeviceMemory2& operator=(DeviceMemory2&& other) noexcept
 	{
+		// To destroy the previous object if there is one.
+		SelfDestruct();
+
 		m_device          = other.m_device;
 		m_memory          = other.m_memory;
 		m_size            = other.m_size;

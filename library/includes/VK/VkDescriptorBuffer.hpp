@@ -16,8 +16,10 @@ public:
 	);
 
 	[[nodiscard]]
-	VkDescriptorSetLayout Get() const noexcept
-	{ return m_layout; }
+	VkDescriptorSetLayout Get() const noexcept { return m_layout; }
+
+private:
+	void SelfDestruct() noexcept;
 
 private:
 	VkDevice              m_device;
@@ -35,6 +37,8 @@ public:
 
 	DescriptorSetLayout& operator=(DescriptorSetLayout&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_device       = other.m_device;
 		m_layout       = other.m_layout;
 		other.m_layout = VK_NULL_HANDLE;

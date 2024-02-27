@@ -42,6 +42,11 @@ VkSamplerCreateInfoBuilder& VkSamplerCreateInfoBuilder::Anisotropy(float anisotr
 
 VKSampler::~VKSampler() noexcept
 {
+	SelfDestruct();
+}
+
+void VKSampler::SelfDestruct() noexcept
+{
 	vkDestroySampler(m_device, m_sampler, nullptr);
 }
 
@@ -57,6 +62,11 @@ void VKSampler::CreateSampler(const VkSamplerCreateInfo& createInfo)
 
 // VKImageView
 VKImageView::~VKImageView() noexcept
+{
+	SelfDestruct();
+}
+
+void VKImageView::SelfDestruct() noexcept
 {
 	vkDestroyImageView(m_device, m_imageView, nullptr);
 }

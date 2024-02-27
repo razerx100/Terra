@@ -47,7 +47,7 @@ public:
 private:
 	std::vector<VkDebugUtilsMessengerEXT>                     m_debugMessengers;
 	std::bitset<static_cast<size_t>(DebugCallbackType::None)> m_callbackTypes;
-	VkInstance                                                m_pInstanceRef;
+	VkInstance                                                m_instance;
 	std::vector<const char*>                                  m_layers;
 
 public:
@@ -57,13 +57,13 @@ public:
 	DebugLayerManager(DebugLayerManager&& other) noexcept
 		: m_debugMessengers{ std::move(other.m_debugMessengers) },
 		m_callbackTypes{ std::move(other.m_callbackTypes) },
-		m_pInstanceRef{ other.m_pInstanceRef }, m_layers{ std::move(other.m_layers) } {}
+		m_instance{ other.m_instance }, m_layers{ std::move(other.m_layers) } {}
 
 	DebugLayerManager& operator=(DebugLayerManager&& other) noexcept
 	{
 		m_debugMessengers = std::move(other.m_debugMessengers);
 		m_callbackTypes   = std::move(other.m_callbackTypes);
-		m_pInstanceRef    = other.m_pInstanceRef;
+		m_instance        = other.m_instance;
 		m_layers          = std::move(other.m_layers);
 
 		return *this;

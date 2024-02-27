@@ -22,6 +22,9 @@ public:
 	VkFramebuffer Get() const noexcept { return m_framebuffer; }
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	VkDevice      m_device;
 	VkFramebuffer m_framebuffer;
 
@@ -36,6 +39,8 @@ public:
 	}
 	VKFramebuffer& operator=(VKFramebuffer&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_device            = other.m_device;
 		m_framebuffer       = other.m_framebuffer;
 		other.m_framebuffer = VK_NULL_HANDLE;

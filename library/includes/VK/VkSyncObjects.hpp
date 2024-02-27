@@ -14,6 +14,9 @@ public:
 	ObjType Get() const noexcept { return m_syncObj; }
 
 protected:
+	virtual void SelfDestruct() noexcept = 0;
+
+protected:
 	VkDevice m_device;
 	ObjType  m_syncObj;
 
@@ -27,6 +30,8 @@ public:
 	}
 	VkSyncObj& operator=(VkSyncObj&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_device        = other.m_device;
 		m_syncObj       = other.m_syncObj;
 		other.m_syncObj = VK_NULL_HANDLE;
@@ -39,9 +44,12 @@ class VKSemaphore : public VkSyncObj<VkSemaphore>
 {
 public:
 	VKSemaphore(VkDevice device) : VkSyncObj{ device } {}
-	~VKSemaphore() noexcept;
+	~VKSemaphore() noexcept override;
 
 	void Create();
+
+private:
+	void SelfDestruct() noexcept override;
 
 public:
 	VKSemaphore(const VKSemaphore&) = delete;
@@ -60,12 +68,15 @@ class VKFence : public VkSyncObj<VkFence>
 {
 public:
 	VKFence(VkDevice device) : VkSyncObj{ device } {}
-	~VKFence() noexcept;
+	~VKFence() noexcept override;
 
 	void Create(bool signaled);
 
 	void Wait() const;
 	void Reset() const;
+
+private:
+	void SelfDestruct() noexcept override;
 
 public:
 	VKFence(const VKFence&) = delete;

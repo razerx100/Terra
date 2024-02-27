@@ -35,6 +35,8 @@ private:
 	[[nodiscard]]
 	static std::uint32_t GetCoreVersion(CoreVersion version) noexcept;
 
+	void SelfDestruct() noexcept;
+
 private:
 	VkInstance                 m_vkInstance;
 	std::string_view           m_appName;
@@ -56,6 +58,8 @@ public:
 
 	VkInstanceManager& operator=(VkInstanceManager&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_vkInstance       = other.m_vkInstance;
 		m_appName          = std::move(other.m_appName);
 		m_coreVersion      = other.m_coreVersion;

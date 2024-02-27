@@ -81,6 +81,11 @@ VKRenderPass::VKRenderPass(VkDevice device) noexcept
 
 VKRenderPass::~VKRenderPass() noexcept
 {
+	SelfDestruct();
+}
+
+void VKRenderPass::SelfDestruct() noexcept
+{
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 }
 

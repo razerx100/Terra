@@ -121,6 +121,11 @@ DeviceMemory2::DeviceMemory2(
 
 DeviceMemory2::~DeviceMemory2() noexcept
 {
+	SelfDestruct();
+}
+
+void DeviceMemory2::SelfDestruct() noexcept
+{
 	vkFreeMemory(m_device, m_memory, nullptr);
 }
 

@@ -11,6 +11,11 @@ VkDeviceManager::VkDeviceManager()
 
 VkDeviceManager::~VkDeviceManager() noexcept
 {
+	SelfDestruct();
+}
+
+void VkDeviceManager::SelfDestruct() noexcept
+{
 	if (m_logicalDevice)
 		vkDestroyDevice(m_logicalDevice, nullptr);
 }

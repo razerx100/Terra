@@ -45,6 +45,8 @@ private:
 		const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface
 	) const noexcept;
 
+	void SelfDestruct() noexcept;
+
 private:
 	VkPhysicalDevice         m_physicalDevice;
 	VkDevice                 m_logicalDevice;
@@ -66,6 +68,8 @@ public:
 	}
 	VkDeviceManager& operator=(VkDeviceManager&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_physicalDevice      = other.m_physicalDevice;
 		m_logicalDevice       = other.m_logicalDevice;
 		m_queueFamilyManager  = other.m_queueFamilyManager;
