@@ -6,7 +6,7 @@
 #include <VkSyncObjects.hpp>
 #include <VkDeviceManager.hpp>
 #include <VKInstanceManager.hpp>
-#include <ISurfaceManager.hpp>
+#include <SurfaceManager.hpp>
 #include <SwapChainManager.hpp>
 #include <IDisplayManager.hpp>
 #include <DescriptorSetManager.hpp>
@@ -52,7 +52,7 @@ public:
 
 	inline IDisplayManager& Display() noexcept { return *m_display; }
 	inline VkInstanceManager& Instance() noexcept { return *m_vkInstance; }
-	inline ISurfaceManager& Surface() noexcept { return *m_surface; }
+	inline SurfaceManager& Surface() noexcept { return *m_surface; }
 	inline VkDeviceManager& Device() noexcept { return *m_device; }
 	inline Resources& Res() noexcept { return m_res; }
 	inline Queue& Graphics() noexcept { return m_graphicsQueue; }
@@ -174,7 +174,7 @@ private:
 	ObjectManager                            m_objectManager;
 	std::unique_ptr<IDisplayManager>         m_display;
 	std::unique_ptr<VkInstanceManager>       m_vkInstance;
-	std::unique_ptr<ISurfaceManager>         m_surface;
+	std::unique_ptr<SurfaceManager>          m_surface;
 	std::unique_ptr<VkDeviceManager>         m_device;
 	Resources                                m_res;
 	Queue                                    m_graphicsQueue;

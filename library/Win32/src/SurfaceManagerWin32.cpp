@@ -2,14 +2,6 @@
 #include <CleanWin.hpp>
 #include <vulkan/vulkan_win32.h>
 
-SurfaceManagerWin32::SurfaceManagerWin32() : m_surface{ VK_NULL_HANDLE }, m_instance{ VK_NULL_HANDLE } {}
-
-SurfaceManagerWin32::~SurfaceManagerWin32() noexcept
-{
-	if (m_instance)
-		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-}
-
 void SurfaceManagerWin32::Create(VkInstance instance, void* windowHandle, void* moduleHandle)
 {
 	m_instance = instance;

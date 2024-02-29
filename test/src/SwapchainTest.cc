@@ -3,7 +3,7 @@
 
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
-#include <ISurfaceManager.hpp>
+#include <SurfaceManager.hpp>
 #ifdef TERRA_WIN32
 #include <SurfaceManagerWin32.hpp>
 #include <SimpleWindow.hpp>
@@ -26,7 +26,7 @@ protected:
 
 protected:
 	inline static std::unique_ptr<VkInstanceManager> s_instanceManager;
-	inline static std::unique_ptr<ISurfaceManager>   s_surfaceManager;
+	inline static std::unique_ptr<SurfaceManager>    s_surfaceManager;
 #ifdef TERRA_WIN32
 	inline static std::unique_ptr<SimpleWindow>      s_window;
 #endif

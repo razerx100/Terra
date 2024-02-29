@@ -49,22 +49,18 @@ SurfaceInfo QuerySurfaceCapabilities(
 	std::uint32_t formatCount = 0u;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
-	if (formatCount) {
-		surfaceInfo.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(
-			device, surface, &formatCount, std::data(surfaceInfo.formats)
-		);
-	}
+	surfaceInfo.formats.resize(formatCount);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(
+		device, surface, &formatCount, std::data(surfaceInfo.formats)
+	);
 
 	std::uint32_t presentModeCount = 0u;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
-	if (presentModeCount) {
-		surfaceInfo.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(
-			device, surface, &presentModeCount, std::data(surfaceInfo.presentModes)
-		);
-	}
+	surfaceInfo.presentModes.resize(presentModeCount);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(
+		device, surface, &presentModeCount, std::data(surfaceInfo.presentModes)
+	);
 
 	return surfaceInfo;
 }

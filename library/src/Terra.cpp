@@ -223,7 +223,7 @@ void Terra::InitDisplay()
 void Terra::InitSurface()
 {
 #ifdef TERRA_WIN32
-		m_objectManager.CreateObject<ISurfaceManager, SurfaceManagerWin32>(m_surface, 3u);
+		m_objectManager.CreateObject<SurfaceManager, SurfaceManagerWin32>(m_surface, 3u);
 #endif
 }
 
