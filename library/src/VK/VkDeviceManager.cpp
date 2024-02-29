@@ -20,53 +20,80 @@ void VkDeviceManager::SelfDestruct() noexcept
 		vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-VkDeviceManager& VkDeviceManager::FindPhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
+std::vector<VkPhysicalDevice> VkDeviceManager::GetAvailableDevices(VkInstance instance)
+{
 	std::uint32_t deviceCount = 0u;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
 	if (!deviceCount)
 		throw Exception("Vulkan Error", "No GPU with Vulkan support.");
 
-	std::vector<VkPhysicalDevice> devices(deviceCount);
+	std::vector<VkPhysicalDevice> devices{ deviceCount };
 	vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
 
-	VkPhysicalDevice suitableDevice = SelectPhysicalDevice(devices, surface);
+	return devices;
+}
+
+VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(
+	VkInstance instance, const SurfaceManager& surface
+) {
+	std::vector<VkPhysicalDevice> devices = GetAvailableDevices(instance);
+
+	VkPhysicalDevice suitableDevice = SelectPhysicalDeviceAutomatic(devices, surface);
 
 	if (suitableDevice == VK_NULL_HANDLE)
 		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
-	else {
-		m_queueFamilyManager.SetQueueFamilyInfo(suitableDevice, surface);
+	else
+	{
+		m_queueFamilyManager.SetQueueFamilyInfo(suitableDevice, surface.Get());
 		m_physicalDevice = suitableDevice;
 	}
 
 	return *this;
 }
 
-VkPhysicalDevice VkDeviceManager::SelectPhysicalDevice(
-	const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface
-) const noexcept {
-	VkPhysicalDevice suitableDevice = QueryPhysicalDevices(
-		devices, surface, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-	);
+VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(VkInstance instance)
+{
+	std::vector<VkPhysicalDevice> devices = GetAvailableDevices(instance);
+
+	VkPhysicalDevice suitableDevice = SelectPhysicalDeviceAutomatic(devices, nullptr);
 
 	if (suitableDevice == VK_NULL_HANDLE)
-		suitableDevice = QueryPhysicalDevices(
-			devices, surface, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
-		);
+		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
+	else
+	{
+		m_queueFamilyManager.SetQueueFamilyInfo(suitableDevice, VK_NULL_HANDLE);
+		m_physicalDevice = suitableDevice;
+	}
 
-	return suitableDevice;
+	return *this;
 }
 
-VkPhysicalDevice VkDeviceManager::QueryPhysicalDevices(
-	const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface,
-	VkPhysicalDeviceType deviceType
-) const noexcept {
-	for (VkPhysicalDevice device : devices)
-		if (CheckDeviceType(device, deviceType))
-			if (IsDeviceSuitable(device, surface))
-				return device;
+VkDeviceManager& VkDeviceManager::SetPhysicalDevice(
+	VkPhysicalDevice device, const SurfaceManager& surface
+){
+	if (!CheckExtensionAndFeatures(device) || !CheckSurfaceSupport(device, surface))
+		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
 
-	return VK_NULL_HANDLE;
+	return *this;
+}
+
+VkDeviceManager& VkDeviceManager::SetPhysicalDevice(VkPhysicalDevice device)
+{
+	if (!CheckExtensionAndFeatures(device))
+		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
+
+	return *this;
+}
+
+std::vector<VkPhysicalDevice> VkDeviceManager::GetDevicesByType(
+	VkInstance instance, VkPhysicalDeviceType type
+) {
+	std::vector<VkPhysicalDevice> devices = GetAvailableDevices(instance);
+
+	std::erase_if(devices, [type](VkPhysicalDevice device) { return !CheckDeviceType(device, type); });
+
+	return devices;
 }
 
 VkDeviceManager& VkDeviceManager::SetDeviceFeatures(CoreVersion coreVersion)
@@ -108,11 +135,18 @@ void VkDeviceManager::CreateLogicalDevice()
 	m_featureManager.ClearFeatureChecks();
 }
 
-bool VkDeviceManager::CheckDeviceType(
-	VkPhysicalDevice device, VkPhysicalDeviceType deviceType
-) const noexcept {
+VkPhysicalDeviceProperties VkDeviceManager::GetDeviceProperties(VkPhysicalDevice device) noexcept
+{
 	VkPhysicalDeviceProperties deviceProperty{};
 	vkGetPhysicalDeviceProperties(device, &deviceProperty);
+
+	return deviceProperty;
+}
+
+bool VkDeviceManager::CheckDeviceType(
+	VkPhysicalDevice device, VkPhysicalDeviceType deviceType
+) noexcept {
+	VkPhysicalDeviceProperties deviceProperty = GetDeviceProperties(device);
 
 	return deviceProperty.deviceType == deviceType;
 }
@@ -122,7 +156,7 @@ bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
 	std::uint32_t extensionCount = 0;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
-	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	std::vector<VkExtensionProperties> availableExtensions{ extensionCount };
 	vkEnumerateDeviceExtensionProperties(
 		device, nullptr, &extensionCount, std::data(availableExtensions)
 	);
@@ -144,26 +178,18 @@ bool VkDeviceManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
 	return true;
 }
 
-bool VkDeviceManager::IsDeviceSuitable(
-	VkPhysicalDevice device, VkSurfaceKHR surface
+bool VkDeviceManager::CheckExtensionAndFeatures(VkPhysicalDevice device) const noexcept
+{
+	return CheckDeviceExtensionSupport(device) && DoesDeviceSupportFeatures(device);
+}
+
+bool VkDeviceManager::CheckSurfaceSupport(
+	VkPhysicalDevice device, const SurfaceManager& surface
 ) const noexcept {
+	VkSurfaceKHR vkSurface = surface.Get();
 
-	if (!CheckDeviceExtensionSupport(device))
-		return false;
-
-	if (surface != VK_NULL_HANDLE)
-	{
-		if (!QuerySurfaceCapabilities(device, surface).IsCapable())
-			return false;
-	}
-
-	if (!DoesDeviceSupportFeatures(device))
-		return false;
-
-	if (!VkQueueFamilyMananger::DoesPhysicalDeviceSupportQueues(device, surface))
-		return false;
-
-	return true;
+	return VkQueueFamilyMananger::DoesPhysicalDeviceSupportQueues(device, vkSurface)
+		&& surface.CanDeviceSupportSurface(device);
 }
 
 bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept

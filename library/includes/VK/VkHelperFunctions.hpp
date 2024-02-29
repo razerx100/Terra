@@ -21,11 +21,6 @@ void CreateSampler(
 	bool anisotropy = false, float maxAnisotropy = 1.f
 );
 
-[[nodiscard]]
-SurfaceInfo QuerySurfaceCapabilities(
-	VkPhysicalDevice device, VkSurfaceKHR surface
-) noexcept;
-
 template<std::integral Integer>
 [[nodiscard]]
 constexpr Integer Align(Integer address, Integer alignment) noexcept {

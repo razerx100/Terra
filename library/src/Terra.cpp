@@ -149,7 +149,7 @@ Terra::Terra(
 	const VkSurfaceKHR vkSurface = Surface().Get();
 	Device()
 		.SetDeviceFeatures(coreVersion)
-		.FindPhysicalDevice(vkInstance, vkSurface)
+		.SetPhysicalDeviceAutomatic(vkInstance)
 		.CreateLogicalDevice();
 
 	const VkDevice logicalDevice             = Device().GetLogicalDevice();
@@ -165,7 +165,7 @@ Terra::Terra(
 	SwapChainManager::Args swapArguments{
 		.device       = logicalDevice,
 		.surface      = vkSurface,
-		.surfaceInfo  = QuerySurfaceCapabilities(physicalDevice, vkSurface),
+		//.surfaceInfo  = QuerySurfaceCapabilities(physicalDevice, vkSurface),
 		.width        = width,
 		.height       = height,
 		.bufferCount  = bufferCount,

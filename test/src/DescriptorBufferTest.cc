@@ -39,7 +39,7 @@ void DescriptorBufferTest::SetUpTestSuite()
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)
-		.FindPhysicalDevice(vkInstance, VK_NULL_HANDLE)
+		.SetPhysicalDeviceAutomatic(vkInstance)
 		.CreateLogicalDevice();
 }
 

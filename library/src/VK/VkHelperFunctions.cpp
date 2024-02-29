@@ -39,32 +39,6 @@ void CreateSampler(
 	vkCreateSampler(logicalDevice, &createInfo, nullptr, sampler);
 }
 
-SurfaceInfo QuerySurfaceCapabilities(
-	VkPhysicalDevice device, VkSurfaceKHR surface
-) noexcept {
-	SurfaceInfo surfaceInfo{};
-
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &surfaceInfo.capabilities);
-
-	std::uint32_t formatCount = 0u;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-	surfaceInfo.formats.resize(formatCount);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(
-		device, surface, &formatCount, std::data(surfaceInfo.formats)
-	);
-
-	std::uint32_t presentModeCount = 0u;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-	surfaceInfo.presentModes.resize(presentModeCount);
-	vkGetPhysicalDeviceSurfacePresentModesKHR(
-		device, surface, &presentModeCount, std::data(surfaceInfo.presentModes)
-	);
-
-	return surfaceInfo;
-}
-
 std::vector<std::uint32_t> ResolveQueueIndices(
 	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
 ) noexcept {

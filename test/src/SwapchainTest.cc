@@ -59,12 +59,7 @@ void SwapchainTest::SetUpTestSuite()
 
 	VkInstance vkInstance = s_instanceManager->GetVKInstance();
 
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-
-#ifdef TERRA_WIN32
 	s_surfaceManager->Create(vkInstance, s_window->GetWindowHandle(), s_window->GetModuleInstance());
-	surface = s_surfaceManager->Get();
-#endif
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
 
@@ -75,7 +70,7 @@ void SwapchainTest::SetUpTestSuite()
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)
-		.FindPhysicalDevice(vkInstance, surface)
+		.SetPhysicalDeviceAutomatic(vkInstance, *s_surfaceManager)
 		.CreateLogicalDevice();
 }
 
