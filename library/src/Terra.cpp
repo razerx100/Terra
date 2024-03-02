@@ -167,8 +167,7 @@ Terra::Terra(
 		queFamilyMan.GetQueue(GraphicsQueue), bufferCount, nullptr /* memoryManager */
 	);
 	Swapchain().CreateSwapchain(
-		logicalDevice, physicalDevice,
-		nullptr /* memoryManager */, Surface(), width, height
+		logicalDevice, physicalDevice, nullptr /* memoryManager */, Surface()
 	);
 
 	m_objectManager.CreateObject(m_graphicsDescriptorSet, 1u, logicalDevice, bufferCount);

@@ -59,7 +59,7 @@ public:
 
 	VkSwapchain& Create(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
-		std::uint32_t width, std::uint32_t height
+		const VkSurfaceCapabilitiesKHR& surfaceCapabilities
 	);
 	VkSwapchain& CreateFramebuffers(
 		VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,
@@ -136,7 +136,7 @@ public:
 	void PresentImage(std::uint32_t imageIndex) const noexcept;
 	void CreateSwapchain(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, MemoryManager* memoryManager,
-		const SurfaceManager& surface, std::uint32_t width, std::uint32_t height
+		const SurfaceManager& surface
 	);
 	void BeginRenderPass(
 		VkCommandBuffer graphicsCmdBuffer, const VkClearColorValue& clearColour, size_t frameIndex

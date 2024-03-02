@@ -43,18 +43,17 @@ VkSwapchain::VkSwapchain(VkDevice device, std::uint32_t bufferCount)
 
 VkSwapchain& VkSwapchain::Create(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
-	std::uint32_t width, std::uint32_t height
+	const VkSurfaceCapabilitiesKHR& surfaceCapabilities
 ) {
 	// Create the swapchain.
-	const VkPresentModeKHR swapPresentMode             = surface.GetPresentMode(physicalDevice);
-	const VkSurfaceCapabilitiesKHR surfaceCapabilities = surface.GetSurfaceCapabilities(physicalDevice);
-	const VkSurfaceFormatKHR surfaceFormat             = surface.GetSurfaceFormat(physicalDevice);
+	const VkPresentModeKHR swapPresentMode = surface.GetPresentMode(physicalDevice);
+	const VkSurfaceFormatKHR surfaceFormat = surface.GetSurfaceFormat(physicalDevice);
 
 	{
 		const std::uint32_t imageCount = std::max(
 			surfaceCapabilities.maxImageCount, static_cast<std::uint32_t>(std::size(m_swapchainImages))
 		);
-		const VkExtent2D swapExtent{ width, height };
+		const VkExtent2D swapExtent = surfaceCapabilities.currentExtent;
 
 		VkSwapchainCreateInfoKHR createInfo{
 			.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -152,15 +151,22 @@ void SwapchainManager::PresentImage(std::uint32_t imageIndex) const noexcept
 
 void SwapchainManager::CreateSwapchain(
 	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, MemoryManager* memoryManager,
-	const SurfaceManager& surface, std::uint32_t width, std::uint32_t height
+	const SurfaceManager& surface
 ) {
+	const VkSurfaceCapabilitiesKHR surfaceCapabilities = surface.GetSurfaceCapabilities(
+		physicalDevice
+	);
+
+	const std::uint32_t width  = surfaceCapabilities.currentExtent.width;
+	const std::uint32_t height = surfaceCapabilities.currentExtent.height;
+
 	m_depthBuffer = DepthBuffer{ logicalDevice, memoryManager };
 	m_depthBuffer.Create(width, height);
 
 	const VkFormat oldFormat = m_swapchain.GetFormat();
 
 	m_swapchain = VkSwapchain{ logicalDevice, m_swapchain.GetImageCount() };
-	m_swapchain.Create(logicalDevice, physicalDevice, surface, width, height);
+	m_swapchain.Create(logicalDevice, physicalDevice, surface, surfaceCapabilities);
 
 	const VkFormat newFormat = m_swapchain.GetFormat();
 

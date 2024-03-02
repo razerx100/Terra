@@ -21,8 +21,6 @@ RendererVK::RendererVK(
 	);
 	Terra& terra = Terra::Get();
 
-	const VkDevice device = terra.Device().GetLogicalDevice();
-
 	terra.Engine().ResizeViewportAndScissor(width, height);
 
 	terra.Camera().SetSceneResolution(width, height);
@@ -118,8 +116,7 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		swapchain.CreateSwapchain(
 			device.GetLogicalDevice(), device.GetPhysicalDevice(),
-			nullptr /* memoryManager */, terra.Surface(),
-			width, height
+			nullptr /* memoryManager */, terra.Surface()
 		);
 
 		engine.ResizeViewportAndScissor(width, height);
