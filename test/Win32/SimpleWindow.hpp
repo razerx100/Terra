@@ -39,7 +39,8 @@ public:
 	}
 };
 
-class SimpleWindow {
+class SimpleWindow
+{
 public:
 	SimpleWindow(std::uint32_t width, std::uint32_t height, const char* name);
 	~SimpleWindow() noexcept;
@@ -49,27 +50,37 @@ public:
 	[[nodiscard]]
 	void* GetModuleInstance() const noexcept { return m_windowClass.GetHInstance(); }
 
+	void SetWindowResolution(std::uint32_t width, std::uint32_t height);
+
 	static LRESULT CALLBACK HandleMsgSetup(
 		HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 	) noexcept;
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	HWND        m_hWnd;
 	WindowClass m_windowClass;
+	RECT        m_windowRect;
 
 public:
 	SimpleWindow(const SimpleWindow&) = delete;
 	SimpleWindow& operator=(const SimpleWindow&) = delete;
 
 	SimpleWindow(SimpleWindow&& other) noexcept
-		: m_hWnd{ other.m_hWnd }, m_windowClass{ std::move(other.m_windowClass) }
+		: m_hWnd{ other.m_hWnd }, m_windowClass{ std::move(other.m_windowClass) },
+		m_windowRect{ other.m_windowRect }
 	{
 		other.m_hWnd = nullptr;
 	}
 	SimpleWindow& operator=(SimpleWindow&& other) noexcept
 	{
+		SelfDestruct();
+
 		m_hWnd        = other.m_hWnd;
 		m_windowClass = std::move(other.m_windowClass);
+		m_windowRect  = other.m_windowRect;
 		other.m_hWnd  = nullptr;
 
 		return *this;

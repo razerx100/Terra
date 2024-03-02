@@ -13,8 +13,8 @@
 
 namespace Constants
 {
-	constexpr std::uint32_t width       = 2560u;
-	constexpr std::uint32_t height      = 1440u;
+	constexpr std::uint32_t width       = 1920;
+	constexpr std::uint32_t height      = 1080u;
 	constexpr std::uint32_t bufferCount = 2u;
 	constexpr const char* appName       = "TerraTest";
 }
@@ -117,9 +117,11 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 		Constants::bufferCount, &memoryManager
 	};
 
-	swapchain.CreateSwapchain(
-		logicalDevice, physicalDevice, &memoryManager, *s_surfaceManager
-	);
-
+	swapchain.CreateSwapchain(logicalDevice, physicalDevice, &memoryManager, *s_surfaceManager);
 	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
+
+	s_window->SetWindowResolution(2560u, 1440u);
+
+	swapchain.CreateSwapchain(logicalDevice, physicalDevice, &memoryManager, *s_surfaceManager);
+	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain re-creation failed.";
 }

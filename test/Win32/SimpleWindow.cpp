@@ -24,7 +24,7 @@ void WindowClass::Register() noexcept
 // Simple Window
 SimpleWindow::SimpleWindow(
 	std::uint32_t width, std::uint32_t height, const char* name
-) : m_hWnd{ nullptr }, m_windowClass{}
+) : m_hWnd{ nullptr }, m_windowClass{}, m_windowRect{ 0, 0, 0, 0 }
 {
 	m_windowClass.Register();
 
@@ -48,9 +48,16 @@ SimpleWindow::SimpleWindow(
 		static_cast<int>(wr.bottom - wr.top),
 		nullptr, nullptr, m_windowClass.GetHInstance(), this
 	);
+
+	GetWindowRect(m_hWnd, &m_windowRect);
 }
 
 SimpleWindow::~SimpleWindow() noexcept
+{
+	SelfDestruct();
+}
+
+void SimpleWindow::SelfDestruct() noexcept
 {
 	if (m_hWnd)
 		SetWindowLongPtr(m_hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(DefWindowProcA));
@@ -60,4 +67,11 @@ LRESULT CALLBACK SimpleWindow::HandleMsgSetup(
 	HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 ) noexcept {
 	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+void SimpleWindow::SetWindowResolution(std::uint32_t width, std::uint32_t height)
+{
+	MoveWindow(m_hWnd, m_windowRect.left, m_windowRect.top, width, height, TRUE);
+
+	GetWindowRect(m_hWnd, &m_windowRect);
 }

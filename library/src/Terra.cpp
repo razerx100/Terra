@@ -146,7 +146,6 @@ Terra::Terra(
 		if (meshShader)
 			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());
 	}
-	const VkSurfaceKHR vkSurface = Surface().Get();
 	Device()
 		.SetDeviceFeatures(coreVersion)
 		.SetPhysicalDeviceAutomatic(vkInstance)
