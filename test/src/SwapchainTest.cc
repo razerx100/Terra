@@ -13,9 +13,10 @@
 
 namespace Constants
 {
-	constexpr std::uint32_t width  = 1920u;
-	constexpr std::uint32_t height = 1080u;
-	constexpr const char* appName  = "TerraTest";
+	constexpr std::uint32_t width       = 2560u;
+	constexpr std::uint32_t height      = 1440u;
+	constexpr std::uint32_t bufferCount = 2u;
+	constexpr const char* appName       = "TerraTest";
 }
 
 class SwapchainTest : public ::testing::Test
@@ -100,4 +101,25 @@ TEST_F(SwapchainTest, RenderPassTest)
 	}
 
 	EXPECT_NE(renderPass1.Get(), VK_NULL_HANDLE) << "RenderPass is null.";
+}
+
+TEST_F(SwapchainTest, SwapchainManagerTest)
+{
+	VkDeviceManager& device = *s_deviceManager;
+
+	VkDevice logicalDevice          = device.GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = device.GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 100_MB, 20_MB };
+
+	SwapchainManager swapchain{
+		logicalDevice, device.GetQueueFamilyManager().GetQueue(QueueType::GraphicsQueue),
+		Constants::bufferCount, &memoryManager
+	};
+
+	swapchain.CreateSwapchain(
+		logicalDevice, physicalDevice, &memoryManager, *s_surfaceManager
+	);
+
+	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
 }
