@@ -7,7 +7,7 @@
 #include <VkDeviceManager.hpp>
 #include <VKInstanceManager.hpp>
 #include <SurfaceManager.hpp>
-#include <SwapChainManager.hpp>
+#include <SwapchainMManager.hpp>
 #include <IDisplayManager.hpp>
 #include <DescriptorSetManager.hpp>
 #include <TextureStorage.hpp>

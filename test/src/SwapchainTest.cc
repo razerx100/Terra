@@ -9,7 +9,7 @@
 #include <SimpleWindow.hpp>
 #endif
 #include <VKRenderPass.hpp>
-#include <SwapChainManager.hpp>
+#include <SwapchainMManager.hpp>
 
 namespace Constants
 {
