@@ -1,4 +1,4 @@
-#include <SwapchainMManager.hpp>
+#include <SwapchainManager.hpp>
 #include <array>
 
 // Framebuffer
