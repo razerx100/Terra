@@ -58,7 +58,7 @@ public:
 	inline Queue& Graphics() noexcept { return m_graphicsQueue; }
 	inline Queue& Compute() noexcept { return m_computeQueue; }
 	inline Queue& Transfer() noexcept { return m_transferQueue; }
-	inline SwapChainManager& Swapchain() noexcept { return *m_swapChain; }
+	inline SwapchainManager& Swapchain() noexcept { return *m_swapChain; }
 	inline DescriptorSetManager& GraphicsDesc() noexcept { return *m_graphicsDescriptorSet; }
 	inline DescriptorSetManager& ComputeDesc() noexcept { return *m_computeDescriptorSet; }
 	inline RenderEngine& Engine() noexcept { return *m_renderEngine; }
@@ -180,7 +180,7 @@ private:
 	Queue                                    m_graphicsQueue;
 	Queue                                    m_computeQueue;
 	Queue                                    m_transferQueue;
-	std::unique_ptr<SwapChainManager>        m_swapChain;
+	std::unique_ptr<SwapchainManager>        m_swapChain;
 	std::unique_ptr<DescriptorSetManager>    m_graphicsDescriptorSet;
 	std::unique_ptr<DescriptorSetManager>    m_computeDescriptorSet;
 	std::unique_ptr<RenderEngine>            m_renderEngine;

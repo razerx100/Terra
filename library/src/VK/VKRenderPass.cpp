@@ -93,3 +93,19 @@ void VKRenderPass::Create(const RenderPassBuilder& renderPassBuilder)
 {
 	vkCreateRenderPass(m_device, renderPassBuilder.Get(), nullptr, &m_renderPass);
 }
+
+void VKRenderPass::BeginPass(
+	VkCommandBuffer graphicsCmdBuffer, VkFramebuffer frameBuffer, VkExtent2D swapchainExtent,
+	std::span<VkClearValue> clearValues
+) {
+	VkRenderPassBeginInfo renderPassInfo{
+		.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.renderPass      = m_renderPass,
+		.framebuffer     = frameBuffer,
+		.renderArea      = { VkOffset2D{ 0, 0 }, swapchainExtent },
+		.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues)),
+		.pClearValues    = std::data(clearValues)
+	};
+
+	vkCmdBeginRenderPass(graphicsCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}

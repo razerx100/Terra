@@ -2,6 +2,7 @@
 #define VK_RENDER_PASS_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <span>
 
 class RenderPassBuilder
 {
@@ -93,6 +94,11 @@ public:
 	~VKRenderPass() noexcept;
 
 	void Create(const RenderPassBuilder& renderPassBuilder);
+
+	void BeginPass(
+		VkCommandBuffer graphicsCmdBuffer, VkFramebuffer frameBuffer, VkExtent2D swapchainExtent,
+		std::span<VkClearValue> clearValues
+	);
 
 	[[nodiscard]]
 	VkRenderPass Get() const noexcept { return m_renderPass; }

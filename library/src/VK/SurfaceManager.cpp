@@ -6,7 +6,7 @@ void SurfaceManager::SelfDestruct() noexcept
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 }
 
-std::vector<VkPresentModeKHR> SurfaceManager::GetPresentModes(VkPhysicalDevice device) const noexcept
+VkPresentModeKHR SurfaceManager::GetPresentMode(VkPhysicalDevice device) const noexcept
 {
 	std::uint32_t presentModeCount = 0u;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
@@ -16,10 +16,14 @@ std::vector<VkPresentModeKHR> SurfaceManager::GetPresentModes(VkPhysicalDevice d
 		device, m_surface, &presentModeCount, std::data(presentModes)
 	);
 
-	return presentModes;
+	for (VkPresentModeKHR mode : presentModes)
+		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+			return mode;
+
+	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-std::vector<VkSurfaceFormatKHR> SurfaceManager::GetSurfaceFormat(VkPhysicalDevice device) const noexcept
+VkSurfaceFormatKHR SurfaceManager::GetSurfaceFormat(VkPhysicalDevice device) const noexcept
 {
 	std::uint32_t formatCount = 0u;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
@@ -29,7 +33,18 @@ std::vector<VkSurfaceFormatKHR> SurfaceManager::GetSurfaceFormat(VkPhysicalDevic
 		device, m_surface, &formatCount, std::data(surfaceFormats)
 	);
 
-	return surfaceFormats;
+	for (const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats) {
+		bool surfaceCheck =
+			surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB
+			||
+			surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB;
+		if (surfaceCheck
+			&&
+			surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+			return surfaceFormat;
+	}
+
+	return std::empty(surfaceFormats) ? VkSurfaceFormatKHR{} : surfaceFormats.front();
 }
 
 VkSurfaceCapabilitiesKHR SurfaceManager::GetSurfaceCapabilities(VkPhysicalDevice device) const noexcept

@@ -66,7 +66,7 @@ void SwapchainTest::SetUpTestSuite()
 	{
 		VkDeviceExtensionManager& extensionManager = s_deviceManager->ExtensionManager();
 
-		extensionManager.AddExtensions(SwapChainManager::GetRequiredExtensions());
+		extensionManager.AddExtensions(SwapchainManager::GetRequiredExtensions());
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)

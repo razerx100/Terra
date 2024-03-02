@@ -139,7 +139,7 @@ Terra::Terra(
 	{
 		VkDeviceExtensionManager& extensionManager = Device().ExtensionManager();
 
-		extensionManager.AddExtensions(SwapChainManager::GetRequiredExtensions());
+		extensionManager.AddExtensions(SwapchainManager::GetRequiredExtensions());
 		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
 		// Need to add DescriptorBuffer
 
@@ -162,18 +162,14 @@ Terra::Terra(
 
 	InitQueues(logicalDevice, bufferCount, queFamilyMan);
 
-	SwapChainManager::Args swapArguments{
-		.device       = logicalDevice,
-		.surface      = vkSurface,
-		//.surfaceInfo  = QuerySurfaceCapabilities(physicalDevice, vkSurface),
-		.width        = width,
-		.height       = height,
-		.bufferCount  = bufferCount,
-		// Graphics and Present queues should be the same
-		.presentQueue = queFamilyMan.GetQueue(GraphicsQueue)
-	};
-
-	m_objectManager.CreateObject(m_swapChain, 1u, swapArguments);
+	m_objectManager.CreateObject(
+		m_swapChain, 1u, logicalDevice,
+		queFamilyMan.GetQueue(GraphicsQueue), bufferCount, nullptr /* memoryManager */
+	);
+	Swapchain().CreateSwapchain(
+		logicalDevice, physicalDevice,
+		nullptr /* memoryManager */, Surface(), width, height
+	);
 
 	m_objectManager.CreateObject(m_graphicsDescriptorSet, 1u, logicalDevice, bufferCount);
 	m_objectManager.CreateObject(m_computeDescriptorSet, 1u, logicalDevice, bufferCount);

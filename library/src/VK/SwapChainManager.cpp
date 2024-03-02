@@ -1,4 +1,5 @@
 #include <SwapChainManager.hpp>
+#include <array>
 
 // Framebuffer
 VKFramebuffer::~VKFramebuffer() noexcept
@@ -29,208 +30,173 @@ void VKFramebuffer::Create(
 	vkCreateFramebuffer(m_device, &frameBufferInfo, nullptr, &m_framebuffer);
 }
 
-// Swapchain Manager
-SwapChainManager::SwapChainManager(const Args& arguments)
-	: m_swapchain{ VK_NULL_HANDLE }, m_deviceRef{ arguments.device },
-	m_swapchainFormat{}, m_swapchainExtent{},
-	m_swapchainImages{ arguments.bufferCount, VK_NULL_HANDLE },
-	m_swapchainImageViews{}, m_frameBuffers{},
-	m_presentQueue{ arguments.presentQueue },
-	m_surfaceInfo{ arguments.surfaceInfo }, m_nextImageIndex{ 0u }
+// VkSwapchain
+VkSwapchain::VkSwapchain(VkDevice device, std::uint32_t bufferCount)
+	: m_device{ device }, m_swapchain{ VK_NULL_HANDLE }, m_swapImageViewFormat{ VK_FORMAT_UNDEFINED },
+	m_swapchainExtent{ 0u, 0u },
+	m_swapchainImages{ bufferCount, VK_NULL_HANDLE }, m_swapchainImageViews{},
+	m_frameBuffers{}
 {
-	m_swapchainImageViews.reserve(arguments.bufferCount);
-	m_frameBuffers.reserve(arguments.bufferCount);
-
-	SwapChainManagerCreateInfo swapCreateInfo{
-		.device      = arguments.device,
-		.surface     = arguments.surface,
-		.surfaceInfo = arguments.surfaceInfo,
-		.width       = arguments.width,
-		.height      = arguments.height,
-		.bufferCount = arguments.bufferCount
-	};
-
-	auto surfaceFormat = ChooseSurfaceFormat(m_surfaceInfo.formats);
-	CreateSwapchain(swapCreateInfo, surfaceFormat);
-	QueryImages();
-	CreateImageViews(m_deviceRef);
+	m_swapchainImageViews.reserve(static_cast<size_t>(bufferCount));
+	m_frameBuffers.reserve(static_cast<size_t>(bufferCount));
 }
 
-SwapChainManager::~SwapChainManager() noexcept
-{
-	CleanUpSwapchain();
-}
+VkSwapchain& VkSwapchain::Create(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
+	std::uint32_t width, std::uint32_t height
+) {
+	// Create the swapchain.
+	const VkPresentModeKHR swapPresentMode             = surface.GetPresentMode(physicalDevice);
+	const VkSurfaceCapabilitiesKHR surfaceCapabilities = surface.GetSurfaceCapabilities(physicalDevice);
+	const VkSurfaceFormatKHR surfaceFormat             = surface.GetSurfaceFormat(physicalDevice);
 
-VkSwapchainKHR SwapChainManager::GetRef() const noexcept {
-	return m_swapchain;
-}
+	{
+		const std::uint32_t imageCount = std::max(
+			surfaceCapabilities.maxImageCount, static_cast<std::uint32_t>(std::size(m_swapchainImages))
+		);
+		const VkExtent2D swapExtent{ width, height };
 
-VkExtent2D SwapChainManager::GetSwapExtent() const noexcept {
-	return m_swapchainExtent;
-}
+		VkSwapchainCreateInfoKHR createInfo{
+			.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+			.surface          = surface.Get(),
+			.minImageCount    = imageCount,
+			.imageFormat      = surfaceFormat.format,
+			.imageColorSpace  = surfaceFormat.colorSpace,
+			.imageExtent      = swapExtent,
+			.imageArrayLayers = 1u,
+			.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+			.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+			.preTransform     = surfaceCapabilities.currentTransform,
+			.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.presentMode      = swapPresentMode,
+			.clipped          = VK_TRUE,
+			.oldSwapchain     = VK_NULL_HANDLE
+		};
 
-VkFormat SwapChainManager::GetSwapFormat() const noexcept {
-	return m_swapchainFormat;
-}
+		vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &m_swapchain);
 
-VkSurfaceFormatKHR SwapChainManager::ChooseSurfaceFormat(
-	const std::vector<VkSurfaceFormatKHR>& availableFormats
-) const noexcept {
-	for (const VkSurfaceFormatKHR& surfaceFormat : availableFormats) {
-		bool surfaceCheck =
-			surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB
-			||
-			surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB;
-		if (surfaceCheck
-			&&
-			surfaceFormat.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
-			return surfaceFormat;
+		m_swapchainExtent = swapExtent;
 	}
 
-	return std::empty(availableFormats) ? VkSurfaceFormatKHR() : availableFormats[0u];
+	// Query the VkImages.
+	{
+		std::uint32_t imageCount = 0u;
+		vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr);
+
+		m_swapchainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, std::data(m_swapchainImages));
+	}
+
+	// Make the ImageViews.
+	{
+		for (size_t index = 0u; index < std::size(m_swapchainImages); ++index)
+			m_swapchainImageViews.emplace_back(logicalDevice).CreateView(
+				m_swapchainImages.at(index), surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT,
+				VK_IMAGE_VIEW_TYPE_2D
+			);
+
+		m_swapImageViewFormat = surfaceFormat.format;
+	}
+
+	return *this;
 }
 
-VkPresentModeKHR SwapChainManager::ChoosePresentMode(
-	const std::vector<VkPresentModeKHR>& availableModes
-) const noexcept {
-	for (const VkPresentModeKHR& mode : availableModes)
-		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
-			return mode;
+VkSwapchain& VkSwapchain::CreateFramebuffers(
+	VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,
+	std::uint32_t width, std::uint32_t height
+) {
+	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
+	{
+		VkImageView attachments[] = { m_swapchainImageViews.at(index).Get(), depthImageView };
 
-	return VK_PRESENT_MODE_FIFO_KHR;
+		m_frameBuffers.emplace_back(device).Create(renderPass, width, height, attachments);
+	}
+
+	return *this;
 }
 
-size_t SwapChainManager::GetNextImageIndex() const noexcept {
-	return m_nextImageIndex;
-}
-
-void SwapChainManager::CreateImageViews(VkDevice device)
+VkSwapchain::~VkSwapchain() noexcept
 {
-	for (size_t index = 0u; index < std::size(m_swapchainImages); ++index)
-		m_swapchainImageViews.emplace_back(device).CreateView(
-			m_swapchainImages.at(index), m_swapchainFormat, VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_IMAGE_VIEW_TYPE_2D
-		);
+	SelfDestruct();
 }
 
-void SwapChainManager::AcquireNextImageIndex(VkSemaphore signalSemaphore) noexcept {
-	std::uint32_t imageIndex;
-	vkAcquireNextImageKHR(
-		m_deviceRef, m_swapchain, UINT64_MAX, signalSemaphore, VK_NULL_HANDLE, &imageIndex
-	);
-
-	m_nextImageIndex = imageIndex;
+void VkSwapchain::SelfDestruct() noexcept
+{
+	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
 }
 
-void SwapChainManager::PresentImage(std::uint32_t imageIndex) const noexcept {
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+// Swapchain Manager
+SwapchainManager::SwapchainManager(
+	VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount, MemoryManager* memoryManager
+)
+	: m_presentQueue{ presentQueue }, m_renderPass{ device },
+	m_depthBuffer{ device, memoryManager }, m_swapchain{ device, bufferCount },
+	m_nextImageIndex{ 0u }
+{}
 
-	const VkSwapchainKHR swapchains[] = { m_swapchain };
-	presentInfo.swapchainCount = 1u;
-	presentInfo.pSwapchains = swapchains;
-	presentInfo.pImageIndices = &imageIndex;
-	presentInfo.pResults = nullptr;
+void SwapchainManager::PresentImage(std::uint32_t imageIndex) const noexcept
+{
+	VkPresentInfoKHR presentInfo{
+		.sType          = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.pImageIndices  = &imageIndex,
+		.pResults       = nullptr
+	};
+
+	const VkSwapchainKHR swapchains[] = { m_swapchain.Get() };
+
+	presentInfo.swapchainCount = std::size(swapchains);
+	presentInfo.pSwapchains    = swapchains;
 
 	vkQueuePresentKHR(m_presentQueue, &presentInfo);
 }
 
-void SwapChainManager::ResizeSwapchain(
-	VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
-	VkRenderPass renderPass, VkImageView depthImageView,
-	const VkSurfaceFormatKHR& surfaceFormat
+void SwapchainManager::CreateSwapchain(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, MemoryManager* memoryManager,
+	const SurfaceManager& surface, std::uint32_t width, std::uint32_t height
 ) {
-	CleanUpSwapchain();
+	m_depthBuffer = DepthBuffer{ logicalDevice, memoryManager };
+	m_depthBuffer.Create(width, height);
 
-	SwapChainManagerCreateInfo createInfo{
-		.device = device,
-		.surface = surface,
-		.surfaceInfo = m_surfaceInfo,
-		.width = width,
-		.height = height,
-		.bufferCount = static_cast<std::uint32_t>(std::size(m_swapchainImages))
-	};
+	const VkFormat oldFormat = m_swapchain.GetFormat();
 
-	CreateSwapchain(createInfo, surfaceFormat);
-	QueryImages();
-	CreateImageViews(device);
-	CreateFramebuffers(device, renderPass, depthImageView, width, height);
-}
+	m_swapchain = VkSwapchain{ logicalDevice, m_swapchain.GetImageCount() };
+	m_swapchain.Create(logicalDevice, physicalDevice, surface, width, height);
 
-VkSurfaceFormatKHR SwapChainManager::GetSurfaceFormat() const noexcept {
-	return ChooseSurfaceFormat(m_surfaceInfo.formats);
-}
+	const VkFormat newFormat = m_swapchain.GetFormat();
 
-bool SwapChainManager::HasSurfaceFormatChanged(
-	const VkSurfaceFormatKHR& surfaceFormat
-) const noexcept {
-	return surfaceFormat.format != m_swapchainFormat ? true : false;
-}
-
-void SwapChainManager::CreateSwapchain(
-	const SwapChainManagerCreateInfo& swapCreateInfo, const VkSurfaceFormatKHR& surfaceFormat
-) {
-	VkExtent2D swapExtent = { swapCreateInfo.width, swapCreateInfo.height };
-	m_surfaceInfo.capabilities.currentExtent = swapExtent;
-
-	m_swapchainExtent = swapExtent;
-	m_swapchainFormat = surfaceFormat.format;
-
-	VkPresentModeKHR swapPresentMode = ChoosePresentMode(
-		swapCreateInfo.surfaceInfo.presentModes
-	);
-
-	std::uint32_t imageCount = swapCreateInfo.bufferCount;
-	if (swapCreateInfo.surfaceInfo.capabilities.maxImageCount > 0u
-		&& swapCreateInfo.surfaceInfo.capabilities.maxImageCount < imageCount)
-		imageCount = swapCreateInfo.surfaceInfo.capabilities.maxImageCount;
-
-	VkSwapchainCreateInfoKHR createInfo{
-		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-		.surface = swapCreateInfo.surface,
-		.minImageCount = imageCount,
-		.imageFormat = surfaceFormat.format,
-		.imageColorSpace = surfaceFormat.colorSpace,
-		.imageExtent = swapExtent,
-		.imageArrayLayers = 1u,
-		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.preTransform = swapCreateInfo.surfaceInfo.capabilities.currentTransform,
-		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-		.presentMode = swapPresentMode,
-		.clipped = VK_TRUE,
-		.oldSwapchain = VK_NULL_HANDLE
-	};
-
-	vkCreateSwapchainKHR(swapCreateInfo.device, &createInfo, nullptr, &m_swapchain);
-}
-
-void SwapChainManager::QueryImages()
-{
-	std::uint32_t imageCount = 0u;
-	vkGetSwapchainImagesKHR(m_deviceRef, m_swapchain, &imageCount, nullptr);
-	m_swapchainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(
-		m_deviceRef, m_swapchain, &imageCount, std::data(m_swapchainImages)
-	);
-}
-
-void SwapChainManager::CleanUpSwapchain() noexcept
-{
-	m_frameBuffers.clear();
-	m_swapchainImageViews.clear();
-
-	vkDestroySwapchainKHR(m_deviceRef, m_swapchain, nullptr);
-}
-
-void SwapChainManager::CreateFramebuffers(
-	VkDevice device, VkRenderPass renderPass, VkImageView depthImageView, std::uint32_t width,
-	std::uint32_t height
-) {
-	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
+	if (oldFormat != newFormat)
 	{
-		VkImageView attachments[] = { m_swapchainImageViews.at(index).Get(), depthImageView};
-
-		m_frameBuffers.emplace_back(device).Create(renderPass, width, height, attachments);
+		m_renderPass = VKRenderPass{ logicalDevice };
+		m_renderPass.Create(
+			RenderPassBuilder{}
+			.AddColourAttachment(newFormat)
+			.AddDepthAttachment(m_depthBuffer.GetFormat())
+			.Build()
+		);
 	}
+
+	m_swapchain.CreateFramebuffers(
+		logicalDevice, m_renderPass.Get(), m_depthBuffer.GetView(), width, height
+	);
+}
+
+void SwapchainManager::BeginRenderPass(
+	VkCommandBuffer graphicsCmdBuffer, const VkClearColorValue& clearColour, size_t frameIndex
+) {
+	std::array<VkClearValue, 2> clearValues{};
+	clearValues[0].color        = clearColour;
+	clearValues[1].depthStencil = m_depthBuffer.GetClearValues();
+
+	m_renderPass.BeginPass(
+		graphicsCmdBuffer, m_swapchain.GetFramebuffer(frameIndex), m_swapchain.GetExtent(),
+		clearValues
+	);
+}
+
+void SwapchainManager::QueryNextImageIndex(VkDevice device, VkSemaphore waitForImageSemaphore)
+{
+	vkAcquireNextImageKHR(
+		device, m_swapchain.Get(), UINT64_MAX, waitForImageSemaphore, VK_NULL_HANDLE,
+		&m_nextImageIndex
+	);
 }

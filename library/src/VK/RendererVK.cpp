@@ -24,7 +24,6 @@ RendererVK::RendererVK(
 	const VkDevice device = terra.Device().GetLogicalDevice();
 
 	terra.Engine().ResizeViewportAndScissor(width, height);
-	terra.Engine().CreateRenderPass(device, terra.Swapchain().GetSwapFormat());
 
 	terra.Camera().SetSceneResolution(width, height);
 }
@@ -73,10 +72,14 @@ void RendererVK::AddModelInputs(
 	);
 }
 
-void RendererVK::Update() {
+void RendererVK::Update()
+{
 	Terra& terra = Terra::Get();
 
-	terra.Swapchain().AcquireNextImageIndex(terra.Graphics().SyncObj().GetFrontSemaphore());
+	terra.Swapchain().QueryNextImageIndex(
+		terra.Device().GetLogicalDevice(),
+		terra.Graphics().SyncObj().GetFrontSemaphore()
+	);
 	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
 
 	terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
@@ -105,29 +108,18 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		Terra& terra = Terra::Get();
 
-		const VkDevice device = terra.Device().GetLogicalDevice();
+		VkDeviceManager& device = terra.Device();
 
-		vkDeviceWaitIdle(device);
+		vkDeviceWaitIdle(device.GetLogicalDevice());
 
 		RenderEngine& engine = terra.Engine();
 
-		engine.CreateDepthBuffer(device, width, height);
-		// depthBufer = std::move(DepthBuffer{}); // Do something like this
+		SwapchainManager& swapchain = terra.Swapchain();
 
-		SwapChainManager& swapchain = terra.Swapchain();
-
-		VkSurfaceFormatKHR surfaceFormat = swapchain.GetSurfaceFormat();
-		bool hasSwapFormatChanged = swapchain.HasSurfaceFormatChanged(surfaceFormat);
-
-		if (hasSwapFormatChanged)
-			engine.CreateRenderPass(
-				terra.Device().GetLogicalDevice(), swapchain.GetSwapFormat()
-			);
-
-		swapchain.ResizeSwapchain(
-			device, terra.Surface().Get(), width, height,
-			engine.GetRenderPass(), engine.GetDepthImageView(),
-			surfaceFormat
+		swapchain.CreateSwapchain(
+			device.GetLogicalDevice(), device.GetPhysicalDevice(),
+			nullptr /* memoryManager */, terra.Surface(),
+			width, height
 		);
 
 		engine.ResizeViewportAndScissor(width, height);
@@ -184,11 +176,6 @@ void RendererVK::ProcessData()
 	buffers.BindResourceToMemory(logicalDevice);
 	engine.BindResourcesToMemory(logicalDevice);
 	terra.Texture().BindMemories(logicalDevice);
-
-	engine.CreateDepthBuffer(logicalDevice, m_width, m_height);
-	terra.Swapchain().CreateFramebuffers(
-		logicalDevice, engine.GetRenderPass(), engine.GetDepthImageView(), m_width, m_height
-	);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;

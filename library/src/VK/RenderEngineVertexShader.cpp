@@ -5,7 +5,7 @@
 // Vertex Shader
 RenderEngineVertexShader::RenderEngineVertexShader(
 	VkDevice device, QueueIndicesTG queueIndices
-) : RenderEngineBase{ device }, m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
+) : m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
 
 void RenderEngineVertexShader::AddGVerticesAndIndices(
 	VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices

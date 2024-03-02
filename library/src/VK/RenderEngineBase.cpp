@@ -2,9 +2,6 @@
 
 #include <Terra.hpp>
 
-RenderEngineBase::RenderEngineBase(VkDevice device) noexcept
-	: m_renderPass{ device } {} // m_depthBuffer{ device } {}
-
 void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) {
 	vkCmdEndRenderPass(graphicsCmdBuffer);
 
@@ -41,22 +38,9 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 	vkCmdSetViewport(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetViewportRef());
 	vkCmdSetScissor(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetScissorRef());
 
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = m_backgroundColour;
-	clearValues[1].depthStencil = { 1.f, 0 };
+	SwapchainManager& swapchain = terra.Swapchain();
 
-	SwapChainManager& swapchain = terra.Swapchain();
-
-	VkRenderPassBeginInfo renderPassInfo{
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.renderPass = GetRenderPass(),
-		.framebuffer = swapchain.GetFramebuffer(frameIndex),
-		.renderArea = { VkOffset2D{ 0, 0 }, swapchain.GetSwapExtent() },
-		.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues)),
-		.pClearValues = std::data(clearValues)
-	};
-
-	vkCmdBeginRenderPass(graphicsCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	swapchain.BeginRenderPass(graphicsCmdBuffer, m_backgroundColour, frameIndex);
 }
 
 void RenderEngineBase::ConstructGraphicsPipelineLayout(VkDevice device) {
@@ -78,33 +62,10 @@ void RenderEngineBase::BindGraphicsDescriptorSets(
 	);
 }
 
-void RenderEngineBase::CreateRenderPass(VkDevice device, VkFormat swapchainFormat) {
-	m_renderPass.Create(
-		RenderPassBuilder{}
-		.AddColourAttachment(swapchainFormat)
-		.Build()
-	);
-}
-
-VkImageView RenderEngineBase::GetDepthImageView() const noexcept {
-	//return m_depthBuffer.GetDepthImageView();
-	return VK_NULL_HANDLE;
-}
-
-VkRenderPass RenderEngineBase::GetRenderPass() const noexcept {
-	return m_renderPass.Get();
-}
-
 void RenderEngineBase::ResizeViewportAndScissor(
 	std::uint32_t width, std::uint32_t height
 ) noexcept {
 	m_viewportAndScissor.Resize(width, height);
-}
-
-void RenderEngineBase::CreateDepthBuffer(
-	VkDevice device, std::uint32_t width, std::uint32_t height
-) {
-	//m_depthBuffer.CreateDepthBuffer(device, width, height);
 }
 
 void RenderEngineBase::ExecutePreRenderStage(

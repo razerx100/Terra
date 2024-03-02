@@ -12,13 +12,9 @@
 
 class RenderEngineBase : public RenderEngine {
 public:
-	RenderEngineBase(VkDevice device) noexcept;
-
 	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) override;
 	void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
 	void ExecutePostRenderStage() final;
-	void CreateRenderPass(VkDevice device, VkFormat swapchainFormat) final;
-	void CreateDepthBuffer(VkDevice device, std::uint32_t width, std::uint32_t height) final;
 	void ResizeViewportAndScissor(std::uint32_t width, std::uint32_t height) noexcept final;
 
 	void AddGVerticesAndIndices(
@@ -34,11 +30,6 @@ public:
 		VkDevice device, std::vector<Vertex>&& gVertices,
 		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
 	) noexcept override;
-
-	[[nodiscard]]
-	VkImageView GetDepthImageView() const noexcept final;
-	[[nodiscard]]
-	VkRenderPass GetRenderPass() const noexcept final;
 
 protected:
 	void ExecutePreGraphicsStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex);
@@ -63,19 +54,18 @@ protected:
 	) const noexcept {
 		VkPipelineLayout graphicsLayout = m_graphicsPipelineLayout->GetLayout();
 
-		graphicsPipeline0->CreateGraphicsPipeline(
+		/*graphicsPipeline0->CreateGraphicsPipeline(
 			device, graphicsLayout, GetRenderPass(), m_shaderPath
 		);
 		for (auto& graphicsPipeline : graphicsPipelines)
 			graphicsPipeline->CreateGraphicsPipeline(
 				device, graphicsLayout, GetRenderPass(), m_shaderPath
 			);
+		*/
 	}
 
 private:
 	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
-	VKRenderPass m_renderPass;
 	ViewportAndScissorManager m_viewportAndScissor;
-	//DepthBuffer m_depthBuffer;
 };
 #endif

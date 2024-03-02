@@ -17,18 +17,24 @@ public:
 
 	[[nodiscard]]
 	VkFormat GetFormat() noexcept { return m_depthImage.GetTexture().Format(); }
+	[[nodiscard]]
+	VkClearDepthStencilValue GetClearValues() const noexcept { return m_depthStencilValue; }
 
 private:
-	VkTextureView m_depthImage;
+	VkTextureView            m_depthImage;
+	VkClearDepthStencilValue m_depthStencilValue;
 
 public:
 	DepthBuffer(const DepthBuffer&) = delete;
 	DepthBuffer& operator=(const DepthBuffer&) = delete;
 
-	DepthBuffer(DepthBuffer&& other) noexcept : m_depthImage{ std::move(other.m_depthImage) } {}
+	DepthBuffer(DepthBuffer&& other) noexcept
+		: m_depthImage{ std::move(other.m_depthImage) }, m_depthStencilValue{ other.m_depthStencilValue }
+	{}
 	DepthBuffer& operator=(DepthBuffer&& other) noexcept
 	{
-		m_depthImage = std::move(other.m_depthImage);
+		m_depthImage        = std::move(other.m_depthImage);
+		m_depthStencilValue = other.m_depthStencilValue;
 
 		return *this;
 	}

@@ -16,9 +16,9 @@ public:
 	virtual void Create(VkInstance instance, void* windowHandle, void* moduleHandle) = 0;
 
 	[[nodiscard]]
-	std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice device) const noexcept;
+	VkPresentModeKHR GetPresentMode(VkPhysicalDevice device) const noexcept;
 	[[nodiscard]]
-	std::vector<VkSurfaceFormatKHR> GetSurfaceFormat(VkPhysicalDevice device) const noexcept;
+	VkSurfaceFormatKHR GetSurfaceFormat(VkPhysicalDevice device) const noexcept;
 	[[nodiscard]]
 	VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(VkPhysicalDevice device) const noexcept;
 	[[nodiscard]]

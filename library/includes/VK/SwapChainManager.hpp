@@ -3,9 +3,11 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <span>
-#include <VkHelperFunctions.hpp>
 #include <VkExtensionManager.hpp>
 #include <VkTextureView.hpp>
+#include <SurfaceManager.hpp>
+#include <VKRenderPass.hpp>
+#include <DepthBuffer.hpp>
 
 class VKFramebuffer
 {
@@ -49,93 +51,109 @@ public:
 	}
 };
 
-class SwapChainManager
+class VkSwapchain
 {
 public:
-	struct Args
+	VkSwapchain(VkDevice device, std::uint32_t bufferCount);
+	~VkSwapchain() noexcept;
+
+	VkSwapchain& Create(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
+		std::uint32_t width, std::uint32_t height
+	);
+	VkSwapchain& CreateFramebuffers(
+		VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,
+		std::uint32_t width, std::uint32_t height
+	);
+
+	[[nodiscard]]
+	std::uint32_t GetImageCount() const noexcept
 	{
-		VkDevice      device;
-		VkSurfaceKHR  surface;
-		SurfaceInfo   surfaceInfo;
-		std::uint32_t width;
-		std::uint32_t height;
-		std::uint32_t bufferCount;
-		VkQueue       presentQueue;
-	};
-
-public:
-	SwapChainManager(const Args& arguments);
-	~SwapChainManager() noexcept;
-
+		return static_cast<std::uint32_t>(std::size(m_swapchainImages));
+	}
 	[[nodiscard]]
-	VkSwapchainKHR GetRef() const noexcept;
+	VkSwapchainKHR Get() const noexcept { return m_swapchain; }
 	[[nodiscard]]
-	VkExtent2D GetSwapExtent() const noexcept;
+	VkFormat GetFormat() const noexcept { return m_swapImageViewFormat; }
 	[[nodiscard]]
-	VkFormat GetSwapFormat() const noexcept;
-	[[nodiscard]]
-	size_t GetNextImageIndex() const noexcept;
+	VkExtent2D GetExtent() const noexcept { return m_swapchainExtent; }
 	[[nodiscard]]
 	VkFramebuffer GetFramebuffer(size_t imageIndex) const noexcept
 	{
 		return m_frameBuffers.at(imageIndex).Get();
 	}
-	[[nodiscard]]
-	bool HasSurfaceFormatChanged(const VkSurfaceFormatKHR& surfaceFormat) const noexcept;
-	[[nodiscard]]
-	VkSurfaceFormatKHR GetSurfaceFormat() const noexcept;
-
-	void AcquireNextImageIndex(VkSemaphore signalSemaphore) noexcept;
-	void PresentImage(std::uint32_t imageIndex) const noexcept;
-	void ResizeSwapchain(
-		VkDevice device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height,
-		VkRenderPass renderPass, VkImageView depthImageView,
-		const VkSurfaceFormatKHR& surfaceFormat
-	);
-	void CreateFramebuffers(
-		VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,
-		std::uint32_t width, std::uint32_t height
-	);
 
 private:
-	struct SwapChainManagerCreateInfo {
-		VkDevice device;
-		VkSurfaceKHR surface;
-		SurfaceInfo surfaceInfo;
-		std::uint32_t width;
-		std::uint32_t height;
-		std::uint32_t bufferCount;
-	};
+	void SelfDestruct() noexcept;
 
 private:
-	[[nodiscard]]
-	VkSurfaceFormatKHR ChooseSurfaceFormat(
-		const std::vector<VkSurfaceFormatKHR>& availableFormats
-	) const noexcept;
-	[[nodiscard]]
-	VkPresentModeKHR ChoosePresentMode(
-		const std::vector<VkPresentModeKHR>& availableModes
-	) const noexcept;
-
-	void QueryImages();
-	void CreateImageViews(VkDevice device);
-	void CreateSwapchain(
-		const SwapChainManagerCreateInfo& swapCreateInfo,
-		const VkSurfaceFormatKHR& surfaceFormat
-	);
-	void CleanUpSwapchain() noexcept;
-
-private:
-	VkSwapchainKHR m_swapchain;
-	VkDevice m_deviceRef;
-	VkFormat m_swapchainFormat;
-	VkExtent2D m_swapchainExtent;
-	std::vector<VkImage> m_swapchainImages;
+	VkDevice                   m_device;
+	VkSwapchainKHR             m_swapchain;
+	VkFormat                   m_swapImageViewFormat;
+	VkExtent2D                 m_swapchainExtent;
+	std::vector<VkImage>       m_swapchainImages;
 	std::vector<VKImageView>   m_swapchainImageViews;
 	std::vector<VKFramebuffer> m_frameBuffers;
-	VkQueue m_presentQueue;
-	SurfaceInfo m_surfaceInfo;
-	size_t m_nextImageIndex;
+
+public:
+	VkSwapchain(const VkSwapchain&) = delete;
+	VkSwapchain& operator=(const VkSwapchain&) = delete;
+
+	VkSwapchain(VkSwapchain&& other) noexcept
+		: m_device{ other.m_device }, m_swapchain{ other.m_swapchain },
+		m_swapImageViewFormat{ other.m_swapImageViewFormat },
+		m_swapchainExtent{ other.m_swapchainExtent },
+		m_swapchainImages{ std::move(other.m_swapchainImages) },
+		m_swapchainImageViews{ std::move(other.m_swapchainImageViews) },
+		m_frameBuffers{ std::move(other.m_frameBuffers) }
+	{
+		other.m_swapchain = VK_NULL_HANDLE;
+	}
+	VkSwapchain& operator=(VkSwapchain&& other) noexcept
+	{
+		SelfDestruct();
+
+		m_device              = other.m_device;
+		m_swapchain           = other.m_swapchain;
+		m_swapImageViewFormat = other.m_swapImageViewFormat;
+		m_swapchainExtent     = other.m_swapchainExtent;
+		m_swapchainImages     = std::move(other.m_swapchainImages);
+		m_swapchainImageViews = std::move(other.m_swapchainImageViews);
+		m_frameBuffers        = std::move(other.m_frameBuffers);
+		other.m_swapchain     = VK_NULL_HANDLE;
+
+		return *this;
+	}
+};
+
+class SwapchainManager
+{
+public:
+	SwapchainManager(
+		VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount, MemoryManager* memoryManager
+	);
+
+	void PresentImage(std::uint32_t imageIndex) const noexcept;
+	void CreateSwapchain(
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, MemoryManager* memoryManager,
+		const SurfaceManager& surface, std::uint32_t width, std::uint32_t height
+	);
+	void BeginRenderPass(
+		VkCommandBuffer graphicsCmdBuffer, const VkClearColorValue& clearColour, size_t frameIndex
+	);
+	void QueryNextImageIndex(VkDevice device, VkSemaphore waitForImageSemaphore);
+
+	[[nodiscard]]
+	std::uint32_t GetNextImageIndex() const noexcept { return m_nextImageIndex; };
+	[[nodiscard]]
+	VkSwapchainKHR GetSwapchain() const noexcept { return m_swapchain.Get(); }
+
+private:
+	VkQueue       m_presentQueue;
+	VKRenderPass  m_renderPass;
+	DepthBuffer   m_depthBuffer;
+	VkSwapchain   m_swapchain;
+	std::uint32_t m_nextImageIndex;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -146,5 +164,24 @@ public:
 	[[nodiscard]]
 	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
 	{ return s_requiredExtensions; }
+
+	SwapchainManager(const SwapchainManager&) = delete;
+	SwapchainManager& operator=(const SwapchainManager&) = delete;
+
+	SwapchainManager(SwapchainManager&& other) noexcept
+		: m_presentQueue{ other.m_presentQueue }, m_renderPass{ std::move(other.m_renderPass) },
+		m_depthBuffer{ std::move(other.m_depthBuffer) }, m_swapchain{ std::move(other.m_swapchain) },
+		m_nextImageIndex{ other.m_nextImageIndex }
+	{}
+	SwapchainManager& operator=(SwapchainManager&& other) noexcept
+	{
+		m_presentQueue   = other.m_presentQueue;
+		m_renderPass     = std::move(other.m_renderPass);
+		m_depthBuffer    = std::move(other.m_depthBuffer);
+		m_swapchain      = std::move(other.m_swapchain);
+		m_nextImageIndex = other.m_nextImageIndex;
+
+		return *this;
+	}
 };
 #endif

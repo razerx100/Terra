@@ -4,7 +4,7 @@
 
 RenderEngineMeshShader::RenderEngineMeshShader(
 	VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
-) : RenderEngineBase{ device }, m_vertexManager{ device, bufferCount, queueIndices },
+) : m_vertexManager{ device, bufferCount, queueIndices },
 	m_meshletBuffer{ device }, m_queueIndicesTG{ queueIndices }, m_bufferCount{ bufferCount } {}
 
 std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLayout(
