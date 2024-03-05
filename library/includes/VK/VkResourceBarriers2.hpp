@@ -79,17 +79,18 @@ public:
 };
 
 template<std::uint32_t barrierCount = 1u>
-class VkBufferBarrier2 {
+class VkBufferBarrier2
+{
 public:
 	VkBufferBarrier2() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
 
-	void RecordBarriers(VkCommandBuffer commandBuffer) noexcept
+	void RecordBarriers(VkCommandBuffer commandBuffer) const noexcept
 	{
 		VkDependencyInfo dependencyInfo{
-			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-			.dependencyFlags = 0u,
+			.sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.dependencyFlags          = 0u,
 			.bufferMemoryBarrierCount = barrierCount,
-			.pBufferMemoryBarriers = std::data(m_barriers)
+			.pBufferMemoryBarriers    = std::data(m_barriers)
 		};
 
 		vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
@@ -112,29 +113,6 @@ public:
 private:
 	size_t                                           m_currentIndex;
 	std::array<VkBufferMemoryBarrier2, barrierCount> m_barriers;
-
-public:
-	VkBufferBarrier2(const VkBufferBarrier2& other) noexcept
-		: m_currentIndex{ other.m_currentIndex }, m_barriers{ other.m_barriers } {}
-
-	VkBufferBarrier2& operator=(const VkBufferBarrier2& other) noexcept
-	{
-		m_currentIndex = other.m_currentIndex;
-		m_barriers     = other.m_barriers;
-
-		return *this;
-	}
-
-	VkBufferBarrier2(VkBufferBarrier2&& other) noexcept
-		: m_currentIndex{ other.m_currentIndex }, m_barriers{ std::move(other.m_barriers) } {}
-
-	VkBufferBarrier2& operator=(VkBufferBarrier2&& other) noexcept
-	{
-		m_currentIndex = other.m_currentIndex;
-		m_barriers     = std::move(other.m_barriers);
-
-		return *this;
-	}
 };
 
 class ImageBarrierBuilder : public BaseBarrierBuilder<VkImageMemoryBarrier2>
@@ -188,15 +166,18 @@ public:
 };
 
 template<std::uint32_t barrierCount = 1u>
-class VkImageBarrier2 {
+class VkImageBarrier2
+{
 public:
 	VkImageBarrier2() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
-	void RecordBarriers(VkCommandBuffer commandBuffer) noexcept {
+
+	void RecordBarriers(VkCommandBuffer commandBuffer) const noexcept
+	{
 		VkDependencyInfo dependencyInfo{
-			.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-			.dependencyFlags = 0u,
+			.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			.dependencyFlags         = 0u,
 			.imageMemoryBarrierCount = barrierCount,
-			.pImageMemoryBarriers = std::data(m_barriers)
+			.pImageMemoryBarriers    = std::data(m_barriers)
 		};
 
 		vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
@@ -222,28 +203,5 @@ public:
 private:
 	size_t                                          m_currentIndex;
 	std::array<VkImageMemoryBarrier2, barrierCount> m_barriers;
-
-public:
-	VkImageBarrier2(const VkImageBarrier2& other) noexcept
-		: m_currentIndex{ other.m_currentIndex }, m_barriers{ other.m_barriers } {}
-
-	VkImageBarrier2& operator=(const VkImageBarrier2& other) noexcept
-	{
-		m_currentIndex = other.m_currentIndex;
-		m_barriers     = other.m_barriers;
-
-		return *this;
-	}
-
-	VkImageBarrier2(VkImageBarrier2&& other) noexcept
-		: m_currentIndex{ other.m_currentIndex }, m_barriers{ std::move(other.m_barriers) } {}
-
-	VkImageBarrier2& operator=(VkImageBarrier2&& other) noexcept
-	{
-		m_currentIndex = other.m_currentIndex;
-		m_barriers     = std::move(other.m_barriers);
-
-		return *this;
-	}
 };
 #endif

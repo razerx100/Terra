@@ -192,18 +192,18 @@ void RenderEngineIndirectDraw::ExecuteComputeStage(size_t frameIndex) {
 	Terra::Queue& compute = Terra::Get().Compute();
 	VKCommandBuffer& computeCmdBuffer = compute.CmdBuffer();
 
-	computeCmdBuffer.ResetBuffer(frameIndex);
+	//computeCmdBuffer.ResetBuffer(frameIndex);
 
-	const VkCommandBuffer vkComputeCommandBuffer = computeCmdBuffer.GetCommandBuffer(
-		frameIndex
-	);
+	//const VkCommandBuffer vkComputeCommandBuffer = computeCmdBuffer.GetCommandBuffer(
+	//	frameIndex
+	//);
 
-	m_computePipeline.ResetCounterBuffer(vkComputeCommandBuffer, frameIndex);
+	/*m_computePipeline.ResetCounterBuffer(vkComputeCommandBuffer, frameIndex);
 	m_computePipeline.BindComputePipeline(vkComputeCommandBuffer, frameIndex);
 	m_computePipeline.DispatchCompute(vkComputeCommandBuffer);
 
 	computeCmdBuffer.CloseBuffer(frameIndex);
-	compute.Que().SubmitCommandBuffer(vkComputeCommandBuffer, compute.SyncObj().GetFrontSemaphore());
+	compute.Que().SubmitCommandBuffer(vkComputeCommandBuffer, compute.SyncObj().GetFrontSemaphore());*/
 }
 
 // Individual Draw

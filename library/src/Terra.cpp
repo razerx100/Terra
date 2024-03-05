@@ -40,9 +40,9 @@ void InitGraphicsQueue(
 	std::uint32_t bufferCount, ObjectManager& om, Terra::Queue& queue
 )
 {
-	om.CreateObject(queue.m_queue, 1u, vkQueue);
-	om.CreateObject(queue.m_cmdBuffer, 1u, logicalDevice, queueIndex, bufferCount);
-	om.CreateObject(queue.m_syncObjects, 1u, logicalDevice, bufferCount, true);
+	//om.CreateObject(queue.m_queue, 1u, vkQueue);
+	//om.CreateObject(queue.m_cmdBuffer, 1u, logicalDevice, queueIndex, bufferCount);
+	//om.CreateObject(queue.m_syncObjects, 1u, logicalDevice, bufferCount, true);
 }
 
 void InitTransferQueue(
@@ -50,9 +50,9 @@ void InitTransferQueue(
 	ObjectManager& om, Terra::Queue& queue
 )
 {
-	om.CreateObject(queue.m_queue, 1u, vkQueue);
-	om.CreateObject(queue.m_cmdBuffer, 1u, logicalDevice, queueIndex);
-	om.CreateObject(queue.m_syncObjects, 1u, logicalDevice);
+	//om.CreateObject(queue.m_queue, 1u, vkQueue);
+	//om.CreateObject(queue.m_cmdBuffer, 1u, logicalDevice, queueIndex);
+	//om.CreateObject(queue.m_syncObjects, 1u, logicalDevice);
 }
 
 // Terra Instance
@@ -103,7 +103,8 @@ Terra::Terra(
 	RenderEngineType engineType
 ) : m_appName{ std::move(appName) }, m_objectManager{}, m_display{ nullptr }, m_vkInstance{ nullptr }
 	, m_surface{ nullptr }, m_device{ nullptr }, m_res{}
-	, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}, m_swapChain{ nullptr }
+	//, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}
+	, m_swapChain{ nullptr }
 	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
 	, m_textureStorage{ nullptr }, m_bufferManager{ nullptr }, m_cameraManager{ nullptr }
 {

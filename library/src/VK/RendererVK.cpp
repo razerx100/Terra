@@ -87,15 +87,15 @@ void RendererVK::Render() {
 	Terra& terra = Terra::Get();
 
 	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
-	const VkCommandBuffer graphicsCommandBuffer = terra.Graphics().CmdBuffer().GetCommandBuffer(
+	/*const VkCommandBuffer graphicsCommandBuffer = terra.Graphics().CmdBuffer().GetCommandBuffer(
 		imageIndex
 	);
 
-	RenderEngine& engine = terra.Engine();
 
 	engine.ExecutePreRenderStage(graphicsCommandBuffer, imageIndex);
 	engine.RecordDrawCommands(graphicsCommandBuffer, imageIndex);
-	engine.Present(graphicsCommandBuffer, imageIndex);
+	engine.Present(graphicsCommandBuffer, imageIndex);*/
+	RenderEngine& engine = terra.Engine();
 	engine.ExecutePostRenderStage();
 }
 
@@ -182,6 +182,7 @@ void RendererVK::ProcessData()
 
 	while (works != 0u);
 
+	/*
 	// Upload to GPU
 	VKCommandBuffer& transferCmdBuffer = terra.Transfer().CmdBuffer();
 	transferCmdBuffer.ResetFirstBuffer();
@@ -238,7 +239,7 @@ void RendererVK::ProcessData()
 	computeSync.WaitForFrontFence();
 	computeSync.ResetFrontFence();
 
-	textures.SetDescriptorLayouts();
+	textures.SetDescriptorLayouts();*/
 
 	terra.GraphicsDesc().CreateDescriptorSets(logicalDevice);
 	terra.ComputeDesc().CreateDescriptorSets(logicalDevice);
@@ -247,7 +248,7 @@ void RendererVK::ProcessData()
 
 	// Cleanup Upload Buffers
 	engine.ReleaseUploadResources();
-	textures.ReleaseUploadBuffers();
+	//textures.ReleaseUploadBuffers();
 	terra.Res().ResetUpload();
 }
 
