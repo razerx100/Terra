@@ -152,9 +152,9 @@ Terra::Terra(
 		.SetPhysicalDeviceAutomatic(vkInstance)
 		.CreateLogicalDevice();
 
-	const VkDevice logicalDevice             = Device().GetLogicalDevice();
-	const VkPhysicalDevice physicalDevice    = Device().GetPhysicalDevice();
-	const VkQueueFamilyMananger queFamilyMan = Device().GetQueueFamilyManager();
+	const VkDevice logicalDevice              = Device().GetLogicalDevice();
+	const VkPhysicalDevice physicalDevice     = Device().GetPhysicalDevice();
+	const VkQueueFamilyMananger& queFamilyMan = Device().GetQueueFamilyManager();
 
 	_vkResourceView::SetBufferAlignments(physicalDevice);
 

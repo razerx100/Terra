@@ -36,7 +36,8 @@ public:
 	static VkPhysicalDeviceProperties GetDeviceProperties(VkPhysicalDevice device) noexcept;
 
 	[[nodiscard]]
-	VkQueueFamilyMananger GetQueueFamilyManager() const noexcept { return m_queueFamilyManager; }
+	const VkQueueFamilyMananger& GetQueueFamilyManager() const noexcept
+	{ return m_queueFamilyManager; }
 	[[nodiscard]]
 	VkDeviceExtensionManager& ExtensionManager() noexcept { return m_extensionManager; }
 	[[nodiscard]]
