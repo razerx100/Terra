@@ -185,6 +185,8 @@ public:
 
 	[[nodiscard]]
 	VKCommandBuffer& GetBuffer(size_t index) noexcept { return m_commandBuffers.at(index); }
+	[[nodiscard]]
+	VkQueue Get() const noexcept { return m_commandQueue; }
 
 private:
 	void SelfDestruct() noexcept;
