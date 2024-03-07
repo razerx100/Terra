@@ -143,14 +143,14 @@ public:
 	}
 
 	ImageBarrierBuilder& Image(
-		VkImage image, VkImageAspectFlags imageAspect, std::uint32_t mipLevel = 0u,
+		VkImage image, VkImageAspectFlags imageAspect, std::uint32_t mipBaseLevel = 0u,
 		std::uint32_t levelCount = 1u
 	) noexcept {
 		m_barrier.image = image;
 
 		VkImageSubresourceRange& subresourceRange = m_barrier.subresourceRange;
 		subresourceRange.aspectMask   = imageAspect;
-		subresourceRange.baseMipLevel = mipLevel;
+		subresourceRange.baseMipLevel = mipBaseLevel;
 		subresourceRange.levelCount   = levelCount;
 
 		return *this;

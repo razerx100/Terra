@@ -45,6 +45,84 @@ private:
 	VkBufferCopy m_bufferCopy;
 };
 
+class BufferToImageCopyBuilder
+{
+public:
+	BufferToImageCopyBuilder()
+		: m_imageCopy{
+			.bufferOffset      = 0u,
+			.bufferRowLength   = 0u,
+			.bufferImageHeight = 0u,
+			.imageSubresource  = VkImageSubresourceLayers{ 0u, 0u, 0u, 1u },
+			.imageOffset       = VkOffset3D{ .x = 0u, .y = 0u, .z = 0u },
+			.imageExtent       = VkExtent3D{ .width = 0u, .height = 0u, .depth = 0u }
+		}
+	{}
+
+	BufferToImageCopyBuilder& ImageOffset(
+		std::uint32_t x, std::uint32_t y, std::uint32_t z = 0u
+	) noexcept {
+		m_imageCopy.imageOffset.x = x;
+		m_imageCopy.imageOffset.y = y;
+		m_imageCopy.imageOffset.z = z;
+
+		return *this;
+	}
+
+	BufferToImageCopyBuilder& ImageExtent(
+		std::uint32_t width, std::uint32_t height, std::uint32_t depth = 0u
+	) noexcept {
+		m_imageCopy.imageExtent.width  = width;
+		m_imageCopy.imageExtent.height = height;
+		m_imageCopy.imageExtent.depth  = depth;
+
+		return *this;
+	}
+
+	BufferToImageCopyBuilder& ImageExtent(const VkExtent3D& extent) noexcept
+	{
+		m_imageCopy.imageExtent  = extent;
+
+		return *this;
+	}
+
+	BufferToImageCopyBuilder& ImageAspectFlags(VkImageAspectFlags aspectFlags) noexcept
+	{
+		m_imageCopy.imageSubresource.aspectMask = aspectFlags;
+
+		return *this;
+	}
+
+	// The MipLevel to copy.
+	BufferToImageCopyBuilder& ImageMipLevel(std::uint32_t mipLevel) noexcept
+	{
+		m_imageCopy.imageSubresource.mipLevel = mipLevel;
+
+		return *this;
+	}
+
+	BufferToImageCopyBuilder& BufferOffet(VkDeviceSize offset) noexcept
+	{
+		m_imageCopy.bufferOffset = offset;
+
+		return *this;
+	}
+
+	BufferToImageCopyBuilder& BufferRowAndHeight(std::uint32_t row, std::uint32_t height) noexcept
+	{
+		m_imageCopy.bufferRowLength   = row;
+		m_imageCopy.bufferImageHeight = height;
+
+		return *this;
+	}
+
+	[[nodiscard]]
+	const VkBufferImageCopy* GetPtr() const noexcept { return &m_imageCopy; }
+
+private:
+	VkBufferImageCopy m_imageCopy;
+};
+
 class VKCommandBuffer
 {
 public:
