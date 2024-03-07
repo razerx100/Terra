@@ -82,13 +82,25 @@ public:
 private:
 	VkCommandBuffer m_commandBuffer;
 
-	// I think I don't need any move ctor or assign operator here,
-	// since all of the commandBuffers should be destroyed with the destruction
-	// of their commandPool. So, I don't have to worry about each of the commandBuffer,
-	// which is what I am storing here.
+public:
+	VKCommandBuffer(const VKCommandBuffer&) = delete;
+	VKCommandBuffer& operator=(const VKCommandBuffer&) = delete;
+
+	VKCommandBuffer(VKCommandBuffer&& other) noexcept
+		: m_commandBuffer{ other.m_commandBuffer }
+	{
+		other.m_commandBuffer = VK_NULL_HANDLE;
+	}
+	VKCommandBuffer& operator=(VKCommandBuffer&& other) noexcept
+	{
+		m_commandBuffer       = other.m_commandBuffer;
+		other.m_commandBuffer = VK_NULL_HANDLE;
+
+		return *this;
+	}
 };
 
-template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
+template<std::uint32_t WaitCount = 0u, std::uint32_t SignalCount = 0u, std::uint32_t CommandBufferCount = 1u>
 class QueueSubmitBuilder
 {
 public:
@@ -104,7 +116,7 @@ public:
 			.signalSemaphoreCount = SignalCount,
 			.pSignalSemaphores    = std::data(m_signalSemaphores)
 		},
-		m_currentWaitIndex{ 0u }, m_currentSignalIndex{ 0u }
+		m_currentWaitIndex{ 0u }, m_currentSignalIndex{ 0u }, m_currentCmdBufferIndex{ 0u }
 	{
 		m_waitSemaphores.fill(VK_NULL_HANDLE);
 		m_waitStages.fill(VK_PIPELINE_STAGE_NONE);
@@ -183,8 +195,29 @@ public:
 		vkQueueSubmit(m_commandQueue, 1u, builder.GetPtr(), fence);
 	}
 
+	template<std::uint32_t WaitCount, std::uint32_t SignalCount>
+	void SubmitCommandBuffer(
+		QueueSubmitBuilder<WaitCount, SignalCount>&& builder,
+		size_t bufferIndex, VkFence fence = VK_NULL_HANDLE
+	) const noexcept {
+		SubmitCommandBuffer<WaitCount, SignalCount>(
+			builder.CommandBuffer(GetBuffer(bufferIndex).Get()), fence
+		);
+	}
+	template<std::uint32_t WaitCount, std::uint32_t SignalCount>
+	void SubmitCommandBuffer(
+		QueueSubmitBuilder<WaitCount, SignalCount>& builder,
+		size_t bufferIndex, VkFence fence = VK_NULL_HANDLE
+	) const noexcept {
+		SubmitCommandBuffer<WaitCount, SignalCount>(
+			builder.CommandBuffer(GetBuffer(bufferIndex).Get()), fence
+		);
+	}
+
 	[[nodiscard]]
 	VKCommandBuffer& GetBuffer(size_t index) noexcept { return m_commandBuffers.at(index); }
+	[[nodiscard]]
+	const VKCommandBuffer& GetBuffer(size_t index) const noexcept { return m_commandBuffers.at(index); }
 	[[nodiscard]]
 	VkQueue Get() const noexcept { return m_commandQueue; }
 
@@ -205,7 +238,7 @@ public:
 	VkCommandQueue(VkCommandQueue&& other) noexcept
 		: m_commandQueue{ other.m_commandQueue }, m_device{ other.m_device },
 		m_commandPool{ other.m_commandPool }, m_queueIndex{ other.m_queueIndex },
-		m_commandBuffers{ std::move(m_commandBuffers) }
+		m_commandBuffers{ std::move(other.m_commandBuffers) }
 	{
 		other.m_commandPool = VK_NULL_HANDLE;
 	}
@@ -217,7 +250,7 @@ public:
 		m_device            = other.m_device;
 		m_commandPool       = other.m_commandPool;
 		m_queueIndex        = other.m_queueIndex;
-		m_commandBuffers    = std::move(m_commandBuffers);
+		m_commandBuffers    = std::move(other.m_commandBuffers);
 		other.m_commandPool = VK_NULL_HANDLE;
 
 		return *this;
