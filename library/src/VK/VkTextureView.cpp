@@ -73,7 +73,7 @@ void VKImageView::SelfDestruct() noexcept
 
 void VKImageView::CreateView(
 	VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
-	std::uint32_t mipLevel, std::uint32_t mipLevelCount
+	std::uint32_t mipBaseLevel, std::uint32_t mipLevelCount
 ) {
 	VkComponentMapping componentMapping{
 		.r = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -83,7 +83,7 @@ void VKImageView::CreateView(
 	};
 	VkImageSubresourceRange subresourceRange{
 		.aspectMask     = aspectFlags,
-		.baseMipLevel   = mipLevel,
+		.baseMipLevel   = mipBaseLevel,
 		.levelCount     = mipLevelCount,
 		.baseArrayLayer = 0u,
 		.layerCount     = 1u
@@ -99,6 +99,10 @@ void VKImageView::CreateView(
 	};
 
 	vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView);
+
+	m_imageAspect   = aspectFlags;
+	m_mipBaseLevel  = mipBaseLevel;
+	m_mipLevelCount = mipLevelCount;
 }
 
 // Texture View
@@ -106,43 +110,37 @@ void VkTextureView::CreateView2D(
 	std::uint32_t width, std::uint32_t height,
 	VkFormat imageFormat, VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
-	std::uint32_t mipLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
+	std::uint32_t mipBaseLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
 ) {
 	m_texture.Create2D(
 		width, height, mipLevelCount, imageFormat, textureUsageFlags, queueFamilyIndices
 	);
 	m_imageView.CreateView(
-		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
+		m_texture.Get(), imageFormat, aspectFlags, imageType, mipBaseLevel, mipLevelCount
 	);
-
-	m_imageAspect = aspectFlags;
 }
 
 void VkTextureView::CreateView3D(
 	std::uint32_t width, std::uint32_t height, std::uint32_t depth,
 	VkFormat imageFormat, VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
-	std::uint32_t mipLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
+	std::uint32_t mipBaseLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
 ) {
 	m_texture.Create3D(
 		width, height, depth, mipLevelCount, imageFormat, textureUsageFlags, queueFamilyIndices
 	);
 	m_imageView.CreateView(
-		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
+		m_texture.Get(), imageFormat, aspectFlags, imageType, mipBaseLevel, mipLevelCount
 	);
-
-	m_imageAspect = aspectFlags;
 }
 
 void VkTextureView::CreateView(
 	Texture&& texture,
 	VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
-	std::uint32_t mipLevel /* = 0u */, std::uint32_t mipLevelCount /* = 1u */
+	std::uint32_t mipBaseLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
 ) {
 	m_texture = std::move(texture);
 	m_imageView.CreateView(
-		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
+		m_texture.Get(), imageFormat, aspectFlags, imageType, mipBaseLevel, mipLevelCount
 	);
-
-	m_imageAspect = aspectFlags;
 }

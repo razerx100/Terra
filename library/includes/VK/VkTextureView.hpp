@@ -5,30 +5,44 @@
 class VKImageView
 {
 public:
-	VKImageView(VkDevice device) : m_device{ device }, m_imageView{ VK_NULL_HANDLE } {}
+	VKImageView(VkDevice device)
+		: m_device{ device }, m_imageView{ VK_NULL_HANDLE }, m_imageAspect{ 0u },
+		m_mipBaseLevel{ 0u }, m_mipLevelCount{ 1u }
+	{}
 	~VKImageView() noexcept;
 
 	void CreateView(
 		VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
-		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
+		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 
 	[[nodiscard]]
 	VkImageView Get() const noexcept { return m_imageView; }
+	[[nodiscard]]
+	VkImageAspectFlags GetAspect() const noexcept { return m_imageAspect; }
+	[[nodiscard]]
+	std::uint32_t GetMipLevelCount() const noexcept { return m_mipLevelCount; }
+	[[nodiscard]]
+	std::uint32_t GetMipBaseLevel() const noexcept { return m_mipBaseLevel; }
 
 private:
 	void SelfDestruct() noexcept;
 
 private:
-	VkDevice    m_device;
-	VkImageView m_imageView;
+	VkDevice           m_device;
+	VkImageView        m_imageView;
+	VkImageAspectFlags m_imageAspect;
+	std::uint32_t      m_mipBaseLevel;
+	std::uint32_t      m_mipLevelCount;
 
 public:
 	VKImageView(const VKImageView&) = delete;
 	VKImageView& operator=(const VKImageView&) = delete;
 
 	VKImageView(VKImageView&& other) noexcept
-		: m_device{ other.m_device }, m_imageView{ other.m_imageView }
+		: m_device{ other.m_device }, m_imageView{ other.m_imageView },
+		m_imageAspect{ other.m_imageAspect }, m_mipBaseLevel{ other.m_mipBaseLevel },
+		m_mipLevelCount{ other.m_mipLevelCount }
 	{
 		other.m_imageView = VK_NULL_HANDLE;
 	}
@@ -38,6 +52,9 @@ public:
 
 		m_device          = other.m_device;
 		m_imageView       = other.m_imageView;
+		m_imageAspect     = other.m_imageAspect;
+		m_mipBaseLevel    = other.m_mipBaseLevel;
+		m_mipLevelCount   = other.m_mipLevelCount;
 		other.m_imageView = VK_NULL_HANDLE;
 
 		return *this;
@@ -48,27 +65,26 @@ class VkTextureView
 {
 public:
 	VkTextureView(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
-		: m_device{ device }, m_texture{ device, memoryManager, memoryType }, m_imageView{ device },
-		m_imageAspect{ 0u }
+		: m_device{ device }, m_texture{ device, memoryManager, memoryType }, m_imageView{ device }
 	{}
 
 	void CreateView2D(
 		std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 		VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 		VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
-		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
+		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 	void CreateView3D(
 		std::uint32_t width, std::uint32_t height, std::uint32_t depth,
 		VkFormat imageFormat, VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 		VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
-		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
+		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 
 	void CreateView(
 		Texture&& texture,
 		VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
-		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
+		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 
 	[[nodiscard]]
@@ -76,13 +92,16 @@ public:
 	[[nodiscard]]
 	VkImageView GetView() const noexcept { return m_imageView.Get(); }
 	[[nodiscard]]
-	VkImageAspectFlags GetAspect() const noexcept { return m_imageAspect; }
+	VkImageAspectFlags GetAspect() const noexcept { return m_imageView.GetAspect(); }
+	[[nodiscard]]
+	std::uint32_t GetMipLevelCount() const noexcept { return m_imageView.GetMipLevelCount(); }
+	[[nodiscard]]
+	std::uint32_t GetMipBaseLevel() const noexcept { return m_imageView.GetMipBaseLevel(); }
 
 private:
 	VkDevice           m_device;
 	Texture            m_texture;
 	VKImageView        m_imageView;
-	VkImageAspectFlags m_imageAspect;
 
 public:
 	VkTextureView(const VkTextureView&) = delete;
@@ -90,14 +109,13 @@ public:
 
 	VkTextureView(VkTextureView&& other) noexcept
 		: m_device{ other.m_device }, m_texture{ std::move(other.m_texture) },
-		m_imageView{ std::move(other.m_imageView) }, m_imageAspect{ other.m_imageAspect }
+		m_imageView{ std::move(other.m_imageView) }
 	{}
 	VkTextureView& operator=(VkTextureView&& other) noexcept
 	{
-		m_device      = other.m_device;
-		m_texture     = std::move(other.m_texture);
-		m_imageView   = std::move(other.m_imageView);
-		m_imageAspect = other.m_imageAspect;
+		m_device        = other.m_device;
+		m_texture       = std::move(other.m_texture);
+		m_imageView     = std::move(other.m_imageView);
 
 		return *this;
 	}
