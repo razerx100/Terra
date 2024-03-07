@@ -4,6 +4,7 @@
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
 #include <VkCommandQueue.hpp>
+#include <VkSyncObjects.hpp>
 
 namespace Constants
 {
@@ -66,4 +67,14 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 	}
 
 	EXPECT_NE(queue.GetBuffer(1u).Get(), VK_NULL_HANDLE) << "Command buffer creation failed.";
+
+	VKFence fence{ logicalDevice };
+	fence.Create(false);
+
+	queue.GetBuffer(0u).Reset();
+	queue.GetBuffer(0u).Close();
+
+	queue.SubmitCommandBuffer(QueueSubmitBuilder{}, 0u, fence.Get());
+
+	fence.Wait();
 }
