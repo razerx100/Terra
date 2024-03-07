@@ -48,13 +48,26 @@ class VkTextureView
 {
 public:
 	VkTextureView(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
-		: m_device{ device }, m_texture{ device, memoryManager, memoryType }, m_imageView{ device }
+		: m_device{ device }, m_texture{ device, memoryManager, memoryType }, m_imageView{ device },
+		m_imageAspect{ 0u }
 	{}
 
-	void CreateView(
+	void CreateView2D(
 		std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
 		VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 		VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
+		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
+	);
+	void CreateView3D(
+		std::uint32_t width, std::uint32_t height, std::uint32_t depth,
+		VkFormat imageFormat, VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
+		VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
+		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
+	);
+
+	void CreateView(
+		Texture&& texture,
+		VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
 		std::uint32_t mipLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 
@@ -62,11 +75,14 @@ public:
 	const Texture& GetTexture() const noexcept { return m_texture; }
 	[[nodiscard]]
 	VkImageView GetView() const noexcept { return m_imageView.Get(); }
+	[[nodiscard]]
+	VkImageAspectFlags GetAspect() const noexcept { return m_imageAspect; }
 
 private:
-	VkDevice    m_device;
-	Texture     m_texture;
-	VKImageView m_imageView;
+	VkDevice           m_device;
+	Texture            m_texture;
+	VKImageView        m_imageView;
+	VkImageAspectFlags m_imageAspect;
 
 public:
 	VkTextureView(const VkTextureView&) = delete;
@@ -74,12 +90,14 @@ public:
 
 	VkTextureView(VkTextureView&& other) noexcept
 		: m_device{ other.m_device }, m_texture{ std::move(other.m_texture) },
-		m_imageView{ std::move(other.m_imageView) } {}
+		m_imageView{ std::move(other.m_imageView) }, m_imageAspect{ other.m_imageAspect }
+	{}
 	VkTextureView& operator=(VkTextureView&& other) noexcept
 	{
-		m_device          = other.m_device;
-		m_texture         = std::move(other.m_texture);
-		m_imageView       = std::move(other.m_imageView);
+		m_device      = other.m_device;
+		m_texture     = std::move(other.m_texture);
+		m_imageView   = std::move(other.m_imageView);
+		m_imageAspect = other.m_imageAspect;
 
 		return *this;
 	}

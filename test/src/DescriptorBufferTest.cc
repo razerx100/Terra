@@ -83,7 +83,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 	}
 
 	{
-		MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+		MemoryManager memoryManager{ physicalDevice, logicalDevice, 200_MB, 200_KB };
 
 		VkSamplerCreateInfoBuilder samplerCreateInfo{};
 
@@ -101,14 +101,14 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		descBuffer.CreateBuffer();
 
 		VkTextureView textureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
-		textureView.CreateView(
+		textureView.CreateView2D(
 			200u, 200u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
 			VK_IMAGE_VIEW_TYPE_2D, {}
 		);
 		VkTextureView storageView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
-		storageView.CreateView(
-			200u, 200u, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_IMAGE_VIEW_TYPE_2D, {}
+		storageView.CreateView3D(
+			200u, 200u, 50u, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_STORAGE_BIT,
+			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_3D, {}
 		);
 
 		descBuffer.AddCombinedImageDescriptor(

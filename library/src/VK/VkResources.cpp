@@ -185,7 +185,7 @@ VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
 // Texture
 Texture::Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: Resource{ memoryManager, memoryType }, m_image{ VK_NULL_HANDLE }, m_device{ device },
-	m_format{ VK_FORMAT_UNDEFINED }
+	m_format{ VK_FORMAT_UNDEFINED }, m_imageExtent{ 0u, 0u, 0u }
 {}
 
 Texture::~Texture() noexcept
@@ -198,33 +198,50 @@ void Texture::SelfDestruct() noexcept
 	vkDestroyImage(m_device, m_image, nullptr);
 }
 
-void Texture::Create(
-	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+void Texture::Create2D(
+	std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkFormat imageFormat,
 	VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 ) {
-	VkExtent3D extent
-	{
-		.width  = width,
-		.height = height,
-		.depth  = 1u
-	};
+	Create(
+		width, height, 1u, mipLevels, imageFormat, VK_IMAGE_TYPE_2D, usageFlags, queueFamilyIndices
+	);
+}
+
+void Texture::Create3D(
+	std::uint32_t width, std::uint32_t height, std::uint32_t depth,
+	std::uint32_t mipLevels, VkFormat imageFormat,
+	VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+) {
+	Create(
+		width, height, depth, mipLevels, imageFormat, VK_IMAGE_TYPE_3D, usageFlags, queueFamilyIndices
+	);
+}
+
+void Texture::Create(
+	std::uint32_t width, std::uint32_t height, std::uint32_t depth,
+	std::uint32_t mipLevels, VkFormat imageFormat, VkImageType imageType,
+	VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+) {
+	m_imageExtent.width  = width;
+	m_imageExtent.height = height;
+	m_imageExtent.depth  = depth;
+
+	m_format = imageFormat;
 
 	VkImageCreateInfo createInfo
 	{
 		.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.flags         = 0u,
-		.imageType     = VK_IMAGE_TYPE_2D,
-		.format        = imageFormat,
-		.extent        = extent,
-		.mipLevels     = 1u,
+		.imageType     = imageType,
+		.format        = m_format,
+		.extent        = m_imageExtent,
+		.mipLevels     = mipLevels,
 		.arrayLayers   = 1u,
 		.samples       = VK_SAMPLE_COUNT_1_BIT,
 		.tiling        = VK_IMAGE_TILING_OPTIMAL,
 		.usage         = usageFlags,
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
-
-	m_format = imageFormat;
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 

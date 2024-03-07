@@ -165,8 +165,13 @@ public:
 	Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
 	~Texture() noexcept;
 
-	void Create(
-		std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
+	void Create2D(
+		std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkFormat imageFormat,
+		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+	);
+	void Create3D(
+		std::uint32_t width, std::uint32_t height, std::uint32_t depth,
+		std::uint32_t mipLevels, VkFormat imageFormat,
 		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
 
@@ -174,14 +179,23 @@ public:
 	VkImage Get() const noexcept { return m_image; }
 	[[nodiscard]]
 	VkFormat Format() const noexcept { return m_format; }
+	[[nodiscard]]
+	VkExtent3D GetExtent() const noexcept { return m_imageExtent; }
 
 private:
 	void SelfDestruct() noexcept;
 
+	void Create(
+		std::uint32_t width, std::uint32_t height, std::uint32_t depth,
+		std::uint32_t mipLevels, VkFormat imageFormat, VkImageType imageType,
+		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
+	);
+
 private:
-	VkImage  m_image;
-	VkDevice m_device;
-	VkFormat m_format;
+	VkImage    m_image;
+	VkDevice   m_device;
+	VkFormat   m_format;
+	VkExtent3D m_imageExtent;
 
 public:
 	Texture(const Texture&) = delete;
@@ -189,7 +203,7 @@ public:
 
 	Texture(Texture&& other) noexcept
 		: Resource{ std::move(other) }, m_image{ other.m_image }, m_device{ other.m_device },
-		m_format{ other.m_format }
+		m_format{ other.m_format }, m_imageExtent{ other.m_imageExtent }
 	{
 		other.m_image = VK_NULL_HANDLE;
 	}
@@ -202,6 +216,7 @@ public:
 		m_image       = other.m_image;
 		m_device      = other.m_device;
 		m_format      = other.m_format;
+		m_imageExtent = other.m_imageExtent;
 		other.m_image = VK_NULL_HANDLE;
 
 		return *this;

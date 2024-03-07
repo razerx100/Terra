@@ -102,14 +102,47 @@ void VKImageView::CreateView(
 }
 
 // Texture View
-void VkTextureView::CreateView(
-	std::uint32_t width, std::uint32_t height, VkFormat imageFormat,
-	VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
+void VkTextureView::CreateView2D(
+	std::uint32_t width, std::uint32_t height,
+	VkFormat imageFormat, VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
 	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
 	std::uint32_t mipLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
 ) {
-	m_texture.Create(width, height, imageFormat, textureUsageFlags, queueFamilyIndices);
+	m_texture.Create2D(
+		width, height, mipLevelCount, imageFormat, textureUsageFlags, queueFamilyIndices
+	);
 	m_imageView.CreateView(
 		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
 	);
+
+	m_imageAspect = aspectFlags;
+}
+
+void VkTextureView::CreateView3D(
+	std::uint32_t width, std::uint32_t height, std::uint32_t depth,
+	VkFormat imageFormat, VkImageUsageFlags textureUsageFlags, VkImageAspectFlags aspectFlags,
+	VkImageViewType imageType, const std::vector<std::uint32_t>& queueFamilyIndices,
+	std::uint32_t mipLevel /* = 0u */ , std::uint32_t mipLevelCount /* = 1u */
+) {
+	m_texture.Create3D(
+		width, height, depth, mipLevelCount, imageFormat, textureUsageFlags, queueFamilyIndices
+	);
+	m_imageView.CreateView(
+		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
+	);
+
+	m_imageAspect = aspectFlags;
+}
+
+void VkTextureView::CreateView(
+	Texture&& texture,
+	VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
+	std::uint32_t mipLevel /* = 0u */, std::uint32_t mipLevelCount /* = 1u */
+) {
+	m_texture = std::move(texture);
+	m_imageView.CreateView(
+		m_texture.Get(), imageFormat, aspectFlags, imageType, mipLevel, mipLevelCount
+	);
+
+	m_imageAspect = aspectFlags;
 }
