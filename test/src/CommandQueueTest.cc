@@ -73,7 +73,7 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 	queue.GetBuffer(0u).Reset();
 	queue.GetBuffer(0u).Close();
 
-	queue.SubmitCommandBuffer(0u, fence.Get());
+	queue.SubmitCommandBuffer(0u, fence);
 
 	fence.Wait();
 }
@@ -129,7 +129,7 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 	VKFence fence{ logicalDevice };
 	fence.Create(false);
 
-	queue.SubmitCommandBuffer(0u, fence.Get());
+	queue.SubmitCommandBuffer(0u, fence);
 
 	fence.Wait();
 }

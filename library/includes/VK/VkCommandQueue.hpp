@@ -4,6 +4,7 @@
 #include <VkResources.hpp>
 #include <VkTextureView.hpp>
 #include <VkResourceBarriers2.hpp>
+#include <VkSyncObjects.hpp>
 #include <array>
 #include <cassert>
 
@@ -211,35 +212,35 @@ public:
 	}
 
 	QueueSubmitBuilder& WaitSemaphore(
-		VkSemaphore semaphore, VkPipelineStageFlagBits pipelineStage
+		const VKSemaphore& semaphore, VkPipelineStageFlagBits pipelineStage
 	) {
 		assert(m_currentWaitIndex < WaitCount && "More Wait semaphores than the allowed amount.");
 
-		m_waitSemaphores.at(m_currentWaitIndex) = semaphore;
+		m_waitSemaphores.at(m_currentWaitIndex) = semaphore.Get();
 		m_waitStages.at(m_currentWaitIndex)     = pipelineStage;
 
 		++m_currentWaitIndex;
 
 		return *this;
 	}
-	QueueSubmitBuilder& SignalSemaphore(VkSemaphore semaphore)
+	QueueSubmitBuilder& SignalSemaphore(const VKSemaphore& semaphore)
 	{
 		assert(m_currentSignalIndex < SignalCount && "More Signal semaphores than the allowed amount.");
 
-		m_signalSemaphores.at(m_currentSignalIndex) = semaphore;
+		m_signalSemaphores.at(m_currentSignalIndex) = semaphore.Get();
 
 		++m_currentSignalIndex;
 
 		return *this;
 	}
-	QueueSubmitBuilder& CommandBuffer(VkCommandBuffer commandBuffer)
+	QueueSubmitBuilder& CommandBuffer(const VKCommandBuffer& commandBuffer)
 	{
 		assert(
 			m_currentCmdBufferIndex < CommandBufferCount
 			&& "More CommandBuffers than the allowed amount."
 		);
 
-		m_commandBuffers.at(m_currentCmdBufferIndex) = commandBuffer;
+		m_commandBuffers.at(m_currentCmdBufferIndex) = commandBuffer.Get();
 
 		++m_currentCmdBufferIndex;
 
@@ -276,17 +277,18 @@ public:
 	template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
 	void SubmitCommandBuffer(
 		const QueueSubmitBuilder<WaitCount, SignalCount, CommandBufferCount>& builder,
-		VkFence fence
+		const VKFence& fence
 	) const noexcept {
-		vkQueueSubmit(m_commandQueue, 1u, builder.GetPtr(), fence);
+		vkQueueSubmit(m_commandQueue, 1u, builder.GetPtr(), fence.Get());
 	}
 
 	template<std::uint32_t WaitCount = 0u, std::uint32_t SignalCount = 0u>
 	void SubmitCommandBuffer(
-		size_t bufferIndex, VkFence fence, QueueSubmitBuilder<WaitCount, SignalCount>&& builder = {}
+		size_t bufferIndex, const VKFence& fence,
+		QueueSubmitBuilder<WaitCount, SignalCount>&& builder = {}
 	) const noexcept {
 		SubmitCommandBuffer<WaitCount, SignalCount>(
-			builder.CommandBuffer(GetBuffer(bufferIndex).Get()), fence
+			builder.CommandBuffer(GetBuffer(bufferIndex)), fence
 		);
 	}
 
