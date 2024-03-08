@@ -5,6 +5,7 @@
 #include <VkDeviceManager.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkSyncObjects.hpp>
+#include <VkTextureView.hpp>
 
 namespace Constants
 {
@@ -73,6 +74,64 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 
 	queue.GetBuffer(0u).Reset();
 	queue.GetBuffer(0u).Close();
+
+	queue.SubmitCommandBuffer(QueueSubmitBuilder{}, 0u, fence.Get());
+
+	fence.Wait();
+}
+
+TEST_F(CommandQueueTest, CommandQueueCopyTest)
+{
+	VkDevice logicalDevice                    = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice           = s_deviceManager->GetPhysicalDevice();
+	const VkQueueFamilyMananger& queFamilyMan = s_deviceManager->GetQueueFamilyManager();
+
+	QueueType type = QueueType::TransferQueue;
+
+	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
+	queue.CreateBuffers(1u);
+
+	EXPECT_NE(queue.Get(), VK_NULL_HANDLE) << "Queue creation failed.";
+
+	VKFence fence{ logicalDevice };
+	fence.Create(false);
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 200_MB, 200_KB };
+
+	Buffer testBuffer1{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+	testBuffer1.Create(
+		20_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		{}
+	);
+
+	Buffer testBuffer2{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+	testBuffer2.Create(
+		20_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		{}
+	);
+
+	VkTextureView testTextureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+	testTextureView.CreateView2D(
+		1280u, 720u, VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, {}
+	);
+
+	Buffer testBuffer3{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+	testBuffer3.Create(
+		testTextureView.GetTexture().Size(),
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {}
+	);
+
+	{
+		VKCommandBuffer& cmdBuffer = queue.GetBuffer(0u);
+		cmdBuffer.Reset();
+
+		cmdBuffer.Copy(testBuffer1, testBuffer2, BufferToBufferCopyBuilder{});
+		cmdBuffer.Copy(testBuffer3, testTextureView, BufferToImageCopyBuilder{});
+
+		cmdBuffer.Close();
+	}
 
 	queue.SubmitCommandBuffer(QueueSubmitBuilder{}, 0u, fence.Get());
 
