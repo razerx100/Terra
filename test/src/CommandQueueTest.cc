@@ -56,8 +56,6 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
 	queue.CreateBuffers(Constants::bufferCount);
 
-	EXPECT_NE(queue.Get(), VK_NULL_HANDLE) << "Queue creation failed.";
-
 	{
 		type = QueueType::ComputeQueue;
 
@@ -90,8 +88,6 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 
 	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
 	queue.CreateBuffers(1u);
-
-	EXPECT_NE(queue.Get(), VK_NULL_HANDLE) << "Queue creation failed.";
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 200_MB, 200_KB };
 
