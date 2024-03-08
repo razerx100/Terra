@@ -138,10 +138,10 @@ public:
 		const Buffer& src, const Buffer& dst, const BufferToBufferCopyBuilder& builder
 	) noexcept;
 	VKCommandBuffer& Copy(
-		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
+		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder = {}
 	) noexcept;
 	VKCommandBuffer& Copy(
-		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
+		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder = {}
 	) noexcept;
 	VKCommandBuffer& Copy(
 		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
@@ -276,15 +276,14 @@ public:
 	template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
 	void SubmitCommandBuffer(
 		const QueueSubmitBuilder<WaitCount, SignalCount, CommandBufferCount>& builder,
-		VkFence fence = VK_NULL_HANDLE
+		VkFence fence
 	) const noexcept {
 		vkQueueSubmit(m_commandQueue, 1u, builder.GetPtr(), fence);
 	}
 
-	template<std::uint32_t WaitCount, std::uint32_t SignalCount>
+	template<std::uint32_t WaitCount = 0u, std::uint32_t SignalCount = 0u>
 	void SubmitCommandBuffer(
-		QueueSubmitBuilder<WaitCount, SignalCount>&& builder,
-		size_t bufferIndex, VkFence fence = VK_NULL_HANDLE
+		size_t bufferIndex, VkFence fence, QueueSubmitBuilder<WaitCount, SignalCount>&& builder = {}
 	) const noexcept {
 		SubmitCommandBuffer<WaitCount, SignalCount>(
 			builder.CommandBuffer(GetBuffer(bufferIndex).Get()), fence

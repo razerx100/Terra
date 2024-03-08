@@ -75,7 +75,7 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 	queue.GetBuffer(0u).Reset();
 	queue.GetBuffer(0u).Close();
 
-	queue.SubmitCommandBuffer(QueueSubmitBuilder{}, 0u, fence.Get());
+	queue.SubmitCommandBuffer(0u, fence.Get());
 
 	fence.Wait();
 }
@@ -127,13 +127,13 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 		VKCommandBuffer& cmdBuffer = queue.GetBuffer(0u);
 		cmdBuffer.Reset();
 
-		cmdBuffer.Copy(testBuffer1, testBuffer2, BufferToBufferCopyBuilder{});
-		cmdBuffer.Copy(testBuffer3, testTextureView, BufferToImageCopyBuilder{});
+		cmdBuffer.Copy(testBuffer1, testBuffer2);
+		cmdBuffer.Copy(testBuffer3, testTextureView);
 
 		cmdBuffer.Close();
 	}
 
-	queue.SubmitCommandBuffer(QueueSubmitBuilder{}, 0u, fence.Get());
+	queue.SubmitCommandBuffer(0u, fence.Get());
 
 	fence.Wait();
 }
