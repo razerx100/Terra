@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <array>
 #include <cassert>
+#include <VkTextureView.hpp>
 
 template<typename VkBarrierType>
 class BaseBarrierBuilder
@@ -149,11 +150,20 @@ public:
 		m_barrier.image = image;
 
 		VkImageSubresourceRange& subresourceRange = m_barrier.subresourceRange;
-		subresourceRange.aspectMask   = imageAspect;
-		subresourceRange.baseMipLevel = mipBaseLevel;
-		subresourceRange.levelCount   = levelCount;
+		subresourceRange.aspectMask     = imageAspect;
+		subresourceRange.baseMipLevel   = mipBaseLevel;
+		subresourceRange.levelCount     = levelCount;
+		subresourceRange.baseArrayLayer = 0u;
+		subresourceRange.layerCount     = 1u;
 
 		return *this;
+	}
+
+	ImageBarrierBuilder& Image(const VkTextureView& textureView) noexcept {
+		return Image(
+			textureView.GetTexture().Get(), textureView.GetAspect(), textureView.GetMipBaseLevel(),
+			textureView.GetMipLevelCount()
+		);
 	}
 
 	ImageBarrierBuilder& Layouts(VkImageLayout oldLayout, VkImageLayout newLayout) noexcept

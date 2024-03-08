@@ -137,7 +137,15 @@ public:
 	VKCommandBuffer& Copy(
 		const Buffer& src, const Buffer& dst, const BufferToBufferCopyBuilder& builder
 	) noexcept;
-	VKCommandBuffer& Copy(const Buffer& src, const VkTextureView& dst) noexcept;
+	VKCommandBuffer& Copy(
+		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
+	) noexcept;
+	VKCommandBuffer& Copy(
+		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
+	) noexcept;
+	VKCommandBuffer& Copy(
+		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
+	) noexcept;
 
 	template<std::uint32_t BarrierCount>
 	VKCommandBuffer& AddBarrier(const VkBufferBarrier2<BarrierCount>& barrier) noexcept
@@ -276,15 +284,6 @@ public:
 	template<std::uint32_t WaitCount, std::uint32_t SignalCount>
 	void SubmitCommandBuffer(
 		QueueSubmitBuilder<WaitCount, SignalCount>&& builder,
-		size_t bufferIndex, VkFence fence = VK_NULL_HANDLE
-	) const noexcept {
-		SubmitCommandBuffer<WaitCount, SignalCount>(
-			builder.CommandBuffer(GetBuffer(bufferIndex).Get()), fence
-		);
-	}
-	template<std::uint32_t WaitCount, std::uint32_t SignalCount>
-	void SubmitCommandBuffer(
-		QueueSubmitBuilder<WaitCount, SignalCount>& builder,
 		size_t bufferIndex, VkFence fence = VK_NULL_HANDLE
 	) const noexcept {
 		SubmitCommandBuffer<WaitCount, SignalCount>(

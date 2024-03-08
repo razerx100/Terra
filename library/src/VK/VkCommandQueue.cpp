@@ -1,4 +1,5 @@
 #include <VkCommandQueue.hpp>
+#include <VkResourceBarriers2.hpp>
 
 // Command Buffer
 VKCommandBuffer::VKCommandBuffer() : m_commandBuffer{VK_NULL_HANDLE} {}
@@ -46,8 +47,36 @@ VKCommandBuffer& VKCommandBuffer::Copy(
 	return *this;
 }
 
-VKCommandBuffer& VKCommandBuffer::Copy(const Buffer& src, const VkTextureView& dst) noexcept
-{
+VKCommandBuffer& VKCommandBuffer::Copy(
+	const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
+) noexcept {
+	return Copy(src, dst, builder.Size(src.Size()));
+}
+
+VKCommandBuffer& VKCommandBuffer::Copy(
+	const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
+) noexcept {
+	return Copy(
+		src, dst, builder.ImageExtent(dst.GetTexture().GetExtent()).ImageAspectFlags(dst.GetAspect())
+	);
+}
+
+VKCommandBuffer& VKCommandBuffer::Copy(
+	const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
+) noexcept {
+	VkImageBarrier2{}.AddMemoryBarrier(
+		ImageBarrierBuilder{}
+		.Image(dst)
+		.Layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		.AccessMasks(VK_ACCESS_NONE, VK_ACCESS_TRANSFER_WRITE_BIT)
+		.StageMasks(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT)
+	).RecordBarriers(m_commandBuffer);
+
+	vkCmdCopyBufferToImage(
+		m_commandBuffer, src.Get(), dst.GetTexture().Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1u, builder.GetPtr()
+	);
+
 	return *this;
 }
 
