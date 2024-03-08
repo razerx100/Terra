@@ -86,15 +86,12 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 	VkPhysicalDevice physicalDevice           = s_deviceManager->GetPhysicalDevice();
 	const VkQueueFamilyMananger& queFamilyMan = s_deviceManager->GetQueueFamilyManager();
 
-	QueueType type = QueueType::TransferQueue;
+	const QueueType type = QueueType::TransferQueue;
 
 	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
 	queue.CreateBuffers(1u);
 
 	EXPECT_NE(queue.Get(), VK_NULL_HANDLE) << "Queue creation failed.";
-
-	VKFence fence{ logicalDevice };
-	fence.Create(false);
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 200_MB, 200_KB };
 
@@ -132,6 +129,9 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 
 		cmdBuffer.Close();
 	}
+
+	VKFence fence{ logicalDevice };
+	fence.Create(false);
 
 	queue.SubmitCommandBuffer(0u, fence.Get());
 
