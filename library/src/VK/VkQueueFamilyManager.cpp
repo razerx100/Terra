@@ -1,47 +1,45 @@
 #include <VkQueueFamilyManager.hpp>
 #include <ranges>
 #include <algorithm>
+#include <limits>
 #include <VkHelperFunctions.hpp>
 
 VkQueueFamilyMananger::VkQueueFamilyMananger() noexcept
 	: m_queueIndices{}, m_graphicsQueue{ VK_NULL_HANDLE }, m_computeQueue{ VK_NULL_HANDLE },
-	m_transferQueue{ VK_NULL_HANDLE } {}
+	m_transferQueue{ VK_NULL_HANDLE }
+{}
 
-void VkQueueFamilyMananger::AddQueueFamilyIndices(const QueueIndices3& indices) noexcept {
+void VkQueueFamilyMananger::AddQueueFamilyIndices(const QueueIndices3& indices) noexcept
+{
 	m_queueIndices = indices;
 }
 
-void VkQueueFamilyMananger::AddQueue(QueueType type, VkQueue queue) noexcept {
-	switch (type) {
-	case GraphicsQueue: {
+void VkQueueFamilyMananger::AddQueue(QueueType type, VkQueue queue) noexcept
+{
+	switch (type)
+	{
+	case GraphicsQueue:
+	{
 		m_graphicsQueue = queue;
 		break;
 	}
-	case ComputeQueue: {
+	case ComputeQueue:
+	{
 		m_computeQueue = queue;
 		break;
 	}
-	case TransferQueue: {
+	case TransferQueue:
+	{
 		m_transferQueue = queue;
 		break;
 	}
 	}
 }
 
-QueueIndicesCG VkQueueFamilyMananger::GetComputeAndGraphicsIndices() const noexcept {
-	return m_queueIndices;
-}
-
-QueueIndicesTG VkQueueFamilyMananger::GetTransferAndGraphicsIndices() const noexcept {
-	return m_queueIndices;
-}
-
-QueueIndices3 VkQueueFamilyMananger::GetAllIndices() const noexcept {
-	return m_queueIndices;
-}
-
-VkQueue VkQueueFamilyMananger::GetQueue(QueueType type) const noexcept {
-	switch (type) {
+VkQueue VkQueueFamilyMananger::GetQueue(QueueType type) const noexcept
+{
+	switch (type)
+	{
 	case GraphicsQueue:
 		return m_graphicsQueue;
 	case ComputeQueue:
@@ -53,8 +51,10 @@ VkQueue VkQueueFamilyMananger::GetQueue(QueueType type) const noexcept {
 	return VK_NULL_HANDLE;
 }
 
-std::uint32_t VkQueueFamilyMananger::GetIndex(QueueType type) const noexcept {
-	switch (type) {
+std::uint32_t VkQueueFamilyMananger::GetIndex(QueueType type) const noexcept
+{
+	switch (type)
+	{
 	case GraphicsQueue:
 		return m_queueIndices.graphics;
 	case ComputeQueue:
@@ -63,17 +63,18 @@ std::uint32_t VkQueueFamilyMananger::GetIndex(QueueType type) const noexcept {
 		return m_queueIndices.transfer;
 	}
 
-	return static_cast<std::uint32_t>(-1);
+	return std::numeric_limits<std::uint32_t>::max();
 }
 
-void VkQueueFamilyMananger::CreateQueues(VkDevice device) noexcept {
+void VkQueueFamilyMananger::CreateQueues(VkDevice device) noexcept
+{
 	auto [graphicsQueue, graphicsIndex] = CreateQueue(device, GraphicsQueue);
-	auto [computeQueue, computeIndex] = CreateQueue(device, ComputeQueue);
+	auto [computeQueue, computeIndex]   = CreateQueue(device, ComputeQueue);
 	auto [transferQueue, transferIndex] = CreateQueue(device, TransferQueue);
 	QueueIndices3 indices{
 		.transfer = transferIndex,
 		.graphics = graphicsIndex,
-		.compute = computeIndex,
+		.compute  = computeIndex,
 	};
 
 	AddQueueFamilyIndices(indices);
@@ -85,10 +86,12 @@ void VkQueueFamilyMananger::CreateQueues(VkDevice device) noexcept {
 std::pair<VkQueue, std::uint32_t> VkQueueFamilyMananger::CreateQueue(
 	VkDevice device, QueueType type
 ) noexcept {
-	VkQueue queue = VK_NULL_HANDLE;
+	VkQueue queue             = VK_NULL_HANDLE;
 	std::uint32_t familyIndex = 0u;
+
 	for (size_t index = 0u; index < std::size(m_usableQueueFamilies); ++index)
-		if (m_usableQueueFamilies[index].typeFlags & type) {
+		if (m_usableQueueFamilies[index].typeFlags & type)
+		{
 			familyIndex = static_cast<std::uint32_t>(index);
 
 			break;
@@ -126,7 +129,7 @@ void VkQueueFamilyMananger::SetQueueFamilyInfo(
 
 	auto& [previousFamilyIndex, queueType] = familyInfos.front();
 	std::uint32_t queueFlag = queueType;
-	size_t queueCount = 1u;
+	size_t queueCount       = 1u;
 
 	for (size_t index = 1u; index < std::size(familyInfos); ++index) {
 		const auto& [familyIndex, familyType] = familyInfos[index];
@@ -138,21 +141,21 @@ void VkQueueFamilyMananger::SetQueueFamilyInfo(
 		else {
 
 			QueueFamilyInfo familyInfo{
-				.index = previousFamilyIndex,
-				.typeFlags = queueFlag,
-				.queueRequired = queueCount
+				.index         = previousFamilyIndex,
+				.queueRequired = queueCount,
+				.typeFlags     = queueFlag
 			};
 			m_usableQueueFamilies.emplace_back(familyInfo);
 			previousFamilyIndex = familyIndex;
-			queueFlag = familyType;
-			queueCount = 1u;
+			queueFlag           = familyType;
+			queueCount          = 1u;
 		}
 	}
 
 	QueueFamilyInfo familyInfo{
-		.index = previousFamilyIndex,
-		.typeFlags = queueFlag,
-		.queueRequired = queueCount
+		.index         = previousFamilyIndex,
+		.queueRequired = queueCount,
+		.typeFlags     = queueFlag
 	};
 	m_usableQueueFamilies.emplace_back(familyInfo);
 }
@@ -178,7 +181,7 @@ std::optional<VkQueueFamilyMananger::FamilyInfo> VkQueueFamilyMananger::QueryQue
 	);
 
 	bool transfer = false;
-	bool compute = false;
+	bool compute  = false;
 	bool graphics = false;
 
 	FamilyInfo familyInfo;
@@ -216,7 +219,7 @@ std::optional<VkQueueFamilyMananger::FamilyInfo> VkQueueFamilyMananger::QueryQue
 				&& queueFamily.queueCount >= 2) {
 				familyInfo.emplace_back(std::make_pair(index, TransferQueue));
 				familyInfo.emplace_back(std::make_pair(index, ComputeQueue));
-				compute = true;
+				compute  = true;
 				transfer = true;
 				queueFamily.queueCount -= 2;
 
@@ -313,21 +316,17 @@ void VkQueueFamilyMananger::QueueCreateInfo::SetQueueCreateInfo(
 ) noexcept {
 	SetPriorities(usableQueueFamilies);
 
-	for (const QueueFamilyInfo& queueFamilyInfo : usableQueueFamilies) {
+	for (const QueueFamilyInfo& queueFamilyInfo : usableQueueFamilies)
+	{
 		VkDeviceQueueCreateInfo createInfo{
-			.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+			.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
 			.queueFamilyIndex = static_cast<std::uint32_t>(queueFamilyInfo.index),
-			.queueCount = static_cast<std::uint32_t>(queueFamilyInfo.queueRequired),
+			.queueCount       = static_cast<std::uint32_t>(queueFamilyInfo.queueRequired),
 			.pQueuePriorities = std::data(m_queuePriorities)
 		};
 
 		m_queueCreateInfo.emplace_back(createInfo);
 	}
-}
-
-std::vector<VkDeviceQueueCreateInfo> VkQueueFamilyMananger::QueueCreateInfo::GetDeviceQueueCreateInfo(
-) const noexcept {
-	return m_queueCreateInfo;
 }
 
 bool VkQueueFamilyMananger::CheckPresentSupport(

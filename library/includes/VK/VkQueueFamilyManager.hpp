@@ -25,26 +25,23 @@ struct QueueIndices3 {
 	std::uint32_t graphics;
 	std::uint32_t compute;
 
-	inline operator QueueIndicesTG() const {
-		return { transfer, graphics };
-	}
+	operator QueueIndicesTG() const { return { transfer, graphics }; }
 
-	inline operator QueueIndicesCG() const {
-		return { compute, graphics };
-	}
+	operator QueueIndicesCG() const { return { compute, graphics }; }
 };
 
-class VkQueueFamilyMananger {
+class VkQueueFamilyMananger
+{
 	friend class VkDeviceManager;
 public:
 	VkQueueFamilyMananger() noexcept;
 
 	[[nodiscard]]
-	QueueIndicesCG GetComputeAndGraphicsIndices() const noexcept;
+	QueueIndicesCG GetComputeAndGraphicsIndices() const noexcept { return GetAllIndices(); }
 	[[nodiscard]]
-	QueueIndicesTG GetTransferAndGraphicsIndices() const noexcept;
+	QueueIndicesTG GetTransferAndGraphicsIndices() const noexcept { return GetAllIndices(); }
 	[[nodiscard]]
-	QueueIndices3 GetAllIndices() const noexcept;
+	QueueIndices3 GetAllIndices() const noexcept { return m_queueIndices; }
 	[[nodiscard]]
 	std::uint32_t GetIndex(QueueType type) const noexcept;
 
@@ -58,10 +55,10 @@ public:
 
 private:
 	struct QueueFamilyInfo {
-		size_t index = 0u;
+		size_t index            = 0u;
+		size_t queueRequired    = 0u;
+		size_t queueCreated     = 0u;
 		std::uint32_t typeFlags = 0u;
-		size_t queueRequired = 0u;
-		size_t queueCreated = 0u;
 	};
 
 	using FamilyInfo = std::vector<std::pair<size_t, QueueType>>;
@@ -94,28 +91,65 @@ private:
 	) noexcept;
 
 private:
-	QueueIndices3 m_queueIndices;
-	VkQueue m_graphicsQueue;
-	VkQueue m_computeQueue;
-	VkQueue m_transferQueue;
+	QueueIndices3                m_queueIndices;
+	VkQueue                      m_graphicsQueue;
+	VkQueue                      m_computeQueue;
+	VkQueue                      m_transferQueue;
 	std::vector<QueueFamilyInfo> m_usableQueueFamilies;
 
 private:
-	class QueueCreateInfo {
+	class QueueCreateInfo
+	{
 	public:
 		void SetQueueCreateInfo(
 			const std::vector<QueueFamilyInfo>& usableQueueFamilies
 		) noexcept;
 
 		[[nodiscard]]
-		std::vector<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo() const noexcept;
+		std::vector<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo() const noexcept
+		{
+			m_queueCreateInfo;
+		}
 
 	private:
 		void SetPriorities(const std::vector<QueueFamilyInfo>& usableQueueFamilies) noexcept;
 
 	private:
-		std::vector<float> m_queuePriorities;
+		std::vector<float>                   m_queuePriorities;
 		std::vector<VkDeviceQueueCreateInfo> m_queueCreateInfo;
 	};
+
+public:
+	VkQueueFamilyMananger(const VkQueueFamilyMananger& other) noexcept
+		: m_queueIndices{ other.m_queueIndices }, m_graphicsQueue{ other.m_graphicsQueue },
+		m_computeQueue{ other.m_computeQueue }, m_transferQueue{ other.m_transferQueue },
+		m_usableQueueFamilies{ other.m_usableQueueFamilies }
+	{}
+	VkQueueFamilyMananger& operator=(const VkQueueFamilyMananger& other) noexcept
+	{
+		m_queueIndices        = other.m_queueIndices;
+		m_graphicsQueue       = other.m_graphicsQueue;
+		m_computeQueue        = other.m_computeQueue;
+		m_transferQueue       = other.m_transferQueue;
+		m_usableQueueFamilies = other.m_usableQueueFamilies;
+
+		return *this;
+	}
+
+	VkQueueFamilyMananger(VkQueueFamilyMananger&& other) noexcept
+		: m_queueIndices{ other.m_queueIndices }, m_graphicsQueue{ other.m_graphicsQueue },
+		m_computeQueue{ other.m_computeQueue }, m_transferQueue{ other.m_transferQueue },
+		m_usableQueueFamilies{ std::move(other.m_usableQueueFamilies) }
+	{}
+	VkQueueFamilyMananger& operator=(VkQueueFamilyMananger&& other) noexcept
+	{
+		m_queueIndices        = other.m_queueIndices;
+		m_graphicsQueue       = other.m_graphicsQueue;
+		m_computeQueue        = other.m_computeQueue;
+		m_transferQueue       = other.m_transferQueue;
+		m_usableQueueFamilies = std::move(other.m_usableQueueFamilies);
+
+		return *this;
+	}
 };
 #endif
