@@ -108,7 +108,7 @@ private:
 		[[nodiscard]]
 		std::vector<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo() const noexcept
 		{
-			m_queueCreateInfo;
+			return m_queueCreateInfo;
 		}
 
 	private:
