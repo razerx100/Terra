@@ -272,7 +272,7 @@ public:
 	{}
 	~VkCommandQueue() noexcept;
 
-	void CreateBuffers(std::uint32_t bufferCount);
+	void CreateCommandBuffers(std::uint32_t bufferCount);
 
 	template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
 	void SubmitCommandBuffer(
@@ -288,16 +288,18 @@ public:
 		QueueSubmitBuilder<WaitCount, SignalCount>&& builder = {}
 	) const noexcept {
 		SubmitCommandBuffer<WaitCount, SignalCount>(
-			builder.CommandBuffer(GetBuffer(bufferIndex)), fence
+			builder.CommandBuffer(GetCommandBuffer(bufferIndex)), fence
 		);
 	}
 
 	[[nodiscard]]
-	VKCommandBuffer& GetBuffer(size_t index) noexcept { return m_commandBuffers.at(index); }
+	VKCommandBuffer& GetCommandBuffer(size_t index) noexcept { return m_commandBuffers.at(index); }
 	[[nodiscard]]
-	const VKCommandBuffer& GetBuffer(size_t index) const noexcept { return m_commandBuffers.at(index); }
+	const VKCommandBuffer& GetCommandBuffer(size_t index) const noexcept {
+		return m_commandBuffers.at(index);
+	}
 	[[nodiscard]]
-	VkQueue Get() const noexcept { return m_commandQueue; }
+	VkQueue GetQueue() const noexcept { return m_commandQueue; }
 
 private:
 	void SelfDestruct() noexcept;

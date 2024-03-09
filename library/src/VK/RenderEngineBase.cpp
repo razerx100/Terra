@@ -7,7 +7,7 @@ void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIn
 
 	Terra::Queue& graphics = Terra::Get().Graphics();
 
-	graphics.Que().GetBuffer(frameIndex).Close();
+	graphics.Que().GetCommandBuffer(frameIndex).Close();
 
 	const auto& waitSemaphores = GetWaitSemaphores();
 	static auto semaphoreCount = static_cast<std::uint32_t>(std::size(waitSemaphores.first));
@@ -33,7 +33,7 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	Terra& terra = Terra::Get();
-	terra.Graphics().Que().GetBuffer(frameIndex).Reset();
+	terra.Graphics().Que().GetCommandBuffer(frameIndex).Reset();
 
 	vkCmdSetViewport(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetViewportRef());
 	vkCmdSetScissor(graphicsCmdBuffer, 0u, 1u, m_viewportAndScissor.GetScissorRef());

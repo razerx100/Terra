@@ -91,7 +91,7 @@ void VkCommandQueue::SelfDestruct() noexcept
 	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 }
 
-void VkCommandQueue::CreateBuffers(std::uint32_t bufferCount)
+void VkCommandQueue::CreateCommandBuffers(std::uint32_t bufferCount)
 {
 	VkCommandPoolCreateInfo poolInfo{
 		.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,

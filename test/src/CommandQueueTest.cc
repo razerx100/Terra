@@ -54,24 +54,24 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 	QueueType type = QueueType::GraphicsQueue;
 
 	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
-	queue.CreateBuffers(Constants::bufferCount);
+	queue.CreateCommandBuffers(Constants::bufferCount);
 
 	{
 		type = QueueType::ComputeQueue;
 
 		VkCommandQueue queue1{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
-		queue1.CreateBuffers(Constants::bufferCount);
+		queue1.CreateCommandBuffers(Constants::bufferCount);
 
 		queue = std::move(queue1);
 	}
 
-	EXPECT_NE(queue.GetBuffer(1u).Get(), VK_NULL_HANDLE) << "Command buffer creation failed.";
+	EXPECT_NE(queue.GetCommandBuffer(1u).Get(), VK_NULL_HANDLE) << "Command buffer creation failed.";
 
 	VKFence fence{ logicalDevice };
 	fence.Create(false);
 
-	queue.GetBuffer(0u).Reset();
-	queue.GetBuffer(0u).Close();
+	queue.GetCommandBuffer(0u).Reset();
+	queue.GetCommandBuffer(0u).Close();
 
 	queue.SubmitCommandBuffer(0u, fence);
 
@@ -87,7 +87,7 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 	const QueueType type = QueueType::TransferQueue;
 
 	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
-	queue.CreateBuffers(1u);
+	queue.CreateCommandBuffers(1u);
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 200_MB, 200_KB };
 
@@ -117,7 +117,7 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 	);
 
 	{
-		VKCommandBuffer& cmdBuffer = queue.GetBuffer(0u);
+		VKCommandBuffer& cmdBuffer = queue.GetCommandBuffer(0u);
 		cmdBuffer.Reset();
 
 		cmdBuffer.Copy(testBuffer1, testBuffer2);
