@@ -80,6 +80,72 @@ VKCommandBuffer& VKCommandBuffer::Copy(
 	return *this;
 }
 
+VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
+	const Buffer& buffer,
+	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
+) noexcept {
+	VkBufferBarrier2{}.AddMemoryBarrier(
+		BufferBarrierBuilder{}
+		.Buffer(buffer)
+		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.AccessMasks(VK_ACCESS_NONE, dstAccess)
+		.StageMasks(VK_PIPELINE_STAGE_NONE, dstStage)
+	).RecordBarriers(m_commandBuffer);
+
+	return *this;
+}
+
+VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
+	const VkTextureView& textureView,
+	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
+	VkImageLayout oldLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */,
+	VkImageLayout newLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */
+) noexcept {
+	VkImageBarrier2().AddMemoryBarrier(
+		ImageBarrierBuilder{}
+		.Image(textureView)
+		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.AccessMasks(VK_ACCESS_NONE, dstAccess)
+		.Layouts(oldLayout, newLayout)
+		.StageMasks(VK_PIPELINE_STAGE_NONE, dstStage)
+	).RecordBarriers(m_commandBuffer);
+
+	return *this;
+}
+
+VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
+	const Buffer& buffer, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
+) noexcept {
+	VkBufferBarrier2{}.AddMemoryBarrier(
+		BufferBarrierBuilder{}
+		.Buffer(buffer)
+		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
+		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
+	).RecordBarriers(m_commandBuffer);
+
+	return *this;
+}
+
+VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
+	const VkTextureView& textureView, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	VkImageLayout oldLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */,
+	VkImageLayout newLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */
+) noexcept {
+	VkImageBarrier2{}.AddMemoryBarrier(
+		ImageBarrierBuilder{}
+		.Image(textureView)
+		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
+		.Layouts(oldLayout, newLayout)
+		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
+	).RecordBarriers(m_commandBuffer);
+
+	return *this;
+}
+
 // Command Queue
 VkCommandQueue::~VkCommandQueue() noexcept
 {

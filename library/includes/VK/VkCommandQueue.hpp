@@ -124,6 +124,8 @@ private:
 	VkBufferImageCopy m_imageCopy;
 };
 
+class VkCommandQueue;
+
 class VKCommandBuffer
 {
 public:
@@ -148,14 +150,36 @@ public:
 		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
 	) noexcept;
 
-	template<std::uint32_t BarrierCount>
+	VKCommandBuffer& AcquireOwnership(
+		const Buffer& buffer,
+		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
+	) noexcept;
+	VKCommandBuffer& AcquireOwnership(
+		const VkTextureView& textureView,
+		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
+		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	) noexcept;
+	VKCommandBuffer& ReleaseOwnership(
+		const Buffer& buffer, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
+	) noexcept;
+	VKCommandBuffer& ReleaseOwnership(
+		const VkTextureView& textureView,
+		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	) noexcept;
+
+	template<std::uint32_t BarrierCount = 1u>
 	VKCommandBuffer& AddBarrier(const VkBufferBarrier2<BarrierCount>& barrier) noexcept
 	{
 		barrier.RecordBarriers(m_commandBuffer);
 
 		return *this;
 	}
-	template<std::uint32_t BarrierCount>
+	template<std::uint32_t BarrierCount = 1u>
 	VKCommandBuffer& AddBarrier(const VkImageBarrier2<BarrierCount>& barrier) noexcept
 	{
 		barrier.RecordBarriers(m_commandBuffer);
@@ -292,6 +316,8 @@ public:
 		);
 	}
 
+	[[nodiscard]]
+	std::uint32_t GetFamilyIndex() const noexcept { return m_queueIndex; }
 	[[nodiscard]]
 	VKCommandBuffer& GetCommandBuffer(size_t index) noexcept { return m_commandBuffers.at(index); }
 	[[nodiscard]]

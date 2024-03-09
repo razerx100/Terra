@@ -47,13 +47,18 @@ class BufferBarrierBuilder : public BaseBarrierBuilder<VkBufferMemoryBarrier2>
 public:
 	BufferBarrierBuilder() : BaseBarrierBuilder{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 } {};
 
-	BufferBarrierBuilder& Buffer(VkBuffer buffer, VkDeviceSize size, VkDeviceSize offset) noexcept
+	BufferBarrierBuilder& Buffer(VkBuffer buffer, VkDeviceSize size, VkDeviceSize offset = 0u) noexcept
 	{
 		m_barrier.buffer = buffer;
 		m_barrier.size   = size;
 		m_barrier.offset = offset;
 
 		return *this;
+	}
+
+	BufferBarrierBuilder& Buffer(const ::Buffer& buffer, VkDeviceSize offset = 0u) noexcept
+	{
+		return Buffer(buffer.Get(), buffer.Size(), offset);
 	}
 
 	BufferBarrierBuilder& QueueIndices(std::uint32_t srcIndex, std::uint32_t dstIndex) noexcept
