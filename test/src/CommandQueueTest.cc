@@ -133,3 +133,37 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 
 	fence.Wait();
 }
+
+TEST_F(CommandQueueTest, TimelineSemaphoreTest)
+{
+	VkDevice logicalDevice                    = s_deviceManager->GetLogicalDevice();
+	const VkQueueFamilyMananger& queFamilyMan = s_deviceManager->GetQueueFamilyManager();
+
+	const QueueType type = QueueType::GraphicsQueue;
+
+	VkCommandQueue queue{ logicalDevice, queFamilyMan.GetQueue(type), queFamilyMan.GetIndex(type) };
+	queue.CreateCommandBuffers(1u);
+
+	{
+		VKCommandBuffer& cmdBuffer = queue.GetCommandBuffer(0u);
+		cmdBuffer.Reset();
+
+		cmdBuffer.Close();
+	}
+
+	VKFence fence{ logicalDevice };
+	fence.Create(false);
+
+	VKSemaphore timeline{ logicalDevice };
+	timeline.Create(true);
+
+	queue.SubmitCommandBuffer(
+		0u, fence, std::move(QueueSubmitBuilder<1u>{}.WaitSemaphore(
+			timeline, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+		))
+	);
+
+	timeline.Signal();
+
+	fence.Wait();
+}
