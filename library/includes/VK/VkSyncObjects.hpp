@@ -46,7 +46,13 @@ public:
 	VKSemaphore(VkDevice device) : VkSyncObj{ device } {}
 	~VKSemaphore() noexcept override;
 
-	void Create();
+	void Create(bool timeline = false, std::uint64_t initialValue = 0u);
+
+	void Signal(std::uint64_t signalValue = 1u) const noexcept;
+	void Wait(std::uint64_t waitValue = 1u) const noexcept;
+
+	[[nodiscard]]
+	std::uint64_t GetCurrentValue() const noexcept;
 
 private:
 	void SelfDestruct() noexcept override;

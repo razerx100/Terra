@@ -216,9 +216,18 @@ class QueueSubmitBuilder
 {
 public:
 	QueueSubmitBuilder()
-		: m_waitSemaphores{}, m_waitStages{}, m_signalSemaphores{}, m_commandBuffers{},
+		: m_waitSemaphores{}, m_waitStages{}, m_waitValues{},
+		m_signalSemaphores{}, m_signalValues{}, m_commandBuffers{},
+		m_timelineInfo{
+			.sType                     = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+			.waitSemaphoreValueCount   = WaitCount,
+			.pWaitSemaphoreValues      = std::data(m_waitValues),
+			.signalSemaphoreValueCount = SignalCount,
+			.pSignalSemaphoreValues    = std::data(m_signalValues)
+		},
 		m_submitInfo{
 			.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+			.pNext                = &m_timelineInfo,
 			.waitSemaphoreCount   = WaitCount,
 			.pWaitSemaphores      = std::data(m_waitSemaphores),
 			.pWaitDstStageMask    = std::data(m_waitStages),
@@ -231,27 +240,32 @@ public:
 	{
 		m_waitSemaphores.fill(VK_NULL_HANDLE);
 		m_waitStages.fill(VK_PIPELINE_STAGE_NONE);
+		m_waitValues.fill(0u);
 		m_signalSemaphores.fill(VK_NULL_HANDLE);
+		m_signalValues.fill(0u);
 		m_commandBuffers.fill(VK_NULL_HANDLE);
 	}
 
 	QueueSubmitBuilder& WaitSemaphore(
-		const VKSemaphore& semaphore, VkPipelineStageFlagBits pipelineStage
+		const VKSemaphore& semaphore, VkPipelineStageFlagBits pipelineStage,
+		std::uint64_t waitValue = 1u
 	) {
 		assert(m_currentWaitIndex < WaitCount && "More Wait semaphores than the allowed amount.");
 
 		m_waitSemaphores.at(m_currentWaitIndex) = semaphore.Get();
 		m_waitStages.at(m_currentWaitIndex)     = pipelineStage;
+		m_waitValues.at(m_currentWaitIndex)     = waitValue;
 
 		++m_currentWaitIndex;
 
 		return *this;
 	}
-	QueueSubmitBuilder& SignalSemaphore(const VKSemaphore& semaphore)
+	QueueSubmitBuilder& SignalSemaphore(const VKSemaphore& semaphore, std::uint64_t signalValue = 1u)
 	{
 		assert(m_currentSignalIndex < SignalCount && "More Signal semaphores than the allowed amount.");
 
 		m_signalSemaphores.at(m_currentSignalIndex) = semaphore.Get();
+		m_signalValues.at(m_currentSignalIndex)     = signalValue;
 
 		++m_currentSignalIndex;
 
@@ -277,8 +291,11 @@ public:
 private:
 	std::array<VkSemaphore, WaitCount>              m_waitSemaphores;
 	std::array<VkPipelineStageFlags, WaitCount>     m_waitStages;
+	std::array<std::uint64_t, WaitCount>            m_waitValues;
 	std::array<VkSemaphore, SignalCount>            m_signalSemaphores;
+	std::array<std::uint64_t, SignalCount>          m_signalValues;
 	std::array<VkCommandBuffer, CommandBufferCount> m_commandBuffers;
+	VkTimelineSemaphoreSubmitInfo                   m_timelineInfo;
 	VkSubmitInfo                                    m_submitInfo;
 	size_t                                          m_currentWaitIndex;
 	size_t                                          m_currentSignalIndex;

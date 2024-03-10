@@ -110,6 +110,9 @@ void VkFeatureManager::Set1_2CoreFeatures() noexcept
 		AddMember(
 			core1_2Type, &VkPhysicalDeviceVulkan12Features::bufferDeviceAddress, v1_2Features
 		);
+		AddMember(
+			core1_2Type, &VkPhysicalDeviceVulkan12Features::timelineSemaphore, v1_2Features
+		);
 
 		m_chainStructMembers.emplace_back(std::move(core1_2Type));
 	}

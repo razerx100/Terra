@@ -12,11 +12,57 @@ void VKSemaphore::SelfDestruct() noexcept
 	vkDestroySemaphore(m_device, m_syncObj, nullptr);
 }
 
-void VKSemaphore::Create()
+void VKSemaphore::Create(bool timeline/* = false */, std::uint64_t initialValue/* = 0u */)
 {
-	VkSemaphoreCreateInfo semaphoreInfo{ .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+	VkSemaphoreTypeCreateInfo typeCreateInfo{
+		.sType         = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+		.semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
+		.initialValue  = 0u
+	};
+
+	VkSemaphoreCreateInfo semaphoreInfo{
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+		.pNext = &typeCreateInfo
+	};
+
+	if (timeline)
+	{
+		typeCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+		typeCreateInfo.initialValue  = initialValue;
+	}
 
 	vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_syncObj);
+}
+
+void VKSemaphore::Signal(std::uint64_t signalValue /* = 1u */) const noexcept
+{
+	VkSemaphoreSignalInfo signalInfo{
+		.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO,
+		.semaphore = m_syncObj,
+		.value     = signalValue
+	};
+
+	vkSignalSemaphore(m_device, &signalInfo);
+}
+
+void VKSemaphore::Wait(std::uint64_t waitValue /* = 1u */) const noexcept
+{
+	VkSemaphoreWaitInfo waitInfo{
+		.sType          = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+		.semaphoreCount = 1u,
+		.pSemaphores    = &m_syncObj,
+		.pValues        = &waitValue
+	};
+
+	vkWaitSemaphores(m_device, &waitInfo, std::numeric_limits<std::uint64_t>::max());
+}
+
+std::uint64_t VKSemaphore::GetCurrentValue() const noexcept
+{
+	std::uint64_t currentValue = 0u;
+	vkGetSemaphoreCounterValue(m_device, m_syncObj, &currentValue);
+
+	return currentValue;
 }
 
 // VK Fence
