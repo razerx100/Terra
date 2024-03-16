@@ -42,7 +42,7 @@ FetchContent_MakeAvailable(googletest)
 find_package(Vulkan REQUIRED)
 
 target_link_libraries(TerraTest PRIVATE
-    GTest::gtest_main TerraLib Vulkan::Vulkan razer::callisto razer::DxMath
+    GTest::gtest_main TerraLib Vulkan::Vulkan razer::callisto razer::DxMath razer::titan
 )
 
 include(GoogleTest)

@@ -50,6 +50,14 @@ endif()
 include(FetchContent)
 
 FetchContent_Declare(
+    Titan
+    GIT_REPOSITORY https://github.com/razerx100/Titan.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(Titan)
+
+FetchContent_Declare(
     Callisto
     GIT_REPOSITORY https://github.com/razerx100/Callisto.git
     GIT_TAG master
@@ -65,4 +73,4 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(DirectXMath)
 
-target_link_libraries(TerraLib PRIVATE razer::callisto razer::DxMath)
+target_link_libraries(TerraLib PRIVATE razer::callisto razer::DxMath razer::titan)
