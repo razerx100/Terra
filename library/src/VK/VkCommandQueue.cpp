@@ -170,3 +170,38 @@ void VkCommandQueue::CreateCommandBuffers(std::uint32_t bufferCount)
 	for (std::uint32_t _ = 0u; _ < bufferCount; ++_)
 		m_commandBuffers.emplace_back(m_device, m_commandPool);
 }
+
+// Graphics Queue
+void VkGraphicsQueue::CreateCommandBuffers(std::uint32_t bufferCount)
+{
+	VkCommandQueue::CreateCommandBuffers(bufferCount);
+
+	if (bufferCount)
+	{
+		{
+			VKFence fence{ m_device };
+			// The first fence needs to be created signaled since in a Render Loop I will
+			// check if a fence is signaled or not at the very beginning and it will stay
+			// blocked there if the fence wasn't created signaled as no queue will be signalling
+			// it.
+			fence.Create(true);
+			m_fences.emplace_back(std::move(fence));
+		}
+
+		for (std::uint32_t _ = 1u; _ < bufferCount; ++_)
+		{
+			VKFence fence{ m_device };
+			fence.Create(false);
+			m_fences.emplace_back(std::move(fence));
+		}
+	}
+}
+
+void VkGraphicsQueue::WaitForSubmission(size_t bufferIndex)
+{
+	m_fences.at(bufferIndex).Wait();
+
+	QueueExecutionFinishedEvent finishEvent{ static_cast<std::uint8_t>(bufferIndex) };
+	std::future<void> waitObj = m_eventDispatcher->DispatchFeedback(finishEvent);
+	waitObj.wait();
+}

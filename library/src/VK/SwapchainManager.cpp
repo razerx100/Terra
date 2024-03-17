@@ -129,22 +129,31 @@ SwapchainManager::SwapchainManager(
 	VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount, MemoryManager* memoryManager
 )
 	: m_presentQueue{ presentQueue }, m_renderPass{ device },
-	m_depthBuffer{ device, memoryManager }, m_swapchain{ device, bufferCount },
+	m_depthBuffer{ device, memoryManager }, m_swapchain{ device, bufferCount }, m_waitSemaphores{},
 	m_nextImageIndex{ 0u }
-{}
+{
+	for (std::uint32_t _ = 0u; _ < bufferCount; ++_)
+	{
+		VKSemaphore semaphore{ device };
+		semaphore.Create();
+		m_waitSemaphores.emplace_back(std::move(semaphore));
+	}
+}
 
 void SwapchainManager::PresentImage(std::uint32_t imageIndex) const noexcept
 {
-	VkPresentInfoKHR presentInfo{
-		.sType          = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-		.pImageIndices  = &imageIndex,
-		.pResults       = nullptr
-	};
-
+	const VkSemaphore semapohores[]   = { m_waitSemaphores.at(imageIndex).Get() };
 	const VkSwapchainKHR swapchains[] = { m_swapchain.Get() };
 
-	presentInfo.swapchainCount = static_cast<std::uint32_t>(std::size(swapchains));
-	presentInfo.pSwapchains    = swapchains;
+	VkPresentInfoKHR presentInfo{
+		.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.waitSemaphoreCount = 1u,
+		.pWaitSemaphores    = semapohores,
+		.swapchainCount     = static_cast<std::uint32_t>(std::size(swapchains)),
+		.pSwapchains        = swapchains,
+		.pImageIndices      = &imageIndex,
+		.pResults           = nullptr
+	};
 
 	vkQueuePresentKHR(m_presentQueue, &presentInfo);
 }

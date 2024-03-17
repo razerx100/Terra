@@ -8,6 +8,7 @@
 #include <SurfaceManager.hpp>
 #include <VKRenderPass.hpp>
 #include <DepthBuffer.hpp>
+#include <VkSyncObjects.hpp>
 
 class VKFramebuffer
 {
@@ -147,13 +148,19 @@ public:
 	std::uint32_t GetNextImageIndex() const noexcept { return m_nextImageIndex; };
 	[[nodiscard]]
 	VkSwapchainKHR GetSwapchain() const noexcept { return m_swapchain.Get(); }
+	[[nodiscard]]
+	const VKSemaphore& GetSwapchainWaitSemaphore(size_t index) const noexcept
+	{
+		return m_waitSemaphores.at(index);
+	}
 
 private:
-	VkQueue       m_presentQueue;
-	VKRenderPass  m_renderPass;
-	DepthBuffer   m_depthBuffer;
-	VkSwapchain   m_swapchain;
-	std::uint32_t m_nextImageIndex;
+	VkQueue                  m_presentQueue;
+	VKRenderPass             m_renderPass;
+	DepthBuffer              m_depthBuffer;
+	VkSwapchain              m_swapchain;
+	std::vector<VKSemaphore> m_waitSemaphores;
+	std::uint32_t            m_nextImageIndex;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -171,6 +178,7 @@ public:
 	SwapchainManager(SwapchainManager&& other) noexcept
 		: m_presentQueue{ other.m_presentQueue }, m_renderPass{ std::move(other.m_renderPass) },
 		m_depthBuffer{ std::move(other.m_depthBuffer) }, m_swapchain{ std::move(other.m_swapchain) },
+		m_waitSemaphores{ std::move(other.m_waitSemaphores) },
 		m_nextImageIndex{ other.m_nextImageIndex }
 	{}
 	SwapchainManager& operator=(SwapchainManager&& other) noexcept
@@ -179,6 +187,7 @@ public:
 		m_renderPass     = std::move(other.m_renderPass);
 		m_depthBuffer    = std::move(other.m_depthBuffer);
 		m_swapchain      = std::move(other.m_swapchain);
+		m_waitSemaphores = std::move(other.m_waitSemaphores);
 		m_nextImageIndex = other.m_nextImageIndex;
 
 		return *this;

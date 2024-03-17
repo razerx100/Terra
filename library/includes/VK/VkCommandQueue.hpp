@@ -5,6 +5,8 @@
 #include <VkTextureView.hpp>
 #include <VkResourceBarriers2.hpp>
 #include <VkSyncObjects.hpp>
+#include <TerraEvents.hpp>
+#include <SwapchainManager.hpp>
 #include <array>
 #include <cassert>
 
@@ -313,7 +315,7 @@ public:
 	{}
 	~VkCommandQueue() noexcept;
 
-	void CreateCommandBuffers(std::uint32_t bufferCount);
+	virtual void CreateCommandBuffers(std::uint32_t bufferCount);
 
 	template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
 	void SubmitCommandBuffer(
@@ -347,7 +349,7 @@ public:
 private:
 	void SelfDestruct() noexcept;
 
-private:
+protected:
 	VkQueue                      m_commandQueue;
 	VkDevice                     m_device;
 	VkCommandPool                m_commandPool;
@@ -375,6 +377,54 @@ public:
 		m_queueIndex        = other.m_queueIndex;
 		m_commandBuffers    = std::move(other.m_commandBuffers);
 		other.m_commandPool = VK_NULL_HANDLE;
+
+		return *this;
+	}
+};
+
+class VkGraphicsQueue : public VkCommandQueue
+{
+public:
+	VkGraphicsQueue(
+		VkDevice device, VkQueue queue, std::uint32_t queueIndex, TerraDispatcher* eventDispatcher
+	) : VkCommandQueue{ device, queue, queueIndex }, m_eventDispatcher{ eventDispatcher }, m_fences{}
+	{}
+
+	void WaitForSubmission(size_t bufferIndex);
+	void CreateCommandBuffers(std::uint32_t bufferCount) override;
+
+	template<std::uint32_t WaitCount = 0u>
+	void SubmitCommandBuffer(
+		size_t bufferIndex, SwapchainManager& swapchain,
+		QueueSubmitBuilder<WaitCount, 1u>&& builder = {}
+	) const noexcept {
+		m_fences.at(bufferIndex).Reset();
+
+		SubmitCommandBuffer<WaitCount, 1u>(
+			builder.CommandBuffer(GetCommandBuffer(bufferIndex))
+			// Since this semaphore is a Binary Semaphore, its value doesn't matter.
+			.SignalSemaphore(swapchain.GetSwapchainWaitSemaphore(bufferIndex))
+			, m_fences.at(bufferIndex)
+		);
+	}
+
+private:
+	TerraDispatcher*     m_eventDispatcher;
+	std::vector<VKFence> m_fences;
+
+public:
+	VkGraphicsQueue(const VkGraphicsQueue&) = delete;
+	VkGraphicsQueue& operator=(const VkGraphicsQueue&) = delete;
+
+	VkGraphicsQueue(VkGraphicsQueue&& other) noexcept
+		: VkCommandQueue{ std::move(other) }, m_eventDispatcher{ other.m_eventDispatcher },
+		m_fences{ std::move(other.m_fences) }
+	{}
+	VkGraphicsQueue& operator=(VkGraphicsQueue&& other) noexcept
+	{
+		VkCommandQueue::operator=(std::move(other));
+		m_eventDispatcher = other.m_eventDispatcher;
+		m_fences          = std::move(other.m_fences);
 
 		return *this;
 	}
