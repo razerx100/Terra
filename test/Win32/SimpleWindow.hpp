@@ -2,6 +2,7 @@
 #define SIMPLE_WINDOW_HPP_
 #include <cstdint>
 #include <utility>
+#include <optional>
 #include <CleanWin.hpp>
 
 class WindowClass {
@@ -55,6 +56,15 @@ public:
 	static LRESULT CALLBACK HandleMsgSetup(
 		HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 	) noexcept;
+	static LRESULT CALLBACK HandleMsgWrap(
+		HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
+	) noexcept;
+
+	[[nodiscard]]
+	LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
+	[[nodiscard]]
+	std::optional<int> Update();
 
 private:
 	void SelfDestruct() noexcept;
