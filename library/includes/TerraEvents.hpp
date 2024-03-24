@@ -4,23 +4,49 @@
 
 enum class TerraEventType
 {
-	QueueExecutionFinished,
+	GfxBufferExecutionFinished,
+	GfxQueueExecutionFinished,
+	InterruptGfxQueue,
 	None
 };
 
 using TerraDispatcher = TitanDispatcher<TerraEventType>;
+using TerraEvent      = TitanEvent<TerraEventType>;
 
-class QueueExecutionFinishedEvent : public FeedbackEvent<TerraEventType>
+class GfxBufferExecutionFinishedEvent : public FeedbackEvent<TerraEventType>
 {
 public:
-	QueueExecutionFinishedEvent(std::uint8_t queueIndex) : m_queueIndex{ queueIndex } {}
+	GfxBufferExecutionFinishedEvent(std::uint8_t queueIndex) : m_queueIndex{ queueIndex } {}
 
 	[[nodiscard]]
-	TerraEventType GetType() const noexcept override { return TerraEventType::QueueExecutionFinished; }
+	TerraEventType GetType() const noexcept override
+	{
+		return TerraEventType::GfxBufferExecutionFinished;
+	}
 	[[nodiscard]]
 	std::uint8_t QueueIndex() const noexcept { return m_queueIndex; }
 
 private:
 	std::uint8_t m_queueIndex;
+};
+
+class GfxQueueExecutionFinishedEvent : public FeedbackEvent<TerraEventType>
+{
+public:
+	[[nodiscard]]
+	TerraEventType GetType() const noexcept override
+	{
+		return TerraEventType::GfxQueueExecutionFinished;
+	}
+};
+
+class InterruptGfxQueueEvent : public TitanEvent<TerraEventType>
+{
+public:
+	[[nodiscard]]
+	TerraEventType GetType() const noexcept override
+	{
+		return TerraEventType::InterruptGfxQueue;
+	}
 };
 #endif

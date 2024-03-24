@@ -384,13 +384,35 @@ public:
 
 class VkGraphicsQueue : public VkCommandQueue
 {
+	class Dispatchable : public ITitanDispatchable<TerraEventType>
+	{
+	public:
+		Dispatchable(VkGraphicsQueue& graphicsQueue) : m_graphicsQueue{ graphicsQueue } {}
+
+		void ProcessEvent(TerraEvent& terraEvent) override
+		{
+			if (terraEvent.GetType() == TerraEventType::InterruptGfxQueue)
+			{
+				m_graphicsQueue.WaitForQueueToFinish();
+			}
+		}
+
+	private:
+		VkGraphicsQueue& m_graphicsQueue;
+	};
+
 public:
 	VkGraphicsQueue(
 		VkDevice device, VkQueue queue, std::uint32_t queueIndex, TerraDispatcher* eventDispatcher
-	) : VkCommandQueue{ device, queue, queueIndex }, m_eventDispatcher{ eventDispatcher }, m_fences{}
-	{}
+	) : VkCommandQueue{ device, queue, queueIndex }, m_eventDispatcher{ eventDispatcher }, m_fences{},
+		m_interruptGfxSub{ std::make_shared<Dispatchable>(*this) }
+	{
+		if (m_eventDispatcher)
+			m_eventDispatcher->Subscribe(TerraEventType::InterruptGfxQueue, m_interruptGfxSub);
+	}
 
 	void WaitForSubmission(size_t bufferIndex);
+	void WaitForQueueToFinish();
 	void CreateCommandBuffers(std::uint32_t bufferCount) override;
 
 	template<std::uint32_t WaitCount = 0u>
@@ -409,8 +431,9 @@ public:
 	}
 
 private:
-	TerraDispatcher*     m_eventDispatcher;
-	std::vector<VKFence> m_fences;
+	TerraDispatcher*              m_eventDispatcher;
+	std::vector<VKFence>          m_fences;
+	std::shared_ptr<Dispatchable> m_interruptGfxSub;
 
 public:
 	VkGraphicsQueue(const VkGraphicsQueue&) = delete;
@@ -418,13 +441,14 @@ public:
 
 	VkGraphicsQueue(VkGraphicsQueue&& other) noexcept
 		: VkCommandQueue{ std::move(other) }, m_eventDispatcher{ other.m_eventDispatcher },
-		m_fences{ std::move(other.m_fences) }
+		m_fences{ std::move(other.m_fences) }, m_interruptGfxSub{ std::move(other.m_interruptGfxSub) }
 	{}
 	VkGraphicsQueue& operator=(VkGraphicsQueue&& other) noexcept
 	{
 		VkCommandQueue::operator=(std::move(other));
 		m_eventDispatcher = other.m_eventDispatcher;
 		m_fences          = std::move(other.m_fences);
+		m_interruptGfxSub = std::move(other.m_interruptGfxSub);
 
 		return *this;
 	}
