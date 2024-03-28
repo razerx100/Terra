@@ -50,13 +50,16 @@ SimpleWindow::SimpleWindow(
 	);
 
 	GetWindowRect(m_hWnd, &m_windowRect);
-
-	ShowWindow(m_hWnd, SW_SHOWDEFAULT);
 }
 
 SimpleWindow::~SimpleWindow() noexcept
 {
 	SelfDestruct();
+}
+
+void SimpleWindow::Show()
+{
+	ShowWindow(m_hWnd, SW_SHOWDEFAULT);
 }
 
 void SimpleWindow::SelfDestruct() noexcept

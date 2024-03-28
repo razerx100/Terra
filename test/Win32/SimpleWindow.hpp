@@ -53,6 +53,8 @@ public:
 
 	void SetWindowResolution(std::uint32_t width, std::uint32_t height);
 
+	void Show();
+
 	static LRESULT CALLBACK HandleMsgSetup(
 		HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 	) noexcept;
