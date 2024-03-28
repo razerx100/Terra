@@ -120,8 +120,8 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 		VKCommandBuffer& cmdBuffer = queue.GetCommandBuffer(0u);
 		cmdBuffer.Reset();
 
-		cmdBuffer.Copy(testBuffer1, testBuffer2);
-		cmdBuffer.Copy(testBuffer3, testTextureView);
+		cmdBuffer.CopyWhole(testBuffer1, testBuffer2);
+		cmdBuffer.CopyWhole(testBuffer3, testTextureView);
 
 		cmdBuffer.Close();
 	}

@@ -142,10 +142,10 @@ public:
 	VKCommandBuffer& Copy(
 		const Buffer& src, const Buffer& dst, const BufferToBufferCopyBuilder& builder
 	) noexcept;
-	VKCommandBuffer& Copy(
+	VKCommandBuffer& CopyWhole(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder = {}
 	) noexcept;
-	VKCommandBuffer& Copy(
+	VKCommandBuffer& CopyWhole(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder = {}
 	) noexcept;
 	VKCommandBuffer& Copy(

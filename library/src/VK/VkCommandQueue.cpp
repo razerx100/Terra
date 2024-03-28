@@ -47,13 +47,13 @@ VKCommandBuffer& VKCommandBuffer::Copy(
 	return *this;
 }
 
-VKCommandBuffer& VKCommandBuffer::Copy(
+VKCommandBuffer& VKCommandBuffer::CopyWhole(
 	const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
 ) noexcept {
 	return Copy(src, dst, builder.Size(src.Size()));
 }
 
-VKCommandBuffer& VKCommandBuffer::Copy(
+VKCommandBuffer& VKCommandBuffer::CopyWhole(
 	const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
 ) noexcept {
 	return Copy(
