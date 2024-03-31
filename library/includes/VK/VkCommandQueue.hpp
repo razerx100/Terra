@@ -72,6 +72,13 @@ public:
 		return *this;
 	}
 
+	BufferToImageCopyBuilder& ImageOffset(const VkOffset3D& offset) noexcept
+	{
+		m_imageCopy.imageOffset = offset;
+
+		return *this;
+	}
+
 	BufferToImageCopyBuilder& ImageExtent(
 		std::uint32_t width, std::uint32_t height, std::uint32_t depth = 0u
 	) noexcept {
@@ -143,14 +150,36 @@ public:
 		const Buffer& src, const Buffer& dst, const BufferToBufferCopyBuilder& builder
 	) noexcept;
 	VKCommandBuffer& CopyWhole(
-		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder = {}
-	) noexcept;
-	VKCommandBuffer& CopyWhole(
-		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder = {}
+		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder& builder
 	) noexcept;
 	VKCommandBuffer& Copy(
 		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
 	) noexcept;
+	VKCommandBuffer& CopyWhole(
+		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
+	) noexcept;
+
+	VKCommandBuffer& Copy(
+		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
+	) noexcept {
+		return Copy(src, dst, builder);
+	}
+	VKCommandBuffer& CopyWhole(
+		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder = {}
+	) noexcept
+	{
+		return CopyWhole(src, dst, builder);
+	}
+	VKCommandBuffer& Copy(
+		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
+	) noexcept {
+		return Copy(src, dst, builder);
+	}
+	VKCommandBuffer& CopyWhole(
+		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder = {}
+	) noexcept {
+		return CopyWhole(src, dst, builder);
+	}
 
 	VKCommandBuffer& AcquireOwnership(
 		const Buffer& buffer,

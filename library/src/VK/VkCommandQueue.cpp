@@ -48,13 +48,13 @@ VKCommandBuffer& VKCommandBuffer::Copy(
 }
 
 VKCommandBuffer& VKCommandBuffer::CopyWhole(
-	const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
+	const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder& builder
 ) noexcept {
 	return Copy(src, dst, builder.Size(src.Size()));
 }
 
 VKCommandBuffer& VKCommandBuffer::CopyWhole(
-	const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
+	const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
 ) noexcept {
 	return Copy(
 		src, dst, builder.ImageExtent(dst.GetTexture().GetExtent()).ImageAspectFlags(dst.GetAspect())
