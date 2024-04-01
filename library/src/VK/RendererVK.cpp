@@ -8,7 +8,7 @@ RendererVK::RendererVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount,
-	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 	RenderEngineType engineType
 ) : m_width{ width }, m_height{ height } {
 

@@ -1,7 +1,7 @@
 #ifndef TERRA_INSTANCE_HPP_
 #define TERRA_INSTANCE_HPP_
 #include <Renderer.hpp>
-#include <IThreadPool.hpp>
+#include <ThreadPool.hpp>
 #include <ISharedDataContainer.hpp>
 
 #ifdef BUILD_TERRA
@@ -15,7 +15,7 @@ TERRA_DLL Renderer* __cdecl CreateTerraInstance(
 	void* windowHandle,
 	void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 	RenderEngineType engineType,
 	std::uint32_t bufferCount = 2u
 );

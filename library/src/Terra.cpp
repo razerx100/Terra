@@ -17,7 +17,7 @@ m_uploadContainer{ nullptr }
 {}
 
 void Terra::Resources::Init(
-	ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, IThreadPool& threadPool
+	ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, ThreadPool& threadPool
 )
 {
 	om.CreateObject(
@@ -99,7 +99,7 @@ Terra& Terra::operator=(Terra&& other) noexcept
 Terra::Terra(
 	std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 	std::uint32_t width, std::uint32_t height,
-	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 	RenderEngineType engineType
 ) : m_appName{ std::move(appName) }, m_objectManager{}, m_display{ nullptr }, m_vkInstance{ nullptr }
 	, m_surface{ nullptr }, m_device{ nullptr }, m_res{}
@@ -196,7 +196,7 @@ Terra& Terra::Get() { return *sTerra; }
 void Terra::Init(
 	std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 	std::uint32_t width, std::uint32_t height,
-	IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 	RenderEngineType engineType
 )
 {

@@ -1,6 +1,6 @@
 #ifndef TERRA_HPP_
 #define TERRA_HPP_
-#include <IThreadPool.hpp>
+#include <ThreadPool.hpp>
 #include <Renderer.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkSyncObjects.hpp>
@@ -32,7 +32,7 @@ public:
 	Terra(
 		std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 		std::uint32_t width, std::uint32_t height,
-		IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+		ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 		RenderEngineType engineType
 	);
 
@@ -46,7 +46,7 @@ public:
 	static void Init(
 		std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 		std::uint32_t width, std::uint32_t height,
-		IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+		ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 		RenderEngineType engineType
 	);
 
@@ -113,7 +113,7 @@ public:
 
 		void Init(
 			ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
-			IThreadPool& threadPool
+			ThreadPool& threadPool
 		);
 		inline void ResetUpload() noexcept
 		{

@@ -66,6 +66,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Callisto)
 
 FetchContent_Declare(
+    Venus
+    GIT_REPOSITORY https://github.com/razerx100/Venus.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(Venus)
+
+FetchContent_Declare(
     DirectXMath
     GIT_REPOSITORY https://github.com/razerx100/DirectXMath.git
     GIT_TAG master
@@ -73,4 +81,4 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(DirectXMath)
 
-target_link_libraries(TerraLib PRIVATE razer::callisto razer::DxMath razer::titan)
+target_link_libraries(TerraLib PRIVATE razer::callisto razer::DxMath razer::titan razer::venus)

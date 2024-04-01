@@ -2,7 +2,7 @@
 #define RENDERER_VK_HPP_
 #include <vulkan/vulkan.hpp>
 #include <string>
-#include <IThreadPool.hpp>
+#include <ThreadPool.hpp>
 
 #include <Renderer.hpp>
 #include <ISharedDataContainer.hpp>
@@ -13,7 +13,7 @@ public:
 		const char* appName,
 		void* windowHandle, void* moduleHandle,
 		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
-		IThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+		ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
 		RenderEngineType engineType
 	);
 

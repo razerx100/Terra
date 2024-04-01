@@ -1,7 +1,7 @@
 #include <UploadContainer.hpp>
 #include <cstring>
 
-UploadContainer::UploadContainer(IThreadPool& threadPool) noexcept
+UploadContainer::UploadContainer(ThreadPool& threadPool) noexcept
 	: m_memoryRefInfos{}, m_dstMemoryStart{ nullptr }, m_threadPool{ threadPool } {}
 
 void UploadContainer::SetMemoryStart(std::uint8_t* dstMemoryStart) noexcept {
@@ -24,12 +24,13 @@ void UploadContainer::CopyData(std::atomic_size_t& workCount) noexcept {
 	++workCount;
 
 	m_threadPool.SubmitWork(
+		std::function{
 		[&] {
 			for (size_t index = 0u; index < std::size(m_memoryRefInfos); ++index)
 				CopyMem(m_memoryRefInfos[index]);
 
 			--workCount;
-		}
+		}}
 	);
 }
 

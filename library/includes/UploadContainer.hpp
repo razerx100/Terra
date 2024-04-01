@@ -3,12 +3,12 @@
 #include <memory>
 #include <vector>
 #include <atomic>
-#include <IThreadPool.hpp>
+#include <ThreadPool.hpp>
 
 class UploadContainer
 {
 public:
-	UploadContainer(IThreadPool& threadPool) noexcept;
+	UploadContainer(ThreadPool& threadPool) noexcept;
 
 	void SetMemoryStart(std::uint8_t* dstMemoryStart) noexcept;
 	void AddMemory(void const* src, size_t memorySize, size_t offset) noexcept;
@@ -27,6 +27,6 @@ private:
 private:
 	std::vector<MemoryInfo> m_memoryRefInfos;
 	std::uint8_t* m_dstMemoryStart;
-	IThreadPool& m_threadPool;
+	ThreadPool& m_threadPool;
 };
 #endif
