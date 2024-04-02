@@ -1,6 +1,9 @@
 # Terra
 Renderer module based on the Vulkan API.
 
+## Instructions
+Use the ADD_TEST_TERRA cmake flag to add unit testing.
+
 # Library used
 1. [Venus](https://github.com/razerx100/Venus).
 2. [Callisto](https://github.com/razerx100/Callisto).
