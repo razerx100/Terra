@@ -348,6 +348,22 @@ public:
 
 	template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
 	void SubmitCommandBuffer(
+		const QueueSubmitBuilder<WaitCount, SignalCount, CommandBufferCount>& builder
+	) const noexcept {
+		vkQueueSubmit(m_commandQueue, 1u, builder.GetPtr(), VK_NULL_HANDLE);
+	}
+
+	template<std::uint32_t WaitCount = 0u, std::uint32_t SignalCount = 0u>
+	void SubmitCommandBuffer(
+		size_t bufferIndex, QueueSubmitBuilder<WaitCount, SignalCount>&& builder = {}
+	) const noexcept {
+		SubmitCommandBuffer<WaitCount, SignalCount>(
+			builder.CommandBuffer(GetCommandBuffer(bufferIndex))
+		);
+	}
+
+	template<std::uint32_t WaitCount, std::uint32_t SignalCount, std::uint32_t CommandBufferCount = 1u>
+	void SubmitCommandBuffer(
 		const QueueSubmitBuilder<WaitCount, SignalCount, CommandBufferCount>& builder,
 		const VKFence& fence
 	) const noexcept {
