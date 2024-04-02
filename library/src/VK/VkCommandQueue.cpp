@@ -178,20 +178,15 @@ void VkGraphicsQueue::CreateCommandBuffers(std::uint32_t bufferCount)
 
 	if (bufferCount)
 	{
-		{
-			VKFence fence{ m_device };
-			// The first fence needs to be created signaled since in a Render Loop I will
-			// check if a fence is signaled or not at the very beginning and it will stay
-			// blocked there if the fence wasn't created signaled as no queue will be signalling
-			// it.
-			fence.Create(true);
-			m_fences.emplace_back(std::move(fence));
-		}
+		// The fences need to be created signaled since in a Render Loop I will
+		// check if a fence is signaled or not at the very beginning and it will stay
+		// blocked there if the fence wasn't created signaled as no queue will be signalling
+		// it.
 
-		for (std::uint32_t _ = 1u; _ < bufferCount; ++_)
+		for (std::uint32_t _ = 0u; _ < bufferCount; ++_)
 		{
 			VKFence fence{ m_device };
-			fence.Create(false);
+			fence.Create(true);
 			m_fences.emplace_back(std::move(fence));
 		}
 	}
