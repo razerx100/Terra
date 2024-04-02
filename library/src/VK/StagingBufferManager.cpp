@@ -50,10 +50,9 @@ void StagingBufferManager::CopyCPU()
 		{
 			const BufferData& bufferData = m_bufferData.at(index);
 
-			tasks.emplace_back([&] {
-				const Buffer& tempBuffer = m_tempBufferToBuffer.at(index);
-
-				memcpy(tempBuffer.CPUHandle(), bufferData.cpuHandle, bufferData.bufferSize);
+			tasks.emplace_back([&bufferData, &tempBuffer = m_tempBufferToBuffer.at(index)]
+				{
+					memcpy(tempBuffer.CPUHandle(), bufferData.cpuHandle, bufferData.bufferSize);
 				});
 
 			currentBatchSize += bufferData.bufferSize;
@@ -81,9 +80,8 @@ void StagingBufferManager::CopyCPU()
 		{
 			const TextureData& textureData = m_textureData.at(index);
 
-			tasks.emplace_back([&] {
-					const Buffer& tempBuffer = m_tempBufferToTexture.at(index);
-
+			tasks.emplace_back([&textureData, &tempBuffer = m_tempBufferToTexture.at(index)]
+				{
 					memcpy(tempBuffer.CPUHandle(), textureData.cpuHandle, textureData.bufferSize);
 				});
 
@@ -161,6 +159,9 @@ void StagingBufferManager::CopyGPU()
 
 		copyCmdBuffer.CopyWhole(tempBuffer, textureData.dst, bufferBuilder);
 	}
+
+	m_bufferData.clear();
+	m_textureData.clear();
 }
 
 void StagingBufferManager::Copy(size_t currentCmdBufferIndex)
@@ -171,12 +172,19 @@ void StagingBufferManager::Copy(size_t currentCmdBufferIndex)
 		CopyCPU();
 
 		m_currentCmdBufferIndex = currentCmdBufferIndex;
-		// Copy on GPU will be done in response to the GfxQueueExecutionFinished event.
+		// Copy on GPU will be done in response to the GfxQueueExecutionFinished event
+		// if there is a Gfx Queue. Otherwise do it here.
 		m_eventDispatcher->Dispatch(InterruptGfxQueueEvent{});
 
-		m_bufferData.clear();
-		m_tempBufferToBuffer.clear();
-		m_textureData.clear();
-		m_tempBufferToTexture.clear();
+		// If the buffer or texture data still exist, that would mean there was no response from
+		// the Interrupt event. So, do the GPU copy here.
+		if (!std::empty(m_textureData) || !std::empty(m_bufferData))
+			CopyGPU();
 	}
+}
+
+void StagingBufferManager::CleanUpTempBuffers()
+{
+		m_tempBufferToBuffer.clear();
+		m_tempBufferToTexture.clear();
 }

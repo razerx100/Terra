@@ -54,6 +54,7 @@ public:
 	);
 
 	void Copy(size_t currentCmdBufferIndex);
+	void CleanUpTempBuffers();
 
 private:
 	void CopyCPU();
