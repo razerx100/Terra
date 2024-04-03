@@ -72,7 +72,7 @@ TEST_F(StagingBufferTest, StagingTest)
 	ThreadPool threadPool{ 8u };
 
 	StagingBufferManager stagingBufferMan{
-		logicalDevice, &memoryManager, &dispatcher, &transferQueue, &threadPool
+		logicalDevice, &memoryManager, &transferQueue, &threadPool
 	};
 
 	Buffer testStorage{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };

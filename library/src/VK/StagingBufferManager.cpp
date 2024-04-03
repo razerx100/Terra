@@ -133,10 +133,10 @@ void StagingBufferManager::CopyCPU()
 	batches.clear();
 }
 
-void StagingBufferManager::CopyGPU()
+void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
 {
 	// Assuming the command buffer has been reset before this.
-	VKCommandBuffer& copyCmdBuffer = m_copyQueue->GetCommandBuffer(m_currentCmdBufferIndex);
+	VKCommandBuffer& copyCmdBuffer = m_copyQueue->GetCommandBuffer(currentCmdBufferIndex);
 
 	for(size_t index = 0u; index < std::size(m_bufferData); ++index)
 	{
@@ -159,32 +159,26 @@ void StagingBufferManager::CopyGPU()
 
 		copyCmdBuffer.CopyWhole(tempBuffer, textureData.dst, bufferBuilder);
 	}
-
-	m_bufferData.clear();
-	m_textureData.clear();
 }
 
 void StagingBufferManager::Copy(size_t currentCmdBufferIndex)
 {
-	// Don't interrupt the Gfx Queue unless there is something to be copied.
+	// Since these are first copied to temp buffers and those are
+	// copied on the GPU, we don't need any cpu synchronisation.
+	// But we should wait on some semaphores from other queues which
+	// are already running before we submit these copy commands.
 	if (!std::empty(m_textureData) || !std::empty(m_bufferData))
 	{
 		CopyCPU();
-
-		m_currentCmdBufferIndex = currentCmdBufferIndex;
-		// Copy on GPU will be done in response to the GfxQueueExecutionFinished event
-		// if there is a Gfx Queue. Otherwise do it here.
-		m_eventDispatcher->Dispatch(InterruptGfxQueueEvent{});
-
-		// If the buffer or texture data still exist, that would mean there was no response from
-		// the Interrupt event. So, do the GPU copy here.
-		if (!std::empty(m_textureData) || !std::empty(m_bufferData))
-			CopyGPU();
+		CopyGPU(currentCmdBufferIndex);
 	}
 }
 
 void StagingBufferManager::CleanUpTempBuffers()
 {
-		m_tempBufferToBuffer.clear();
-		m_tempBufferToTexture.clear();
+	// These need to be cleared when the copy queue is finished.
+	m_tempBufferToBuffer.clear();
+	m_tempBufferToTexture.clear();
+	m_bufferData.clear();
+	m_textureData.clear();
 }
