@@ -5,7 +5,6 @@
 #include <VkTextureView.hpp>
 #include <VkResourceBarriers2.hpp>
 #include <VkSyncObjects.hpp>
-#include <TerraEvents.hpp>
 #include <SwapchainManager.hpp>
 #include <array>
 #include <cassert>
@@ -429,37 +428,10 @@ public:
 
 class VkGraphicsQueue : public VkCommandQueue
 {
-	class Dispatchable : public ITitanDispatchable<TerraEventType>
-	{
-	public:
-		Dispatchable(VkGraphicsQueue* graphicsQueue) : m_graphicsQueue{ graphicsQueue } {}
-
-		void ProcessEvent(TerraEvent& terraEvent) override
-		{
-			if (terraEvent.GetType() == TerraEventType::InterruptGfxQueue)
-			{
-				m_graphicsQueue->WaitForQueueToFinish();
-			}
-		}
-
-		void UpdateReference(VkGraphicsQueue* graphicsQueue) noexcept
-		{
-			m_graphicsQueue = graphicsQueue;
-		}
-
-	private:
-		VkGraphicsQueue* m_graphicsQueue;
-	};
-
 public:
-	VkGraphicsQueue(
-		VkDevice device, VkQueue queue, std::uint32_t queueIndex, TerraDispatcher* eventDispatcher
-	) : VkCommandQueue{ device, queue, queueIndex }, m_eventDispatcher{ eventDispatcher }, m_fences{},
-		m_interruptGfxSub{ std::make_shared<Dispatchable>(this) }
-	{
-		if (m_eventDispatcher)
-			m_eventDispatcher->Subscribe(TerraEventType::InterruptGfxQueue, m_interruptGfxSub);
-	}
+	VkGraphicsQueue(VkDevice device, VkQueue queue, std::uint32_t queueIndex)
+		: VkCommandQueue{ device, queue, queueIndex }, m_fences{}
+	{}
 
 	void WaitForSubmission(size_t bufferIndex);
 	void WaitForQueueToFinish();
@@ -481,30 +453,20 @@ public:
 	}
 
 private:
-	TerraDispatcher*              m_eventDispatcher;
 	std::vector<VKFence>          m_fences;
-	std::shared_ptr<Dispatchable> m_interruptGfxSub;
 
 public:
 	VkGraphicsQueue(const VkGraphicsQueue&) = delete;
 	VkGraphicsQueue& operator=(const VkGraphicsQueue&) = delete;
 
 	VkGraphicsQueue(VkGraphicsQueue&& other) noexcept
-		: VkCommandQueue{ std::move(other) }, m_eventDispatcher{ other.m_eventDispatcher },
-		m_fences{ std::move(other.m_fences) }, m_interruptGfxSub{ std::move(other.m_interruptGfxSub) }
-	{
-		// Need to update the reference of the owner object as we are changing the object.
-		m_interruptGfxSub->UpdateReference(this);
-	}
+		: VkCommandQueue{ std::move(other) }, m_fences{ std::move(other.m_fences) }
+	{}
 
 	VkGraphicsQueue& operator=(VkGraphicsQueue&& other) noexcept
 	{
 		VkCommandQueue::operator=(std::move(other));
-		m_eventDispatcher = other.m_eventDispatcher;
 		m_fences          = std::move(other.m_fences);
-		m_interruptGfxSub = std::move(other.m_interruptGfxSub);
-
-		m_interruptGfxSub->UpdateReference(this);
 
 		return *this;
 	}

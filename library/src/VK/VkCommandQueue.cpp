@@ -195,18 +195,10 @@ void VkGraphicsQueue::CreateCommandBuffers(std::uint32_t bufferCount)
 void VkGraphicsQueue::WaitForSubmission(size_t bufferIndex)
 {
 	m_fences.at(bufferIndex).Wait();
-
-	GfxBufferExecutionFinishedEvent finishEvent{ static_cast<std::uint8_t>(bufferIndex) };
-	std::future<void> waitObj = m_eventDispatcher->DispatchFeedback(finishEvent);
-	waitObj.wait();
 }
 
 void VkGraphicsQueue::WaitForQueueToFinish()
 {
 	for (auto& fence : m_fences)
 		fence.Wait();
-
-	GfxQueueExecutionFinishedEvent finishEvent{};
-	std::future<void> waitObj = m_eventDispatcher->DispatchFeedback(finishEvent);
-	waitObj.wait();
 }

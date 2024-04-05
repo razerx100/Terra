@@ -51,7 +51,6 @@ TEST_F(StagingBufferTest, StagingTest)
 	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
-	TerraDispatcher dispatcher{};
 
 	const VkQueueFamilyMananger& queueFamilyMan = s_deviceManager->GetQueueFamilyManager();
 
@@ -64,8 +63,7 @@ TEST_F(StagingBufferTest, StagingTest)
 	VkGraphicsQueue graphicsQueue{
 		logicalDevice,
 		queueFamilyMan.GetQueue(QueueType::GraphicsQueue),
-		queueFamilyMan.GetIndex(QueueType::GraphicsQueue),
-		&dispatcher
+		queueFamilyMan.GetIndex(QueueType::GraphicsQueue)
 	};
 	graphicsQueue.CreateCommandBuffers(2u);
 
