@@ -5,8 +5,11 @@
 #include <string>
 #include <VKPipelineObject.hpp>
 
-class GraphicsPipelineBase {
+class GraphicsPipelineBase
+{
 public:
+	GraphicsPipelineBase() : m_graphicsPipeline{}, m_fragmentShader{} {}
+
 	virtual void CreateGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath
@@ -16,6 +19,22 @@ public:
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
-	std::wstring m_fragmentShader;
+	std::wstring                      m_fragmentShader;
+
+public:
+	GraphicsPipelineBase(const GraphicsPipelineBase&) = delete;
+	GraphicsPipelineBase& operator=(const GraphicsPipelineBase&) = delete;
+
+	GraphicsPipelineBase(GraphicsPipelineBase&& other) noexcept
+		: m_graphicsPipeline{ std::move(other.m_graphicsPipeline) },
+		m_fragmentShader{ std::move(other.m_fragmentShader) }
+	{}
+	GraphicsPipelineBase& operator=(GraphicsPipelineBase&& other) noexcept
+	{
+		m_graphicsPipeline = std::move(other.m_graphicsPipeline);
+		m_fragmentShader   = std::move(other.m_fragmentShader);
+
+		return *this;
+	}
 };
 #endif

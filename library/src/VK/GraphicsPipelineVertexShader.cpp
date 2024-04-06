@@ -38,7 +38,9 @@ void GraphicsPipelineVertexShader::CreateGraphicsPipeline(
 
 // Indirect Draw
 GraphicsPipelineIndirectDraw::GraphicsPipelineIndirectDraw() noexcept
-	: m_modelCount{ 0u }, m_counterBufferOffset{ 0u }, m_argumentBufferOffset{ 0u } {}
+	: GraphicsPipelineVertexShader{}, m_modelCount{ 0u }, m_counterBufferOffset{ 0u },
+	m_argumentBufferOffset{ 0u }
+{}
 
 void GraphicsPipelineIndirectDraw::DrawModels(
 	VkCommandBuffer graphicsCmdBuffer, VkBuffer argumentBuffer, VkBuffer counterBuffer
@@ -59,8 +61,8 @@ void GraphicsPipelineIndirectDraw::ConfigureGraphicsPipeline(
 	m_modelCount = modelCount;
 
 	m_argumentBufferOffset = sizeof(VkDrawIndexedIndirectCommand) * modelCountOffset;
-	m_counterBufferOffset = sizeof(std::uint32_t) * 2u * counterIndex;
-	m_fragmentShader = fragmentShader;
+	m_counterBufferOffset  = sizeof(std::uint32_t) * 2u * counterIndex;
+	m_fragmentShader       = fragmentShader;
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsPipeline(
@@ -75,14 +77,14 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsP
 
 // Individual Draw
 GraphicsPipelineIndividualDraw::GraphicsPipelineIndividualDraw() noexcept
-	: m_modelCount{ 0u }, m_modelOffset{ 0u } {}
+	: GraphicsPipelineVertexShader{}, m_modelCount{ 0u }, m_modelOffset{ 0u } {}
 
 void GraphicsPipelineIndividualDraw::ConfigureGraphicsPipeline(
 	const std::wstring& fragmentShader, size_t modelCount, size_t modelOffset
 ) noexcept {
 	m_fragmentShader = fragmentShader;
-	m_modelCount = modelCount;
-	m_modelOffset = modelOffset;
+	m_modelCount     = modelCount;
+	m_modelOffset    = modelOffset;
 }
 
 void GraphicsPipelineIndividualDraw::DrawModels(

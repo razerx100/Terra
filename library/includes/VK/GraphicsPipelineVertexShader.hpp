@@ -2,8 +2,11 @@
 #define GRAPHICS_PIPELINE_VERTEX_SHADER_HPP_
 #include <GraphicsPipelineBase.hpp>
 
-class GraphicsPipelineVertexShader : public GraphicsPipelineBase {
+class GraphicsPipelineVertexShader : public GraphicsPipelineBase
+{
 public:
+	GraphicsPipelineVertexShader() : GraphicsPipelineBase{} {}
+
 	void CreateGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath
@@ -21,9 +24,24 @@ protected:
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) const noexcept = 0;
+
+public:
+	GraphicsPipelineVertexShader(const GraphicsPipelineVertexShader&) = delete;
+	GraphicsPipelineVertexShader& operator=(const GraphicsPipelineVertexShader&) = delete;
+
+	GraphicsPipelineVertexShader(GraphicsPipelineVertexShader&& other) noexcept
+		: GraphicsPipelineBase{ std::move(other) }
+	{}
+	GraphicsPipelineVertexShader& operator=(GraphicsPipelineVertexShader&& other) noexcept
+	{
+		GraphicsPipelineBase::operator=(std::move(other));
+
+		return *this;
+	}
 };
 
-class GraphicsPipelineIndirectDraw : public GraphicsPipelineVertexShader {
+class GraphicsPipelineIndirectDraw : public GraphicsPipelineVertexShader
+{
 public:
 	GraphicsPipelineIndirectDraw() noexcept;
 
@@ -45,11 +63,31 @@ private:
 
 private:
 	std::uint32_t m_modelCount;
-	VkDeviceSize m_counterBufferOffset;
-	VkDeviceSize m_argumentBufferOffset;
+	VkDeviceSize  m_counterBufferOffset;
+	VkDeviceSize  m_argumentBufferOffset;
+
+public:
+	GraphicsPipelineIndirectDraw(const GraphicsPipelineIndirectDraw&) = delete;
+	GraphicsPipelineIndirectDraw& operator=(const GraphicsPipelineIndirectDraw&) = delete;
+
+	GraphicsPipelineIndirectDraw(GraphicsPipelineIndirectDraw&& other) noexcept
+		: GraphicsPipelineVertexShader{ std::move(other) }, m_modelCount{ other.m_modelCount },
+		m_counterBufferOffset{ other.m_counterBufferOffset },
+		m_argumentBufferOffset{ other.m_argumentBufferOffset }
+	{}
+	GraphicsPipelineIndirectDraw& operator=(GraphicsPipelineIndirectDraw&& other) noexcept
+	{
+		GraphicsPipelineVertexShader::operator=(std::move(other));
+		m_modelCount           = other.m_modelCount;
+		m_counterBufferOffset  = other.m_counterBufferOffset;
+		m_argumentBufferOffset = other.m_argumentBufferOffset;
+
+		return *this;
+	}
 };
 
-class GraphicsPipelineIndividualDraw : public GraphicsPipelineVertexShader {
+class GraphicsPipelineIndividualDraw : public GraphicsPipelineVertexShader
+{
 public:
 	GraphicsPipelineIndividualDraw() noexcept;
 
@@ -72,5 +110,22 @@ private:
 private:
 	size_t m_modelCount;
 	size_t m_modelOffset;
+
+public:
+	GraphicsPipelineIndividualDraw(const GraphicsPipelineIndividualDraw&) = delete;
+	GraphicsPipelineIndividualDraw& operator=(const GraphicsPipelineIndividualDraw&) = delete;
+
+	GraphicsPipelineIndividualDraw(GraphicsPipelineIndividualDraw&& other) noexcept
+		: GraphicsPipelineVertexShader{ std::move(other) }, m_modelCount{ other.m_modelCount },
+		m_modelOffset{ other.m_modelOffset }
+	{}
+	GraphicsPipelineIndividualDraw& operator=(GraphicsPipelineIndividualDraw&& other) noexcept
+	{
+		GraphicsPipelineVertexShader::operator=(std::move(other));
+		m_modelCount  = other.m_modelCount;
+		m_modelOffset = other.m_modelOffset;
+
+		return *this;
+	}
 };
 #endif
