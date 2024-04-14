@@ -97,8 +97,7 @@ private:
 private:
 	template<VkDescriptorType type>
 	void AddBufferToDescriptor(
-		const Buffer& buffer, size_t layoutIndex, size_t descIndex,
-		VkFormat texelBufferFormat = VK_FORMAT_UNDEFINED
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelBufferFormat = VK_FORMAT_UNDEFINED
 	) {
 		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
 
@@ -143,14 +142,13 @@ private:
 
 		DescBuffer::vkGetDescriptorEXT(
 			m_device, &getInfo, descriptorSize,
-			m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(layoutIndex) + descriptorSize * descIndex
+			m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(layoutIndex) + descriptorSize
 		);
 	}
 
 	template<VkDescriptorType type>
 	void AddImageToDescriptor(
-		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex,
-		size_t descIndex
+		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex
 	) {
 		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
 
@@ -195,62 +193,61 @@ private:
 
 		DescBuffer::vkGetDescriptorEXT(
 			m_device, &getInfo, descriptorSize,
-			m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(layoutIndex) + descriptorSize * descIndex
+			m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(layoutIndex) + descriptorSize
 		);
 	}
 
 public:
-	void AddStorageBufferDescriptor(const Buffer& buffer, size_t layoutIndex, size_t descIndex)
+	void AddStorageBufferDescriptor(const Buffer& buffer, size_t layoutIndex)
 	{
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(buffer, layoutIndex, descIndex);
+		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(buffer, layoutIndex);
 	}
-	void AddUniformBufferDescriptor(const Buffer& buffer, size_t layoutIndex, size_t descIndex)
+	void AddUniformBufferDescriptor(const Buffer& buffer, size_t layoutIndex)
 	{
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(buffer, layoutIndex, descIndex);
+		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(buffer, layoutIndex);
 	}
 	void AddUniformTexelBufferDescriptor(
-		const Buffer& buffer, size_t layoutIndex, size_t descIndex, VkFormat texelFormat
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat
 	) {
 		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
-			buffer, layoutIndex, descIndex, texelFormat
+			buffer, layoutIndex, texelFormat
 		);
 	}
 	void AddStorageTexelBufferDescriptor(
-		const Buffer& buffer, size_t layoutIndex, size_t descIndex, VkFormat texelFormat
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat
 	) {
 		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
-			buffer, layoutIndex, descIndex, texelFormat
+			buffer, layoutIndex, texelFormat
 		);
 	}
 	void AddCombinedImageDescriptor(
-		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex,
-		size_t descIndex
+		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex
 	)
 	{
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-			imageView, sampler, imageLayout, layoutIndex, descIndex
+			imageView, sampler, imageLayout, layoutIndex
 		);
 	}
 	void AddSampledImageDescriptor(
-		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex, size_t descIndex
+		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex
 	)
 	{
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex, descIndex
+			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex
 		);
 	}
 	void AddStorageImageDescriptor(
-		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex, size_t descIndex
+		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex
 	)
 	{
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
-			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex, descIndex
+			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex
 		);
 	}
-	void AddSamplerDescriptor(VkSampler sampler, size_t layoutIndex, size_t descIndex)
+	void AddSamplerDescriptor(VkSampler sampler, size_t layoutIndex)
 	{
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
-			VK_NULL_HANDLE, sampler, VK_IMAGE_LAYOUT_UNDEFINED, layoutIndex, descIndex
+			VK_NULL_HANDLE, sampler, VK_IMAGE_LAYOUT_UNDEFINED, layoutIndex
 		);
 	}
 

@@ -77,9 +77,9 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		);
 		descBuffer.CreateBuffer();
 
-		descBuffer.AddStorageBufferDescriptor(testStorage, 0u, 0u);
-		descBuffer.AddUniformBufferDescriptor(testUniform, 1u, 0u);
-		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, 0u, VK_FORMAT_R8G8B8A8_UINT);
+		descBuffer.AddStorageBufferDescriptor(testStorage, 0u);
+		descBuffer.AddUniformBufferDescriptor(testUniform, 1u);
+		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, VK_FORMAT_R8G8B8A8_UINT);
 	}
 
 	{
@@ -112,14 +112,14 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		);
 
 		descBuffer.AddCombinedImageDescriptor(
-			textureView.GetView(), sampler.Get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+			textureView.GetView(), sampler.Get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u
 		);
 		descBuffer.AddSampledImageDescriptor(
-			textureView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
+			textureView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u
 		);
-		descBuffer.AddSamplerDescriptor(sampler.Get(), 2u, 0u);
+		descBuffer.AddSamplerDescriptor(sampler.Get(), 2u);
 		descBuffer.AddStorageImageDescriptor(
-			storageView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u, 0u
+			storageView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u
 		);
 	}
 }
