@@ -15,7 +15,7 @@ void GraphicsPipelineMeshShader::AddModelDetails(
 ) noexcept {
 	ModelDetails modelDetails{
 		.modelIndex = modelIndex,
-		.meshletOffset = meshletOffset,
+		.meshletOffset = meshletOffset, // I am not using this variable anywhere? I should probably use it
 		.meshletCount = meshletCount
 	};
 

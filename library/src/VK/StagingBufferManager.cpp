@@ -2,9 +2,16 @@
 
 StagingBufferManager& StagingBufferManager::AddTextureView(
 	std::uint8_t* cpuHandle, VkDeviceSize bufferSize,
-	const VkTextureView& dst, const VkOffset3D& offset, std::uint32_t mipLevelIndex/* = 0u */
+	const VkTextureView& dst, const VkOffset3D& offset,
+	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
+	std::uint32_t mipLevelIndex/* = 0u */
 ) {
-	m_textureData.emplace_back(TextureData{ cpuHandle, bufferSize, dst, offset, mipLevelIndex });
+	m_textureData.emplace_back(
+		TextureData{
+			cpuHandle, bufferSize, dst, offset, mipLevelIndex,
+			dstQueueType, dstAccess, dstStage
+		}
+	);
 
 	Buffer& tempBuffer = m_tempBufferToTexture.emplace_back(
 		m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -15,9 +22,12 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 }
 
 StagingBufferManager& StagingBufferManager::AddBuffer(
-	std::uint8_t* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset
+	std::uint8_t* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset,
+	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
 ) {
-	m_bufferData.emplace_back(BufferData{cpuHandle, bufferSize, dst, offset});
+	m_bufferData.emplace_back(
+		BufferData{ cpuHandle, bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
+	);
 
 	Buffer& tempBuffer = m_tempBufferToBuffer.emplace_back(
 		m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -149,7 +159,7 @@ void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
 		copyCmdBuffer.CopyWhole(tempBuffer, bufferData.dst, bufferBuilder);
 	}
 
-	for(size_t index = 0u; index < std::size(m_bufferData); ++index)
+	for(size_t index = 0u; index < std::size(m_textureData); ++index)
 	{
 		const TextureData& textureData = m_textureData.at(index);
 		const Buffer& tempBuffer       = m_tempBufferToTexture.at(index);
@@ -181,4 +191,40 @@ void StagingBufferManager::CleanUpTempBuffers()
 	m_tempBufferToTexture.clear();
 	m_bufferData.clear();
 	m_textureData.clear();
+}
+
+void StagingBufferManager::ReleaseOwnership(
+	size_t currentSrcCmdBufferIndex, const VkCommandQueue& dstCmdQueue
+) {
+	// If the dstQueue is not None, that should mean the resource has exclusive ownership
+	// and needs an ownership transfer. The reason I have two separate functions is because
+	// the acquire and release commands need to be executed on different queues, which won't
+	// happen at the same time.
+	VKCommandBuffer& copyCmdBuffer = m_copyQueue->GetCommandBuffer(currentSrcCmdBufferIndex);
+
+	for (const auto& bufferData : m_bufferData)
+		if (bufferData.dstQueueType != QueueType::None)
+			copyCmdBuffer.ReleaseOwnership(bufferData.dst, *m_copyQueue, dstCmdQueue);
+
+	for (const auto& textureData : m_textureData)
+		if (textureData.dstQueueType != QueueType::None)
+			copyCmdBuffer.ReleaseOwnership(textureData.dst, *m_copyQueue, dstCmdQueue);
+}
+
+void StagingBufferManager::AcquireOwnership(
+	size_t currentDstCmdBufferIndex, VkCommandQueue& dstCmdQueue
+) {
+	VKCommandBuffer& dstCmdBuffer = dstCmdQueue.GetCommandBuffer(currentDstCmdBufferIndex);
+
+	for (const auto& bufferData : m_bufferData)
+		if (bufferData.dstQueueType != QueueType::None)
+			dstCmdBuffer.AcquireOwnership(
+				bufferData.dst, *m_copyQueue, dstCmdQueue, bufferData.dstAccess, bufferData.dstStage
+			);
+
+	for (const auto& textureData : m_textureData)
+		if (textureData.dstQueueType != QueueType::None)
+			dstCmdBuffer.AcquireOwnership(
+				textureData.dst, *m_copyQueue, dstCmdQueue, textureData.dstAccess, textureData.dstStage
+			);
 }

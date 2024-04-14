@@ -6,8 +6,9 @@
 
 enum QueueType {
 	TransferQueue = 1,
-	ComputeQueue = 2,
-	GraphicsQueue = 4
+	ComputeQueue  = 2,
+	GraphicsQueue = 4,
+	None
 };
 
 struct QueueIndicesTG {

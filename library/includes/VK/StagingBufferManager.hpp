@@ -3,6 +3,7 @@
 #include <VkResources.hpp>
 #include <VkTextureView.hpp>
 #include <VkCommandQueue.hpp>
+#include <VkQueueFamilyManager.hpp>
 #include <vector>
 #include <ThreadPool.hpp>
 
@@ -19,13 +20,37 @@ public:
 
 	StagingBufferManager& AddTextureView(
 		std::uint8_t* cpuHandle, VkDeviceSize bufferSize,
-		const VkTextureView& dst, const VkOffset3D& offset, std::uint32_t mipLevelIndex = 0u
+		const VkTextureView& dst, const VkOffset3D& offset,
+		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
+		std::uint32_t mipLevelIndex = 0u
 	);
 	StagingBufferManager& AddBuffer(
-		std::uint8_t* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset
+		std::uint8_t* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset,
+		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
 	);
+	StagingBufferManager& AddTextureView(
+		std::uint8_t* cpuHandle, VkDeviceSize bufferSize,
+		const VkTextureView& dst, const VkOffset3D& offset, std::uint32_t mipLevelIndex = 0u
+	) {
+		return AddTextureView(
+			cpuHandle, bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
+			VK_PIPELINE_STAGE_2_NONE, mipLevelIndex
+		);
+	}
+	StagingBufferManager& AddBuffer(
+		std::uint8_t* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset
+	) {
+		return AddBuffer(
+			cpuHandle, bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
+			VK_PIPELINE_STAGE_2_NONE
+		);
+	}
 
 	void Copy(size_t currentCmdBufferIndex);
+	// This function should be run after the Copy function. The ownership transfer is done via a
+	// barrier. So, I shouldn't need any extra syncing.
+	void ReleaseOwnership(size_t currentSrcCmdBufferIndex, const VkCommandQueue& dstCmdQueue);
+	void AcquireOwnership(size_t currentDstCmdBufferIndex, VkCommandQueue& dstCmdQueue);
 	void CleanUpTempBuffers();
 
 private:
@@ -35,19 +60,25 @@ private:
 private:
 	struct BufferData
 	{
-		std::uint8_t* cpuHandle;
-		VkDeviceSize  bufferSize;
-		const Buffer& dst;
-		VkDeviceSize  offset;
+		std::uint8_t*         cpuHandle;
+		VkDeviceSize          bufferSize;
+		const Buffer&         dst;
+		VkDeviceSize          offset;
+		QueueType             dstQueueType;
+		VkAccessFlags2        dstAccess;
+		VkPipelineStageFlags2 dstStage;
 	};
 
 	struct TextureData
 	{
-		std::uint8_t*        cpuHandle;
-		VkDeviceSize         bufferSize;
-		const VkTextureView& dst;
-		VkOffset3D           offset;
-		std::uint32_t        mipLevelIndex;
+		std::uint8_t*         cpuHandle;
+		VkDeviceSize          bufferSize;
+		const VkTextureView&  dst;
+		VkOffset3D            offset;
+		std::uint32_t         mipLevelIndex;
+		QueueType             dstQueueType;
+		VkAccessFlags2        dstAccess;
+		VkPipelineStageFlags2 dstStage;
 	};
 
 private:
