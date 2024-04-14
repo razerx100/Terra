@@ -1,94 +1,68 @@
 #include <VertexManagerVertexShader.hpp>
 
-#include <Terra.hpp>
+VertexManagerVertexShader::VertexManagerVertexShader(
+	VkDevice device, MemoryManager* memoryManager
+) noexcept
+	: m_vertexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_indexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_vertices{}, m_indices{}
+{}
 
-VertexManagerVertexShader::VertexManagerVertexShader(VkDevice device) noexcept
-	: m_gVertexBuffer{ device }, m_gIndexBuffer{ device } {}
-
-void VertexManagerVertexShader::AddGVerticesAndIndices(
-	VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
+void VertexManagerVertexShader::SetVerticesAndIndices(
+	std::vector<Vertex>&& vertices, std::vector<std::uint32_t>&& indices,
+	StagingBufferManager& stagingBufferMan
 ) noexcept {
 	// Vertex Buffer
-	const size_t vertexBufferSize = sizeof(Vertex) * std::size(gVertices);
+	{
+		const auto vertexBufferSize = static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(vertices));
 
-	m_gVertexBuffer.CreateResource(
-		device, static_cast<VkDeviceSize>(vertexBufferSize), 1u,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-	);
+		m_vertexBuffer.Create(
+			static_cast<VkDeviceSize>(vertexBufferSize),
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		);
 
-	m_gVertexBuffer.SetMemoryOffsetAndType(device);
+		m_vertices = std::move(vertices);
 
-	UploadContainer& uploadContainer = Terra::Get().Res().UploadCont();
-
-	uploadContainer.AddMemory(
-		std::data(gVertices), vertexBufferSize, m_gVertexBuffer.GetFirstUploadMemoryOffset()
-	);
-
-	m_gVertices = std::move(gVertices);
+		stagingBufferMan.AddBuffer(
+			reinterpret_cast<std::uint8_t*>(std::data(m_vertices)), vertexBufferSize, m_vertexBuffer, 0u,
+			QueueType::GraphicsQueue, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
+			VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
+		);
+	}
 
 	// Index Buffer
-	const size_t indexBufferSize = sizeof(std::uint32_t) * std::size(gIndices);
+	{
+		const auto indexBufferSize = sizeof(std::uint32_t) * std::size(indices);
 
-	m_gIndexBuffer.CreateResource(
-		device, static_cast<VkDeviceSize>(indexBufferSize), 1u,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-	);
+		m_indexBuffer.Create(
+			static_cast<VkDeviceSize>(indexBufferSize),
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		);
 
-	m_gIndexBuffer.SetMemoryOffsetAndType(device);
+		m_indices = std::move(indices);
 
-	uploadContainer.AddMemory(
-		std::data(gIndices), indexBufferSize, m_gIndexBuffer.GetFirstUploadMemoryOffset()
-	);
-
-	m_gIndices = std::move(gIndices);
+		stagingBufferMan.AddBuffer(
+			reinterpret_cast<std::uint8_t*>(std::data(m_indices)), indexBufferSize, m_indexBuffer, 0u,
+			QueueType::GraphicsQueue, VK_ACCESS_2_INDEX_READ_BIT,
+			VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT
+		);
+	}
 }
 
 void VertexManagerVertexShader::BindVertexAndIndexBuffer(
 	VkCommandBuffer graphicsCmdBuffer
 ) const noexcept {
-	VkBuffer vertexBuffers[] = { m_gVertexBuffer.GetResource() };
+	VkBuffer vertexBuffers[]                  = { m_vertexBuffer.Get() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
 
 	vkCmdBindVertexBuffers(graphicsCmdBuffer, 0u, 1u, vertexBuffers, vertexOffsets);
 	vkCmdBindIndexBuffer(
-		graphicsCmdBuffer, m_gIndexBuffer.GetResource(), 0u, VK_INDEX_TYPE_UINT32
+		graphicsCmdBuffer, m_indexBuffer.Get(), 0u, VK_INDEX_TYPE_UINT32
 	);
 }
 
-void VertexManagerVertexShader::AcquireOwnerShips(
-	VkCommandBuffer graphicsCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept{
-	m_gVertexBuffer.AcquireOwnership(
-		graphicsCmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-	);
-	m_gIndexBuffer.AcquireOwnership(
-		graphicsCmdBuffer, srcQueueIndex, dstQueueIndex, VK_ACCESS_INDEX_READ_BIT,
-		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
-	);
-}
-
-void VertexManagerVertexShader::ReleaseOwnerships(
-	VkCommandBuffer transferCmdBuffer, std::uint32_t srcQueueIndex, std::uint32_t dstQueueIndex
-) noexcept {
-	m_gVertexBuffer.ReleaseOwnerShip(transferCmdBuffer, srcQueueIndex, dstQueueIndex);
-	m_gIndexBuffer.ReleaseOwnerShip(transferCmdBuffer, srcQueueIndex, dstQueueIndex);
-}
-
-void VertexManagerVertexShader::RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept {
-	m_gVertexBuffer.RecordCopy(transferCmdBuffer);
-	m_gIndexBuffer.RecordCopy(transferCmdBuffer);
-}
-
-void VertexManagerVertexShader::ReleaseUploadResources() noexcept {
-	m_gVertexBuffer.CleanUpUploadResource();
-	m_gIndexBuffer.CleanUpUploadResource();
-
-	m_gVertices = std::vector<Vertex>{};
-	m_gIndices = std::vector<std::uint32_t>{};
-}
-
-void VertexManagerVertexShader::BindResourceToMemory(VkDevice device) const noexcept {
-	m_gVertexBuffer.BindResourceToMemory(device);
-	m_gIndexBuffer.BindResourceToMemory(device);
+void VertexManagerVertexShader::CleanupTempData() noexcept
+{
+	m_vertices = std::vector<Vertex>{};
+	m_indices  = std::vector<std::uint32_t>{};
 }

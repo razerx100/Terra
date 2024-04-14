@@ -43,7 +43,7 @@ private:
 	GraphicsPipeline m_graphicsPipeline0;
 	std::vector<GraphicsPipeline> m_graphicsPipelines;
 
-	VertexManagerMeshShader m_vertexManager;
+	//VertexManagerMeshShader m_vertexManager;
 	VkUploadableBufferResourceView m_meshletBuffer;
 	std::vector<Meshlet> m_meshlets;
 

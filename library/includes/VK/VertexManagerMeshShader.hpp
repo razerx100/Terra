@@ -3,31 +3,33 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <vector>
-#include <VkResourceViews.hpp>
-#include <VkQueueFamilyManager.hpp>
-#include <UploadContainer.hpp>
+#include <VkResources.hpp>
+#include <VkDescriptorBuffer.hpp>
+#include <StagingBufferManager.hpp>
 
 #include <IModel.hpp>
 
-class VertexManagerMeshShader {
+class VertexManagerMeshShader
+{
 public:
-	VertexManagerMeshShader(
-		VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
-	) noexcept;
+	VertexManagerMeshShader(VkDevice device, MemoryManager* memoryManager);
 
-	void AddGVerticesAndPrimIndices(
-		VkDevice device, std::vector<Vertex>&& gVertices,
-		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
-	) noexcept;
+	void SetVerticesAndPrimIndices(
+		std::vector<Vertex>&& vertices,
+		std::vector<std::uint32_t>&& vertexIndices, std::vector<std::uint32_t>&& primIndices,
+		StagingBufferManager& stagingBufferMan
+	);
 
-	void AcquireOwnerShips(VkCommandBuffer graphicsCmdBuffer) noexcept;
-	void ReleaseOwnerships(VkCommandBuffer transferCmdBuffer) noexcept;
-	void RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept;
-	void ReleaseUploadResources() noexcept;
-	void BindResourceToMemory(VkDevice device) const noexcept;
+	void SetDescriptorBuffer(
+		VkDescriptorBuffer& descriptorBuffer, std::uint32_t verticesBindingSlot,
+		std::uint32_t vertexIndicesBindingSlot, std::uint32_t primIndicesBindingSlot
+	) const noexcept;
+
+	void CleanupTempData() noexcept;
 
 private:
-	struct GLSLVertex {
+	struct GLSLVertex
+	{
 		DirectX::XMFLOAT3 position;
 		float padding0;
 		DirectX::XMFLOAT3 normal;
@@ -36,48 +38,60 @@ private:
 		float padding3[2];
 	};
 
-private:
-	void AddDescriptors(
-		VkUploadableBufferResourceView& buffer, std::uint32_t bindingSlot
-	) const noexcept;
-
-	[[nodiscard]]
-	static std::vector<GLSLVertex> TransformVertices(
-		const std::vector<Vertex>& vertices
-	) noexcept;
-
 	template<typename T>
 	static void ConfigureBuffer(
-		VkDevice device, std::vector<T>&& input, std::vector<T>& output,
-		VkUploadableBufferResourceView& buffer
+		std::vector<T>&& inputData, std::vector<T>& outputData, Buffer& buffer,
+		StagingBufferManager& stagingBufferMan
 	) noexcept {
-		const size_t bufferSize = sizeof(T) * std::size(input);
+		const auto bufferSize = static_cast<VkDeviceSize>(sizeof(T) * std::size(inputData));
 
-		buffer.CreateResource(
-			device, static_cast<VkDeviceSize>(bufferSize), 1u,
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+		buffer.Create(
+			bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 		);
 
-		buffer.SetMemoryOffsetAndType(device);
+		outputData = std::move(inputData);
 
-		GetUploadContainer().AddMemory(
-			std::data(input), bufferSize, buffer.GetFirstUploadMemoryOffset()
+		stagingBufferMan.AddBuffer(
+			reinterpret_cast<std::uint8_t*>(std::data(outputData)), bufferSize, buffer, 0u,
+			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
+			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 		);
-
-		output = std::move(input);
 	}
 
+private:
 	[[nodiscard]]
-	static UploadContainer& GetUploadContainer() noexcept;
+	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 
 private:
-	std::uint32_t m_bufferCount;
-	QueueIndicesTG m_queueIndices;
-	VkUploadableBufferResourceView m_vertexBuffer;
-	VkUploadableBufferResourceView m_vertexIndicesBuffer;
-	VkUploadableBufferResourceView m_primIndicesBuffer;
-	std::vector<GLSLVertex> m_gVertices;
-	std::vector<std::uint32_t> m_gVerticesIndices;
-	std::vector<std::uint32_t> m_gPrimIndices;
+	Buffer                     m_vertexBuffer;
+	Buffer                     m_vertexIndicesBuffer;
+	Buffer                     m_primIndicesBuffer;
+	std::vector<GLSLVertex>    m_vertices;
+	std::vector<std::uint32_t> m_vertexIndices;
+	std::vector<std::uint32_t> m_primIndices;
+
+public:
+	VertexManagerMeshShader(const VertexManagerMeshShader&) = delete;
+	VertexManagerMeshShader& operator=(const VertexManagerMeshShader&) = delete;
+
+	VertexManagerMeshShader(VertexManagerMeshShader&& other) noexcept
+		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
+		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
+		m_vertices{ std::move(other.m_vertices) }, m_vertexIndices{ std::move(other.m_vertexIndices) },
+		m_primIndices{ std::move(other.m_primIndices) }
+	{}
+
+	VertexManagerMeshShader& operator=(VertexManagerMeshShader&& other) noexcept
+	{
+		m_vertexBuffer        = std::move(other.m_vertexBuffer);
+		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
+		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
+		m_vertices            = std::move(other.m_vertices);
+		m_vertexIndices       = std::move(other.m_vertexIndices);
+		m_primIndices         = std::move(other.m_primIndices);
+
+		return *this;
+	}
 };
 #endif

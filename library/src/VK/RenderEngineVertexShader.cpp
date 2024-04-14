@@ -5,50 +5,51 @@
 // Vertex Shader
 RenderEngineVertexShader::RenderEngineVertexShader(
 	VkDevice device, QueueIndicesTG queueIndices
-) : m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
+//) : m_vertexManager{ device }, m_queueIndices{ queueIndices } {}
+) : m_queueIndices{ queueIndices } {}
 
 void RenderEngineVertexShader::AddGVerticesAndIndices(
 	VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 ) noexcept {
-	m_vertexManager.AddGVerticesAndIndices(device, std::move(gVertices), std::move(gIndices));
+	//m_vertexManager.AddGVerticesAndIndices(device, std::move(gVertices), std::move(gIndices));
 }
 
 void RenderEngineVertexShader::BindGraphicsBuffers(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	BindGraphicsDescriptorSets(graphicsCmdBuffer, frameIndex);
-	m_vertexManager.BindVertexAndIndexBuffer(graphicsCmdBuffer);
+	//m_vertexManager.BindVertexAndIndexBuffer(graphicsCmdBuffer);
 }
 
 void RenderEngineVertexShader::BindResourcesToMemory(VkDevice device) {
-	m_vertexManager.BindResourceToMemory(device);
+	//m_vertexManager.BindResourceToMemory(device);
 	_bindResourcesToMemory(device);
 }
 
 void RenderEngineVertexShader::RecordCopy(VkCommandBuffer transferBuffer) noexcept {
-	m_vertexManager.RecordCopy(transferBuffer);
+	//m_vertexManager.RecordCopy(transferBuffer);
 	_recordCopy(transferBuffer);
 }
 
 void RenderEngineVertexShader::ReleaseUploadResources() noexcept {
-	m_vertexManager.ReleaseUploadResources();
+	//m_vertexManager.ReleaseUploadResources();
 	_releaseUploadResources();
 }
 
 void RenderEngineVertexShader::AcquireOwnerShipGraphics(
 	VkCommandBuffer graphicsCmdBuffer
 ) noexcept {
-	m_vertexManager.AcquireOwnerShips(
+	/*m_vertexManager.AcquireOwnerShips(
 		graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);
+	);*/
 }
 
 void RenderEngineVertexShader::ReleaseOwnership(
 	VkCommandBuffer transferCmdBuffer
 ) noexcept {
-	m_vertexManager.ReleaseOwnerships(
+	/*m_vertexManager.ReleaseOwnerships(
 		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);
+	);*/
 	_releaseOwnership(transferCmdBuffer);
 }
 

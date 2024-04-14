@@ -4,8 +4,8 @@
 
 RenderEngineMeshShader::RenderEngineMeshShader(
 	VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
-) : m_vertexManager{ device, bufferCount, queueIndices },
-	m_meshletBuffer{ device }, m_queueIndicesTG{ queueIndices }, m_bufferCount{ bufferCount } {}
+//) : m_vertexManager{ device, bufferCount, queueIndices },
+) : m_meshletBuffer{ device }, m_queueIndicesTG{ queueIndices }, m_bufferCount{ bufferCount } {}
 
 std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLayout(
 	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
@@ -54,9 +54,9 @@ void RenderEngineMeshShader::AddGVerticesAndPrimIndices(
 	VkDevice device, std::vector<Vertex>&& gVertices,
 	std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
 ) noexcept {
-	m_vertexManager.AddGVerticesAndPrimIndices(
+	/*m_vertexManager.AddGVerticesAndPrimIndices(
 		device, std::move(gVertices), std::move(gVerticesIndices), std::move(gPrimIndices)
-	);
+	);*/
 }
 
 void RenderEngineMeshShader::ConstructPipelines() {
@@ -86,24 +86,24 @@ void RenderEngineMeshShader::RecordDrawCommands(
 }
 
 void RenderEngineMeshShader::BindResourcesToMemory(VkDevice device) {
-	m_vertexManager.BindResourceToMemory(device);
+	//m_vertexManager.BindResourceToMemory(device);
 	m_meshletBuffer.BindResourceToMemory(device);
 }
 
 void RenderEngineMeshShader::RecordCopy(VkCommandBuffer transferBuffer) noexcept {
-	m_vertexManager.RecordCopy(transferBuffer);
+	//m_vertexManager.RecordCopy(transferBuffer);
 	m_meshletBuffer.RecordCopy(transferBuffer);
 }
 
 void RenderEngineMeshShader::ReleaseUploadResources() noexcept {
-	m_vertexManager.ReleaseUploadResources();
+	//m_vertexManager.ReleaseUploadResources();
 	m_meshletBuffer.CleanUpUploadResource();
 }
 
 void RenderEngineMeshShader::AcquireOwnerShipGraphics(
 	VkCommandBuffer graphicsCmdBuffer
 ) noexcept {
-	m_vertexManager.AcquireOwnerShips(graphicsCmdBuffer);
+	//m_vertexManager.AcquireOwnerShips(graphicsCmdBuffer);
 	m_meshletBuffer.AcquireOwnership(
 		graphicsCmdBuffer, m_queueIndicesTG.transfer, m_queueIndicesTG.graphics,
 		VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT
@@ -111,7 +111,7 @@ void RenderEngineMeshShader::AcquireOwnerShipGraphics(
 }
 
 void RenderEngineMeshShader::ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {
-	m_vertexManager.ReleaseOwnerships(transferCmdBuffer);
+	//m_vertexManager.ReleaseOwnerships(transferCmdBuffer);
 	m_meshletBuffer.ReleaseOwnerShip(
 		transferCmdBuffer, m_queueIndicesTG.transfer, m_queueIndicesTG.graphics
 	);

@@ -37,7 +37,7 @@ private:
 	) const noexcept final;
 
 private:
-	VertexManagerVertexShader m_vertexManager;
+	//VertexManagerVertexShader m_vertexManager;
 	QueueIndicesTG m_queueIndices;
 };
 

@@ -1,96 +1,38 @@
 #include <VertexManagerMeshShader.hpp>
 
-#include <Terra.hpp>
+VertexManagerMeshShader::VertexManagerMeshShader(VkDevice device, MemoryManager* memoryManager)
+	: m_vertexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_vertexIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_primIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_vertices{}, m_vertexIndices{}, m_primIndices{}
+{}
 
-VertexManagerMeshShader::VertexManagerMeshShader(
-	VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
-) noexcept
-	: m_bufferCount{ bufferCount }, m_queueIndices{ queueIndices }, m_vertexBuffer{ device },
-	m_vertexIndicesBuffer{ device }, m_primIndicesBuffer{ device } {}
+void VertexManagerMeshShader::SetVerticesAndPrimIndices(
+	std::vector<Vertex>&& vertices,
+	std::vector<std::uint32_t>&& vertexIndices, std::vector<std::uint32_t>&& primIndices,
+	StagingBufferManager& stagingBufferMan
+) {
+	std::vector<GLSLVertex> glslVertices = TransformVertices(vertices);
 
-void VertexManagerMeshShader::AddGVerticesAndPrimIndices(
-	VkDevice device, std::vector<Vertex>&& gVertices,
-	std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
-) noexcept {
-	std::vector<GLSLVertex> glslVertices = TransformVertices(gVertices);
-
-	ConfigureBuffer(device, std::move(glslVertices), m_gVertices, m_vertexBuffer);
-	ConfigureBuffer(
-		device, std::move(gVerticesIndices), m_gVerticesIndices, m_vertexIndicesBuffer
-	);
-	ConfigureBuffer(device, std::move(gPrimIndices), m_gPrimIndices, m_primIndicesBuffer);
-
-	AddDescriptors(m_vertexBuffer, 6u);
-	AddDescriptors(m_vertexIndicesBuffer, 7u);
-	AddDescriptors(m_primIndicesBuffer, 8u);
+	ConfigureBuffer(std::move(glslVertices), m_vertices, m_vertexBuffer, stagingBufferMan);
+	ConfigureBuffer(std::move(vertexIndices), m_vertexIndices, m_vertexIndicesBuffer, stagingBufferMan);
+	ConfigureBuffer(std::move(primIndices), m_primIndices, m_primIndicesBuffer, stagingBufferMan);
 }
 
-UploadContainer& VertexManagerMeshShader::GetUploadContainer() noexcept {
-	return Terra::Get().Res().UploadCont();
+void VertexManagerMeshShader::CleanupTempData() noexcept
+{
+	m_vertices      = std::vector<GLSLVertex>{};
+	m_vertexIndices = std::vector<std::uint32_t>{};
+	m_primIndices   = std::vector<std::uint32_t>{};
 }
 
-void VertexManagerMeshShader::AcquireOwnerShips(VkCommandBuffer graphicsCmdBuffer) noexcept{
-	m_vertexBuffer.AcquireOwnership(
-		graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics,
-		VK_ACCESS_SHADER_READ_BIT,	VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT
-	);
-	m_vertexIndicesBuffer.AcquireOwnership(
-		graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics,
-		VK_ACCESS_SHADER_READ_BIT,	VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT
-	);
-	m_primIndicesBuffer.AcquireOwnership(
-		graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics,
-		VK_ACCESS_SHADER_READ_BIT,	VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT
-	);
-}
-
-void VertexManagerMeshShader::ReleaseOwnerships(VkCommandBuffer transferCmdBuffer) noexcept {
-	m_vertexBuffer.ReleaseOwnerShip(
-		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);
-	m_vertexIndicesBuffer.ReleaseOwnerShip(
-		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);
-	m_primIndicesBuffer.ReleaseOwnerShip(
-		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);
-}
-
-void VertexManagerMeshShader::RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept {
-	m_vertexBuffer.RecordCopy(transferCmdBuffer);
-	m_vertexIndicesBuffer.RecordCopy(transferCmdBuffer);
-	m_primIndicesBuffer.RecordCopy(transferCmdBuffer);
-}
-
-void VertexManagerMeshShader::ReleaseUploadResources() noexcept {
-	m_vertexBuffer.CleanUpUploadResource();
-	m_vertexIndicesBuffer.CleanUpUploadResource();
-	m_primIndicesBuffer.CleanUpUploadResource();
-
-	m_gVertices = std::vector<GLSLVertex>{};
-	m_gVerticesIndices = std::vector<std::uint32_t>{};
-	m_gPrimIndices = std::vector<std::uint32_t>{};
-}
-
-void VertexManagerMeshShader::BindResourceToMemory(VkDevice device) const noexcept {
-	m_vertexBuffer.BindResourceToMemory(device);
-	m_vertexIndicesBuffer.BindResourceToMemory(device);
-	m_primIndicesBuffer.BindResourceToMemory(device);
-}
-
-void VertexManagerMeshShader::AddDescriptors(
-	VkUploadableBufferResourceView& buffer, std::uint32_t bindingSlot
+void VertexManagerMeshShader::SetDescriptorBuffer(
+	VkDescriptorBuffer& descriptorBuffer, std::uint32_t verticesBindingSlot,
+	std::uint32_t vertexIndicesBindingSlot, std::uint32_t primIndicesBindingSlot
 ) const noexcept {
-	DescriptorInfo descInfo{
-		.bindingSlot = bindingSlot,
-		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
-	};
-
-	auto bufferInfo = buffer.GetDescBufferInfoSpread(m_bufferCount);
-
-	Terra::Get().GraphicsDesc().AddBuffersSplit(
-		descInfo, std::move(bufferInfo), VK_SHADER_STAGE_MESH_BIT_EXT
-	);
+	descriptorBuffer.AddStorageBufferDescriptor(m_vertexBuffer, verticesBindingSlot);
+	descriptorBuffer.AddStorageBufferDescriptor(m_vertexIndicesBuffer, vertexIndicesBindingSlot);
+	descriptorBuffer.AddStorageBufferDescriptor(m_primIndicesBuffer, primIndicesBindingSlot);
 }
 
 std::vector<VertexManagerMeshShader::GLSLVertex> VertexManagerMeshShader::TransformVertices(
@@ -100,8 +42,8 @@ std::vector<VertexManagerMeshShader::GLSLVertex> VertexManagerMeshShader::Transf
 
 	for (size_t index = 0u; index < std::size(vertices); ++index) {
 		glslVertices[index].position = vertices[index].position;
-		glslVertices[index].normal = vertices[index].normal;
-		glslVertices[index].uv = vertices[index].uv;
+		glslVertices[index].normal   = vertices[index].normal;
+		glslVertices[index].uv       = vertices[index].uv;
 	}
 
 	return glslVertices;

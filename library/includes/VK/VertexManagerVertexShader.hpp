@@ -3,36 +3,48 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <vector>
-#include <VkResourceViews.hpp>
+#include <VkResources.hpp>
+#include <VkDescriptorBuffer.hpp>
+#include <StagingBufferManager.hpp>
 
 #include <IModel.hpp>
 
-class VertexManagerVertexShader {
+class VertexManagerVertexShader
+{
 public:
-	VertexManagerVertexShader(VkDevice device) noexcept;
+	VertexManagerVertexShader(VkDevice device, MemoryManager* memoryManager) noexcept;
 
-	void AddGVerticesAndIndices(
-		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
+	void SetVerticesAndIndices(
+		std::vector<Vertex>&& vertices, std::vector<std::uint32_t>&& indices,
+		StagingBufferManager& stagingBufferMan
 	) noexcept;
 
 	void BindVertexAndIndexBuffer(VkCommandBuffer graphicsCmdBuffer) const noexcept;
-
-	void AcquireOwnerShips(
-		VkCommandBuffer graphicsCmdBuffer, std::uint32_t srcQueueIndex,
-		std::uint32_t dstQueueIndex
-	) noexcept;
-	void ReleaseOwnerships(
-		VkCommandBuffer transferCmdBuffer, std::uint32_t srcQueueIndex,
-		std::uint32_t dstQueueIndex
-	) noexcept;
-	void RecordCopy(VkCommandBuffer transferCmdBuffer) noexcept;
-	void ReleaseUploadResources() noexcept;
-	void BindResourceToMemory(VkDevice device) const noexcept;
+	void CleanupTempData() noexcept;
 
 private:
-	VkUploadableBufferResourceView m_gVertexBuffer;
-	VkUploadableBufferResourceView m_gIndexBuffer;
-	std::vector<Vertex> m_gVertices;
-	std::vector<std::uint32_t> m_gIndices;
+	Buffer                     m_vertexBuffer;
+	Buffer                     m_indexBuffer;
+	std::vector<Vertex>        m_vertices;
+	std::vector<std::uint32_t> m_indices;
+
+public:
+	VertexManagerVertexShader(const VertexManagerVertexShader&) = delete;
+	VertexManagerVertexShader& operator=(const VertexManagerVertexShader&) = delete;
+
+	VertexManagerVertexShader(VertexManagerVertexShader&& other) noexcept
+		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		m_indexBuffer{ std::move(other.m_indexBuffer) },
+		m_vertices{ std::move(other.m_vertices) }, m_indices{ std::move(other.m_indices) }
+	{}
+	VertexManagerVertexShader& operator=(VertexManagerVertexShader&& other) noexcept
+	{
+		m_vertexBuffer = std::move(other.m_vertexBuffer);
+		m_indexBuffer  = std::move(other.m_indexBuffer);
+		m_vertices     = std::move(other.m_vertices);
+		m_indices      = std::move(other.m_indices);
+
+		return *this;
+	}
 };
 #endif
