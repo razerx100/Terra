@@ -3,32 +3,68 @@
 #include <vulkan/vulkan.hpp>
 #include <cstdint>
 #include <optional>
+#include <vector>
+#include <type_traits>
 
-enum QueueType {
+enum QueueType
+{
 	TransferQueue = 1,
 	ComputeQueue  = 2,
 	GraphicsQueue = 4,
 	None
 };
 
-struct QueueIndicesTG {
+struct QueueIndicesTG
+{
 	std::uint32_t transfer;
 	std::uint32_t graphics;
+
+	[[nodiscard]]
+	std::vector<std::uint32_t> ResolveQueueIndices() const noexcept;
 };
 
-struct QueueIndicesCG {
+struct QueueIndicesCG
+{
 	std::uint32_t compute;
 	std::uint32_t graphics;
+
+	[[nodiscard]]
+	std::vector<std::uint32_t> ResolveQueueIndices() const noexcept;
 };
 
-struct QueueIndices3 {
+struct QueueIndices3
+{
 	std::uint32_t transfer;
 	std::uint32_t graphics;
 	std::uint32_t compute;
 
 	operator QueueIndicesTG() const { return { transfer, graphics }; }
-
 	operator QueueIndicesCG() const { return { compute, graphics }; }
+
+	template<typename T>
+	[[nodiscard]]
+	std::vector<std::uint32_t> ResolveQueueIndices() const noexcept
+	{
+		if constexpr (std::is_same_v<T, QueueIndices3>)
+			return ResolveQueueIndices(transfer, graphics, compute);
+		else if constexpr (std::is_same_v<T, QueueIndicesCG>)
+			return ResolveQueueIndices(compute, graphics);
+		else if constexpr (std::is_same_v<T, QueueIndicesTG>)
+			return ResolveQueueIndices(transfer, graphics);
+
+		return {};
+	}
+
+	[[nodiscard]]
+	static std::vector<std::uint32_t> ResolveQueueIndices(
+		std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
+	) noexcept;
+	[[nodiscard]]
+	static std::vector<std::uint32_t> ResolveQueueIndices(
+		std::uint32_t index0, std::uint32_t index1
+	) noexcept {
+		return ResolveQueueIndices(index0, index1, index0);
+	}
 };
 
 class VkQueueFamilyMananger
@@ -55,7 +91,8 @@ public:
 	VkQueue GetQueue(QueueType type) const noexcept;
 
 private:
-	struct QueueFamilyInfo {
+	struct QueueFamilyInfo
+	{
 		size_t index            = 0u;
 		size_t queueRequired    = 0u;
 		size_t queueCreated     = 0u;

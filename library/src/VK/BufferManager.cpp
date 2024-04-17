@@ -19,7 +19,7 @@ void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	const VkShaderStageFlagBits vertexType
 		= m_meshShader ? VK_SHADER_STAGE_MESH_BIT_EXT : VK_SHADER_STAGE_VERTEX_BIT;
 
-	auto resolvedIndices = ResolveQueueIndices(m_queueIndices.compute, m_queueIndices.graphics);
+	std::vector<std::uint32_t> resolvedIndices = m_queueIndices.ResolveQueueIndices();
 
 	CreateBufferComputeAndVertex(
 		device, m_cameraBuffer, static_cast<VkDeviceSize>(cameraBufferSize),

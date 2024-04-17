@@ -112,7 +112,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		argumentBuffer.CreateResource(
 			device, commandBufferSize, 1u,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-			ResolveQueueIndices(m_queueIndices.compute, m_queueIndices.graphics)
+			m_queueIndices.ResolveQueueIndices<QueueIndicesCG>()
 		);
 		argumentBuffer.SetMemoryOffsetAndType(device, MemoryType::gpuOnly);
 	}
@@ -124,9 +124,7 @@ void ComputePipelineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
 		counterBuffer.CreateResource(
 			device, counterBufferSize, 1u,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-			ResolveQueueIndices(
-				m_queueIndices.compute, m_queueIndices.graphics, m_queueIndices.transfer
-			)
+			m_queueIndices.ResolveQueueIndices<QueueIndices3>()
 		);
 		counterBuffer.SetMemoryOffsetAndType(device);
 	}

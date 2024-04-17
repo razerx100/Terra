@@ -28,14 +28,4 @@ constexpr Integer Align(Integer address, Integer alignment) noexcept {
 	size_t _alignment = static_cast<size_t>(alignment);
 	return static_cast<Integer>((_address + (_alignment - 1u)) & ~(_alignment - 1u));
 }
-
-[[nodiscard]]
-std::vector<std::uint32_t> ResolveQueueIndices(
-	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
-) noexcept;
-
-[[nodiscard]]
-std::vector<std::uint32_t> ResolveQueueIndices(
-	std::uint32_t index0, std::uint32_t index1
-) noexcept;
 #endif

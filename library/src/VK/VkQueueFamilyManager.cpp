@@ -2,8 +2,31 @@
 #include <ranges>
 #include <algorithm>
 #include <limits>
-#include <VkHelperFunctions.hpp>
 
+// Queue Indices
+std::vector<std::uint32_t> QueueIndices3::ResolveQueueIndices(
+	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
+) noexcept {
+	std::vector<uint32_t> distinctQueueIndices{ index0, index1, index2 };
+	std::ranges::sort(distinctQueueIndices);
+
+	auto ret = std::ranges::unique(distinctQueueIndices);
+	distinctQueueIndices.erase(std::begin(ret), std::end(ret));
+
+	return distinctQueueIndices;
+}
+
+std::vector<std::uint32_t> QueueIndicesCG::ResolveQueueIndices() const noexcept
+{
+	return QueueIndices3::ResolveQueueIndices(compute, graphics);
+}
+
+std::vector<std::uint32_t> QueueIndicesTG::ResolveQueueIndices() const noexcept
+{
+	return QueueIndices3::ResolveQueueIndices(transfer, graphics);
+}
+
+// Queue Family Manager
 VkQueueFamilyMananger::VkQueueFamilyMananger() noexcept
 	: m_queueIndices{}, m_graphicsQueue{ VK_NULL_HANDLE }, m_computeQueue{ VK_NULL_HANDLE },
 	m_transferQueue{ VK_NULL_HANDLE }
