@@ -96,19 +96,10 @@ private:
 
 private:
 	template<VkDescriptorType type>
-	void AddBufferToDescriptor(
-		const Buffer& buffer, size_t layoutIndex, VkFormat texelBufferFormat = VK_FORMAT_UNDEFINED
+	void GetBufferToDescriptor(
+		const VkDescriptorAddressInfoEXT& bufferInfo, size_t layoutIndex
 	) {
 		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
-
-		VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress();
-
-		VkDescriptorAddressInfoEXT bufferInfo{
-			.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-			.address = bufferAddress,
-			.range   = buffer.Size(),
-			.format  = texelBufferFormat
-		};
 
 		VkDescriptorDataEXT descData{};
 		size_t descriptorSize = 0u;
@@ -140,10 +131,37 @@ private:
 			.data  = descData
 		};
 
+		// It might be possible to do this with a memcpy once it has been fetched with
+		// vkGetDescriptorEXT once. But I am not sure how that would work, so keeping it as is, for now.
 		DescBuffer::vkGetDescriptorEXT(
 			m_device, &getInfo, descriptorSize,
 			m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(layoutIndex) + descriptorSize
 		);
+	}
+
+	[[nodiscard]]
+	static VkDescriptorAddressInfoEXT GetBufferDescAddressInfo(
+		const Buffer& buffer, VkFormat texelBufferFormat
+	) noexcept;
+
+	template<VkDescriptorType type>
+	void AddBufferToDescriptor(
+		const Buffer& buffer, size_t layoutIndex
+	) {
+		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
+			buffer, VK_FORMAT_UNDEFINED
+		);
+		GetBufferToDescriptor<type>(bufferDescAddressInfo, layoutIndex);
+	}
+
+	template<VkDescriptorType type>
+	void AddTexelBufferToDescriptor(
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelBufferFormat
+	) {
+		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
+			buffer, texelBufferFormat
+		);
+		GetBufferToDescriptor<type>(bufferDescAddressInfo, layoutIndex);
 	}
 
 	template<VkDescriptorType type>
@@ -209,14 +227,14 @@ public:
 	void AddUniformTexelBufferDescriptor(
 		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat
 	) {
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
+		AddTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
 			buffer, layoutIndex, texelFormat
 		);
 	}
 	void AddStorageTexelBufferDescriptor(
 		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat
 	) {
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
+		AddTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
 			buffer, layoutIndex, texelFormat
 		);
 	}

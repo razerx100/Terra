@@ -79,3 +79,18 @@ void VkDescriptorBuffer::SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice
 
 	vkGetPhysicalDeviceProperties2(physicalDevice, &physicalDeviceProp2);
 }
+
+VkDescriptorAddressInfoEXT VkDescriptorBuffer::GetBufferDescAddressInfo(
+	const Buffer& buffer, VkFormat texelBufferFormat
+) noexcept {
+	const VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress();
+
+	VkDescriptorAddressInfoEXT bufferDescAddressInfo{
+		.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+		.address = bufferAddress,
+		.range   = buffer.Size(),
+		.format  = texelBufferFormat
+	};
+
+	return bufferDescAddressInfo;
+}
