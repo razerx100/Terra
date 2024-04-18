@@ -141,25 +141,33 @@ private:
 
 	[[nodiscard]]
 	static VkDescriptorAddressInfoEXT GetBufferDescAddressInfo(
-		const Buffer& buffer, VkFormat texelBufferFormat
+		VkDeviceAddress bufferStartingAddress, VkDeviceSize bufferSize, VkFormat texelBufferFormat
 	) noexcept;
 
 	template<VkDescriptorType type>
 	void AddBufferToDescriptor(
-		const Buffer& buffer, size_t layoutIndex
+		const Buffer& buffer, size_t layoutIndex,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
+		const VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress() + bufferOffset;
+		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.Size();
+
 		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
-			buffer, VK_FORMAT_UNDEFINED
+			bufferAddress, actualBufferSize, VK_FORMAT_UNDEFINED
 		);
 		GetBufferToDescriptor<type>(bufferDescAddressInfo, layoutIndex);
 	}
 
 	template<VkDescriptorType type>
 	void AddTexelBufferToDescriptor(
-		const Buffer& buffer, size_t layoutIndex, VkFormat texelBufferFormat
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelBufferFormat,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
+		const VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress() + bufferOffset;
+		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.Size();
+
 		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
-			buffer, texelBufferFormat
+			bufferAddress, actualBufferSize, texelBufferFormat
 		);
 		GetBufferToDescriptor<type>(bufferDescAddressInfo, layoutIndex);
 	}
@@ -216,26 +224,36 @@ private:
 	}
 
 public:
-	void AddStorageBufferDescriptor(const Buffer& buffer, size_t layoutIndex)
-	{
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(buffer, layoutIndex);
+	void AddStorageBufferDescriptor(
+		const Buffer& buffer, size_t layoutIndex,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+	) {
+		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(
+			buffer, layoutIndex, bufferOffset, bufferSize
+		);
 	}
-	void AddUniformBufferDescriptor(const Buffer& buffer, size_t layoutIndex)
-	{
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(buffer, layoutIndex);
+	void AddUniformBufferDescriptor(
+		const Buffer& buffer, size_t layoutIndex,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+	) {
+		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(
+			buffer, layoutIndex, bufferOffset, bufferSize
+		);
 	}
 	void AddUniformTexelBufferDescriptor(
-		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
 		AddTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
-			buffer, layoutIndex, texelFormat
+			buffer, layoutIndex, texelFormat, bufferOffset, bufferSize
 		);
 	}
 	void AddStorageTexelBufferDescriptor(
-		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat
+		const Buffer& buffer, size_t layoutIndex, VkFormat texelFormat,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
 		AddTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
-			buffer, layoutIndex, texelFormat
+			buffer, layoutIndex, texelFormat, bufferOffset, bufferSize
 		);
 	}
 	void AddCombinedImageDescriptor(
