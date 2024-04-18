@@ -68,6 +68,9 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		Buffer testTexel{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 		testTexel.Create(2_KB, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, {});
 
+		Buffer testStorageM{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		testStorageM.Create(4_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+
 		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
 		descBuffer.SetDescriptorBufferInfo(physicalDevice);
 		descBuffer.AddLayout(0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -75,11 +78,20 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		descBuffer.AddLayout(
 			2u, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
+		descBuffer.AddLayout(3u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddLayout(4u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.CreateBuffer();
 
 		descBuffer.AddStorageBufferDescriptor(testStorage, 0u);
 		descBuffer.AddUniformBufferDescriptor(testUniform, 1u);
 		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, VK_FORMAT_R8G8B8A8_UINT);
+		descBuffer.AddStorageBufferDescriptor(
+			testStorageM, 3u, 0u, static_cast<VkDeviceSize>(2_KB)
+		);
+		descBuffer.AddStorageBufferDescriptor(
+			testStorageM, 4u,
+			static_cast<VkDeviceAddress>(2_KB), static_cast<VkDeviceSize>(2_KB)
+		);
 	}
 
 	{
