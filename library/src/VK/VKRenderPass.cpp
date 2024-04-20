@@ -75,10 +75,17 @@ VkAttachmentDescription RenderPassBuilder::GetDepthAttachment(VkFormat format) n
 	};
 }
 
-// RenderPass
-VKRenderPass::VKRenderPass(VkDevice device) noexcept
-	: m_device{ device }, m_renderPass{ VK_NULL_HANDLE } {}
+void RenderPassBuilder::UpdatePointers() noexcept
+{
+	m_subpassDesc.pColorAttachments       = std::data(m_colourAttachmentRefs);
+	m_subpassDesc.pDepthStencilAttachment = std::data(m_depthAttachmentRefs);
 
+	m_createInfo.pAttachments  = std::data(m_attachments);
+	m_createInfo.pSubpasses    = &m_subpassDesc;
+	m_createInfo.pDependencies = &m_subpassDependency;
+}
+
+// RenderPass
 VKRenderPass::~VKRenderPass() noexcept
 {
 	SelfDestruct();
@@ -91,7 +98,7 @@ void VKRenderPass::SelfDestruct() noexcept
 
 void VKRenderPass::Create(const RenderPassBuilder& renderPassBuilder)
 {
-	vkCreateRenderPass(m_device, renderPassBuilder.Get(), nullptr, &m_renderPass);
+	vkCreateRenderPass(m_device, renderPassBuilder.GetRef(), nullptr, &m_renderPass);
 }
 
 void VKRenderPass::BeginPass(

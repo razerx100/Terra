@@ -35,9 +35,13 @@ public:
 	RenderPassBuilder& Build() noexcept;
 
 	[[nodiscard]]
-	const VkRenderPassCreateInfo* Get() const noexcept { return &m_createInfo; }
+	const VkRenderPassCreateInfo* GetRef() const noexcept { return &m_createInfo; }
+	[[nodiscard]]
+	VkRenderPassCreateInfo Get() const noexcept { return m_createInfo; }
 
 private:
+	void UpdatePointers() noexcept;
+
 	// Might replace these with their respective builders if I need to use customised
 	// attachments later on.
 	static VkAttachmentDescription GetColourAttachment(VkFormat format) noexcept;
@@ -56,7 +60,10 @@ public:
 		: m_subpassDesc{ other.m_subpassDesc }, m_subpassDependency{ other.m_subpassDependency },
 		m_depthAttachmentRefs{ other.m_depthAttachmentRefs },
 		m_colourAttachmentRefs{ other.m_colourAttachmentRefs },
-		m_attachments{ other.m_attachments }, m_createInfo{ other.m_createInfo } {}
+		m_attachments{ other.m_attachments }, m_createInfo{ other.m_createInfo }
+	{
+		UpdatePointers();
+	}
 	RenderPassBuilder& operator=(const RenderPassBuilder& other) noexcept
 	{
 		m_subpassDesc          = other.m_subpassDesc;
@@ -66,6 +73,8 @@ public:
 		m_attachments          = other.m_attachments;
 		m_createInfo           = other.m_createInfo;
 
+		UpdatePointers();
+
 		return *this;
 	}
 
@@ -73,7 +82,10 @@ public:
 		: m_subpassDesc{ other.m_subpassDesc }, m_subpassDependency{ other.m_subpassDependency },
 		m_depthAttachmentRefs{ std::move(other.m_depthAttachmentRefs) },
 		m_colourAttachmentRefs{ std::move(other.m_colourAttachmentRefs) },
-		m_attachments{ std::move(other.m_attachments) }, m_createInfo{ other.m_createInfo } {}
+		m_attachments{ std::move(other.m_attachments) }, m_createInfo{ other.m_createInfo }
+	{
+		UpdatePointers();
+	}
 	RenderPassBuilder& operator=(RenderPassBuilder&& other) noexcept
 	{
 		m_subpassDesc          = other.m_subpassDesc;
@@ -83,6 +95,8 @@ public:
 		m_attachments          = std::move(other.m_attachments);
 		m_createInfo           = other.m_createInfo;
 
+		UpdatePointers();
+
 		return *this;
 	}
 };
@@ -90,7 +104,7 @@ public:
 class VKRenderPass
 {
 public:
-	VKRenderPass(VkDevice device) noexcept;
+	VKRenderPass(VkDevice device) noexcept : m_device{ device }, m_renderPass{ VK_NULL_HANDLE } {}
 	~VKRenderPass() noexcept;
 
 	void Create(const RenderPassBuilder& renderPassBuilder);
