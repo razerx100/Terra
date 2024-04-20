@@ -42,6 +42,8 @@ public:
 
 	[[nodiscard]]
 	const VkBufferCopy* GetPtr() const noexcept { return &m_bufferCopy; }
+	[[nodiscard]]
+	VkBufferCopy Get() const noexcept { return m_bufferCopy; }
 
 private:
 	VkBufferCopy m_bufferCopy;
@@ -127,6 +129,8 @@ public:
 
 	[[nodiscard]]
 	const VkBufferImageCopy* GetPtr() const noexcept { return &m_imageCopy; }
+	[[nodiscard]]
+	VkBufferImageCopy Get() const noexcept { return m_imageCopy; }
 
 private:
 	VkBufferImageCopy m_imageCopy;
@@ -317,6 +321,21 @@ public:
 
 	[[nodiscard]]
 	const VkSubmitInfo* GetPtr() const noexcept { return &m_submitInfo; }
+	[[nodiscard]]
+	VkSubmitInfo Get() const noexcept { return m_submitInfo; }
+
+private:
+	void UpdatePointers() noexcept
+	{
+		m_timelineInfo.pWaitSemaphoreValues   = std::data(m_waitValues);
+		m_timelineInfo.pSignalSemaphoreValues = std::data(m_signalValues);
+
+		m_submitInfo.pNext             = &m_timelineInfo;
+		m_submitInfo.pWaitSemaphores   = std::data(m_waitSemaphores);
+		m_submitInfo.pWaitDstStageMask = std::data(m_waitStages);
+		m_submitInfo.pCommandBuffers   = std::data(m_commandBuffers);
+		m_submitInfo.pSignalSemaphores = std::data(m_signalSemaphores);
+	}
 
 private:
 	std::array<VkSemaphore, WaitCount>              m_waitSemaphores;
@@ -330,8 +349,45 @@ private:
 	size_t                                          m_currentWaitIndex;
 	size_t                                          m_currentSignalIndex;
 	size_t                                          m_currentCmdBufferIndex;
-	// No need for the copy and move ctors and assign operators, since std::array is basically
-	// a C style array and has no special move ctor or assign operator.
+
+public:
+	QueueSubmitBuilder(const QueueSubmitBuilder& other) noexcept
+		: m_waitSemaphores{ other.m_waitSemaphores },
+		m_waitStages{ other.m_waitStages },
+		m_waitValues{ other.m_waitValues },
+		m_signalSemaphores{ other.m_signalSemaphores },
+		m_signalValues{ other.m_signalValues },
+		m_commandBuffers{ other.m_commandBuffers },
+		m_timelineInfo{ other.m_timelineInfo },
+		m_submitInfo{ other.m_submitInfo },
+		m_currentWaitIndex{ other.m_currentWaitIndex },
+		m_currentSignalIndex{ other.m_currentSignalIndex },
+		m_currentCmdBufferIndex{ other.m_currentCmdBufferIndex }
+	{
+		UpdatePointers();
+	}
+	QueueSubmitBuilder& operator=(const QueueSubmitBuilder& other) noexcept
+	{
+		m_waitSemaphores        = other.m_waitSemaphores;
+		m_waitStages            = other.m_waitStages;
+		m_waitValues            = other.m_waitValues;
+		m_signalSemaphores      = other.m_signalSemaphores;
+		m_signalValues          = other.m_signalValues;
+		m_commandBuffers        = other.m_commandBuffers;
+		m_timelineInfo          = other.m_timelineInfo;
+		m_submitInfo            = other.m_submitInfo;
+		m_currentWaitIndex      = other.m_currentWaitIndex;
+		m_currentSignalIndex    = other.m_currentSignalIndex;
+		m_currentCmdBufferIndex = other.m_currentCmdBufferIndex;
+
+		UpdatePointers();
+
+		return *this;
+	}
+	// There is no need for moving as std::array is just a C style array. Just defining these
+	// to update the pointers upon copying.
+	QueueSubmitBuilder(QueueSubmitBuilder&& other) noexcept : QueueSubmitBuilder{ other } {}
+	QueueSubmitBuilder& operator=(QueueSubmitBuilder&& other) noexcept { return operator=(other); }
 };
 
 class VkCommandQueue
