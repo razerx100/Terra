@@ -66,9 +66,9 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	fs->CreateShader(device, shaderPath + fragmentShader);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateGraphicsPipelineMS(
+	/*pso->CreateGraphicsPipelineMS(
 		device, graphicsLayout, renderPass, ms->GetShaderModule(), fs->GetShaderModule()
-	);
+	);*/
 
 	return pso;
 }

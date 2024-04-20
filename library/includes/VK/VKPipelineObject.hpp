@@ -4,71 +4,360 @@
 #include <vector>
 #include <VertexLayout.hpp>
 
-class VkPipelineObject {
-public:
-	VkPipelineObject(VkDevice device) noexcept;
-	~VkPipelineObject() noexcept;
-
-	void CreateGraphicsPipelineVS(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const VertexLayout& vertexInput, VkShaderModule vertexShader,
-		VkShaderModule fragmentShader
-	) noexcept;
-	void CreateGraphicsPipelineMS(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		VkShaderModule meshShader, VkShaderModule fragmentShader
-	) noexcept;
-	void CreateComputePipeline(
-		VkDevice device, VkPipelineLayout computeLayout, VkShaderModule computeShader
-	) noexcept;
-
-	[[nodiscard]]
-	VkPipeline GetPipeline() const noexcept;
-
-private:
+class PipelineBuilderBase
+{
+protected:
 	[[nodiscard]]
 	static VkPipelineShaderStageCreateInfo GetShaderStageInfo(
 		VkShaderModule shader, VkShaderStageFlagBits shaderType
 	) noexcept;
+};
+
+class StencilOpStateBuilder
+{
+public:
+	StencilOpStateBuilder() : m_opState{} {}
+
+	StencilOpStateBuilder& StencilOps(
+		VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp
+	) noexcept {
+		m_opState.failOp      = failOp;
+		m_opState.passOp      = passOp;
+		m_opState.depthFailOp = depthFailOp;
+
+		return *this;
+	}
+
+	StencilOpStateBuilder& CompareOp(VkCompareOp compareOp) noexcept
+	{
+		m_opState.compareOp = compareOp;
+
+		return *this;
+	}
+
+	StencilOpStateBuilder& Masks(std::uint32_t compareMask, std::uint32_t writeMask) noexcept
+	{
+		m_opState.compareMask = compareMask;
+		m_opState.writeMask   = writeMask;
+
+		return *this;
+	}
+
+	StencilOpStateBuilder& Reference(std::uint32_t reference) noexcept
+	{
+		m_opState.reference = reference;
+
+		return *this;
+	}
+
+	[[nodiscard]]
+	VkStencilOpState Get() const noexcept { return m_opState; }
 
 private:
-	VkDevice m_deviceRef;
+	VkStencilOpState m_opState;
+};
+
+class DepthStencilStateBuilder
+{
+public:
+	DepthStencilStateBuilder()
+		: m_depthStencilStateInfo{
+			.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+			.depthTestEnable       = VK_TRUE,
+			.depthWriteEnable      = VK_TRUE,
+			.depthCompareOp        = VK_COMPARE_OP_LESS,
+			.depthBoundsTestEnable = VK_FALSE,
+			.stencilTestEnable     = VK_FALSE,
+			.front                 = {},
+			.back                  = {},
+			.minDepthBounds        = 0.f,
+			.maxDepthBounds        = 1.f
+		}
+	{}
+
+	DepthStencilStateBuilder& Enable(
+		VkBool32 depthTest, VkBool32 depthWrite, VkBool32 depthBoundsTest, VkBool32 stencilTest
+	) noexcept {
+		m_depthStencilStateInfo.depthTestEnable       = depthTest;
+		m_depthStencilStateInfo.depthWriteEnable      = depthWrite;
+		m_depthStencilStateInfo.depthBoundsTestEnable = depthBoundsTest;
+		m_depthStencilStateInfo.stencilTestEnable     = stencilTest;
+
+		return *this;
+	}
+
+	DepthStencilStateBuilder& DepthCompareOp(VkCompareOp compareOp) noexcept
+	{
+		m_depthStencilStateInfo.depthCompareOp = compareOp;
+
+		return *this;
+	}
+
+	DepthStencilStateBuilder& DepthBounds(float minBounds, float maxBounds) noexcept
+	{
+		m_depthStencilStateInfo.minDepthBounds = minBounds;
+		m_depthStencilStateInfo.maxDepthBounds = maxBounds;
+
+		return *this;
+	}
+
+	DepthStencilStateBuilder& StencilOpStates(
+		const StencilOpStateBuilder& front, const StencilOpStateBuilder& back
+	) noexcept {
+		m_depthStencilStateInfo.front = front.Get();
+		m_depthStencilStateInfo.back  = back.Get();
+
+		return *this;
+	}
+
+	[[nodiscard]]
+	VkPipelineDepthStencilStateCreateInfo const* GetRef() const noexcept
+	{ return &m_depthStencilStateInfo; }
+	[[nodiscard]]
+	VkPipelineDepthStencilStateCreateInfo Get() const noexcept { return m_depthStencilStateInfo; }
+
+private:
+	VkPipelineDepthStencilStateCreateInfo m_depthStencilStateInfo;
+};
+
+class GraphicsPipelineBuilder : private PipelineBuilderBase
+{
+public:
+	GraphicsPipelineBuilder(VkPipelineLayout graphicsLayout, VkRenderPass renderPass)
+		: m_vertexLayout{},
+		m_inputAssemblerInfo{
+			.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+			.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+			.primitiveRestartEnable = VK_FALSE
+		}, m_viewportInfo{
+			.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+			.viewportCount = 1u,
+			.pViewports    = nullptr,
+			.scissorCount  = 1u,
+			.pScissors     = nullptr
+		}, m_rasterizationInfo{
+			.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+			.depthClampEnable        = VK_FALSE,
+			.rasterizerDiscardEnable = VK_FALSE,
+			.polygonMode             = VK_POLYGON_MODE_FILL,
+			.cullMode                = VK_CULL_MODE_BACK_BIT,
+			.frontFace               = VK_FRONT_FACE_CLOCKWISE,
+			.depthBiasEnable         = VK_FALSE,
+			.depthBiasConstantFactor = 0.f,
+			.depthBiasClamp          = 0.f,
+			.depthBiasSlopeFactor    = 0.f,
+			.lineWidth               = 1.f
+		}, m_multisampleInfo{
+			.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+			.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT,
+			.sampleShadingEnable   = VK_FALSE,
+			.minSampleShading      = 1.f,
+			.pSampleMask           = nullptr,
+			.alphaToCoverageEnable = VK_FALSE,
+			.alphaToOneEnable      = VK_FALSE
+		}, m_colourAttachmentState{
+			.blendEnable         = VK_FALSE,
+			.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+			.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+			.colorBlendOp        = VK_BLEND_OP_ADD,
+			.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+			.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+			.alphaBlendOp        = VK_BLEND_OP_ADD,
+			.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+				| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+		}, m_colourStateInfo{
+			.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+			.logicOpEnable   = VK_FALSE,
+			.logicOp         = VK_LOGIC_OP_COPY,
+			.attachmentCount = 1u,
+			.pAttachments    = &m_colourAttachmentState,
+			.blendConstants  = { 0.f, 0.f, 0.f, 0.f }
+		}, m_dynamicStates{
+			{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR }
+		}, m_dynamicStateInfo{
+			.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+			.dynamicStateCount = static_cast<std::uint32_t>(std::size(m_dynamicStates)),
+			.pDynamicStates    = std::data(m_dynamicStates)
+		}, m_depthStencilStateInfo{
+			.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+			.depthTestEnable       = VK_TRUE,
+			.depthWriteEnable      = VK_TRUE,
+			.depthCompareOp        = VK_COMPARE_OP_LESS,
+			.depthBoundsTestEnable = VK_FALSE,
+			.stencilTestEnable     = VK_FALSE,
+			.front                 = {},
+			.back                  = {},
+			.minDepthBounds        = 0.f,
+			.maxDepthBounds        = 1.f
+		}, m_pipelineCreateInfo{
+			.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			.pViewportState      = &m_viewportInfo,
+			.pRasterizationState = &m_rasterizationInfo,
+			.pMultisampleState   = &m_multisampleInfo,
+			.pDepthStencilState  = &m_depthStencilStateInfo,
+			.pColorBlendState    = &m_colourStateInfo,
+			.pDynamicState       = &m_dynamicStateInfo,
+			.layout              = graphicsLayout,
+			.renderPass          = renderPass,
+			.subpass             = 0u,
+			.basePipelineHandle  = VK_NULL_HANDLE,
+			.basePipelineIndex   = -1
+		}
+	{}
+
+	GraphicsPipelineBuilder& SetInputAssembler(
+		const VertexLayout& vertexLayout,
+		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		VkBool32 primitiveRestart = VK_FALSE
+	) noexcept;
+
+	GraphicsPipelineBuilder& SetVertexShaderStage(
+		VkShaderModule vertexShader, VkShaderModule fragmentShader
+	) noexcept;
+	GraphicsPipelineBuilder& SetMeshShaderStage(
+		VkShaderModule meshShader, VkShaderModule fragmentShader,
+		VkShaderModule taskShader = VK_NULL_HANDLE
+	) noexcept;
+
+	GraphicsPipelineBuilder& AddDynamicState(VkDynamicState dynamicState) noexcept;
+
+	// Will add more Builders for each type when I want to customise them.
+
+	[[nodiscard]]
+	VkGraphicsPipelineCreateInfo const* GetRef() const noexcept { return &m_pipelineCreateInfo; }
+	[[nodiscard]]
+	VkGraphicsPipelineCreateInfo Get() const noexcept { return m_pipelineCreateInfo; }
+
+private:
+	void AddShaderStages() noexcept;
+	// Since the Mesh Shader pipeline can't have an Input Assembler, can't add those
+	// if the Pipeline is for Mesh Shader.
+	void UpdatePointers(bool inputAssembler) noexcept;
+
+private:
+	VertexLayout                                 m_vertexLayout;
+	VkPipelineInputAssemblyStateCreateInfo       m_inputAssemblerInfo;
+	VkPipelineViewportStateCreateInfo            m_viewportInfo;
+	VkPipelineRasterizationStateCreateInfo       m_rasterizationInfo;
+	VkPipelineMultisampleStateCreateInfo         m_multisampleInfo;
+	VkPipelineColorBlendAttachmentState          m_colourAttachmentState;
+	VkPipelineColorBlendStateCreateInfo          m_colourStateInfo;
+	std::vector<VkDynamicState>                  m_dynamicStates;
+	VkPipelineDynamicStateCreateInfo             m_dynamicStateInfo;
+	std::vector<VkPipelineShaderStageCreateInfo> m_shaderStagesInfo;
+	VkPipelineDepthStencilStateCreateInfo        m_depthStencilStateInfo;
+	VkGraphicsPipelineCreateInfo                 m_pipelineCreateInfo;
+
+public:
+	GraphicsPipelineBuilder(const GraphicsPipelineBuilder& other) noexcept
+		: m_vertexLayout{ other.m_vertexLayout },
+		m_inputAssemblerInfo{ other.m_inputAssemblerInfo },
+		m_viewportInfo{ other.m_viewportInfo },
+		m_rasterizationInfo{ other.m_rasterizationInfo },
+		m_multisampleInfo{ other.m_multisampleInfo },
+		m_colourAttachmentState{ other.m_colourAttachmentState },
+		m_colourStateInfo{ other.m_colourStateInfo },
+		m_dynamicStates{ other.m_dynamicStates },
+		m_dynamicStateInfo{ other.m_dynamicStateInfo },
+		m_shaderStagesInfo{ other.m_shaderStagesInfo },
+		m_depthStencilStateInfo{ other.m_depthStencilStateInfo },
+		m_pipelineCreateInfo{ other.m_pipelineCreateInfo }
+	{
+		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
+	}
+	GraphicsPipelineBuilder& operator=(const GraphicsPipelineBuilder& other) noexcept
+	{
+		m_vertexLayout          = other.m_vertexLayout;
+		m_inputAssemblerInfo    = other.m_inputAssemblerInfo;
+		m_viewportInfo          = other.m_viewportInfo;
+		m_rasterizationInfo     = other.m_rasterizationInfo;
+		m_multisampleInfo       = other.m_multisampleInfo;
+		m_colourAttachmentState = other.m_colourAttachmentState;
+		m_colourStateInfo       = other.m_colourStateInfo;
+		m_dynamicStates         = other.m_dynamicStates;
+		m_dynamicStateInfo      = other.m_dynamicStateInfo;
+		m_shaderStagesInfo      = other.m_shaderStagesInfo;
+		m_depthStencilStateInfo = other.m_depthStencilStateInfo;
+		m_pipelineCreateInfo    = other.m_pipelineCreateInfo;
+
+		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
+
+		return *this;
+	}
+	GraphicsPipelineBuilder(GraphicsPipelineBuilder&& other) noexcept
+		: m_vertexLayout{ other.m_vertexLayout },
+		m_inputAssemblerInfo{ other.m_inputAssemblerInfo },
+		m_viewportInfo{ other.m_viewportInfo },
+		m_rasterizationInfo{ other.m_rasterizationInfo },
+		m_multisampleInfo{ other.m_multisampleInfo },
+		m_colourAttachmentState{ other.m_colourAttachmentState },
+		m_colourStateInfo{ other.m_colourStateInfo },
+		m_dynamicStates{ std::move(other.m_dynamicStates) },
+		m_dynamicStateInfo{ other.m_dynamicStateInfo },
+		m_shaderStagesInfo{ std::move(other.m_shaderStagesInfo) },
+		m_depthStencilStateInfo{ other.m_depthStencilStateInfo },
+		m_pipelineCreateInfo{ other.m_pipelineCreateInfo }
+	{
+		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
+	}
+	GraphicsPipelineBuilder& operator=(GraphicsPipelineBuilder&& other) noexcept
+	{
+		m_vertexLayout          = other.m_vertexLayout;
+		m_inputAssemblerInfo    = other.m_inputAssemblerInfo;
+		m_viewportInfo          = other.m_viewportInfo;
+		m_rasterizationInfo     = other.m_rasterizationInfo;
+		m_multisampleInfo       = other.m_multisampleInfo;
+		m_colourAttachmentState = other.m_colourAttachmentState;
+		m_colourStateInfo       = other.m_colourStateInfo;
+		m_dynamicStates         = std::move(other.m_dynamicStates);
+		m_dynamicStateInfo      = other.m_dynamicStateInfo;
+		m_shaderStagesInfo      = std::move(other.m_shaderStagesInfo);
+		m_depthStencilStateInfo = other.m_depthStencilStateInfo;
+		m_pipelineCreateInfo    = other.m_pipelineCreateInfo;
+
+		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
+
+		return *this;
+	}
+};
+
+class ComputePipelineBuilder : private PipelineBuilderBase
+{
+public:
+	ComputePipelineBuilder(VkPipelineLayout computeLayout)
+		: m_pipelineCreateInfo{
+			.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+			.layout = computeLayout,
+			.basePipelineHandle = VK_NULL_HANDLE,
+			.basePipelineIndex = -1
+		}
+	{}
+
+	ComputePipelineBuilder& SetComputeShaderStage(VkShaderModule computeShader) noexcept;
+
+	[[nodiscard]]
+	VkComputePipelineCreateInfo const* GetRef() const noexcept { return &m_pipelineCreateInfo; }
+	[[nodiscard]]
+	VkComputePipelineCreateInfo Get() const noexcept { return m_pipelineCreateInfo; }
+
+private:
+	VkComputePipelineCreateInfo m_pipelineCreateInfo;
+};
+
+class VkPipelineObject
+{
+public:
+	VkPipelineObject(VkDevice device) noexcept : m_device{ device }, m_pipeline{ VK_NULL_HANDLE } {}
+	~VkPipelineObject() noexcept;
+
+	void CreateGraphicsPipeline(const GraphicsPipelineBuilder& builder) noexcept;
+	void CreateComputePipeline(const ComputePipelineBuilder& builder) noexcept;
+
+	[[nodiscard]]
+	VkPipeline Get() const noexcept { return m_pipeline; }
+
+private:
+	VkDevice   m_device;
 	VkPipeline m_pipeline;
-
-private:
-	class GraphicsPipelineCreateInfo {
-	public:
-		GraphicsPipelineCreateInfo(
-			VkPipelineLayout graphicsLayout, VkRenderPass renderPass
-		) noexcept;
-
-		void SetInputAssembler(const VertexLayout& vertexLayout) noexcept;
-		void SetVertexShaderStage(
-			VkShaderModule vertexShader, VkShaderModule fragmentShader
-		) noexcept;
-		void SetMeshShaderStage(
-			VkShaderModule meshShader, VkShaderModule fragmentShader
-		) noexcept;
-
-		[[nodiscard]]
-		VkGraphicsPipelineCreateInfo const* GetGraphicsCreateInfoRef() const noexcept;
-
-	private:
-		void AddShaderStages() noexcept;
-
-	private:
-		VertexLayout m_vertexLayout;
-		VkPipelineInputAssemblyStateCreateInfo m_inputAssemblerInfo;
-		VkPipelineViewportStateCreateInfo m_viewportInfo;
-		VkPipelineRasterizationStateCreateInfo m_rasterizationInfo;
-		VkPipelineMultisampleStateCreateInfo m_multisampleInfo;
-		VkPipelineColorBlendAttachmentState m_colourAttachmentState;
-		VkPipelineColorBlendStateCreateInfo m_colourStateInfo;
-		std::vector<VkDynamicState> m_dynamicStates;
-		VkPipelineDynamicStateCreateInfo m_dynamicStateInfo;
-		std::vector<VkPipelineShaderStageCreateInfo> m_shaderStagesInfo;
-		VkPipelineDepthStencilStateCreateInfo m_depthStencilStateInfo;
-		VkGraphicsPipelineCreateInfo m_pipelineCreateInfo;
-	};
 };
 #endif

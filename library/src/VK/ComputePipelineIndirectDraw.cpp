@@ -50,7 +50,7 @@ std::unique_ptr<VkPipelineObject> ComputePipelineIndirectDraw::_createComputePip
 	cs->CreateShader(device, shaderPath + L"ComputeShader.spv");
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateComputePipeline(device, computeLayout, cs->GetShaderModule());
+	//pso->CreateComputePipeline(device, computeLayout, cs->GetShaderModule());
 
 	return pso;
 }
@@ -69,7 +69,7 @@ void ComputePipelineIndirectDraw::BindComputePipeline(
 ) const noexcept {
 	vkCmdBindPipeline(
 		computeCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-		m_computePipeline->GetPipeline()
+		m_computePipeline->Get()
 	);
 
 	VkDescriptorSet descSets[] = { Terra::Get().ComputeDesc().GetDescriptorSet(frameIndex)};
