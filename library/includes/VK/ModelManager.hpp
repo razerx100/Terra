@@ -5,6 +5,8 @@
 #include <VkExtensionManager.hpp>
 #include <VkQueueFamilyManager.hpp>
 #include <VkDescriptorBuffer.hpp>
+#include <StagingBufferManager.hpp>
+#include <memory>
 
 #include <IModel.hpp>
 
@@ -64,7 +66,7 @@ public:
 	void AddModel(
 		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
 	) noexcept;
-	void Draw(VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout);
+	void Draw(VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 private:
 	struct ModelDetails
@@ -98,7 +100,7 @@ public:
 	ModelBundleMeshShader() : ModelBundle{}, m_modelDetails{} {}
 
 	void AddModel(std::uint32_t meshletCount, std::uint32_t modelIndex) noexcept;
-	void Draw(VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout);
+	void Draw(VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 private:
 	struct ModelDetails
@@ -135,23 +137,25 @@ public:
 	}
 };
 
-class ModelBundleVertexShaderIndirect : public ModelBundle
+class ModelBundleComputeShaderIndirect
 {
 public:
-	ModelBundleVertexShaderIndirect(
-		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
-		QueueIndices3 queueIndices
-	);
+	ModelBundleComputeShaderIndirect(VkDevice device, MemoryManager* memoryManager);
 
-	void AddModels(VkDevice device, std::uint32_t modelCount) noexcept;
-	void Draw(VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex);
-
+	void AddModel(
+		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
+	) noexcept;
+	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
-		std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot
+		VkDescriptorBuffer& descriptorBuffer,
+		std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
 	) const noexcept;
 
-private:
+	void Dispatch(VKCommandBuffer& computeBuffer) const noexcept;
+
+	void CleanupTempData() noexcept;
+
+public:
 	struct Argument
 	{
 	// This object has 5, 32bits int. So, I can put another without adding any implicit paddings.
@@ -160,13 +164,80 @@ private:
 	};
 
 private:
-	std::uint32_t m_modelCount;
-	QueueIndices3 m_queueIndices;
-	VkDeviceSize  m_argumentBufferSize;
-	VkDeviceSize  m_counterBufferSize;
-	Buffer        m_argumentBuffer;
-	Buffer        m_counterBuffer;
-	std::uint32_t m_frameCount;
+	struct CullingData
+	{
+		std::uint32_t     commandCount;
+		std::uint32_t     padding;	// Next Vec2 starts at 8bytes offset
+		DirectX::XMFLOAT2 xBounds;
+		DirectX::XMFLOAT2 yBounds;
+		DirectX::XMFLOAT2 zBounds;
+	};
+
+private:
+	Buffer                       m_argumentInputBuffer;
+	Buffer                       m_cullingDataBuffer;
+	std::vector<Argument>        m_indirectArguments;
+	std::unique_ptr<CullingData> m_cullingData;
+	std::uint32_t                m_dispatchXCount;
+
+	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
+	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
+	static constexpr DirectX::XMFLOAT2 ZBOUNDS = { 1.f, -1.f };
+	static constexpr float THREADBLOCKSIZE     = 64.f;
+
+public:
+	ModelBundleComputeShaderIndirect(const ModelBundleComputeShaderIndirect&) = delete;
+	ModelBundleComputeShaderIndirect& operator=(const ModelBundleComputeShaderIndirect&) = delete;
+
+	ModelBundleComputeShaderIndirect(ModelBundleComputeShaderIndirect&& other) noexcept
+		: m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
+		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
+		m_indirectArguments{ std::move(other.m_indirectArguments) },
+		m_cullingData{ std::move(other.m_cullingData) },
+		m_dispatchXCount{ other.m_dispatchXCount }
+	{}
+	ModelBundleComputeShaderIndirect& operator=(ModelBundleComputeShaderIndirect&& other) noexcept
+	{
+		m_argumentInputBuffer = std::move(other.m_argumentInputBuffer);
+		m_cullingDataBuffer   = std::move(other.m_cullingDataBuffer);
+		m_indirectArguments   = std::move(other.m_indirectArguments);
+		m_cullingData         = std::move(other.m_cullingData);
+		m_dispatchXCount      = other.m_dispatchXCount;
+
+		return *this;
+	}
+};
+
+class ModelBundleVertexShaderIndirect : public ModelBundle
+{
+public:
+	ModelBundleVertexShaderIndirect(
+		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
+		QueueIndices3 queueIndices
+	);
+
+	void CreateBuffers(std::uint32_t modelCount, StagingBufferManager& stagingBufferMan);
+	void Draw(VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
+
+	void SetDescriptorBuffer(
+		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
+		std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot
+	) const noexcept;
+
+	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
+
+	void CleanupTempData() noexcept;
+
+private:
+	std::uint32_t                  m_modelCount;
+	QueueIndices3                  m_queueIndices;
+	VkDeviceSize                   m_argumentBufferSize;
+	VkDeviceSize                   m_counterBufferSize;
+	Buffer                         m_argumentBuffer;
+	Buffer                         m_counterBuffer;
+	Buffer                         m_counterResetBuffer;
+	std::unique_ptr<std::uint32_t> m_counterResetData;
+	std::uint32_t                  m_frameCount;
 
 public:
 	ModelBundleVertexShaderIndirect(const ModelBundleVertexShaderIndirect&) = delete;
@@ -179,6 +250,8 @@ public:
 		m_counterBufferSize{ other.m_counterBufferSize },
 		m_argumentBuffer{ std::move(other.m_argumentBuffer) },
 		m_counterBuffer{ std::move(other.m_counterBuffer) },
+		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
+		m_counterResetData{ std::move(other.m_counterResetData) },
 		m_frameCount{ other.m_frameCount }
 	{}
 	ModelBundleVertexShaderIndirect& operator=(ModelBundleVertexShaderIndirect&& other) noexcept
@@ -190,6 +263,8 @@ public:
 		m_counterBufferSize  = other.m_counterBufferSize;
 		m_argumentBuffer     = std::move(other.m_argumentBuffer);
 		m_counterBuffer      = std::move(other.m_counterBuffer);
+		m_counterResetBuffer = std::move(other.m_counterResetBuffer);
+		m_counterResetData   = std::move(other.m_counterResetData);
 		m_frameCount         = other.m_frameCount;
 
 		return *this;
