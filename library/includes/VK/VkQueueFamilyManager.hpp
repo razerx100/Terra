@@ -51,8 +51,8 @@ struct QueueIndices3
 			return ResolveQueueIndices(compute, graphics);
 		else if constexpr (std::is_same_v<T, QueueIndicesTG>)
 			return ResolveQueueIndices(transfer, graphics);
-
-		return {};
+		else
+			return {};
 	}
 
 	[[nodiscard]]
