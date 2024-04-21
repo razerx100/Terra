@@ -47,10 +47,12 @@ std::unique_ptr<VkPipelineObject> ComputePipelineIndirectDraw::_createComputePip
 	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
 ) const noexcept {
 	auto cs = std::make_unique<VkShader>(device);
-	cs->CreateShader(device, shaderPath + L"ComputeShader.spv");
+	cs->Create(shaderPath + L"ComputeShader.spv");
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	//pso->CreateComputePipeline(device, computeLayout, cs->GetShaderModule());
+	pso->CreateComputePipeline(
+		ComputePipelineBuilder{ computeLayout }.SetComputeStage(cs->Get())
+	);
 
 	return pso;
 }

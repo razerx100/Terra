@@ -205,19 +205,21 @@ public:
 		}
 	{}
 
+	// Can only be set on a Vertex Shader based Pipeline.
 	GraphicsPipelineBuilder& SetInputAssembler(
 		const VertexLayout& vertexLayout,
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		VkBool32 primitiveRestart = VK_FALSE
 	) noexcept;
-
-	GraphicsPipelineBuilder& SetVertexShaderStage(
+	GraphicsPipelineBuilder& SetVertexStage(
 		VkShaderModule vertexShader, VkShaderModule fragmentShader
 	) noexcept;
-	GraphicsPipelineBuilder& SetMeshShaderStage(
-		VkShaderModule meshShader, VkShaderModule fragmentShader,
-		VkShaderModule taskShader = VK_NULL_HANDLE
+
+	GraphicsPipelineBuilder& SetMeshStage(
+		VkShaderModule meshShader, VkShaderModule fragmentShader
 	) noexcept;
+	// Can only be set on a Mesh Shader based Pipeline.
+	GraphicsPipelineBuilder& SetTaskStage(VkShaderModule taskShader) noexcept;
 
 	GraphicsPipelineBuilder& AddDynamicState(VkDynamicState dynamicState) noexcept;
 
@@ -229,7 +231,7 @@ public:
 	VkGraphicsPipelineCreateInfo Get() const noexcept { return m_pipelineCreateInfo; }
 
 private:
-	void AddShaderStages() noexcept;
+	void UpdateShaderStages() noexcept;
 	// Since the Mesh Shader pipeline can't have an Input Assembler, can't add those
 	// if the Pipeline is for Mesh Shader.
 	void UpdatePointers(bool inputAssembler) noexcept;
@@ -333,7 +335,7 @@ public:
 		}
 	{}
 
-	ComputePipelineBuilder& SetComputeShaderStage(VkShaderModule computeShader) noexcept;
+	ComputePipelineBuilder& SetComputeStage(VkShaderModule computeShader) noexcept;
 
 	[[nodiscard]]
 	VkComputePipelineCreateInfo const* GetRef() const noexcept { return &m_pipelineCreateInfo; }

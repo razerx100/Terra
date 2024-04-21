@@ -7,18 +7,18 @@ class GraphicsPipelineVertexShader : public GraphicsPipelineBase
 public:
 	GraphicsPipelineVertexShader() : GraphicsPipelineBase{} {}
 
-	void CreateGraphicsPipeline(
+	void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) noexcept final;
 
 protected:
 	[[nodiscard]]
-	std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
+	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader,
 		const std::wstring& vertexShader
-	) const noexcept;
+	) noexcept;
 	[[nodiscard]]
 	virtual std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
@@ -43,16 +43,7 @@ public:
 class GraphicsPipelineIndirectDraw : public GraphicsPipelineVertexShader
 {
 public:
-	GraphicsPipelineIndirectDraw() noexcept;
-
-	void ConfigureGraphicsPipeline(
-		const std::wstring& fragmentShader, std::uint32_t modelCount,
-		std::uint32_t modelCountOffset, size_t counterIndex
-	) noexcept;
-
-	void DrawModels(
-		VkCommandBuffer graphicsCmdBuffer, VkBuffer argumentBuffer, VkBuffer counterBuffer
-	) const noexcept;
+	GraphicsPipelineIndirectDraw() : GraphicsPipelineVertexShader{} {}
 
 private:
 	[[nodiscard]]
@@ -61,26 +52,16 @@ private:
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) const noexcept final;
 
-private:
-	std::uint32_t m_modelCount;
-	VkDeviceSize  m_counterBufferOffset;
-	VkDeviceSize  m_argumentBufferOffset;
-
 public:
 	GraphicsPipelineIndirectDraw(const GraphicsPipelineIndirectDraw&) = delete;
 	GraphicsPipelineIndirectDraw& operator=(const GraphicsPipelineIndirectDraw&) = delete;
 
 	GraphicsPipelineIndirectDraw(GraphicsPipelineIndirectDraw&& other) noexcept
-		: GraphicsPipelineVertexShader{ std::move(other) }, m_modelCount{ other.m_modelCount },
-		m_counterBufferOffset{ other.m_counterBufferOffset },
-		m_argumentBufferOffset{ other.m_argumentBufferOffset }
+		: GraphicsPipelineVertexShader{ std::move(other) }
 	{}
 	GraphicsPipelineIndirectDraw& operator=(GraphicsPipelineIndirectDraw&& other) noexcept
 	{
 		GraphicsPipelineVertexShader::operator=(std::move(other));
-		m_modelCount           = other.m_modelCount;
-		m_counterBufferOffset  = other.m_counterBufferOffset;
-		m_argumentBufferOffset = other.m_argumentBufferOffset;
 
 		return *this;
 	}
@@ -89,16 +70,7 @@ public:
 class GraphicsPipelineIndividualDraw : public GraphicsPipelineVertexShader
 {
 public:
-	GraphicsPipelineIndividualDraw() noexcept;
-
-	void ConfigureGraphicsPipeline(
-		const std::wstring& fragmentShader, size_t modelCount, size_t modelOffset
-	) noexcept;
-
-	void DrawModels(
-		VkCommandBuffer graphicsCmdBuffer,
-		const std::vector<VkDrawIndexedIndirectCommand>& drawArguments
-	) const noexcept;
+	GraphicsPipelineIndividualDraw() : GraphicsPipelineVertexShader{} {}
 
 private:
 	[[nodiscard]]
@@ -107,23 +79,16 @@ private:
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) const noexcept final;
 
-private:
-	size_t m_modelCount;
-	size_t m_modelOffset;
-
 public:
 	GraphicsPipelineIndividualDraw(const GraphicsPipelineIndividualDraw&) = delete;
 	GraphicsPipelineIndividualDraw& operator=(const GraphicsPipelineIndividualDraw&) = delete;
 
 	GraphicsPipelineIndividualDraw(GraphicsPipelineIndividualDraw&& other) noexcept
-		: GraphicsPipelineVertexShader{ std::move(other) }, m_modelCount{ other.m_modelCount },
-		m_modelOffset{ other.m_modelOffset }
+		: GraphicsPipelineVertexShader{ std::move(other) }
 	{}
 	GraphicsPipelineIndividualDraw& operator=(GraphicsPipelineIndividualDraw&& other) noexcept
 	{
 		GraphicsPipelineVertexShader::operator=(std::move(other));
-		m_modelCount  = other.m_modelCount;
-		m_modelOffset = other.m_modelOffset;
 
 		return *this;
 	}

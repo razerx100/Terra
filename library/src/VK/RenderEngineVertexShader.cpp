@@ -93,17 +93,17 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_graphicsPipeline0->BindGraphicsPipeline(graphicsCmdBuffer);
+	m_graphicsPipeline0->Bind(graphicsCmdBuffer);
 	BindGraphicsBuffers(graphicsCmdBuffer, frameIndex);
 
 	VkBuffer argumentBuffer = m_computePipeline.GetArgumentBuffer(frameIndex);
 	VkBuffer counterBuffer = m_computePipeline.GetCounterBuffer(frameIndex);
 
-	m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
+	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
 
 	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		graphicsPipeline->BindGraphicsPipeline(graphicsCmdBuffer);
-		graphicsPipeline->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
+		graphicsPipeline->Bind(graphicsCmdBuffer);
+		//graphicsPipeline->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
 	}
 }
 
@@ -132,10 +132,10 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndirectDraw>();
 	// old currentModelCount hold the modelCountOffset value
-	graphicsPipeline->ConfigureGraphicsPipeline(
+	/*graphicsPipeline->ConfigureGraphicsPipeline(
 		fragmentShader, static_cast<std::uint32_t>(std::size(models)),
 		m_computePipeline.GetCurrentModelCount(), m_computePipeline.GetCounterCount()
-	);
+	);*/
 
 	m_computePipeline.RecordIndirectArguments(models);
 
@@ -215,14 +215,14 @@ void RenderEngineIndividualDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_graphicsPipeline0->BindGraphicsPipeline(graphicsCmdBuffer);
+	m_graphicsPipeline0->Bind(graphicsCmdBuffer);
 	BindGraphicsBuffers(graphicsCmdBuffer, frameIndex);
 
-	m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, m_modelArguments);
+	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, m_modelArguments);
 
 	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		graphicsPipeline->BindGraphicsPipeline(graphicsCmdBuffer);
-		graphicsPipeline->DrawModels(graphicsCmdBuffer, m_modelArguments);
+		graphicsPipeline->Bind(graphicsCmdBuffer);
+		//graphicsPipeline->DrawModels(graphicsCmdBuffer, m_modelArguments);
 	}
 }
 
@@ -241,10 +241,10 @@ void RenderEngineIndividualDraw::RecordModelDataSet(
 	const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndividualDraw>();
-	graphicsPipeline->ConfigureGraphicsPipeline(
+	/*graphicsPipeline->ConfigureGraphicsPipeline(
 		fragmentShader, static_cast<std::uint32_t>(std::size(models)),
 		std::size(m_modelArguments)
-	);
+	);*/
 
 	RecordModelArguments(models);
 

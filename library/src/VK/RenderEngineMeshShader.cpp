@@ -27,17 +27,17 @@ void RenderEngineMeshShader::AddMeshletModelSet(
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineMeshShader>();
 
-	graphicsPipeline->ConfigureGraphicsPipeline(fragmentShader);
+	//graphicsPipeline->ConfigureGraphicsPipeline(fragmentShader);
 
 	static std::uint32_t modelCount = 0u;
 
 	for (size_t index = 0u; index < std::size(meshletModels); ++index) {
 		std::vector<Meshlet>&& meshlets = std::move(meshletModels[index].meshlets);
 
-		graphicsPipeline->AddModelDetails(
+		/*graphicsPipeline->AddModelDetails(
 			static_cast<std::uint32_t>(std::size(meshlets)),
 			static_cast<std::uint32_t>(std::size(m_meshlets)), modelCount
-		);
+		);*/
 
 		++modelCount;
 
@@ -74,14 +74,14 @@ void RenderEngineMeshShader::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_graphicsPipeline0->BindGraphicsPipeline(graphicsCmdBuffer);
+	m_graphicsPipeline0->Bind(graphicsCmdBuffer);
 	BindGraphicsDescriptorSets(graphicsCmdBuffer, frameIndex);
 
-	m_graphicsPipeline0->DrawModels(graphicsCmdBuffer);
+	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer);
 
 	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		graphicsPipeline->BindGraphicsPipeline(graphicsCmdBuffer);
-		graphicsPipeline->DrawModels(graphicsCmdBuffer);
+		graphicsPipeline->Bind(graphicsCmdBuffer);
+		//graphicsPipeline->DrawModels(graphicsCmdBuffer);
 	}
 }
 

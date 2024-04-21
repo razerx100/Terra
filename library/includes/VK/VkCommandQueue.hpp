@@ -509,7 +509,7 @@ public:
 	}
 
 private:
-	std::vector<VKFence>          m_fences;
+	std::vector<VKFence> m_fences;
 
 public:
 	VkGraphicsQueue(const VkGraphicsQueue&) = delete;

@@ -37,7 +37,7 @@ VkPipelineShaderStageCreateInfo PipelineBuilderBase::GetShaderStageInfo(
 }
 
 // Compute Pipeline Builder
-ComputePipelineBuilder& ComputePipelineBuilder::SetComputeShaderStage(
+ComputePipelineBuilder& ComputePipelineBuilder::SetComputeStage(
 	VkShaderModule computeShader
 ) noexcept {
 	m_pipelineCreateInfo.stage = GetShaderStageInfo(computeShader, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -58,44 +58,39 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetInputAssembler(
 	return *this;
 }
 
-void GraphicsPipelineBuilder::AddShaderStages() noexcept {
+void GraphicsPipelineBuilder::UpdateShaderStages() noexcept
+{
 	m_pipelineCreateInfo.stageCount = static_cast<std::uint32_t>(std::size(m_shaderStagesInfo));
 	m_pipelineCreateInfo.pStages    = std::data(m_shaderStagesInfo);
 }
 
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexShaderStage(
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexStage(
 	VkShaderModule vertexShader, VkShaderModule fragmentShader
 ) noexcept {
-	m_shaderStagesInfo.emplace_back(
-		GetShaderStageInfo(vertexShader, VK_SHADER_STAGE_VERTEX_BIT)
-	);
-	m_shaderStagesInfo.emplace_back(
-		GetShaderStageInfo(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT)
-	);
+	m_shaderStagesInfo.emplace_back(GetShaderStageInfo(vertexShader, VK_SHADER_STAGE_VERTEX_BIT));
+	m_shaderStagesInfo.emplace_back(GetShaderStageInfo(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT));
 
-	AddShaderStages();
+	UpdateShaderStages();
 
 	return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetMeshShaderStage(
-	VkShaderModule meshShader, VkShaderModule fragmentShader,
-	VkShaderModule taskShader /* = VK_NULL_HANDLE */
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetMeshStage(
+	VkShaderModule meshShader, VkShaderModule fragmentShader
 ) noexcept {
-	if (taskShader != VK_NULL_HANDLE)
-		m_shaderStagesInfo.emplace_back(
-			GetShaderStageInfo(taskShader, VK_SHADER_STAGE_TASK_BIT_EXT)
-		);
+	m_shaderStagesInfo.emplace_back(GetShaderStageInfo(meshShader, VK_SHADER_STAGE_MESH_BIT_EXT));
+	m_shaderStagesInfo.emplace_back(GetShaderStageInfo(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT));
 
-	m_shaderStagesInfo.emplace_back(
-		GetShaderStageInfo(meshShader, VK_SHADER_STAGE_MESH_BIT_EXT)
-	);
-	m_shaderStagesInfo.emplace_back(
-		GetShaderStageInfo(fragmentShader, VK_SHADER_STAGE_FRAGMENT_BIT)
-	);
+	UpdateShaderStages();
 
-	AddShaderStages();
+	return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetTaskStage(VkShaderModule taskShader) noexcept
+{
+	m_shaderStagesInfo.emplace_back(GetShaderStageInfo(taskShader, VK_SHADER_STAGE_TASK_BIT_EXT));
+	UpdateShaderStages();
 
 	return *this;
 }

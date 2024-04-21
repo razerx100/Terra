@@ -144,8 +144,8 @@ Terra::Terra(
 		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
 		// Need to add DescriptorBuffer
 
-		if (meshShader)
-			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());
+		/*if (meshShader)
+			extensionManager.AddExtensions(GraphicsPipelineMeshShader::GetRequiredExtensions());*/
 	}
 	Device()
 		.SetDeviceFeatures(coreVersion)

@@ -8,31 +8,28 @@
 class GraphicsPipelineBase
 {
 public:
-	GraphicsPipelineBase() : m_graphicsPipeline{}, m_fragmentShader{} {}
+	GraphicsPipelineBase() : m_graphicsPipeline{} {}
 
-	virtual void CreateGraphicsPipeline(
+	virtual void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) noexcept = 0;
 
-	void BindGraphicsPipeline(VkCommandBuffer graphicsCmdBuffer) const noexcept;
+	void Bind(VkCommandBuffer graphicsCmdBuffer) const noexcept;
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
-	std::wstring                      m_fragmentShader;
 
 public:
 	GraphicsPipelineBase(const GraphicsPipelineBase&) = delete;
 	GraphicsPipelineBase& operator=(const GraphicsPipelineBase&) = delete;
 
 	GraphicsPipelineBase(GraphicsPipelineBase&& other) noexcept
-		: m_graphicsPipeline{ std::move(other.m_graphicsPipeline) },
-		m_fragmentShader{ std::move(other.m_fragmentShader) }
+		: m_graphicsPipeline{ std::move(other.m_graphicsPipeline) }
 	{}
 	GraphicsPipelineBase& operator=(GraphicsPipelineBase&& other) noexcept
 	{
 		m_graphicsPipeline = std::move(other.m_graphicsPipeline);
-		m_fragmentShader   = std::move(other.m_fragmentShader);
 
 		return *this;
 	}
