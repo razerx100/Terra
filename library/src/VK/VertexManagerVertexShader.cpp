@@ -24,7 +24,7 @@ void VertexManagerVertexShader::SetVerticesAndIndices(
 		m_vertices = std::move(vertices);
 
 		stagingBufferMan.AddBuffer(
-			reinterpret_cast<std::uint8_t*>(std::data(m_vertices)), vertexBufferSize, m_vertexBuffer, 0u,
+			std::data(m_vertices), vertexBufferSize, m_vertexBuffer, 0u,
 			QueueType::GraphicsQueue, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
 			VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
 		);
@@ -42,7 +42,7 @@ void VertexManagerVertexShader::SetVerticesAndIndices(
 		m_indices = std::move(indices);
 
 		stagingBufferMan.AddBuffer(
-			reinterpret_cast<std::uint8_t*>(std::data(m_indices)), indexBufferSize, m_indexBuffer, 0u,
+			std::data(m_indices), indexBufferSize, m_indexBuffer, 0u,
 			QueueType::GraphicsQueue, VK_ACCESS_2_INDEX_READ_BIT,
 			VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT
 		);
