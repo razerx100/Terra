@@ -357,7 +357,30 @@ public:
 	VkPipeline Get() const noexcept { return m_pipeline; }
 
 private:
+	void SelfDestruct() noexcept;
+
+private:
 	VkDevice   m_device;
 	VkPipeline m_pipeline;
+
+public:
+	VkPipelineObject(const VkPipelineObject&) = delete;
+	VkPipelineObject& operator=(const VkPipelineObject&) = delete;
+
+	VkPipelineObject(VkPipelineObject&& other) noexcept
+		: m_device{ other.m_device }, m_pipeline{ other.m_pipeline }
+	{
+		other.m_pipeline = VK_NULL_HANDLE;
+	}
+	VkPipelineObject& operator=(VkPipelineObject&& other) noexcept
+	{
+		SelfDestruct();
+
+		m_device         = other.m_device;
+		m_pipeline       = other.m_pipeline;
+		other.m_pipeline = VK_NULL_HANDLE;
+
+		return *this;
+	}
 };
 #endif

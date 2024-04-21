@@ -4,15 +4,19 @@
 #include <string>
 #include <vector>
 
-class VkShader {
+class VkShader
+{
 public:
-	VkShader(VkDevice device);
+	VkShader(VkDevice device) : m_device{ device }, m_shaderBinary{ VK_NULL_HANDLE } {}
 	~VkShader() noexcept;
 
-	void CreateShader(VkDevice device, const std::wstring& fileName);
+	void Create(const std::wstring& fileName);
 
 	[[nodiscard]]
-	VkShaderModule GetShaderModule() const noexcept;
+	VkShaderModule Get() const noexcept { return m_shaderBinary; }
+
+private:
+	void SelfDestruct() noexcept;
 
 private:
 	[[nodiscard]]
@@ -21,7 +25,27 @@ private:
 	void CreateShaderModule(VkDevice device, void const* binary, size_t binarySize);
 
 private:
-	VkDevice m_deviceRef;
-	VkShaderModule m_pBinary;
+	VkDevice       m_device;
+	VkShaderModule m_shaderBinary;
+
+public:
+	VkShader(const VkShader&) = delete;
+	VkShader& operator=(const VkShader&) = delete;
+
+	VkShader(VkShader&& other) noexcept
+		: m_device{ other.m_device }, m_shaderBinary{ other.m_shaderBinary }
+	{
+		other.m_shaderBinary = VK_NULL_HANDLE;
+	}
+	VkShader& operator=(VkShader&& other) noexcept
+	{
+		SelfDestruct();
+
+		m_device             = other.m_device;
+		m_shaderBinary       = other.m_shaderBinary;
+		other.m_shaderBinary = VK_NULL_HANDLE;
+
+		return *this;
+	}
 };
 #endif

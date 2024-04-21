@@ -2,6 +2,11 @@
 
 VkPipelineObject::~VkPipelineObject() noexcept
 {
+	SelfDestruct();
+}
+
+void VkPipelineObject::SelfDestruct() noexcept
+{
 	vkDestroyPipeline(m_device, m_pipeline, nullptr);
 }
 
