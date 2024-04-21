@@ -1,7 +1,7 @@
 #include <StagingBufferManager.hpp>
 
 StagingBufferManager& StagingBufferManager::AddTextureView(
-	std::uint8_t* cpuHandle, VkDeviceSize bufferSize,
+	void const* cpuHandle, VkDeviceSize bufferSize,
 	const VkTextureView& dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 	std::uint32_t mipLevelIndex/* = 0u */
@@ -22,7 +22,7 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 }
 
 StagingBufferManager& StagingBufferManager::AddBuffer(
-	std::uint8_t* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset,
+	void const* cpuHandle, VkDeviceSize bufferSize, const Buffer& dst, VkDeviceSize offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
 ) {
 	m_bufferData.emplace_back(

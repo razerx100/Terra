@@ -52,7 +52,7 @@ private:
 		outputData = std::move(inputData);
 
 		stagingBufferMan.AddBuffer(
-			reinterpret_cast<std::uint8_t*>(std::data(outputData)), bufferSize, buffer, 0u,
+			std::data(outputData), bufferSize, buffer, 0u,
 			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 		);
