@@ -49,16 +49,15 @@ void VertexManagerVertexShader::SetVerticesAndIndices(
 	}
 }
 
-void VertexManagerVertexShader::BindVertexAndIndexBuffer(
-	VkCommandBuffer graphicsCmdBuffer
-) const noexcept {
+void VertexManagerVertexShader::Bind(VKCommandBuffer& graphicsCmdBuffer) const noexcept
+{
 	VkBuffer vertexBuffers[]                  = { m_vertexBuffer.Get() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
 
-	vkCmdBindVertexBuffers(graphicsCmdBuffer, 0u, 1u, vertexBuffers, vertexOffsets);
-	vkCmdBindIndexBuffer(
-		graphicsCmdBuffer, m_indexBuffer.Get(), 0u, VK_INDEX_TYPE_UINT32
-	);
+	VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
+
+	vkCmdBindVertexBuffers(cmdBuffer, 0u, 1u, vertexBuffers, vertexOffsets);
+	vkCmdBindIndexBuffer(cmdBuffer, m_indexBuffer.Get(), 0u, VK_INDEX_TYPE_UINT32);
 }
 
 void VertexManagerVertexShader::CleanupTempData() noexcept

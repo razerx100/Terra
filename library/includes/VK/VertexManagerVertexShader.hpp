@@ -6,6 +6,7 @@
 #include <VkResources.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
+#include <VkCommandQueue.hpp>
 
 #include <IModel.hpp>
 
@@ -19,7 +20,7 @@ public:
 		StagingBufferManager& stagingBufferMan
 	) noexcept;
 
-	void BindVertexAndIndexBuffer(VkCommandBuffer graphicsCmdBuffer) const noexcept;
+	void Bind(VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 	void CleanupTempData() noexcept;
 
 private:
