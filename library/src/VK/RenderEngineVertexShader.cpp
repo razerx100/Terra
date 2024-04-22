@@ -79,8 +79,8 @@ void RenderEngineVertexShader::_releaseOwnership(
 // Indirect Draw
 RenderEngineIndirectDraw::RenderEngineIndirectDraw(
 	VkDevice device, std::uint32_t bufferCount, QueueIndices3 queueIndices
-) : RenderEngineVertexShader{ device, queueIndices },
-	m_computePipeline{ device, bufferCount, queueIndices } {}
+) : RenderEngineVertexShader{ device, queueIndices } {}
+	//m_computePipeline{ device, bufferCount, queueIndices } {}
 
 void RenderEngineIndirectDraw::ExecutePreRenderStage(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
@@ -93,16 +93,16 @@ void RenderEngineIndirectDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_graphicsPipeline0->Bind(graphicsCmdBuffer);
+	//m_graphicsPipeline0->Bind(graphicsCmdBuffer);
 	BindGraphicsBuffers(graphicsCmdBuffer, frameIndex);
 
-	VkBuffer argumentBuffer = m_computePipeline.GetArgumentBuffer(frameIndex);
-	VkBuffer counterBuffer = m_computePipeline.GetCounterBuffer(frameIndex);
+	//VkBuffer argumentBuffer = m_computePipeline.GetArgumentBuffer(frameIndex);
+	//VkBuffer counterBuffer = m_computePipeline.GetCounterBuffer(frameIndex);
 
 	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
 
 	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		graphicsPipeline->Bind(graphicsCmdBuffer);
+		//graphicsPipeline->Bind(graphicsCmdBuffer);
 		//graphicsPipeline->DrawModels(graphicsCmdBuffer, argumentBuffer, counterBuffer);
 	}
 }
@@ -117,10 +117,10 @@ void RenderEngineIndirectDraw::ConstructPipelines() {
 
 	DescriptorSetManager& descManager = terra.ComputeDesc();
 
-	m_computePipeline.CreateComputePipelineLayout(
+	/*m_computePipeline.CreateComputePipelineLayout(
 		device, descManager.GetDescriptorSetCount(), descManager.GetDescriptorSetLayouts()
 	);
-	m_computePipeline.CreateComputePipeline(device, m_shaderPath);
+	m_computePipeline.CreateComputePipeline(device, m_shaderPath);*/
 }
 
 void RenderEngineIndirectDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
@@ -137,7 +137,7 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 		m_computePipeline.GetCurrentModelCount(), m_computePipeline.GetCounterCount()
 	);*/
 
-	m_computePipeline.RecordIndirectArguments(models);
+	//m_computePipeline.RecordIndirectArguments(models);
 
 	if (!m_graphicsPipeline0)
 		m_graphicsPipeline0 = std::move(graphicsPipeline);
@@ -160,33 +160,33 @@ RenderEngineBase::WaitSemaphoreData RenderEngineIndirectDraw::GetWaitSemaphores(
 }
 
 void RenderEngineIndirectDraw::CreateBuffers(VkDevice device) noexcept {
-	m_computePipeline.CreateBuffers(device);
+	//m_computePipeline.CreateBuffers(device);
 }
 
 void RenderEngineIndirectDraw::_bindResourcesToMemory(VkDevice device) {
-	m_computePipeline.BindResourceToMemory(device);
+	//m_computePipeline.BindResourceToMemory(device);
 }
 
 void RenderEngineIndirectDraw::CopyData() noexcept {
-	m_computePipeline.CopyData();
+	//m_computePipeline.CopyData();
 }
 
 void RenderEngineIndirectDraw::_recordCopy(VkCommandBuffer transferBuffer) noexcept {
-	m_computePipeline.RecordCopy(transferBuffer);
+	//m_computePipeline.RecordCopy(transferBuffer);
 }
 
 void RenderEngineIndirectDraw::_releaseUploadResources() noexcept {
-	m_computePipeline.ReleaseUploadResources();
+	//m_computePipeline.ReleaseUploadResources();
 }
 
 void RenderEngineIndirectDraw::AcquireOwnerShipCompute(
 	VkCommandBuffer computeCmdBuffer
 ) noexcept {
-	m_computePipeline.AcquireOwnerShip(computeCmdBuffer);
+	//m_computePipeline.AcquireOwnerShip(computeCmdBuffer);
 }
 
 void RenderEngineIndirectDraw::_releaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {
-	m_computePipeline.ReleaseOwnership(transferCmdBuffer);
+	//m_computePipeline.ReleaseOwnership(transferCmdBuffer);
 }
 
 void RenderEngineIndirectDraw::ExecuteComputeStage(size_t frameIndex) {
@@ -215,13 +215,13 @@ void RenderEngineIndividualDraw::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_graphicsPipeline0->Bind(graphicsCmdBuffer);
+	//m_graphicsPipeline0->Bind(graphicsCmdBuffer);
 	BindGraphicsBuffers(graphicsCmdBuffer, frameIndex);
 
 	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer, m_modelArguments);
 
 	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		graphicsPipeline->Bind(graphicsCmdBuffer);
+		//graphicsPipeline->Bind(graphicsCmdBuffer);
 		//graphicsPipeline->DrawModels(graphicsCmdBuffer, m_modelArguments);
 	}
 }

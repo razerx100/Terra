@@ -8,7 +8,7 @@ void ModelBundleVertexShaderIndividual::AddModel(
 }
 
 void ModelBundleVertexShaderIndividual::Draw(
-	VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
@@ -36,7 +36,7 @@ void ModelBundleMeshShader::AddModel(std::uint32_t meshletCount, std::uint32_t m
 }
 
 void ModelBundleMeshShader::Draw(
-	VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
@@ -115,7 +115,7 @@ void ModelBundleVertexShaderIndirect::SetDescriptorBuffer(
 }
 
 void ModelBundleVertexShaderIndirect::Draw(
-	VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
+	const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	// This stride might change.
 	constexpr auto strideSize =
@@ -202,7 +202,7 @@ void ModelBundleComputeShaderIndirect::SetDescriptorBuffer(
 	descriptorBuffer.AddStorageBufferDescriptor(m_cullingDataBuffer, cullingDataBindingSlot);
 }
 
-void ModelBundleComputeShaderIndirect::Dispatch(VKCommandBuffer& computeBuffer) const noexcept
+void ModelBundleComputeShaderIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
 {
 	VkCommandBuffer cmdBuffer = computeBuffer.Get();
 

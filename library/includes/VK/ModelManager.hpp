@@ -66,7 +66,7 @@ public:
 	void AddModel(
 		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
 	) noexcept;
-	void Draw(VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
+	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 private:
 	struct ModelDetails
@@ -100,7 +100,7 @@ public:
 	ModelBundleMeshShader() : ModelBundle{}, m_modelDetails{} {}
 
 	void AddModel(std::uint32_t meshletCount, std::uint32_t modelIndex) noexcept;
-	void Draw(VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
+	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 private:
 	struct ModelDetails
@@ -151,7 +151,7 @@ public:
 		std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
 	) const noexcept;
 
-	void Dispatch(VKCommandBuffer& computeBuffer) const noexcept;
+	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 	void CleanupTempData() noexcept;
 
@@ -217,7 +217,7 @@ public:
 	);
 
 	void CreateBuffers(std::uint32_t modelCount, StagingBufferManager& stagingBufferMan);
-	void Draw(VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
+	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,

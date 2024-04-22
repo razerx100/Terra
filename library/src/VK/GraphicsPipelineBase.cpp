@@ -1,6 +1,8 @@
 #include <GraphicsPipelineBase.hpp>
 
-void GraphicsPipelineBase::Bind(VkCommandBuffer graphicsCmdBuffer) const noexcept
+void GraphicsPipelineBase::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
-	vkCmdBindPipeline(graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline->Get());
+	VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
+
+	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline->Get());
 }

@@ -6,7 +6,7 @@
 #include <VertexManagerVertexShader.hpp>
 
 #include <RenderEngineBase.hpp>
-#include <ComputePipelineIndirectDraw.hpp>
+#include <ComputePipeline.hpp>
 
 class RenderEngineVertexShader : public RenderEngineBase {
 public:
@@ -72,7 +72,7 @@ private:
 	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndirectDraw>;
 
 private:
-	ComputePipelineIndirectDraw m_computePipeline;
+	//ComputePipelineIndirectDraw m_computePipeline;
 	GraphicsPipeline m_graphicsPipeline0;
 	std::vector<GraphicsPipeline> m_graphicsPipelines;
 };

@@ -74,13 +74,13 @@ void RenderEngineMeshShader::RecordDrawCommands(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
 	// One Pipeline needs to be bound before Descriptors can be bound.
-	m_graphicsPipeline0->Bind(graphicsCmdBuffer);
+	//m_graphicsPipeline0->Bind(graphicsCmdBuffer);
 	BindGraphicsDescriptorSets(graphicsCmdBuffer, frameIndex);
 
 	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer);
 
 	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		graphicsPipeline->Bind(graphicsCmdBuffer);
+		//graphicsPipeline->Bind(graphicsCmdBuffer);
 		//graphicsPipeline->DrawModels(graphicsCmdBuffer);
 	}
 }

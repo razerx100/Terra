@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <VKPipelineObject.hpp>
+#include <VkCommandQueue.hpp>
 
 class GraphicsPipelineBase
 {
@@ -15,7 +16,7 @@ public:
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) noexcept = 0;
 
-	void Bind(VkCommandBuffer graphicsCmdBuffer) const noexcept;
+	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
