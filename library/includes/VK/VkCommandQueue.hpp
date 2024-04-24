@@ -186,6 +186,27 @@ public:
 
 	VKCommandBuffer& AcquireOwnership(
 		const Buffer& buffer,
+		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
+		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
+	) noexcept;
+	VKCommandBuffer& AcquireOwnership(
+		const VkTextureView& textureView,
+		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
+		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
+		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	) noexcept;
+	VKCommandBuffer& ReleaseOwnership(
+		const Buffer& buffer, std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex
+	) noexcept;
+	VKCommandBuffer& ReleaseOwnership(
+		const VkTextureView& textureView,
+		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
+		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	) noexcept;
+	VKCommandBuffer& AcquireOwnership(
+		const Buffer& buffer,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
 	) noexcept;

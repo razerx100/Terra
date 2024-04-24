@@ -95,7 +95,7 @@ void ModelBundleVertexShaderIndirect::CreateBuffers(
 	);
 
 	stagingBufferMan.AddBuffer(
-		m_counterResetData.get(), m_counterBufferSize, m_counterResetBuffer, 0u
+		m_counterResetData.get(), m_counterBufferSize, &m_counterResetBuffer, 0u
 	);
 }
 
@@ -189,9 +189,9 @@ void ModelBundleComputeShaderIndirect::CreateBuffers(StagingBufferManager& stagi
 	);
 
 	stagingBufferMan.AddBuffer(
-		std::data(m_indirectArguments), argumentBufferSize, m_argumentInputBuffer, 0u
+		std::data(m_indirectArguments), argumentBufferSize, &m_argumentInputBuffer, 0u
 	);
-	stagingBufferMan.AddBuffer(m_cullingData.get(), cullingDataSize, m_cullingDataBuffer, 0u);
+	stagingBufferMan.AddBuffer(m_cullingData.get(), cullingDataSize, &m_cullingDataBuffer, 0u);
 }
 
 void ModelBundleComputeShaderIndirect::SetDescriptorBuffer(

@@ -82,13 +82,13 @@ VKCommandBuffer& VKCommandBuffer::Copy(
 
 VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
 	const Buffer& buffer,
-	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
 ) noexcept {
 	VkBufferBarrier2{}.AddMemoryBarrier(
 		BufferBarrierBuilder{}
 		.Buffer(buffer)
-		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.QueueIndices(srcQueueFamilyIndex, dstQueueFamilyIndex)
 		.AccessMasks(VK_ACCESS_NONE, dstAccess)
 		.StageMasks(VK_PIPELINE_STAGE_NONE, dstStage)
 	).RecordBarriers(m_commandBuffer);
@@ -98,7 +98,7 @@ VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
 
 VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
 	const VkTextureView& textureView,
-	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
 	VkImageLayout oldLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */,
 	VkImageLayout newLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */
@@ -106,7 +106,7 @@ VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
 	VkImageBarrier2().AddMemoryBarrier(
 		ImageBarrierBuilder{}
 		.Image(textureView)
-		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.QueueIndices(srcQueueFamilyIndex, dstQueueFamilyIndex)
 		.AccessMasks(VK_ACCESS_NONE, dstAccess)
 		.Layouts(oldLayout, newLayout)
 		.StageMasks(VK_PIPELINE_STAGE_NONE, dstStage)
@@ -116,12 +116,12 @@ VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
 }
 
 VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
-	const Buffer& buffer, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
+	const Buffer& buffer, std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex
 ) noexcept {
 	VkBufferBarrier2{}.AddMemoryBarrier(
 		BufferBarrierBuilder{}
 		.Buffer(buffer)
-		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.QueueIndices(srcQueueFamilyIndex, dstQueueFamilyIndex)
 		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
 		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
 	).RecordBarriers(m_commandBuffer);
@@ -130,20 +130,61 @@ VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
 }
 
 VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
-	const VkTextureView& textureView, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	const VkTextureView& textureView,
+	std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 	VkImageLayout oldLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */,
 	VkImageLayout newLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */
 ) noexcept {
 	VkImageBarrier2{}.AddMemoryBarrier(
 		ImageBarrierBuilder{}
 		.Image(textureView)
-		.QueueIndices(srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex())
+		.QueueIndices(srcQueueFamilyIndex, dstQueueFamilyIndex)
 		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
 		.Layouts(oldLayout, newLayout)
 		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
 	).RecordBarriers(m_commandBuffer);
 
 	return *this;
+}
+
+VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
+	const Buffer& buffer,
+	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
+) noexcept {
+	return AcquireOwnership(
+		buffer, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex(), dstAccess, dstStage
+	);
+}
+
+VKCommandBuffer& VKCommandBuffer::AcquireOwnership(
+	const VkTextureView& textureView,
+	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
+	VkImageLayout oldLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */ ,
+	VkImageLayout newLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */
+) noexcept {
+	return AcquireOwnership(
+		textureView, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex(), dstAccess, dstStage,
+		oldLayout, newLayout
+	);
+}
+
+VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
+	const Buffer& buffer, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
+) noexcept {
+	return ReleaseOwnership(buffer, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex());
+}
+
+VKCommandBuffer& VKCommandBuffer::ReleaseOwnership(
+	const VkTextureView& textureView,
+	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
+	VkImageLayout oldLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */,
+	VkImageLayout newLayout /* = VK_IMAGE_LAYOUT_UNDEFINED */
+) noexcept {
+	return ReleaseOwnership(
+		textureView, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex(), oldLayout, newLayout
+	);
 }
 
 // Command Queue

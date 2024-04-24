@@ -39,6 +39,9 @@ public:
 	const VkQueueFamilyMananger& GetQueueFamilyManager() const noexcept
 	{ return m_queueFamilyManager; }
 	[[nodiscard]]
+	VkQueueFamilyMananger const* GetQueueFamilyManagerRef() const noexcept
+	{ return &m_queueFamilyManager; }
+	[[nodiscard]]
 	VkDeviceExtensionManager& ExtensionManager() noexcept { return m_extensionManager; }
 	[[nodiscard]]
 	VkPhysicalDevice GetPhysicalDevice() const noexcept { return m_physicalDevice; }

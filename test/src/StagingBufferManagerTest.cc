@@ -70,7 +70,8 @@ TEST_F(StagingBufferTest, StagingTest)
 	ThreadPool threadPool{ 8u };
 
 	StagingBufferManager stagingBufferMan{
-		logicalDevice, &memoryManager, &transferQueue, &threadPool
+		logicalDevice, &memoryManager, &transferQueue, &threadPool,
+		s_deviceManager->GetQueueFamilyManagerRef()
 	};
 
 	Buffer testStorage{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
@@ -90,9 +91,9 @@ TEST_F(StagingBufferTest, StagingTest)
 	std::unique_ptr<std::uint8_t> textureData =
 		std::unique_ptr<std::uint8_t>{ new std::uint8_t[testTextureView.GetTexture().Size()] };
 
-	stagingBufferMan.AddBuffer(bufferData.get(), 2_KB, testStorage, 0u);
+	stagingBufferMan.AddBuffer(bufferData.get(), 2_KB, &testStorage, 0u);
 	stagingBufferMan.AddTextureView(
-		textureData.get(), testTextureView.GetTexture().Size(), testTextureView, {}
+		textureData.get(), testTextureView.GetTexture().Size(), &testTextureView, {}
 	);
 
 	VKCommandBuffer& transferCmdBuffer = transferQueue.GetCommandBuffer(0u);

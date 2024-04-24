@@ -10,21 +10,9 @@
 
 #include <IModel.hpp>
 
-// The idea behind this class would be to either have a single model in it or multiple of them.
-// If there are multiple models in it, all of their vertices will be packed into a single buffer.
-// And you will need to get rid of the whole bundle if you just want to get rid of one model from it.
-// I am doing this, since adding and removing elements from gvertices would be a pain and probably not
-// worth it. But with this way, I can have gvertices support and also that should help when doing mesh
-// shading. Mesh shading for a single small model wouldn't really be that efficient.
 class ModelBundle
 {
 public:
-	// I think I might be able to store the Argument Buffer and the counter buffer here. And from
-	// the child class' function, bind them to the compute descriptor. And that should be it? I need
-	// to keep them here, since the Draw call needs them. But the compute queue just needs to output
-	// to them. I shouldn't need to do frustum culling for all models in one dispatch call, as long
-	// as they are in the same submission, it should be the same? The same should be applicable to
-	// the meshlets as well.
 	ModelBundle() : m_psoIndex{ 0u }, m_vertexManagerIndex{ 0u }, m_modelID{ 0u } {}
 
 	void SetPSOIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
@@ -272,7 +260,7 @@ public:
 };
 
 // I will put a VertexManager, ModelBundles and PSOs in this class. Multiple modelBundles can use a
-// single modelManager and a single PSO. And can also change them.
+// single VertexManager and a single PSO. And can also change them.
 // I want to keep the bare minimum here to draw models. I want to add deferred rendering later,
 // while I think I can reuse ModelBundle, I feel like won't be able to reuse ModelManager.
 class ModelManager
