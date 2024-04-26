@@ -57,7 +57,7 @@ void RenderEngineBase::BindGraphicsDescriptorSets(
 	VkDescriptorSet descSets[] = { Terra::Get().GraphicsDesc().GetDescriptorSet(frameIndex) };
 	vkCmdBindDescriptorSets(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		m_graphicsPipelineLayout->GetLayout(), 0u, 1u,
+		m_graphicsPipelineLayout->Get(), 0u, 1u,
 		descSets, 0u, nullptr
 	);
 }

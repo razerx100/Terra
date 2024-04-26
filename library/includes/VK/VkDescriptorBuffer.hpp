@@ -80,6 +80,11 @@ public:
 	{
 		return m_layoutOffsets;
 	}
+	[[nodiscard]]
+	const std::vector<DescriptorSetLayout>& GetLayouts() const noexcept
+	{
+		return m_setLayouts;
+	}
 
 private:
 	VkDevice                         m_device;

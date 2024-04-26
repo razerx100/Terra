@@ -1,9 +1,6 @@
 #include <VkDescriptorBuffer.hpp>
 
-VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorInfo{
-	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT
-};
-
+// Descriptor Set Layout
 DescriptorSetLayout::~DescriptorSetLayout() noexcept
 {
 	SelfDestruct();
@@ -35,6 +32,11 @@ void DescriptorSetLayout::CreateLayout(
 
 	vkCreateDescriptorSetLayout(m_device, &layoutCreateInfo, nullptr, &m_layout);
 }
+
+// Vk Descriptor Buffer
+VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorInfo{
+	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT
+};
 
 VkDescriptorBuffer& VkDescriptorBuffer::AddLayout(
 	std::uint32_t bindingIndex, VkDescriptorType type, std::uint32_t descriptorCount,

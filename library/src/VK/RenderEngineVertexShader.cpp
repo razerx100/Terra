@@ -60,7 +60,7 @@ std::unique_ptr<PipelineLayout> RenderEngineVertexShader::CreateGraphicsPipeline
 
 	// Push constants needs to be serialised according to the shader stages
 
-	pipelineLayout->CreateLayout(setLayouts, layoutCount);
+	pipelineLayout->Create(setLayouts, layoutCount);
 
 	return pipelineLayout;
 }

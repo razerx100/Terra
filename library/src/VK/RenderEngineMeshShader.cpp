@@ -17,7 +17,7 @@ std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLa
 			static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
 
 	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_MESH_BIT_EXT, pushConstantSize);
-	pipelineLayout->CreateLayout(setLayouts, layoutCount);
+	pipelineLayout->Create(setLayouts, layoutCount);
 
 	return pipelineLayout;
 }

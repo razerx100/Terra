@@ -1,38 +1,56 @@
 #include <PipelineLayout.hpp>
 
-PipelineLayout::PipelineLayout(VkDevice device)
-	: m_deviceRef{ device }, m_pipelineLayout{ VK_NULL_HANDLE }, m_pushConstantOffset{ 0u } {}
+PipelineLayout::~PipelineLayout() noexcept
+{
+	SelfDestruct();
+}
 
-PipelineLayout::~PipelineLayout() noexcept {
-	vkDestroyPipelineLayout(m_deviceRef, m_pipelineLayout, nullptr);
+void PipelineLayout::SelfDestruct() noexcept
+{
+	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 }
 
 void PipelineLayout::AddPushConstantRange(
 	VkShaderStageFlags shaderFlag, std::uint32_t rangeSize
 ) noexcept {
-	VkPushConstantRange range{};
-	range.stageFlags = shaderFlag;
-	range.size = rangeSize;
-	range.offset = m_pushConstantOffset;
+	VkPushConstantRange range{
+		.stageFlags = shaderFlag,
+		.offset     = m_pushConstantOffset,
+		.size       = rangeSize
+	};
 
 	m_pushConstantOffset += rangeSize;
 
 	m_pushRanges.emplace_back(range);
 }
 
-void PipelineLayout::CreateLayout(
+void PipelineLayout::Create(
 	VkDescriptorSetLayout const* setLayouts, std::uint32_t layoutCount
 ) {
-	VkPipelineLayoutCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.setLayoutCount = layoutCount;
-	createInfo.pSetLayouts = setLayouts;
-	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(std::size(m_pushRanges));
-	createInfo.pPushConstantRanges = std::data(m_pushRanges);
+	VkPipelineLayoutCreateInfo createInfo{
+		.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.setLayoutCount         = layoutCount,
+		.pSetLayouts            = setLayouts,
+		.pushConstantRangeCount = static_cast<std::uint32_t>(std::size(m_pushRanges)),
+		.pPushConstantRanges    = std::data(m_pushRanges)
+	};
 
-	vkCreatePipelineLayout(m_deviceRef, &createInfo, nullptr, &m_pipelineLayout);
+	vkCreatePipelineLayout(m_device, &createInfo, nullptr, &m_pipelineLayout);
 }
 
-VkPipelineLayout PipelineLayout::GetLayout() const noexcept {
-	return m_pipelineLayout;
+void PipelineLayout::Create(const std::vector<DescriptorSetLayout>& setLayouts)
+{
+	const size_t layoutCount = std::size(setLayouts);
+	std::vector<VkDescriptorSetLayout> vkSetLayouts{ layoutCount, VK_NULL_HANDLE };
+
+	for (size_t index = 0u; index < layoutCount; ++index)
+		vkSetLayouts.at(index) = setLayouts.at(index).Get();
+
+	Create(std::data(vkSetLayouts), static_cast<std::uint32_t>(layoutCount));
+}
+
+void PipelineLayout::Create(const VkDescriptorBuffer& descBuffer)
+{
+	const std::vector<DescriptorSetLayout>& layouts = descBuffer.GetLayouts();
+	Create(layouts);
 }

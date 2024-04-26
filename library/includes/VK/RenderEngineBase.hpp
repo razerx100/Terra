@@ -52,7 +52,7 @@ protected:
 		VkDevice device, std::unique_ptr<Pipeline>& graphicsPipeline0,
 		std::vector<std::unique_ptr<Pipeline>>& graphicsPipelines
 	) const noexcept {
-		VkPipelineLayout graphicsLayout = m_graphicsPipelineLayout->GetLayout();
+		VkPipelineLayout graphicsLayout = m_graphicsPipelineLayout->Get();
 
 		/*graphicsPipeline0->CreateGraphicsPipeline(
 			device, graphicsLayout, GetRenderPass(), m_shaderPath
