@@ -6,6 +6,7 @@
 #include <VkQueueFamilyManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
+#include <PipelineLayout.hpp>
 #include <memory>
 
 #include <IModel.hpp>
@@ -85,20 +86,34 @@ public:
 class ModelBundleMeshShader : public ModelBundle
 {
 public:
-	ModelBundleMeshShader() : ModelBundle{}, m_modelDetails{} {}
+	ModelBundleMeshShader(VkDevice device, MemoryManager* memoryManager)
+		: ModelBundle{}, m_modelDetails{},
+		m_meshletBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+		m_meshlets{}
+	{}
 
-	void AddModel(std::uint32_t meshletCount, std::uint32_t modelIndex) noexcept;
+	void AddModel(std::vector<Meshlet>&& meshlets, std::uint32_t modelIndex) noexcept;
+	void CreateBuffers(StagingBufferManager& stagingBufferMan);
+	void SetDescriptorBuffer(
+		VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
+	) const noexcept;
+
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
+
+	void CleanupTempData() noexcept;
 
 private:
 	struct ModelDetails
 	{
 		std::uint32_t modelIndex;
-		std::uint32_t meshletCount;
+		std::uint32_t meshletOffset;
+		std::uint32_t threadGroupCountX;
 	};
 
 private:
 	std::vector<ModelDetails> m_modelDetails;
+	Buffer                    m_meshletBuffer;
+	std::vector<Meshlet>      m_meshlets;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -114,12 +129,17 @@ public:
 	ModelBundleMeshShader& operator=(const ModelBundleMeshShader&) = delete;
 
 	ModelBundleMeshShader(ModelBundleMeshShader&& other) noexcept
-		: ModelBundle{ std::move(other) }, m_modelDetails{ std::move(other.m_modelDetails) }
+		: ModelBundle{ std::move(other) },
+		m_modelDetails{ std::move(other.m_modelDetails) },
+		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
+		m_meshlets{ std::move(other.m_meshlets) }
 	{}
 	ModelBundleMeshShader& operator=(ModelBundleMeshShader&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
 		m_modelDetails       = std::move(other.m_modelDetails);
+		m_meshletBuffer      = std::move(other.m_meshletBuffer);
+		m_meshlets           = std::move(other.m_meshlets);
 
 		return *this;
 	}
@@ -200,11 +220,12 @@ class ModelBundleVertexShaderIndirect : public ModelBundle
 {
 public:
 	ModelBundleVertexShaderIndirect(
-		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
-		QueueIndices3 queueIndices
+		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 	);
 
-	void CreateBuffers(std::uint32_t modelCount, StagingBufferManager& stagingBufferMan);
+	void CreateBuffers(
+		std::uint32_t modelCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
+	);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 
 	void SetDescriptorBuffer(
@@ -225,7 +246,6 @@ private:
 	Buffer                         m_counterBuffer;
 	Buffer                         m_counterResetBuffer;
 	std::unique_ptr<std::uint32_t> m_counterResetData;
-	std::uint32_t                  m_frameCount;
 
 public:
 	ModelBundleVertexShaderIndirect(const ModelBundleVertexShaderIndirect&) = delete;
@@ -239,8 +259,7 @@ public:
 		m_argumentBuffer{ std::move(other.m_argumentBuffer) },
 		m_counterBuffer{ std::move(other.m_counterBuffer) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
-		m_counterResetData{ std::move(other.m_counterResetData) },
-		m_frameCount{ other.m_frameCount }
+		m_counterResetData{ std::move(other.m_counterResetData) }
 	{}
 	ModelBundleVertexShaderIndirect& operator=(ModelBundleVertexShaderIndirect&& other) noexcept
 	{
@@ -253,7 +272,63 @@ public:
 		m_counterBuffer      = std::move(other.m_counterBuffer);
 		m_counterResetBuffer = std::move(other.m_counterResetBuffer);
 		m_counterResetData   = std::move(other.m_counterResetData);
-		m_frameCount         = other.m_frameCount;
+
+		return *this;
+	}
+};
+
+class ModelBuffers
+{
+public:
+	ModelBuffers(VkDevice device, MemoryManager* memoryManager)
+		: m_modelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		m_modelBuffersInstanceSize{ 0u }, m_models{}
+	{}
+
+	void CreateBuffer(std::uint32_t frameCount);
+	void SetDescriptorBuffer(
+		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+	) const noexcept;
+
+	void AddModel(std::shared_ptr<IModel>&& model) noexcept;
+	void AddModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
+
+	void Update(VkDeviceSize bufferIndex) const;
+
+private:
+	struct ModelData
+	{
+		DirectX::XMMATRIX modelMatrix;
+		DirectX::XMFLOAT3 modelOffset;
+		float             padding;
+		// GLSL vec3 is actually vec4.
+	};
+
+private:
+	[[nodiscard]]
+	static consteval size_t GetStride() noexcept { return sizeof(ModelData); }
+	[[nodiscard]]
+	size_t GetCount() const noexcept { return std::size(m_models); }
+
+private:
+	Buffer                               m_modelBuffers;
+	VkDeviceSize                         m_modelBuffersInstanceSize;
+	std::vector<std::shared_ptr<IModel>> m_models;
+
+public:
+	ModelBuffers(const ModelBuffers&) = delete;
+	ModelBuffers& operator=(const ModelBuffers&) = delete;
+
+	ModelBuffers(ModelBuffers&& other) noexcept
+		: m_modelBuffers{ std::move(other.m_modelBuffers) },
+		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
+		m_models{ std::move(other.m_models) }
+	{}
+	ModelBuffers& operator=(ModelBuffers&& other) noexcept
+	{
+		m_modelBuffers             = std::move(other.m_modelBuffers);
+		m_modelBuffersInstanceSize = other.m_modelBuffersInstanceSize;
+		m_models                   = std::move(other.m_models);
 
 		return *this;
 	}
@@ -266,17 +341,21 @@ public:
 class ModelManager
 {
 public:
-	ModelManager() {}
+	ModelManager(VkDevice device) : m_pipelineLayout{ device } {}
 
-private:
+protected:
+	PipelineLayout m_pipelineLayout;
+
 public:
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
 
 	ModelManager(ModelManager&& other) noexcept
+		: m_pipelineLayout{ std::move(other.m_pipelineLayout) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
+		m_pipelineLayout = std::move(other.m_pipelineLayout);
 		return *this;
 	}
 };

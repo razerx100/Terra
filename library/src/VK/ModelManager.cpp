@@ -1,3 +1,6 @@
+#include <ranges>
+#include <algorithm>
+
 #include <ModelManager.hpp>
 
 // Model Bundle Vertex Shader Individual
@@ -30,9 +33,18 @@ void ModelBundleVertexShaderIndividual::Draw(
 }
 
 // Model Bundle Mesh Shader
-void ModelBundleMeshShader::AddModel(std::uint32_t meshletCount, std::uint32_t modelIndex) noexcept
-{
-	m_modelDetails.emplace_back(ModelDetails{ modelIndex, meshletCount });
+void ModelBundleMeshShader::AddModel(
+	std::vector<Meshlet>&& meshlets, std::uint32_t modelIndex
+) noexcept {
+	const size_t meshletCount = std::size(meshlets);
+
+	m_modelDetails.emplace_back(ModelDetails{
+			.modelIndex        = modelIndex,
+			.meshletOffset     = static_cast<std::uint32_t>(std::size(m_meshlets)),
+			.threadGroupCountX = static_cast<std::uint32_t>(meshletCount)
+		});
+
+	std::ranges::move(meshlets, std::back_inserter(m_meshlets));
 }
 
 void ModelBundleMeshShader::Draw(
@@ -43,41 +55,66 @@ void ModelBundleMeshShader::Draw(
 
 	for (const auto& modelDetail : m_modelDetails)
 	{
-		constexpr auto pushConstantSize = static_cast<std::uint32_t>(sizeof(std::uint32_t));
+		// Copying the modelIndex and the meshletOffset, so sizeof(std::uint32_t) * 2u.
+		constexpr auto pushConstantSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
 			pushConstantSize, &modelDetail.modelIndex
 		);
 
-		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, modelDetail.meshletCount, 1u, 1u);
+		// Unlike the Compute Shader where we process the data of a model with a thread, here
+		// one group handles a Model and its threads handle a meshlet each.
+		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, modelDetail.threadGroupCountX, 1u, 1u);
+		// It might be worth checking if we are reaching the Group Count Limit and if needed
+		// launch more Groups. Could achieve that by passing a GroupLaunch index.
 	}
+}
+
+void ModelBundleMeshShader::CreateBuffers(StagingBufferManager& stagingBufferMan)
+{
+	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
+
+	m_meshletBuffer.Create(
+		meshletBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	);
+
+	stagingBufferMan.AddBuffer(std::data(m_meshlets), meshletBufferSize, &m_meshletBuffer, 0u);
+}
+
+void ModelBundleMeshShader::SetDescriptorBuffer(
+	VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
+) const noexcept {
+	descriptorBuffer.AddStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot);
+}
+
+void ModelBundleMeshShader::CleanupTempData() noexcept
+{
+	m_meshlets = std::vector<Meshlet>{};
 }
 
 // Model Bundle Vertex Shader Indirect
 ModelBundleVertexShaderIndirect::ModelBundleVertexShaderIndirect(
-	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
-	QueueIndices3 queueIndices
+	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 ) : ModelBundle{}, m_modelCount{ 0u }, m_queueIndices{ queueIndices },
 	m_argumentBufferSize{ 0u },
 	m_counterBufferSize{ static_cast<VkDeviceSize>(sizeof(std::uint32_t)) },
 	m_argumentBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_counterBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_counterResetData{ std::make_unique<std::uint32_t>(0u) },
-	m_frameCount{ frameCount }
+	m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
 {}
 
 void ModelBundleVertexShaderIndirect::CreateBuffers(
-	std::uint32_t modelCount, StagingBufferManager& stagingBufferMan
+	std::uint32_t modelCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
 ) {
 	m_modelCount = modelCount;
 
 	constexpr size_t strideSize = sizeof(ModelBundleComputeShaderIndirect::Argument);
 	m_argumentBufferSize        = static_cast<VkDeviceSize>(m_modelCount * strideSize);
 
-	const VkDeviceSize argumentBufferTotalSize = m_argumentBufferSize * m_frameCount;
-	const VkDeviceSize counterBufferTotalSize  = m_counterBufferSize * m_frameCount;
+	const VkDeviceSize argumentBufferTotalSize = m_argumentBufferSize * frameCount;
+	const VkDeviceSize counterBufferTotalSize  = m_counterBufferSize * frameCount;
 
 	m_argumentBuffer.Create(
 		argumentBufferTotalSize,
@@ -174,6 +211,9 @@ void ModelBundleComputeShaderIndirect::CreateBuffers(StagingBufferManager& stagi
 	const auto argumentCount      = static_cast<std::uint32_t>(std::size(m_indirectArguments));
 	m_cullingData->commandCount   = argumentCount;
 
+	// ThreadBlockSize is the number of threads in a thread group. If the argumentCount/ModelCount
+	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
+	// Threads 64, Model 65 = Group 2.
 	m_dispatchXCount = static_cast<std::uint32_t>(std::ceil(argumentCount / THREADBLOCKSIZE));
 
 	const auto argumentBufferSize = static_cast<VkDeviceSize>(strideSize * argumentCount);
@@ -213,4 +253,54 @@ void ModelBundleComputeShaderIndirect::CleanupTempData() noexcept
 {
 	m_indirectArguments = std::vector<Argument>{};
 	m_cullingData.reset();
+}
+
+// Model Buffers
+void ModelBuffers::CreateBuffer(std::uint32_t frameCount)
+{
+	constexpr size_t strideSize = GetStride();
+	const size_t modelCount     = GetCount();
+
+	m_modelBuffersInstanceSize              = static_cast<VkDeviceSize>(strideSize * modelCount);
+	const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * frameCount;
+
+	m_modelBuffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+}
+
+void ModelBuffers::SetDescriptorBuffer(
+	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+) const noexcept {
+	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
+
+	descriptorBuffer.AddStorageBufferDescriptor(
+		m_modelBuffers, bindingSlot, bufferOffset, m_modelBuffersInstanceSize
+	);
+}
+
+void ModelBuffers::AddModel(std::shared_ptr<IModel>&& model) noexcept
+{
+	m_models.emplace_back(std::move(model));
+}
+
+void ModelBuffers::AddModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept
+{
+	std::ranges::move(models, std::back_inserter(m_models));
+}
+
+void ModelBuffers::Update(VkDeviceSize bufferIndex) const
+{
+	std::uint8_t* bufferOffset  = m_modelBuffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;
+	constexpr size_t strideSize = GetStride();
+	size_t modelOffset          = 0u;
+
+	for (auto& model : m_models)
+	{
+		const ModelData modelData{
+			.modelMatrix = model->GetModelMatrix(),
+			.modelOffset = model->GetModelOffset()
+		};
+
+		memcpy(bufferOffset + modelOffset, &modelData, strideSize);
+		modelOffset += strideSize;
+	}
 }
