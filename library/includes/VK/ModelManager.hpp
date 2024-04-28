@@ -305,6 +305,8 @@ private:
 		DirectX::XMFLOAT3 modelOffset;
 		float             padding;
 		// GLSL vec3 is actually vec4.
+		std::uint32_t     materialIndex;
+		std::uint32_t     boundingBoxIndex;
 	};
 
 private:

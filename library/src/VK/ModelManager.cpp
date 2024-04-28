@@ -295,8 +295,11 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const
 	for (auto& model : m_models)
 	{
 		const ModelData modelData{
-			.modelMatrix = model->GetModelMatrix(),
-			.modelOffset = model->GetModelOffset()
+			.modelMatrix      = model->GetModelMatrix(),
+			.modelOffset      = model->GetModelOffset(),
+			// Need to update the IModel class for the two down below.
+			//.materialIndex    = model->GetMaterialIndex(),
+			//.boundingBoxIndex = model->BoundingBoxIndex()
 		};
 
 		memcpy(bufferOffset + modelOffset, &modelData, strideSize);
