@@ -24,7 +24,10 @@ static VkMemoryRequirements GetMemoryRequirements(VkDevice device, VkImage image
 
 // VkAllocator
 VkAllocator::VkAllocator(DeviceMemory2&& memory, std::uint16_t id)
-	: m_memory{ std::move(memory) }, m_allocator{ 0u, m_memory.Size(), 256_B }, m_id{ id } {}
+	: m_memory{ std::move(memory) },
+	m_allocator{ 0u, static_cast<size_t>(m_memory.Size()), 256_B },
+	m_id{ id }
+{}
 
 std::optional<VkDeviceSize> VkAllocator::Allocate(const VkMemoryRequirements& memoryReq) noexcept
 {
@@ -191,10 +194,10 @@ template<typename T>
 MemoryManager::MemoryAllocation MemoryManager::Allocate(
 	T resource, VkMemoryPropertyFlagBits memoryType
 ) {
-	constexpr bool isBuffer                    = std::is_same_v<VkBuffer, T>;
-	const VkMemoryRequirements memoryReq       = GetMemoryRequirements(m_logicalDevice, resource);
-	const VkDeviceSize bufferSize              = memoryReq.size;
-	const bool isCPUAccessible                 = memoryType & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	constexpr bool isBuffer              = std::is_same_v<VkBuffer, T>;
+	const VkMemoryRequirements memoryReq = GetMemoryRequirements(m_logicalDevice, resource);
+	const VkDeviceSize bufferSize        = memoryReq.size;
+	const bool isCPUAccessible           = memoryType & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
 	std::vector<VkAllocator>& allocators = isCPUAccessible ? m_cpuAllocators : m_gpuAllocators;
 
