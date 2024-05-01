@@ -7,7 +7,8 @@
 #include <Renderer.hpp>
 #include <ISharedDataContainer.hpp>
 
-class RendererVK final : public Renderer {
+class RendererVK final : public Renderer
+{
 public:
 	RendererVK(
 		const char* appName,
