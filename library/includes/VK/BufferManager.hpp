@@ -8,6 +8,7 @@
 #include <VkQueueFamilyManager.hpp>
 
 #include <Model.hpp>
+#include <Material.hpp>
 #include <ISharedDataContainer.hpp>
 
 class BufferManager
@@ -151,7 +152,7 @@ private:
 					modelBuffersOffset, modelOffset
 				);
 
-			const auto& modelMaterial = model->GetMaterial();
+			/*const auto& modelMaterial = model->GetMaterial();
 
 			MaterialBuffer material{
 				.ambient = modelMaterial.ambient,
@@ -163,7 +164,7 @@ private:
 				.specularTexIndex = model->GetSpecularTexIndex(),
 				.shininess = modelMaterial.shininess
 			};
-			CopyStruct(material, materialBuffersOffset, materialOffset);
+			CopyStruct(material, materialBuffersOffset, materialOffset);*/
 		}
 	}
 

@@ -265,3 +265,9 @@ size_t RendererVK::AddTexture(
 void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(Terra::Get().Device().GetLogicalDevice());
 }
+
+void RendererVK::AddMaterial(std::shared_ptr<Material> material)
+{}
+
+void RendererVK::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
+{}

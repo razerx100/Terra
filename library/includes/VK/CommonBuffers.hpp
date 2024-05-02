@@ -5,7 +5,7 @@
 #include <VkDescriptorBuffer.hpp>
 
 // Need something like an IMaterial. But for now will use Model.
-#include <Model.hpp>
+#include <Material.hpp>
 
 class MaterialBuffers
 {
@@ -67,8 +67,8 @@ public:
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
 	) const noexcept;
 
-	void AddBoundingBox(ModelBounds boundingBox) noexcept;
-	void AddBoundingBoxes(std::vector<ModelBounds>&& boundingBoxes) noexcept;
+	//void AddBoundingBox(ModelBounds boundingBox) noexcept;
+	//void AddBoundingBoxes(std::vector<ModelBounds>&& boundingBoxes) noexcept;
 
 private:
 	struct BoundingBox

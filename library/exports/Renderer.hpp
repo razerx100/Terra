@@ -6,9 +6,11 @@
 #include <string>
 #include <RendererTypes.hpp>
 
+#include <Material.hpp>
 #include <Model.hpp>
 
-class Renderer {
+class Renderer
+{
 public:
 	struct Resolution {
 		std::uint64_t width;
@@ -43,6 +45,9 @@ public:
 		std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gVerticesIndices,
 		std::vector<std::uint32_t>&& gPrimIndices
 	) = 0;
+
+	virtual void AddMaterial(std::shared_ptr<Material> material) = 0;
+	virtual void AddMaterials(std::vector<std::shared_ptr<Material>>&& materials) = 0;
 
 	virtual void Update() = 0;
 	virtual void Render() = 0;
