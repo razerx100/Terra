@@ -4,8 +4,8 @@
 #include <StagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 
-// Need something like an IMaterial. But for now will use IModel.
-#include <IModel.hpp>
+// Need something like an IMaterial. But for now will use Model.
+#include <Model.hpp>
 
 class MaterialBuffers
 {

@@ -276,12 +276,12 @@ void ModelBuffers::SetDescriptorBuffer(
 	);
 }
 
-void ModelBuffers::AddModel(std::shared_ptr<IModel>&& model) noexcept
+void ModelBuffers::AddModel(std::shared_ptr<Model>&& model) noexcept
 {
 	m_models.emplace_back(std::move(model));
 }
 
-void ModelBuffers::AddModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept
+void ModelBuffers::AddModels(std::vector<std::shared_ptr<Model>>&& models) noexcept
 {
 	std::ranges::move(models, std::back_inserter(m_models));
 }

@@ -32,7 +32,7 @@ public:
 	) override;
 
 	void AddModelSet(
-		std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<Model>>&& models, const std::wstring& fragmentShader
 	) override;
 	void AddMeshletModelSet(
 		std::vector<MeshletModel>&& meshletModels, const std::wstring& fragmentShader

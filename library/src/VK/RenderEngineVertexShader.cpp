@@ -128,7 +128,7 @@ void RenderEngineIndirectDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const
 }
 
 void RenderEngineIndirectDraw::RecordModelDataSet(
-	const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
+	const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndirectDraw>();
 	// old currentModelCount hold the modelCountOffset value
@@ -238,7 +238,7 @@ void RenderEngineIndividualDraw::UpdateModelBuffers(VkDeviceSize frameIndex) con
 }
 
 void RenderEngineIndividualDraw::RecordModelDataSet(
-	const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
+	const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndividualDraw>();
 	/*graphicsPipeline->ConfigureGraphicsPipeline(
@@ -255,7 +255,7 @@ void RenderEngineIndividualDraw::RecordModelDataSet(
 }
 
 void RenderEngineIndividualDraw::RecordModelArguments(
-	const std::vector<std::shared_ptr<IModel>>& models
+	const std::vector<std::shared_ptr<Model>>& models
 ) noexcept {
 	for (const auto& model : models) {
 		VkDrawIndexedIndirectCommand arguments{

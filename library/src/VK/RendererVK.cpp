@@ -31,7 +31,7 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 }
 
 void RendererVK::AddModelSet(
-	std::vector<std::shared_ptr<IModel>>&& models, const std::wstring& fragmentShader
+	std::vector<std::shared_ptr<Model>>&& models, const std::wstring& fragmentShader
 ) {
 	Terra& terra = Terra::Get();
 

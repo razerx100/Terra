@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 
-#include <IModel.hpp>
+#include <Model.hpp>
 
 class RenderEngine {
 public:
@@ -29,7 +29,7 @@ public:
 		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
 	) noexcept = 0;
 	virtual void RecordModelDataSet(
-		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
+		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 	) noexcept = 0;
 	virtual void AddMeshletModelSet(
 		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader

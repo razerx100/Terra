@@ -9,7 +9,7 @@
 #include <PipelineLayout.hpp>
 #include <memory>
 
-#include <IModel.hpp>
+#include <Model.hpp>
 
 class MeshBundle
 {
@@ -293,8 +293,8 @@ public:
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
 	) const noexcept;
 
-	void AddModel(std::shared_ptr<IModel>&& model) noexcept;
-	void AddModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
+	void AddModel(std::shared_ptr<Model>&& model) noexcept;
+	void AddModels(std::vector<std::shared_ptr<Model>>&& models) noexcept;
 
 	void Update(VkDeviceSize bufferIndex) const;
 
@@ -316,9 +316,9 @@ private:
 	size_t GetCount() const noexcept { return std::size(m_models); }
 
 private:
-	Buffer                               m_modelBuffers;
-	VkDeviceSize                         m_modelBuffersInstanceSize;
-	std::vector<std::shared_ptr<IModel>> m_models;
+	Buffer                              m_modelBuffers;
+	VkDeviceSize                        m_modelBuffersInstanceSize;
+	std::vector<std::shared_ptr<Model>> m_models;
 
 public:
 	ModelBuffers(const ModelBuffers&) = delete;

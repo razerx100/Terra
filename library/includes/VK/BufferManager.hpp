@@ -7,7 +7,7 @@
 #include <DescriptorSetManager.hpp>
 #include <VkQueueFamilyManager.hpp>
 
-#include <IModel.hpp>
+#include <Model.hpp>
 #include <ISharedDataContainer.hpp>
 
 class BufferManager
@@ -19,7 +19,7 @@ public:
 	);
 
 	void CreateBuffers(VkDevice device) noexcept;
-	void AddOpaqueModels(std::vector<std::shared_ptr<IModel>>&& models) noexcept;
+	void AddOpaqueModels(std::vector<std::shared_ptr<Model>>&& models) noexcept;
 	void AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept;
 	void BindResourceToMemory(VkDevice device) const noexcept;
 
@@ -107,7 +107,7 @@ private:
 	[[nodiscard]]
 	std::uint8_t* GetCPUWriteStartMemory() const noexcept;
 
-	void CheckLightSourceAndAddOpaque(std::shared_ptr<IModel>&& model) noexcept;
+	void CheckLightSourceAndAddOpaque(std::shared_ptr<Model>&& model) noexcept;
 
 	template<bool modelWithNoBB>
 	void UpdatePerModelData(
@@ -184,7 +184,7 @@ private:
 	VkResourceView m_lightBuffers;
 	VkResourceView m_fragmentDataBuffer;
 	std::uint32_t m_bufferCount;
-	std::vector<std::shared_ptr<IModel>> m_opaqueModels;
+	std::vector<std::shared_ptr<Model>> m_opaqueModels;
 	QueueIndicesCG m_queueIndices;
 	std::vector<size_t> m_lightModelIndices;
 	bool m_modelDataNoBB;

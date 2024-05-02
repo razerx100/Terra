@@ -52,7 +52,7 @@ public:
 	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
 
 	void RecordModelDataSet(
-		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
+		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 	) noexcept final;
 	void CreateBuffers(VkDevice device) noexcept final;
 	void CopyData() noexcept final;
@@ -87,11 +87,11 @@ public:
 	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
 
 	void RecordModelDataSet(
-		const std::vector<std::shared_ptr<IModel>>& models, const std::wstring& fragmentShader
+		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 	) noexcept final;
 
 private:
-	void RecordModelArguments(const std::vector<std::shared_ptr<IModel>>& models) noexcept;
+	void RecordModelArguments(const std::vector<std::shared_ptr<Model>>& models) noexcept;
 
 	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndividualDraw>;
 
