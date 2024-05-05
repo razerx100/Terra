@@ -14,31 +14,36 @@
 class ModelBundle
 {
 public:
-	ModelBundle() : m_psoIndex{ 0u }, m_vertexManagerIndex{ 0u } {}
+	ModelBundle() : m_psoIndex{ 0u }, m_meshIndex{ 0u } {}
 
 	void SetPSOIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
-	void SetVertexManagerIndex(std::uint32_t index) noexcept { m_vertexManagerIndex = index; }
+	void SetMeshIndex(std::uint32_t index) noexcept { m_meshIndex = index; }
 
 	[[nodiscard]]
 	std::uint32_t GetPSOIndex() const noexcept { return m_psoIndex; }
 	[[nodiscard]]
-	std::uint32_t GetVertexManagerIndex() const noexcept { return m_vertexManagerIndex; }
+	std::uint32_t GetMeshIndex() const noexcept { return m_meshIndex; }
+
+	[[nodiscard]]
+	static VkDrawIndexedIndirectCommand GetDrawIndexedIndirectCommand(
+		const std::shared_ptr<ModelVS>& model
+	) noexcept;
 
 protected:
 	std::uint32_t m_psoIndex;
-	std::uint32_t m_vertexManagerIndex;
+	std::uint32_t m_meshIndex;
 
 public:
 	ModelBundle(const ModelBundle&) = delete;
 	ModelBundle& operator=(const ModelBundle&) = delete;
 
 	ModelBundle(ModelBundle&& other) noexcept
-		: m_psoIndex{ other.m_psoIndex }, m_vertexManagerIndex{ other.m_vertexManagerIndex }
+		: m_psoIndex{ other.m_psoIndex }, m_meshIndex{ other.m_meshIndex }
 	{}
 	ModelBundle& operator=(ModelBundle&& other) noexcept
 	{
-		m_psoIndex           = other.m_psoIndex;
-		m_vertexManagerIndex = other.m_vertexManagerIndex;
+		m_psoIndex  = other.m_psoIndex;
+		m_meshIndex = other.m_meshIndex;
 
 		return *this;
 	}
@@ -49,15 +54,13 @@ class ModelBundleVertexShaderIndividual : public ModelBundle
 public:
 	ModelBundleVertexShaderIndividual() : ModelBundle{}, m_meshDetails{} {}
 
-	void AddMesh(
-		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
-	) noexcept;
+	void AddMeshDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 private:
 	struct MeshDetails
 	{
-		std::uint32_t                modelIndex;
+		std::uint32_t                modelBufferIndex;
 		VkDrawIndexedIndirectCommand indexedArguments;
 	};
 
@@ -89,7 +92,8 @@ public:
 		m_meshlets{}
 	{}
 
-	void AddMesh(std::vector<Meshlet>&& meshlets, std::uint32_t modelIndex) noexcept;
+	// Need this one as non-const, since I am gonna move the meshlets.
+	void AddMeshDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
@@ -102,7 +106,8 @@ public:
 private:
 	struct MeshDetails
 	{
-		std::uint32_t modelIndex;
+		std::uint32_t modelBufferIndex;
+		// Since there could be meshlets of multiple Models, we need the starting point of each.
 		std::uint32_t meshletOffset;
 		std::uint32_t threadGroupCountX;
 	};
@@ -147,9 +152,7 @@ class ModelBundleComputeShaderIndirect
 public:
 	ModelBundleComputeShaderIndirect(VkDevice device, MemoryManager* memoryManager);
 
-	void AddMesh(
-		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
-	) noexcept;
+	void AddMeshDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer,
@@ -163,9 +166,9 @@ public:
 public:
 	struct Argument
 	{
+		std::uint32_t                modelBufferIndex;
 	// This object has 5, 32bits int. So, I can put another without adding any implicit paddings.
 		VkDrawIndexedIndirectCommand indirectArguments;
-		std::uint32_t                modelIndex;
 	};
 
 private:
@@ -188,6 +191,8 @@ private:
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 ZBOUNDS = { 1.f, -1.f };
+
+	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE     = 64.f;
 
 public:
@@ -221,7 +226,7 @@ public:
 	);
 
 	void CreateBuffers(
-		std::uint32_t meshCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
+		std::uint32_t modelCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
 	);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 
@@ -235,7 +240,7 @@ public:
 	void CleanupTempData() noexcept;
 
 private:
-	std::uint32_t                  m_meshCount;
+	std::uint32_t                  m_modelCount;
 	QueueIndices3                  m_queueIndices;
 	VkDeviceSize                   m_argumentBufferSize;
 	VkDeviceSize                   m_counterBufferSize;
@@ -249,7 +254,7 @@ public:
 	ModelBundleVertexShaderIndirect& operator=(const ModelBundleVertexShaderIndirect&) = delete;
 
 	ModelBundleVertexShaderIndirect(ModelBundleVertexShaderIndirect&& other) noexcept
-		: ModelBundle{ std::move(other) }, m_meshCount{ other.m_meshCount },
+		: ModelBundle{ std::move(other) }, m_modelCount{ other.m_modelCount },
 		m_queueIndices{ other.m_queueIndices },
 		m_argumentBufferSize{ other.m_argumentBufferSize },
 		m_counterBufferSize{ other.m_counterBufferSize },
@@ -261,7 +266,7 @@ public:
 	ModelBundleVertexShaderIndirect& operator=(ModelBundleVertexShaderIndirect&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
-		m_meshCount          = other.m_meshCount;
+		m_modelCount         = other.m_modelCount;
 		m_queueIndices       = other.m_queueIndices;
 		m_argumentBufferSize = other.m_argumentBufferSize;
 		m_counterBufferSize  = other.m_counterBufferSize;
@@ -300,7 +305,6 @@ private:
 		float             padding;
 		// GLSL vec3 is actually vec4.
 		std::uint32_t     materialIndex;
-		std::uint32_t     boundingBoxIndex;
 	};
 
 private:

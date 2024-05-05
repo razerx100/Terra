@@ -38,6 +38,8 @@ public:
 	virtual bool IsLightSource() const noexcept = 0;
 	[[nodiscard]]
 	virtual std::uint32_t GetMeshIndex() const noexcept = 0;
+	[[nodiscard]]
+	virtual std::uint32_t GetMaterialIndex() const noexcept = 0;
 };
 
 class ModelVS : public virtual Model
