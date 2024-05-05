@@ -5,7 +5,7 @@
 #include <PipelineLayout.hpp>
 #include <RenderEngineBase.hpp>
 #include <GraphicsPipelineMeshShader.hpp>
-#include <VertexManagerMeshShader.hpp>
+#include <MeshManagerMeshShader.hpp>
 #include <VkResourceViews.hpp>
 
 class RenderEngineMeshShader : public RenderEngineBase

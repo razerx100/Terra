@@ -3,7 +3,7 @@
 #include <PipelineLayout.hpp>
 #include <vector>
 #include <GraphicsPipelineVertexShader.hpp>
-#include <VertexManagerVertexShader.hpp>
+#include <MeshManagerVertexShader.hpp>
 
 #include <RenderEngineBase.hpp>
 #include <ComputePipeline.hpp>
