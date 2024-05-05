@@ -11,49 +11,43 @@
 
 #include <Model.hpp>
 
-class MeshBundle
+class ModelBundle
 {
 public:
-	MeshBundle() : m_psoIndex{ 0u }, m_vertexManagerIndex{ 0u }, m_bundleID{ 0u } {}
+	ModelBundle() : m_psoIndex{ 0u }, m_vertexManagerIndex{ 0u } {}
 
 	void SetPSOIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
 	void SetVertexManagerIndex(std::uint32_t index) noexcept { m_vertexManagerIndex = index; }
-	void SetBundleID(size_t ID) noexcept { m_bundleID = ID; }
 
 	[[nodiscard]]
 	std::uint32_t GetPSOIndex() const noexcept { return m_psoIndex; }
 	[[nodiscard]]
 	std::uint32_t GetVertexManagerIndex() const noexcept { return m_vertexManagerIndex; }
-	[[nodiscard]]
-	size_t GetID() const noexcept { return m_bundleID; }
 
 protected:
 	std::uint32_t m_psoIndex;
 	std::uint32_t m_vertexManagerIndex;
-	size_t        m_bundleID;
 
 public:
-	MeshBundle(const MeshBundle&) = delete;
-	MeshBundle& operator=(const MeshBundle&) = delete;
+	ModelBundle(const ModelBundle&) = delete;
+	ModelBundle& operator=(const ModelBundle&) = delete;
 
-	MeshBundle(MeshBundle&& other) noexcept
-		: m_psoIndex{ other.m_psoIndex }, m_vertexManagerIndex{ other.m_vertexManagerIndex },
-		m_bundleID{ other.m_bundleID }
+	ModelBundle(ModelBundle&& other) noexcept
+		: m_psoIndex{ other.m_psoIndex }, m_vertexManagerIndex{ other.m_vertexManagerIndex }
 	{}
-	MeshBundle& operator=(MeshBundle&& other) noexcept
+	ModelBundle& operator=(ModelBundle&& other) noexcept
 	{
 		m_psoIndex           = other.m_psoIndex;
 		m_vertexManagerIndex = other.m_vertexManagerIndex;
-		m_bundleID           = other.m_bundleID;
 
 		return *this;
 	}
 };
 
-class MeshBundleVertexShaderIndividual : public MeshBundle
+class ModelBundleVertexShaderIndividual : public ModelBundle
 {
 public:
-	MeshBundleVertexShaderIndividual() : MeshBundle{}, m_meshDetails{} {}
+	ModelBundleVertexShaderIndividual() : ModelBundle{}, m_meshDetails{} {}
 
 	void AddMesh(
 		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
@@ -71,26 +65,26 @@ private:
 	std::vector<MeshDetails> m_meshDetails;
 
 public:
-	MeshBundleVertexShaderIndividual(const MeshBundleVertexShaderIndividual&) = delete;
-	MeshBundleVertexShaderIndividual& operator=(const MeshBundleVertexShaderIndividual&) = delete;
+	ModelBundleVertexShaderIndividual(const ModelBundleVertexShaderIndividual&) = delete;
+	ModelBundleVertexShaderIndividual& operator=(const ModelBundleVertexShaderIndividual&) = delete;
 
-	MeshBundleVertexShaderIndividual(MeshBundleVertexShaderIndividual&& other) noexcept
-		: MeshBundle{ std::move(other) }, m_meshDetails{ std::move(other.m_meshDetails) }
+	ModelBundleVertexShaderIndividual(ModelBundleVertexShaderIndividual&& other) noexcept
+		: ModelBundle{ std::move(other) }, m_meshDetails{ std::move(other.m_meshDetails) }
 	{}
-	MeshBundleVertexShaderIndividual& operator=(MeshBundleVertexShaderIndividual&& other) noexcept
+	ModelBundleVertexShaderIndividual& operator=(ModelBundleVertexShaderIndividual&& other) noexcept
 	{
-		MeshBundle::operator=(std::move(other));
+		ModelBundle::operator=(std::move(other));
 		m_meshDetails        = std::move(other.m_meshDetails);
 
 		return *this;
 	}
 };
 
-class MeshBundleMeshShader : public MeshBundle
+class ModelBundleMeshShader : public ModelBundle
 {
 public:
-	MeshBundleMeshShader(VkDevice device, MemoryManager* memoryManager)
-		: MeshBundle{}, m_meshDetails{},
+	ModelBundleMeshShader(VkDevice device, MemoryManager* memoryManager)
+		: ModelBundle{}, m_meshDetails{},
 		m_meshletBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 		m_meshlets{}
 	{}
@@ -128,30 +122,30 @@ public:
 	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
 	{ return s_requiredExtensions; }
 
-	MeshBundleMeshShader(const MeshBundleMeshShader&) = delete;
-	MeshBundleMeshShader& operator=(const MeshBundleMeshShader&) = delete;
+	ModelBundleMeshShader(const ModelBundleMeshShader&) = delete;
+	ModelBundleMeshShader& operator=(const ModelBundleMeshShader&) = delete;
 
-	MeshBundleMeshShader(MeshBundleMeshShader&& other) noexcept
-		: MeshBundle{ std::move(other) },
+	ModelBundleMeshShader(ModelBundleMeshShader&& other) noexcept
+		: ModelBundle{ std::move(other) },
 		m_meshDetails{ std::move(other.m_meshDetails) },
 		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
 		m_meshlets{ std::move(other.m_meshlets) }
 	{}
-	MeshBundleMeshShader& operator=(MeshBundleMeshShader&& other) noexcept
+	ModelBundleMeshShader& operator=(ModelBundleMeshShader&& other) noexcept
 	{
-		MeshBundle::operator=(std::move(other));
-		m_meshDetails       = std::move(other.m_meshDetails);
-		m_meshletBuffer     = std::move(other.m_meshletBuffer);
-		m_meshlets          = std::move(other.m_meshlets);
+		ModelBundle::operator=(std::move(other));
+		m_meshDetails        = std::move(other.m_meshDetails);
+		m_meshletBuffer      = std::move(other.m_meshletBuffer);
+		m_meshlets           = std::move(other.m_meshlets);
 
 		return *this;
 	}
 };
 
-class MeshBundleComputeShaderIndirect
+class ModelBundleComputeShaderIndirect
 {
 public:
-	MeshBundleComputeShaderIndirect(VkDevice device, MemoryManager* memoryManager);
+	ModelBundleComputeShaderIndirect(VkDevice device, MemoryManager* memoryManager);
 
 	void AddMesh(
 		const VkDrawIndexedIndirectCommand& drawArguments, std::uint32_t modelIndex
@@ -197,17 +191,17 @@ private:
 	static constexpr float THREADBLOCKSIZE     = 64.f;
 
 public:
-	MeshBundleComputeShaderIndirect(const MeshBundleComputeShaderIndirect&) = delete;
-	MeshBundleComputeShaderIndirect& operator=(const MeshBundleComputeShaderIndirect&) = delete;
+	ModelBundleComputeShaderIndirect(const ModelBundleComputeShaderIndirect&) = delete;
+	ModelBundleComputeShaderIndirect& operator=(const ModelBundleComputeShaderIndirect&) = delete;
 
-	MeshBundleComputeShaderIndirect(MeshBundleComputeShaderIndirect&& other) noexcept
+	ModelBundleComputeShaderIndirect(ModelBundleComputeShaderIndirect&& other) noexcept
 		: m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
 		m_dispatchXCount{ other.m_dispatchXCount }
 	{}
-	MeshBundleComputeShaderIndirect& operator=(MeshBundleComputeShaderIndirect&& other) noexcept
+	ModelBundleComputeShaderIndirect& operator=(ModelBundleComputeShaderIndirect&& other) noexcept
 	{
 		m_argumentInputBuffer = std::move(other.m_argumentInputBuffer);
 		m_cullingDataBuffer   = std::move(other.m_cullingDataBuffer);
@@ -219,10 +213,10 @@ public:
 	}
 };
 
-class MeshBundleVertexShaderIndirect : public MeshBundle
+class ModelBundleVertexShaderIndirect : public ModelBundle
 {
 public:
-	MeshBundleVertexShaderIndirect(
+	ModelBundleVertexShaderIndirect(
 		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 	);
 
@@ -251,11 +245,11 @@ private:
 	std::unique_ptr<std::uint32_t> m_counterResetData;
 
 public:
-	MeshBundleVertexShaderIndirect(const MeshBundleVertexShaderIndirect&) = delete;
-	MeshBundleVertexShaderIndirect& operator=(const MeshBundleVertexShaderIndirect&) = delete;
+	ModelBundleVertexShaderIndirect(const ModelBundleVertexShaderIndirect&) = delete;
+	ModelBundleVertexShaderIndirect& operator=(const ModelBundleVertexShaderIndirect&) = delete;
 
-	MeshBundleVertexShaderIndirect(MeshBundleVertexShaderIndirect&& other) noexcept
-		: MeshBundle{ std::move(other) }, m_meshCount{ other.m_meshCount },
+	ModelBundleVertexShaderIndirect(ModelBundleVertexShaderIndirect&& other) noexcept
+		: ModelBundle{ std::move(other) }, m_meshCount{ other.m_meshCount },
 		m_queueIndices{ other.m_queueIndices },
 		m_argumentBufferSize{ other.m_argumentBufferSize },
 		m_counterBufferSize{ other.m_counterBufferSize },
@@ -264,9 +258,9 @@ public:
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_counterResetData{ std::move(other.m_counterResetData) }
 	{}
-	MeshBundleVertexShaderIndirect& operator=(MeshBundleVertexShaderIndirect&& other) noexcept
+	ModelBundleVertexShaderIndirect& operator=(ModelBundleVertexShaderIndirect&& other) noexcept
 	{
-		MeshBundle::operator=(std::move(other));
+		ModelBundle::operator=(std::move(other));
 		m_meshCount          = other.m_meshCount;
 		m_queueIndices       = other.m_queueIndices;
 		m_argumentBufferSize = other.m_argumentBufferSize;
@@ -339,10 +333,10 @@ public:
 	}
 };
 
-// I will put a VertexManager, ModelBundles and PSOs in this class. Multiple MeshBundles can use a
-// single VertexManager and a single PSO. And can also change them.
+// I will put a MeshManager, ModelBundles and PSOs in this class. Multiple ModelBundles can use a
+// single MeshManager and a single PSO. And can also change them.
 // I want to keep the bare minimum here to draw models. I want to add deferred rendering later,
-// while I think I can reuse MeshBundle, I feel like won't be able to reuse ModelManager.
+// while I think I can reuse ModelBundle, I feel like won't be able to reuse ModelManager.
 class ModelManager
 {
 public:

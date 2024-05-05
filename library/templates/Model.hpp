@@ -51,6 +51,8 @@ class ModelMS : public virtual Model
 {
 public:
 	[[nodiscard]]
-	virtual MeshDetailsMS&& GetMeshDetailsMS() noexcept = 0;
+	// I am keeping this as non const, as I can potentially process the meshlets of multiple models
+	// at once. So, I will need to keep them all in a single container, ie move from here.
+	virtual MeshDetailsMS& GetMeshDetailsMS() noexcept = 0;
 };
 #endif
