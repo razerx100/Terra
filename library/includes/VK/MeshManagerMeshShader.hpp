@@ -14,10 +14,8 @@ class MeshManagerMeshShader
 public:
 	MeshManagerMeshShader(VkDevice device, MemoryManager* memoryManager);
 
-	void SetVerticesAndPrimIndices(
-		std::vector<Vertex>&& vertices,
-		std::vector<std::uint32_t>&& vertexIndices, std::vector<std::uint32_t>&& primIndices,
-		StagingBufferManager& stagingBufferMan
+	void SetMeshBundle(
+		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan
 	);
 
 	void SetDescriptorBuffer(
@@ -26,6 +24,9 @@ public:
 	) const noexcept;
 
 	void CleanupTempData() noexcept;
+
+	[[nodiscard]]
+	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBundle->GetBounds(); }
 
 private:
 	struct GLSLVertex
@@ -40,19 +41,16 @@ private:
 
 	template<typename T>
 	static void ConfigureBuffer(
-		std::vector<T>&& inputData, std::vector<T>& outputData, Buffer& buffer,
-		StagingBufferManager& stagingBufferMan
+		const std::vector<T>& bufferData, Buffer& buffer, StagingBufferManager& stagingBufferMan
 	) noexcept {
-		const auto bufferSize = static_cast<VkDeviceSize>(sizeof(T) * std::size(inputData));
+		const auto bufferSize = static_cast<VkDeviceSize>(sizeof(T) * std::size(bufferData));
 
 		buffer.Create(
 			bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 		);
 
-		outputData = std::move(inputData);
-
 		stagingBufferMan.AddBuffer(
-			std::data(outputData), bufferSize, &buffer, 0u,
+			std::data(bufferData), bufferSize, &buffer, 0u,
 			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 		);
@@ -63,12 +61,11 @@ private:
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 
 private:
-	Buffer                     m_vertexBuffer;
-	Buffer                     m_vertexIndicesBuffer;
-	Buffer                     m_primIndicesBuffer;
-	std::vector<GLSLVertex>    m_vertices;
-	std::vector<std::uint32_t> m_vertexIndices;
-	std::vector<std::uint32_t> m_primIndices;
+	Buffer                        m_vertexBuffer;
+	Buffer                        m_vertexIndicesBuffer;
+	Buffer                        m_primIndicesBuffer;
+	std::vector<GLSLVertex>       m_vertices;
+	std::unique_ptr<MeshBundleMS> m_meshBundle;
 
 public:
 	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;
@@ -78,8 +75,8 @@ public:
 		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
 		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
-		m_vertices{ std::move(other.m_vertices) }, m_vertexIndices{ std::move(other.m_vertexIndices) },
-		m_primIndices{ std::move(other.m_primIndices) }
+		m_vertices{ std::move(other.m_vertices) },
+		m_meshBundle{ std::move(other.m_meshBundle) }
 	{}
 
 	MeshManagerMeshShader& operator=(MeshManagerMeshShader&& other) noexcept
@@ -88,8 +85,7 @@ public:
 		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
 		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
 		m_vertices            = std::move(other.m_vertices);
-		m_vertexIndices       = std::move(other.m_vertexIndices);
-		m_primIndices         = std::move(other.m_primIndices);
+		m_meshBundle          = std::move(other.m_meshBundle);
 
 		return *this;
 	}

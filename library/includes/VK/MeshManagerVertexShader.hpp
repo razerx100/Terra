@@ -15,19 +15,20 @@ class MeshManagerVertexShader
 public:
 	MeshManagerVertexShader(VkDevice device, MemoryManager* memoryManager) noexcept;
 
-	void SetVerticesAndIndices(
-		std::vector<Vertex>&& vertices, std::vector<std::uint32_t>&& indices,
-		StagingBufferManager& stagingBufferMan
-	) noexcept;
+	void SetMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
+	);
 
 	void Bind(VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 	void CleanupTempData() noexcept;
 
+	[[nodiscard]]
+	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBundle->GetBounds(); }
+
 private:
-	Buffer                     m_vertexBuffer;
-	Buffer                     m_indexBuffer;
-	std::vector<Vertex>        m_vertices;
-	std::vector<std::uint32_t> m_indices;
+	Buffer                        m_vertexBuffer;
+	Buffer                        m_indexBuffer;
+	std::unique_ptr<MeshBundleVS> m_meshBundle;
 
 public:
 	MeshManagerVertexShader(const MeshManagerVertexShader&) = delete;
@@ -36,14 +37,13 @@ public:
 	MeshManagerVertexShader(MeshManagerVertexShader&& other) noexcept
 		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
-		m_vertices{ std::move(other.m_vertices) }, m_indices{ std::move(other.m_indices) }
+		m_meshBundle{ std::move(other.m_meshBundle) }
 	{}
 	MeshManagerVertexShader& operator=(MeshManagerVertexShader&& other) noexcept
 	{
 		m_vertexBuffer = std::move(other.m_vertexBuffer);
 		m_indexBuffer  = std::move(other.m_indexBuffer);
-		m_vertices     = std::move(other.m_vertices);
-		m_indices      = std::move(other.m_indices);
+		m_meshBundle   = std::move(other.m_meshBundle);
 
 		return *this;
 	}
