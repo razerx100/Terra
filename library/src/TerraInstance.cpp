@@ -7,11 +7,11 @@ Renderer* CreateTerraInstance(
 	void* windowHandle,
 	void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
-	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool,
 	RenderEngineType engineType, std::uint32_t bufferCount
 ) {
 	return new RendererVK(
 		appName, windowHandle, moduleHandle, width, height, bufferCount,
-		threadPool, sharedContainer, engineType
+		threadPool, engineType
 	);
 }

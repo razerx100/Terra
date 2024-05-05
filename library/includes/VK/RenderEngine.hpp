@@ -8,6 +8,7 @@
 #include <memory>
 
 #include <Model.hpp>
+#include <MeshBundle.hpp>
 
 class RenderEngine {
 public:
@@ -31,9 +32,9 @@ public:
 	virtual void RecordModelDataSet(
 		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 	) noexcept = 0;
-	virtual void AddMeshletModelSet(
+	/*virtual void AddMeshletModelSet(
 		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
-	) noexcept = 0;
+	) noexcept = 0;*/
 	virtual void AddGVerticesAndPrimIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices,
 		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices

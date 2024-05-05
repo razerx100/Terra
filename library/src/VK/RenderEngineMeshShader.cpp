@@ -22,7 +22,7 @@ std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLa
 	return pipelineLayout;
 }
 
-void RenderEngineMeshShader::AddMeshletModelSet(
+/*void RenderEngineMeshShader::AddMeshletModelSet(
 	std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineMeshShader>();
@@ -34,10 +34,10 @@ void RenderEngineMeshShader::AddMeshletModelSet(
 	for (size_t index = 0u; index < std::size(meshletModels); ++index) {
 		std::vector<Meshlet>&& meshlets = std::move(meshletModels[index].meshlets);
 
-		/*graphicsPipeline->AddModelDetails(
+		graphicsPipeline->AddModelDetails(
 			static_cast<std::uint32_t>(std::size(meshlets)),
 			static_cast<std::uint32_t>(std::size(m_meshlets)), modelCount
-		);*/
+		);
 
 		++modelCount;
 
@@ -48,7 +48,7 @@ void RenderEngineMeshShader::AddMeshletModelSet(
 		m_graphicsPipeline0 = std::move(graphicsPipeline);
 	else
 		m_graphicsPipelines.emplace_back(std::move(graphicsPipeline));
-}
+}*/
 
 void RenderEngineMeshShader::AddGVerticesAndPrimIndices(
 	VkDevice device, std::vector<Vertex>&& gVertices,

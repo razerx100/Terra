@@ -259,9 +259,9 @@ void RenderEngineIndividualDraw::RecordModelArguments(
 ) noexcept {
 	for (const auto& model : models) {
 		VkDrawIndexedIndirectCommand arguments{
-			.indexCount = model->GetIndexCount(),
+			//.indexCount = model->GetIndexCount(),
 			.instanceCount = 1u,
-			.firstIndex = model->GetIndexOffset(),
+			//.firstIndex = model->GetIndexOffset(),
 			.vertexOffset = 0u,
 			.firstInstance = static_cast<std::uint32_t>(std::size(m_modelArguments))
 		};

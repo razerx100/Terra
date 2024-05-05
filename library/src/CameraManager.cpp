@@ -2,9 +2,9 @@
 
 #include <CameraManager.hpp>
 
-CameraManager::CameraManager(ISharedDataContainer& sharedData) noexcept
+CameraManager::CameraManager() noexcept
 	: m_cameraMatrices{}, m_fovRadian(DirectX::XMConvertToRadians(65.f)),
-	m_sceneWidth(0), m_sceneHeight(0), m_sharedData{ sharedData } {}
+	m_sceneWidth(0), m_sceneHeight(0) {}
 
 void CameraManager::CopyData(std::uint8_t* cpuHandle) noexcept {
 	FetchCameraData();
@@ -30,9 +30,9 @@ void CameraManager::SetSceneResolution(std::uint32_t width, std::uint32_t height
 }
 
 void CameraManager::FetchCameraData() noexcept {
-	m_fovRadian = DirectX::XMConvertToRadians(static_cast<float>(m_sharedData.GetFov()));
+	//m_fovRadian = DirectX::XMConvertToRadians(static_cast<float>(m_sharedData.GetFov()));
 
 	SetProjectionMatrix();
 
-	m_cameraMatrices.view = m_sharedData.GetViewMatrix();
+	//m_cameraMatrices.view = m_sharedData.GetViewMatrix();
 }

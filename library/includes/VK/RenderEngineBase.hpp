@@ -23,9 +23,9 @@ public:
 	void RecordModelDataSet(
 		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 	) noexcept override;
-	void AddMeshletModelSet(
+	/*void AddMeshletModelSet(
 		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
-	) noexcept override;
+	) noexcept override;*/
 	void AddGVerticesAndPrimIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices,
 		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices

@@ -96,10 +96,10 @@ void RenderEngineBase::RecordModelDataSet(
 	[[maybe_unused]] const std::wstring& fragmentShader
 ) noexcept {}
 
-void RenderEngineBase::AddMeshletModelSet(
+/*void RenderEngineBase::AddMeshletModelSet(
 	[[maybe_unused]] std::vector<MeshletModel>& meshletModels,
 	[[maybe_unused]] const std::wstring& fragmentShader
-) noexcept {}
+) noexcept {}*/
 
 void RenderEngineBase::AddGVerticesAndPrimIndices(
 	[[maybe_unused]] VkDevice device, [[maybe_unused]] std::vector<Vertex>&& gVertices,

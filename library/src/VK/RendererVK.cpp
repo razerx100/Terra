@@ -8,7 +8,7 @@ RendererVK::RendererVK(
 	void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount,
-	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool,
 	RenderEngineType engineType
 ) : m_width{ width }, m_height{ height } {
 
@@ -16,7 +16,7 @@ RendererVK::RendererVK(
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
 
 	Terra::Init(
-		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool, sharedContainer,
+		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool,
 		engineType
 	);
 	Terra& terra = Terra::Get();
@@ -30,7 +30,7 @@ void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) n
 	Terra::Get().Engine().SetBackgroundColour(colourVector);
 }
 
-void RendererVK::AddModelSet(
+/*void RendererVK::AddModelSet(
 	std::vector<std::shared_ptr<Model>>&& models, const std::wstring& fragmentShader
 ) {
 	Terra& terra = Terra::Get();
@@ -68,7 +68,7 @@ void RendererVK::AddModelInputs(
 		terra.Device().GetLogicalDevice(), std::move(gVertices), std::move(gVerticesIndices),
 		std::move(gPrimIndices)
 	);
-}
+}*/
 
 void RendererVK::Update()
 {
@@ -266,8 +266,31 @@ void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(Terra::Get().Device().GetLogicalDevice());
 }
 
+void RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader)
+{}
+
+void RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& pixelShader)
+{}
+
+void RendererVK::AddModelBundle(
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+) {}
+
+void RendererVK::AddModelBundle(
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& pixelShader
+) {}
+
+void RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
+{}
+
+void RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
+{}
+
 void RendererVK::AddMaterial(std::shared_ptr<Material> material)
 {}
 
 void RendererVK::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
+{}
+
+void RendererVK::SetCamera(std::shared_ptr<Camera>&& camera)
 {}

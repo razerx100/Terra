@@ -19,7 +19,6 @@
 
 #include <RenderEngine.hpp>
 #include <BufferManager.hpp>
-#include <ISharedDataContainer.hpp>
 #include <CameraManager.hpp>
 
 class Terra
@@ -32,8 +31,7 @@ public:
 	Terra(
 		std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 		std::uint32_t width, std::uint32_t height,
-		ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
-		RenderEngineType engineType
+		ThreadPool& threadPool, RenderEngineType engineType
 	);
 
 	Terra(const Terra&) = delete;
@@ -46,8 +44,7 @@ public:
 	static void Init(
 		std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 		std::uint32_t width, std::uint32_t height,
-		ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
-		RenderEngineType engineType
+		ThreadPool& threadPool,	RenderEngineType engineType
 	);
 
 	inline IDisplayManager& Display() noexcept { return *m_display; }

@@ -7,7 +7,7 @@
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
 
-#include <Model.hpp>
+#include <MeshBundle.hpp>
 
 class VertexManagerMeshShader
 {

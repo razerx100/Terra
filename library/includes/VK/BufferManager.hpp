@@ -8,30 +8,30 @@
 #include <VkQueueFamilyManager.hpp>
 
 #include <Model.hpp>
+#include <MeshBundle.hpp>
 #include <Material.hpp>
-#include <ISharedDataContainer.hpp>
 
 class BufferManager
 {
 public:
 	BufferManager(
 		VkDevice device, std::uint32_t bufferCount, QueueIndicesCG queueIndices, bool modelDataNoBB,
-		bool meshShader, ISharedDataContainer& sharedData
+		bool meshShader
 	);
 
 	void CreateBuffers(VkDevice device) noexcept;
 	void AddOpaqueModels(std::vector<std::shared_ptr<Model>>&& models) noexcept;
-	void AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept;
+	//void AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept;
 	void BindResourceToMemory(VkDevice device) const noexcept;
 
 	template<bool modelWithNoBB>
 	void Update(VkDeviceSize bufferIndex) const noexcept {
 		std::uint8_t* cpuMemoryStart = GetCPUWriteStartMemory();
-		const DirectX::XMMATRIX viewMatrix = GetViewMatrix();
+		//const DirectX::XMMATRIX viewMatrix = GetViewMatrix();
 
 		UpdateCameraData(bufferIndex, cpuMemoryStart);
-		UpdatePerModelData<modelWithNoBB>(bufferIndex, cpuMemoryStart, viewMatrix);
-		UpdateLightData(bufferIndex, cpuMemoryStart, viewMatrix);
+		//UpdatePerModelData<modelWithNoBB>(bufferIndex, cpuMemoryStart, viewMatrix);
+		//UpdateLightData(bufferIndex, cpuMemoryStart, viewMatrix);
 		UpdateFragmentData(bufferIndex, cpuMemoryStart);
 	}
 
@@ -103,8 +103,8 @@ private:
 		VkBufferUsageFlagBits bufferType, const DescriptorInfo& descInfo
 	) const noexcept;
 
-	[[nodiscard]]
-	DirectX::XMMATRIX GetViewMatrix() const noexcept;
+	//[[nodiscard]]
+	//DirectX::XMMATRIX GetViewMatrix() const noexcept;
 	[[nodiscard]]
 	std::uint8_t* GetCPUWriteStartMemory() const noexcept;
 
@@ -124,7 +124,7 @@ private:
 			cpuMemoryStart + m_materialBuffers.GetMemoryOffset(bufferIndex);
 
 		for (auto& model : m_opaqueModels) {
-			const auto& boundingBox = model->GetBoundingBox();
+			//const auto& boundingBox = model->GetBoundingBox();
 			const DirectX::XMMATRIX modelMatrix = model->GetModelMatrix();
 
 			if constexpr (modelWithNoBB)
@@ -146,8 +146,8 @@ private:
 						DirectX::XMMatrixInverse(nullptr, modelMatrix * viewMatrix)
 					),
 					.modelOffset = model->GetModelOffset(),
-					.positiveBounds = boundingBox.positiveAxes,
-					.negativeBounds = boundingBox.negativeAxes
+					//.positiveBounds = boundingBox.positiveAxes,
+					//.negativeBounds = boundingBox.negativeAxes
 					},
 					modelBuffersOffset, modelOffset
 				);
@@ -190,6 +190,5 @@ private:
 	std::vector<size_t> m_lightModelIndices;
 	bool m_modelDataNoBB;
 	bool m_meshShader;
-	ISharedDataContainer& m_sharedData;
 };
 #endif

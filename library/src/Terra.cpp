@@ -99,7 +99,7 @@ Terra& Terra::operator=(Terra&& other) noexcept
 Terra::Terra(
 	std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 	std::uint32_t width, std::uint32_t height,
-	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool,
 	RenderEngineType engineType
 ) : m_appName{ std::move(appName) }, m_objectManager{}, m_display{ nullptr }, m_vkInstance{ nullptr }
 	, m_surface{ nullptr }, m_device{ nullptr }, m_res{}
@@ -185,10 +185,10 @@ Terra::Terra(
 	m_objectManager.CreateObject(
 		m_bufferManager, 1u,
 		logicalDevice,  bufferCount,queFamilyMan.GetComputeAndGraphicsIndices(), modelDataNoBB,
-		meshShader, sharedContainer
+		meshShader
 	);
 
-	m_objectManager.CreateObject(m_cameraManager, 0u, sharedContainer);
+	//m_objectManager.CreateObject(m_cameraManager, 0u, sharedContainer);
 }
 
 Terra& Terra::Get() { return *sTerra; }
@@ -196,12 +196,12 @@ Terra& Terra::Get() { return *sTerra; }
 void Terra::Init(
 	std::string_view appName, void* windowHandle, void* moduleHandle, std::uint32_t bufferCount,
 	std::uint32_t width, std::uint32_t height,
-	ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
+	ThreadPool& threadPool,
 	RenderEngineType engineType
 )
 {
 	sTerra = std::make_unique<Terra>(
-		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool, sharedContainer,
+		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool,
 		engineType
 	);
 }

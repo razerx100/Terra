@@ -6,11 +6,11 @@
 
 BufferManager::BufferManager(
 	VkDevice device, std::uint32_t bufferCount, QueueIndicesCG queueIndices, bool modelDataNoBB,
-	bool meshShader, ISharedDataContainer& sharedData
+	bool meshShader
 ) : m_cameraBuffer{ device }, m_modelBuffers{ device }, m_materialBuffers{ device },
 	m_lightBuffers{ device }, m_fragmentDataBuffer{ device }, m_bufferCount{ bufferCount },
-	m_queueIndices{ queueIndices }, m_modelDataNoBB{ modelDataNoBB }, m_meshShader{ meshShader },
-	m_sharedData{ sharedData } {}
+	m_queueIndices{ queueIndices }, m_modelDataNoBB{ modelDataNoBB }, m_meshShader{ meshShader }
+{}
 
 void BufferManager::CreateBuffers(VkDevice device) noexcept {
 	// Camera
@@ -81,10 +81,10 @@ void BufferManager::AddOpaqueModels(std::vector<std::shared_ptr<Model>>&& models
 		CheckLightSourceAndAddOpaque(std::move(models[index]));
 }
 
-void BufferManager::AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept {
+/*void BufferManager::AddOpaqueModels(std::vector<MeshletModel>&& meshletModels) noexcept {
 	for (size_t index = 0u; index < std::size(meshletModels); ++index)
 		CheckLightSourceAndAddOpaque(std::move(meshletModels[index].model));
-}
+}*/
 
 void BufferManager::UpdateCameraData(
 	VkDeviceSize bufferIndex, std::uint8_t* cpuMemoryStart
@@ -169,9 +169,9 @@ void BufferManager::CreateBufferFragment(
 	);
 }
 
-DirectX::XMMATRIX BufferManager::GetViewMatrix() const noexcept {
+/*DirectX::XMMATRIX BufferManager::GetViewMatrix() const noexcept {
 	return m_sharedData.GetViewMatrix();
-}
+}*/
 
 std::uint8_t* BufferManager::GetCPUWriteStartMemory() const noexcept {
 	return Terra::Get().Res().CPU().GetMappedCPUPtr();

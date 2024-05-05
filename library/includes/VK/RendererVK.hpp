@@ -5,7 +5,6 @@
 #include <ThreadPool.hpp>
 
 #include <Renderer.hpp>
-#include <ISharedDataContainer.hpp>
 
 class RendererVK final : public Renderer
 {
@@ -14,8 +13,7 @@ public:
 		const char* appName,
 		void* windowHandle, void* moduleHandle,
 		std::uint32_t width, std::uint32_t height, std::uint32_t bufferCount,
-		ThreadPool& threadPool, ISharedDataContainer& sharedContainer,
-		RenderEngineType engineType
+		ThreadPool& threadPool, RenderEngineType engineType
 	);
 
 	void Resize(std::uint32_t width, std::uint32_t height) override;
@@ -31,22 +29,22 @@ public:
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 	) override;
 
-	void AddModelSet(
-		std::vector<std::shared_ptr<Model>>&& models, const std::wstring& fragmentShader
+	void AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader) override;
+	void AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& pixelShader) override;
+	void AddModelBundle(
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
 	) override;
-	void AddMeshletModelSet(
-		std::vector<MeshletModel>&& meshletModels, const std::wstring& fragmentShader
+	void AddModelBundle(
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& pixelShader
 	) override;
-	void AddModelInputs(
-		std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
-	) override;
-	void AddModelInputs(
-		std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gVerticesIndices,
-		std::vector<std::uint32_t>&& gPrimIndices
-	) override;
+
+	void AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override;
+	void AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle) override;
 
 	void AddMaterial(std::shared_ptr<Material> material) override;
 	void AddMaterials(std::vector<std::shared_ptr<Material>>&& materials) override;
+
+	void SetCamera(std::shared_ptr<Camera>&& camera) override;
 
 	void Update() override;
 	void Render() override;

@@ -8,7 +8,7 @@
 #include <StagingBufferManager.hpp>
 #include <VkCommandQueue.hpp>
 
-#include <Model.hpp>
+#include <MeshBundle.hpp>
 
 class VertexManagerVertexShader
 {
