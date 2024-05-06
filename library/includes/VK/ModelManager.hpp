@@ -8,6 +8,7 @@
 #include <StagingBufferManager.hpp>
 #include <PipelineLayout.hpp>
 #include <memory>
+#include <optional>
 
 #include <Model.hpp>
 
@@ -282,18 +283,24 @@ public:
 class ModelBuffers
 {
 public:
-	ModelBuffers(VkDevice device, MemoryManager* memoryManager)
+	ModelBuffers(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_modelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-		m_modelBuffersInstanceSize{ 0u }, m_models{}
+		m_modelBuffersInstanceSize{ 0u }, m_models{}, m_availableIndices{},
+		m_bufferInstanceCount{ frameCount }
 	{}
 
-	void CreateBuffer(std::uint32_t frameCount);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
 	) const noexcept;
 
-	void AddModel(std::shared_ptr<Model>&& model) noexcept;
-	void AddModels(std::vector<std::shared_ptr<Model>>&& models) noexcept;
+	[[nodiscard]]
+	// Returns the index of the Model in the ModelBuffer.
+	size_t AddModel(std::shared_ptr<Model>&& model);
+	[[nodiscard]]
+	// Returns the indices of the Models in the ModelBuffer.
+	std::vector<size_t> AddModels(std::vector<std::shared_ptr<Model>>&& models);
+
+	void RemoveModel(size_t index) noexcept;
 
 	void Update(VkDeviceSize bufferIndex) const;
 
@@ -311,12 +318,27 @@ private:
 	[[nodiscard]]
 	static consteval size_t GetStride() noexcept { return sizeof(ModelData); }
 	[[nodiscard]]
+	// Chose 4 for not particular reason.
+	static consteval size_t GetExtraModelAllocationCount() noexcept { return 4u; }
+	[[nodiscard]]
 	size_t GetCount() const noexcept { return std::size(m_models); }
+
+	void CreateBuffer(size_t modelCount);
+
+	[[nodiscard]]
+	std::optional<size_t> GetAvailableModelIndex() const noexcept;
+
+	void AddNewModel(std::shared_ptr<Model>&& model) noexcept;
+	void UpdateModel(size_t modelIndex, std::shared_ptr<Model>&& model) noexcept;
+
+	void ReserveNewModels(size_t newCount) noexcept;
 
 private:
 	Buffer                              m_modelBuffers;
 	VkDeviceSize                        m_modelBuffersInstanceSize;
 	std::vector<std::shared_ptr<Model>> m_models;
+	std::vector<bool>                   m_availableIndices;
+	std::uint32_t                       m_bufferInstanceCount;
 
 public:
 	ModelBuffers(const ModelBuffers&) = delete;
@@ -325,13 +347,17 @@ public:
 	ModelBuffers(ModelBuffers&& other) noexcept
 		: m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
-		m_models{ std::move(other.m_models) }
+		m_models{ std::move(other.m_models) },
+		m_availableIndices{ std::move(other.m_availableIndices) },
+		m_bufferInstanceCount{ other.m_bufferInstanceCount }
 	{}
 	ModelBuffers& operator=(ModelBuffers&& other) noexcept
 	{
 		m_modelBuffers             = std::move(other.m_modelBuffers);
 		m_modelBuffersInstanceSize = other.m_modelBuffersInstanceSize;
 		m_models                   = std::move(other.m_models);
+		m_availableIndices         = std::move(other.m_availableIndices);
+		m_bufferInstanceCount      = other.m_bufferInstanceCount;
 
 		return *this;
 	}

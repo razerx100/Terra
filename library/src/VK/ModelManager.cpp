@@ -286,13 +286,12 @@ void ModelBundleComputeShaderIndirect::CleanupTempData() noexcept
 }
 
 // Model Buffers
-void ModelBuffers::CreateBuffer(std::uint32_t frameCount)
+void ModelBuffers::CreateBuffer(size_t modelCount)
 {
 	constexpr size_t strideSize = GetStride();
-	const size_t modelCount     = GetCount();
 
 	m_modelBuffersInstanceSize              = static_cast<VkDeviceSize>(strideSize * modelCount);
-	const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * frameCount;
+	const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * m_bufferInstanceCount;
 
 	m_modelBuffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 }
@@ -307,14 +306,115 @@ void ModelBuffers::SetDescriptorBuffer(
 	);
 }
 
-void ModelBuffers::AddModel(std::shared_ptr<Model>&& model) noexcept
+std::optional<size_t> ModelBuffers::GetAvailableModelIndex() const noexcept
 {
-	m_models.emplace_back(std::move(model));
+	auto result = std::ranges::find(m_availableIndices, true);
+
+	if (result != std::end(m_availableIndices))
+		return static_cast<size_t>(std::distance(std::begin(m_availableIndices), result));
+	else
+		return {};
 }
 
-void ModelBuffers::AddModels(std::vector<std::shared_ptr<Model>>&& models) noexcept
+void ModelBuffers::AddNewModel(std::shared_ptr<Model>&& model) noexcept
 {
-	std::ranges::move(models, std::back_inserter(m_models));
+	m_models.emplace_back(std::move(model));
+	m_availableIndices.emplace_back(false);
+}
+
+void ModelBuffers::UpdateModel(size_t modelIndex, std::shared_ptr<Model>&& model) noexcept
+{
+	m_models.at(modelIndex)           = std::move(model);
+	m_availableIndices.at(modelIndex) = false;
+}
+
+void ModelBuffers::ReserveNewModels(size_t newCount) noexcept
+{
+	m_models.resize(newCount);
+	m_availableIndices.resize(newCount, true);
+}
+
+size_t ModelBuffers::AddModel(std::shared_ptr<Model>&& model)
+{
+	auto oModelIndex = GetAvailableModelIndex();
+
+	if (oModelIndex)
+	{
+		const size_t modelIndex = oModelIndex.value();
+
+		UpdateModel(modelIndex, std::move(model));
+
+		return modelIndex;
+	}
+	else
+	{
+		const size_t modelIndex    = GetCount();
+
+		AddNewModel(std::move(model));
+
+		const size_t newModelCount = GetCount() + GetExtraModelAllocationCount();
+
+		ReserveNewModels(newModelCount);
+
+		CreateBuffer(newModelCount);
+
+		return modelIndex;
+	}
+}
+
+std::vector<size_t> ModelBuffers::AddModels(std::vector<std::shared_ptr<Model>>&& models)
+{
+	// Someday I will use a cutom CPU allocator for in the vector below.
+	std::vector<size_t> freeIndices{};
+
+	auto result = std::ranges::find(m_availableIndices, true);
+
+	while (result != std::end(m_availableIndices))
+	{
+		freeIndices.emplace_back(
+			static_cast<size_t>(std::distance(std::begin(m_availableIndices), result))
+		);
+		++result;
+
+		result = std::find(result, std::end(m_availableIndices), true);
+	}
+
+	for (size_t index = 0u; index < std::size(freeIndices); ++index)
+	{
+		const size_t freeIndex = freeIndices.at(index);
+
+		UpdateModel(freeIndex, std::move(models.at(index)));
+	}
+
+	const size_t newModelCount  = std::size(models);
+	const size_t freeIndexCount = std::size(freeIndices);
+
+	if (newModelCount > freeIndexCount)
+	{
+		for (size_t index = freeIndexCount; index < newModelCount; ++index)
+		{
+			AddNewModel(std::move(models.at(index)));
+
+			freeIndices.emplace_back(index);
+		}
+
+		const size_t newExtraModelCount = newModelCount + GetExtraModelAllocationCount();
+
+		ReserveNewModels(newExtraModelCount);
+
+		CreateBuffer(newExtraModelCount);
+	}
+
+	// Now these are the new used indices.
+	freeIndices.resize(newModelCount);
+
+	return freeIndices;
+}
+
+void ModelBuffers::RemoveModel(size_t index) noexcept
+{
+	m_models.at(index).reset();
+	m_availableIndices.at(index) = true;
 }
 
 void ModelBuffers::Update(VkDeviceSize bufferIndex) const
