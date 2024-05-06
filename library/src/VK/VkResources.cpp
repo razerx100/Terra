@@ -164,6 +164,10 @@ void Buffer::Create(
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
 
+	// If the buffer pointer is already allocated, then free it.
+	if (m_buffer != VK_NULL_HANDLE)
+		SelfDestruct();
+
 	vkCreateBuffer(m_device, &createInfo, nullptr, &m_buffer);
 
 	if (m_memoryManager)
@@ -244,6 +248,10 @@ void Texture::Create(
 	};
 
 	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
+
+	// If the image pointer is already allocated, then free it.
+	if (m_image != VK_NULL_HANDLE)
+		SelfDestruct();
 
 	vkCreateImage(m_device, &createInfo, nullptr, &m_image);
 

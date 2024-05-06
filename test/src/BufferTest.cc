@@ -61,6 +61,8 @@ TEST_F(BufferTest, VkBufferTest)
 
 	Buffer testTexel{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 	testTexel.Create(2_KB, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, {});
+
+	testTexel.Create(4_KB, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, {});
 }
 
 TEST_F(BufferTest, VkSamplerTest)
@@ -92,6 +94,8 @@ TEST_F(BufferTest, TextureTest)
 
 	Texture testTexture{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 	testTexture.Create2D(1280u, 720u, 1u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, {});
+
+	testTexture.Create2D(1920u, 1080u, 1u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, {});
 }
 
 TEST_F(BufferTest, TextureViewTest)
