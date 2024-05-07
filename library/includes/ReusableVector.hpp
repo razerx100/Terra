@@ -5,6 +5,7 @@
 #include <ranges>
 #include <algorithm>
 #include <type_traits>
+#include <utility>
 
 template<typename T>
 class ReusableVector
@@ -15,24 +16,16 @@ public:
 		: m_elements{ initialSize }, m_availableIndices( initialSize )
 	{}
 
-	void AddNewElement(T&& element) noexcept
+	template<typename U>
+	void AddNewElement(U&& element) noexcept
 	{
-		m_elements.emplace_back(std::move(element));
+		m_elements.emplace_back(std::forward<U>(element));
 		m_availableIndices.emplace_back(false);
 	}
-	void UpdateElement(size_t elementIndex, T&& element) noexcept
+	template<typename U>
+	void UpdateElement(size_t elementIndex, U&& element) noexcept
 	{
-		m_elements.at(elementIndex)         = std::move(element);
-		m_availableIndices.at(elementIndex) = false;
-	}
-	void AddNewElement(const T& element) noexcept
-	{
-		m_elements.emplace_back(element);
-		m_availableIndices.emplace_back(false);
-	}
-	void UpdateElement(size_t elementIndex, const T& element) noexcept
-	{
-		m_elements.at(elementIndex)         = element;
+		m_elements.at(elementIndex)         = std::forward<U>(element);
 		m_availableIndices.at(elementIndex) = false;
 	}
 	void ReserveNewElements(size_t newCount) noexcept
@@ -53,7 +46,6 @@ public:
 			(m_elements.at(index).*clearFunction)();
 		m_availableIndices.at(index) = true;
 	}
-
 
 	[[nodiscard]]
 	std::optional<size_t> GetFirstAvailableIndex() const noexcept
