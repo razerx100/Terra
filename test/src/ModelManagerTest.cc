@@ -91,9 +91,11 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 		for (size_t index = 0u; index < 6u; ++index)
 			models.emplace_back(std::make_shared<ModelDummy>());
 
-		const size_t modelIndex = modelBuffers.AddModel(std::move(models.at(0u)));
+		{
+			const size_t modelIndex = modelBuffers.AddModel(std::move(models.at(0u)));
 
-		modelBuffers.RemoveModel(modelIndex);
+			modelBuffers.RemoveModel(modelIndex);
+		}
 
 		for (size_t index = 1u; index < std::size(models); ++index)
 		{
