@@ -3,27 +3,31 @@
 #include <VkResources.hpp>
 #include <StagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
+#include <ReusableVkBuffer.hpp>
+#include <queue>
 
-// Need something like an IMaterial. But for now will use Model.
 #include <Material.hpp>
+#include <MeshBundle.hpp>
 
-class MaterialBuffers
+class MaterialBuffers : public ReusableVkBuffer<MaterialBuffers, std::shared_ptr<Material>>
 {
+	friend class ReusableVkBuffer<MaterialBuffers, std::shared_ptr<Material>>;
 public:
 	MaterialBuffers(VkDevice device, MemoryManager* memoryManager)
-		: m_materialBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT }
+		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
 	{}
 
-	void CreateBuffer(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
 	) const noexcept;
 
-	//void AddMaterial(std::shared_ptr<IMaterial>&& material) noexcept;
-	//void AddMaterials(std::vector<std::shared_ptr<IMaterial>>&& materials) noexcept;
+	// Shouldn't be called on every frame. Only updates the index specified.
+	void Update(size_t index) const noexcept;
+	// Shouldn't be called on every frame. Only updates the indices specified.
+	void Update(const std::vector<size_t>& indices) const noexcept;
 
 private:
-	struct MaterialBuffer
+	struct MaterialBufferData
 	{
 		DirectX::XMFLOAT4 ambient;
 		DirectX::XMFLOAT4 diffuse;
@@ -37,62 +41,104 @@ private:
 	};
 
 private:
-	Buffer m_materialBuffers;
+	[[nodiscard]]
+	static consteval size_t GetStride() noexcept { return sizeof(MaterialBufferData); }
+	[[nodiscard]]
+	// Chose 4 for not particular reason.
+	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
+
+	void CreateBuffer(size_t materialCount);
+	void _remove(size_t index) noexcept;
 
 public:
 	MaterialBuffers(const MaterialBuffers&) = delete;
 	MaterialBuffers& operator=(const MaterialBuffers&) = delete;
 
 	MaterialBuffers(MaterialBuffers&& other) noexcept
-		: m_materialBuffers{ std::move(other.m_materialBuffers) }
+		: ReusableVkBuffer{ std::move(other) }
 	{}
 	MaterialBuffers& operator=(MaterialBuffers&& other) noexcept
 	{
-		m_materialBuffers = std::move(other.m_materialBuffers);
+		ReusableVkBuffer::operator=(std::move(other));
 
 		return *this;
 	}
 };
 
-// For now, the BoundingBoxes seem to me like they should be linked to the Meshes not the Models.
-class BoundingBoxBuffers
+class MeshBoundsBuffers
 {
 public:
-	BoundingBoxBuffers(VkDevice device, MemoryManager* memoryManager)
-		: m_boundingBoxBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT }
+	MeshBoundsBuffers(VkDevice device, MemoryManager* memoryManager)
+		: m_boundsBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		m_boundsData{}, m_availableIndices{}
 	{}
 
-	void CreateBuffer(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
 	) const noexcept;
 
-	//void AddBoundingBox(ModelBounds boundingBox) noexcept;
-	//void AddBoundingBoxes(std::vector<ModelBounds>&& boundingBoxes) noexcept;
+	[[nodiscard]]
+	// Returns the index of the Bounds in the BoundsBuffer.
+	size_t Add(const MeshBounds& bounds) noexcept;
+	[[nodiscard]]
+	// Returns the indices of the bounds in the BoundsBuffer.
+	std::vector<size_t> AddMultiple(const std::vector<MeshBounds>& multipleBounds) noexcept;
+
+	void Remove(size_t index) noexcept;
+	// Shouldn't be called on every frame. Update all the queued data.
+	void Update() noexcept;
 
 private:
-	struct BoundingBox
+	struct BoundsData
 	{
 		DirectX::XMFLOAT3 positiveBounds;
-		float padding0;
+		float             padding0;
 		DirectX::XMFLOAT3 negativeBounds;
-		float padding1;
+		std::uint32_t     index; // This is actually a padding on the GPU, so can use it on the CPU.
 		// GLSL's vec3 is actually vec4.
 	};
 
 private:
-	Buffer m_boundingBoxBuffers;
+	[[nodiscard]]
+	static consteval size_t GetStride() noexcept { return sizeof(BoundsData); }
+	// Chose 4 for not particular reason.
+	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
+
+	[[nodiscard]]
+	size_t GetCount() const noexcept { return std::size(m_availableIndices); }
+
+	void CreateBuffer(size_t boundsCount);
+
+	[[nodiscard]]
+	std::optional<size_t> GetFirstAvailableIndex() const noexcept
+	{
+		return ::GetFirstAvailableIndex(m_availableIndices);
+	}
+	[[nodiscard]]
+	std::vector<size_t> GetAvailableIndices() const noexcept
+	{
+		return ::GetAvailableIndices(m_availableIndices);
+	}
+
+private:
+	Buffer                 m_boundsBuffer;
+	std::queue<BoundsData> m_boundsData;
+	std::vector<bool>      m_availableIndices;
 
 public:
-	BoundingBoxBuffers(const BoundingBoxBuffers&) = delete;
-	BoundingBoxBuffers& operator=(const BoundingBoxBuffers&) = delete;
+	MeshBoundsBuffers(const MeshBoundsBuffers&) = delete;
+	MeshBoundsBuffers& operator=(const MeshBoundsBuffers&) = delete;
 
-	BoundingBoxBuffers(BoundingBoxBuffers&& other) noexcept
-		: m_boundingBoxBuffers{ std::move(other.m_boundingBoxBuffers) }
+	MeshBoundsBuffers(MeshBoundsBuffers&& other) noexcept
+		: m_boundsBuffer{ std::move(other.m_boundsBuffer) },
+		m_boundsData{ std::move(other.m_boundsData) },
+		m_availableIndices{ std::move(other.m_availableIndices) }
 	{}
-	BoundingBoxBuffers& operator=(BoundingBoxBuffers&& other) noexcept
+	MeshBoundsBuffers& operator=(MeshBoundsBuffers&& other) noexcept
 	{
-		m_boundingBoxBuffers = std::move(other.m_boundingBoxBuffers);
+		m_boundsBuffer     = std::move(other.m_boundsBuffer);
+		m_boundsData       = std::move(other.m_boundsData);
+		m_availableIndices = std::move(other.m_availableIndices);
 
 		return *this;
 	}
