@@ -194,4 +194,7 @@ void MeshBoundsBuffers::Update() noexcept
 		const size_t boundsOffset = boundsData.index * strideSize;
 		memcpy(bufferOffset + boundsOffset, &boundsData, strideSize);
 	}
+
+	// Release the internal memory of the m_boundsData container, as pop wouldn't.
+	m_boundsData = std::queue<BoundsData>{};
 }
