@@ -33,12 +33,12 @@ public:
 		m_elements.resize(newCount);
 		m_availableIndices.resize(newCount, true);
 	}
-	void RemoveModel(size_t index, T defaultValue = {}) noexcept
+	void RemoveElement(size_t index, T defaultValue = {}) noexcept
 	{
 		m_elements.at(index)         = defaultValue;
 		m_availableIndices.at(index) = true;
 	}
-	void RemoveModel(size_t index, void(T::*clearFunction)()) noexcept
+	void RemoveElement(size_t index, void(T::*clearFunction)()) noexcept
 	{
 		if constexpr (std::is_pointer_v<T>)
 			(m_elements.at(index)->*clearFunction)();
