@@ -2,10 +2,13 @@
 #define REUSABLE_VECTOR_HPP_
 #include <vector>
 #include <optional>
-#include <ranges>
-#include <algorithm>
 #include <type_traits>
 #include <utility>
+
+[[nodiscard]]
+std::optional<size_t> GetFirstAvailableIndex(const std::vector<bool>& availableIndices) noexcept;
+[[nodiscard]]
+std::vector<size_t> GetAvailableIndices(const std::vector<bool>& availableIndices) noexcept;
 
 template<typename T>
 class ReusableVector
@@ -51,32 +54,12 @@ public:
 	[[nodiscard]]
 	std::optional<size_t> GetFirstAvailableIndex() const noexcept
 	{
-		auto result = std::ranges::find(m_availableIndices, true);
-
-		if (result != std::end(m_availableIndices))
-			return static_cast<size_t>(std::distance(std::begin(m_availableIndices), result));
-		else
-			return {};
+		return ::GetFirstAvailableIndex(m_availableIndices);
 	}
 	[[nodiscard]]
 	std::vector<size_t> GetAvailableIndices() const noexcept
 	{
-		// Someday I will use a cutom CPU allocator for in the vector below.
-		std::vector<size_t> freeIndices{};
-
-		auto result = std::ranges::find(m_availableIndices, true);
-
-		while (result != std::end(m_availableIndices))
-		{
-			freeIndices.emplace_back(
-				static_cast<size_t>(std::distance(std::begin(m_availableIndices), result))
-			);
-			++result;
-
-			result = std::find(result, std::end(m_availableIndices), true);
-		}
-
-		return freeIndices;
+		return ::GetAvailableIndices(m_availableIndices);
 	}
 
 	[[nodiscard]]
