@@ -33,9 +33,10 @@ public:
 		m_elements.resize(newCount);
 		m_availableIndices.resize(newCount, true);
 	}
-	void RemoveElement(size_t index, T defaultValue = {}) noexcept
+	void RemoveElement(size_t index) noexcept
 	{
-		m_elements.at(index)         = defaultValue;
+		// If there is no clear function, then there is no need to update the freed index.
+		// We can just add the new item when needed.
 		m_availableIndices.at(index) = true;
 	}
 	void RemoveElement(size_t index, void(T::*clearFunction)()) noexcept
