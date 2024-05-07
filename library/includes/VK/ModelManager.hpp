@@ -8,7 +8,7 @@
 #include <StagingBufferManager.hpp>
 #include <PipelineLayout.hpp>
 #include <memory>
-#include <ReusableVector.hpp>
+#include <ReusableVkBuffer.hpp>
 
 #include <Model.hpp>
 
@@ -280,28 +280,20 @@ public:
 	}
 };
 
-class ModelBuffers
+class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>
 {
+	friend class ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>;
 public:
 	ModelBuffers(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: m_modelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-		m_modelBuffersInstanceSize{ 0u }, m_models{}, m_bufferInstanceCount{ frameCount }
+		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		m_modelBuffersInstanceSize{ 0u }, m_bufferInstanceCount{ frameCount }
 	{}
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
 	) const noexcept;
 
-	[[nodiscard]]
-	// Returns the index of the Model in the ModelBuffer.
-	size_t AddModel(std::shared_ptr<Model>&& model);
-	[[nodiscard]]
-	// Returns the indices of the Models in the ModelBuffer.
-	std::vector<size_t> AddModels(std::vector<std::shared_ptr<Model>>&& models);
-
-	void RemoveModel(size_t index) noexcept;
-
-	void Update(VkDeviceSize bufferIndex) const;
+	void Update(VkDeviceSize bufferIndex) const noexcept;
 
 private:
 	struct ModelData
@@ -318,33 +310,29 @@ private:
 	static consteval size_t GetStride() noexcept { return sizeof(ModelData); }
 	[[nodiscard]]
 	// Chose 4 for not particular reason.
-	static consteval size_t GetExtraModelAllocationCount() noexcept { return 4u; }
-	[[nodiscard]]
-	size_t GetCount() const noexcept { return m_models.GetCount(); }
+	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
 
 	void CreateBuffer(size_t modelCount);
 
+	void _remove(size_t index) noexcept;
+
 private:
-	Buffer                                 m_modelBuffers;
-	VkDeviceSize                           m_modelBuffersInstanceSize;
-	ReusableVector<std::shared_ptr<Model>> m_models;
-	std::uint32_t                          m_bufferInstanceCount;
+	VkDeviceSize  m_modelBuffersInstanceSize;
+	std::uint32_t m_bufferInstanceCount;
 
 public:
 	ModelBuffers(const ModelBuffers&) = delete;
 	ModelBuffers& operator=(const ModelBuffers&) = delete;
 
 	ModelBuffers(ModelBuffers&& other) noexcept
-		: m_modelBuffers{ std::move(other.m_modelBuffers) },
+		: ReusableVkBuffer{ std::move(other) },
 		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
-		m_models{ std::move(other.m_models) },
 		m_bufferInstanceCount{ other.m_bufferInstanceCount }
 	{}
 	ModelBuffers& operator=(ModelBuffers&& other) noexcept
 	{
-		m_modelBuffers             = std::move(other.m_modelBuffers);
+		ReusableVkBuffer::operator=(std::move(other));
 		m_modelBuffersInstanceSize = other.m_modelBuffersInstanceSize;
-		m_models                   = std::move(other.m_models);
 		m_bufferInstanceCount      = other.m_bufferInstanceCount;
 
 		return *this;

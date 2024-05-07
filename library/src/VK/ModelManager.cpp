@@ -293,7 +293,7 @@ void ModelBuffers::CreateBuffer(size_t modelCount)
 	m_modelBuffersInstanceSize              = static_cast<VkDeviceSize>(strideSize * modelCount);
 	const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * m_bufferInstanceCount;
 
-	m_modelBuffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+	m_buffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 }
 
 void ModelBuffers::SetDescriptorBuffer(
@@ -302,86 +302,22 @@ void ModelBuffers::SetDescriptorBuffer(
 	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
 
 	descriptorBuffer.AddStorageBufferDescriptor(
-		m_modelBuffers, bindingSlot, bufferOffset, m_modelBuffersInstanceSize
+		m_buffers, bindingSlot, bufferOffset, m_modelBuffersInstanceSize
 	);
 }
 
-size_t ModelBuffers::AddModel(std::shared_ptr<Model>&& model)
+void ModelBuffers::_remove(size_t index) noexcept
 {
-	auto oModelIndex = m_models.GetFirstAvailableIndex();
-
-	if (oModelIndex)
-	{
-		const size_t modelIndex = oModelIndex.value();
-
-		m_models.UpdateElement(modelIndex, std::move(model));
-
-		return modelIndex;
-	}
-	else
-	{
-		const size_t modelIndex    = GetCount();
-
-		m_models.AddNewElement(std::move(model));
-
-		const size_t newModelCount = GetCount() + GetExtraModelAllocationCount();
-
-		m_models.ReserveNewElements(newModelCount);
-
-		CreateBuffer(newModelCount);
-
-		return modelIndex;
-	}
+	m_elements.RemoveElement(index, &std::shared_ptr<Model>::reset);
 }
 
-std::vector<size_t> ModelBuffers::AddModels(std::vector<std::shared_ptr<Model>>&& models)
+void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 {
-	std::vector<size_t> freeIndices = m_models.GetAvailableIndices();
-
-	for (size_t index = 0u; index < std::size(freeIndices); ++index)
-	{
-		const size_t freeIndex = freeIndices.at(index);
-
-		m_models.UpdateElement(freeIndex, std::move(models.at(index)));
-	}
-
-	const size_t newModelCount  = std::size(models);
-	const size_t freeIndexCount = std::size(freeIndices);
-
-	if (newModelCount > freeIndexCount)
-	{
-		for (size_t index = freeIndexCount; index < newModelCount; ++index)
-		{
-			m_models.AddNewElement(std::move(models.at(index)));
-
-			freeIndices.emplace_back(index);
-		}
-
-		const size_t newExtraModelCount = newModelCount + GetExtraModelAllocationCount();
-
-		m_models.ReserveNewElements(newExtraModelCount);
-
-		CreateBuffer(newExtraModelCount);
-	}
-
-	// Now these are the new used indices.
-	freeIndices.resize(newModelCount);
-
-	return freeIndices;
-}
-
-void ModelBuffers::RemoveModel(size_t index) noexcept
-{
-	m_models.RemoveModel(index, &std::shared_ptr<Model>::reset);
-}
-
-void ModelBuffers::Update(VkDeviceSize bufferIndex) const
-{
-	std::uint8_t* bufferOffset  = m_modelBuffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;
+	std::uint8_t* bufferOffset  = m_buffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;
 	constexpr size_t strideSize = GetStride();
 	size_t modelOffset          = 0u;
 
-	auto& models = m_models.Get();
+	auto& models = m_elements.Get();
 
 	for (auto& model : models)
 	{

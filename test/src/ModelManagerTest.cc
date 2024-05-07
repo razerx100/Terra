@@ -77,7 +77,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 		for (size_t index = 0u; index < std::size(models); ++index)
 		{
-			const size_t modelIndex = modelBuffers.AddModel(std::move(models.at(index)));
+			const size_t modelIndex = modelBuffers.Add(std::move(models.at(index)));
 
 			EXPECT_EQ(modelIndex, index) << "Model index doesn't match.";
 		}
@@ -92,14 +92,14 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 			models.emplace_back(std::make_shared<ModelDummy>());
 
 		{
-			const size_t modelIndex = modelBuffers.AddModel(std::move(models.at(0u)));
+			const size_t modelIndex = modelBuffers.Add(std::move(models.at(0u)));
 
-			modelBuffers.RemoveModel(modelIndex);
+			modelBuffers.Remove(modelIndex);
 		}
 
 		for (size_t index = 1u; index < std::size(models); ++index)
 		{
-			const size_t modelIndex = modelBuffers.AddModel(std::move(models.at(index)));
+			const size_t modelIndex = modelBuffers.Add(std::move(models.at(index)));
 
 			EXPECT_EQ(modelIndex, index - 1u) << "Model index doesn't match.";
 		}
@@ -114,7 +114,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 			for (size_t index = 0u; index < 6u; ++index)
 				models.emplace_back(std::make_shared<ModelDummy>());
 
-			std::vector<size_t> modelIndices = modelBuffers.AddModels(std::move(models));
+			std::vector<size_t> modelIndices = modelBuffers.AddMultiple(std::move(models));
 
 			for (size_t index = 0u; index < std::size(modelIndices); ++index)
 			{
@@ -128,7 +128,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 			for (size_t index = 0u; index < 4u; ++index)
 				models.emplace_back(std::make_shared<ModelDummy>());
 
-			std::vector<size_t> modelIndices = modelBuffers.AddModels(std::move(models));
+			std::vector<size_t> modelIndices = modelBuffers.AddMultiple(std::move(models));
 
 			for (size_t index = 6u; index < std::size(modelIndices); ++index)
 			{
@@ -148,7 +148,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 			for (size_t index = 0u; index < 6u; ++index)
 				models.emplace_back(std::make_shared<ModelDummy>());
 
-			std::vector<size_t> modelIndices = modelBuffers.AddModels(std::move(models));
+			std::vector<size_t> modelIndices = modelBuffers.AddMultiple(std::move(models));
 
 			for (size_t index = 0u; index < std::size(modelIndices); ++index)
 			{
@@ -157,13 +157,13 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 				EXPECT_EQ(modelIndex, index) << "Model index doesn't match.";
 			}
 		}
-		modelBuffers.RemoveModel(5u);
+		modelBuffers.Remove(5u);
 		{
 			std::vector<std::shared_ptr<Model>> models{};
 			for (size_t index = 0u; index < 5u; ++index)
 				models.emplace_back(std::make_shared<ModelDummy>());
 
-			std::vector<size_t> modelIndices = modelBuffers.AddModels(std::move(models));
+			std::vector<size_t> modelIndices = modelBuffers.AddMultiple(std::move(models));
 
 			for (size_t index = 5u; index < std::size(modelIndices); ++index)
 			{
