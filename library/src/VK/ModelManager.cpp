@@ -39,7 +39,7 @@ void ModelBundleVertexShaderIndividual::Draw(
 
 	for (const auto& meshDetail : m_meshDetails)
 	{
-		constexpr auto pushConstantSize = static_cast<std::uint32_t>(sizeof(std::uint32_t));
+		constexpr auto pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
@@ -79,8 +79,7 @@ void ModelBundleMeshShader::Draw(
 
 	for (const auto& meshDetail : m_meshDetails)
 	{
-		// Copying the modelIndex and the meshletOffset, so sizeof(std::uint32_t) * 2u.
-		constexpr auto pushConstantSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
+		constexpr auto pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
@@ -330,4 +329,14 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 		memcpy(bufferOffset + modelOffset, &modelData, strideSize);
 		modelOffset += strideSize;
 	}
+}
+
+// Model Manager VS Individual
+void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
+{
+	// Push constants needs to be serialised according to the shader stages
+	constexpr std::uint32_t pushConstantSize = ModelBundleVertexShaderIndividual::GetConstantBufferSize();
+
+	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
+	m_pipelineLayout.Create(descriptorBuffer);
 }

@@ -58,6 +58,12 @@ public:
 	void AddMeshDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
+	[[nodiscard]]
+	static consteval std::uint32_t GetConstantBufferSize() noexcept
+	{
+		return static_cast<std::uint32_t>(sizeof(std::uint32_t));
+	}
+
 private:
 	struct MeshDetails
 	{
@@ -103,6 +109,13 @@ public:
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 	void CleanupTempData() noexcept;
+
+	[[nodiscard]]
+	static consteval std::uint32_t GetConstantBufferSize() noexcept
+	{
+		// One for the modelBufferIndex and another for the meshletOffset.
+		return static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
+	}
 
 private:
 	struct MeshDetails
@@ -343,10 +356,16 @@ public:
 // single MeshManager and a single PSO. And can also change them.
 // I want to keep the bare minimum here to draw models. I want to add deferred rendering later,
 // while I think I can reuse ModelBundle, I feel like won't be able to reuse ModelManager.
+template<class Derived>
 class ModelManager
 {
 public:
 	ModelManager(VkDevice device) : m_pipelineLayout{ device } {}
+
+	void CreatePipelineLayout(const VkDescriptorBuffer& descriptorBuffer)
+	{
+		static_cast<Derived*>(this)->CreatePipelineLayoutImpl(descriptorBuffer);
+	}
 
 protected:
 	PipelineLayout m_pipelineLayout;
@@ -361,6 +380,35 @@ public:
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
 		m_pipelineLayout = std::move(other.m_pipelineLayout);
+
+		return *this;
+	}
+};
+
+class ModelManagerVSIndividual : public ModelManager<ModelManagerVSIndividual>
+{
+	friend class ModelManager<ModelManagerVSIndividual>;
+public:
+	ModelManagerVSIndividual(VkDevice device) : ModelManager{ device }
+	{}
+
+private:
+	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
+
+private:
+
+
+public:
+	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
+	ModelManagerVSIndividual& operator=(const ModelManagerVSIndividual&) = delete;
+
+	ModelManagerVSIndividual(ModelManagerVSIndividual&& other) noexcept
+		: ModelManager{ std::move(other) }
+	{}
+	ModelManagerVSIndividual& operator=(ModelManagerVSIndividual&& other) noexcept
+	{
+		ModelManager::operator=(std::move(other));
+
 		return *this;
 	}
 };
