@@ -5,6 +5,7 @@
 #include <VkDeviceManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <VkTextureView.hpp>
+#include <PipelineLayout.hpp>
 
 namespace Constants
 {
@@ -133,5 +134,9 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		descBuffer.AddStorageImageDescriptor(
 			storageView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u
 		);
+
+		// PipelineLayout
+		PipelineLayout pipelineLayout{ logicalDevice };
+		pipelineLayout.Create(descBuffer);
 	}
 }

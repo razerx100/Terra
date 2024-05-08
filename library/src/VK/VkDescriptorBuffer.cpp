@@ -97,7 +97,7 @@ VkDescriptorAddressInfoEXT VkDescriptorBuffer::GetBufferDescAddressInfo(
 
 std::vector<VkDescriptorSetLayout> VkDescriptorBuffer::GetVkLayouts() const noexcept
 {
-	std::vector<VkDescriptorSetLayout> vkSetLayouts{ std::size(m_setLayouts) };
+	std::vector<VkDescriptorSetLayout> vkSetLayouts{ std::size(m_setLayouts), VK_NULL_HANDLE };
 
 	for (size_t index = 0u; index < std::size(m_setLayouts); ++index)
 		vkSetLayouts.at(index) = m_setLayouts.at(index).Get();
