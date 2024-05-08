@@ -20,8 +20,8 @@ VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
 	return indirectCommand;
 }
 
-// Model Bundle Vertex Shader Individual
-void ModelBundleVertexShaderIndividual::AddMeshDetails(
+// Model Bundle VS Individual
+void ModelBundleVSIndividual::AddMeshDetails(
 	const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex
 ) noexcept {
 	m_meshDetails.emplace_back(
@@ -32,7 +32,7 @@ void ModelBundleVertexShaderIndividual::AddMeshDetails(
 	);
 }
 
-void ModelBundleVertexShaderIndividual::Draw(
+void ModelBundleVSIndividual::Draw(
 	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
@@ -54,8 +54,8 @@ void ModelBundleVertexShaderIndividual::Draw(
 	}
 }
 
-// Model Bundle Mesh Shader
-void ModelBundleMeshShader::AddMeshDetails(
+// Model Bundle MS
+void ModelBundleMS::AddMeshDetails(
 	std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex
 ) noexcept {
 	std::vector<Meshlet>&& meshlets = std::move(model->GetMeshDetailsMS().meshlets);
@@ -71,7 +71,7 @@ void ModelBundleMeshShader::AddMeshDetails(
 	std::ranges::move(meshlets, std::back_inserter(m_meshlets));
 }
 
-void ModelBundleMeshShader::Draw(
+void ModelBundleMS::Draw(
 	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
@@ -95,7 +95,7 @@ void ModelBundleMeshShader::Draw(
 	}
 }
 
-void ModelBundleMeshShader::CreateBuffers(StagingBufferManager& stagingBufferMan)
+void ModelBundleMS::CreateBuffers(StagingBufferManager& stagingBufferMan)
 {
 	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
 
@@ -106,19 +106,19 @@ void ModelBundleMeshShader::CreateBuffers(StagingBufferManager& stagingBufferMan
 	stagingBufferMan.AddBuffer(std::data(m_meshlets), meshletBufferSize, &m_meshletBuffer, 0u);
 }
 
-void ModelBundleMeshShader::SetDescriptorBuffer(
+void ModelBundleMS::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
 ) const noexcept {
 	descriptorBuffer.AddStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot);
 }
 
-void ModelBundleMeshShader::CleanupTempData() noexcept
+void ModelBundleMS::CleanupTempData() noexcept
 {
 	m_meshlets = std::vector<Meshlet>{};
 }
 
-// Model Bundle Vertex Shader Indirect
-ModelBundleVertexShaderIndirect::ModelBundleVertexShaderIndirect(
+// Model Bundle VS Indirect
+ModelBundleVSIndirect::ModelBundleVSIndirect(
 	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 ) : ModelBundle{}, m_modelCount{ 0u }, m_queueIndices{ queueIndices },
 	m_argumentBufferSize{ 0u },
@@ -129,12 +129,12 @@ ModelBundleVertexShaderIndirect::ModelBundleVertexShaderIndirect(
 	m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
 {}
 
-void ModelBundleVertexShaderIndirect::CreateBuffers(
+void ModelBundleVSIndirect::CreateBuffers(
 	std::uint32_t meshCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
 ) {
 	m_modelCount = meshCount;
 
-	constexpr size_t strideSize = sizeof(ModelBundleComputeShaderIndirect::Argument);
+	constexpr size_t strideSize = sizeof(ModelBundleCSIndirect::Argument);
 	m_argumentBufferSize        = static_cast<VkDeviceSize>(m_modelCount * strideSize);
 
 	const VkDeviceSize argumentBufferTotalSize = m_argumentBufferSize * frameCount;
@@ -160,7 +160,7 @@ void ModelBundleVertexShaderIndirect::CreateBuffers(
 	);
 }
 
-void ModelBundleVertexShaderIndirect::SetDescriptorBuffer(
+void ModelBundleVSIndirect::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
 	std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot
 ) const noexcept {
@@ -175,11 +175,11 @@ void ModelBundleVertexShaderIndirect::SetDescriptorBuffer(
 	);
 }
 
-void ModelBundleVertexShaderIndirect::Draw(
+void ModelBundleVSIndirect::Draw(
 	const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	constexpr auto strideSize =
-		static_cast<std::uint32_t>(sizeof(ModelBundleComputeShaderIndirect::Argument));
+		static_cast<std::uint32_t>(sizeof(ModelBundleCSIndirect::Argument));
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
@@ -189,7 +189,7 @@ void ModelBundleVertexShaderIndirect::Draw(
 	);
 }
 
-void ModelBundleVertexShaderIndirect::ResetCounterBuffer(
+void ModelBundleVSIndirect::ResetCounterBuffer(
 	VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	BufferToBufferCopyBuilder builder{};
@@ -198,13 +198,13 @@ void ModelBundleVertexShaderIndirect::ResetCounterBuffer(
 	transferBuffer.Copy(m_counterResetBuffer, m_counterBuffer, builder);
 }
 
-void ModelBundleVertexShaderIndirect::CleanupTempData() noexcept
+void ModelBundleVSIndirect::CleanupTempData() noexcept
 {
 	m_counterResetData.reset();
 }
 
-// Model Bundle Compute Shader Indirect
-ModelBundleComputeShaderIndirect::ModelBundleComputeShaderIndirect(
+// Model Bundle CS Indirect
+ModelBundleCSIndirect::ModelBundleCSIndirect(
 	VkDevice device, MemoryManager* memoryManager
 ) : m_argumentInputBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_cullingDataBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
@@ -221,9 +221,7 @@ ModelBundleComputeShaderIndirect::ModelBundleComputeShaderIndirect(
 	}, m_dispatchXCount{ 0u }
 {}
 
-[[nodiscard]]
-
-void ModelBundleComputeShaderIndirect::AddMeshDetails(
+void ModelBundleCSIndirect::AddMeshDetails(
 	const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex
 ) noexcept {
 	m_indirectArguments.emplace_back(
@@ -234,9 +232,9 @@ void ModelBundleComputeShaderIndirect::AddMeshDetails(
 	);
 }
 
-void ModelBundleComputeShaderIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
+void ModelBundleCSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
 {
-	constexpr size_t strideSize = sizeof(ModelBundleComputeShaderIndirect::Argument);
+	constexpr size_t strideSize = sizeof(Argument);
 	const auto argumentCount    = static_cast<std::uint32_t>(std::size(m_indirectArguments));
 	m_cullingData->commandCount = argumentCount;
 
@@ -263,7 +261,7 @@ void ModelBundleComputeShaderIndirect::CreateBuffers(StagingBufferManager& stagi
 	stagingBufferMan.AddBuffer(m_cullingData.get(), cullingDataSize, &m_cullingDataBuffer, 0u);
 }
 
-void ModelBundleComputeShaderIndirect::SetDescriptorBuffer(
+void ModelBundleCSIndirect::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer,
 	std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
 ) const noexcept {
@@ -271,14 +269,14 @@ void ModelBundleComputeShaderIndirect::SetDescriptorBuffer(
 	descriptorBuffer.AddStorageBufferDescriptor(m_cullingDataBuffer, cullingDataBindingSlot);
 }
 
-void ModelBundleComputeShaderIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
+void ModelBundleCSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
 {
 	VkCommandBuffer cmdBuffer = computeBuffer.Get();
 
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
 
-void ModelBundleComputeShaderIndirect::CleanupTempData() noexcept
+void ModelBundleCSIndirect::CleanupTempData() noexcept
 {
 	m_indirectArguments = std::vector<Argument>{};
 	m_cullingData.reset();
@@ -335,7 +333,7 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
 	// Push constants needs to be serialised according to the shader stages
-	constexpr std::uint32_t pushConstantSize = ModelBundleVertexShaderIndividual::GetConstantBufferSize();
+	constexpr std::uint32_t pushConstantSize = ModelBundleVSIndividual::GetConstantBufferSize();
 
 	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 	m_pipelineLayout.Create(descriptorBuffer);
