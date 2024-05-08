@@ -85,6 +85,8 @@ public:
 	{
 		return m_setLayouts;
 	}
+	[[nodiscard]]
+	std::vector<VkDescriptorSetLayout> GetVkLayouts() const noexcept;
 
 private:
 	VkDevice                         m_device;
