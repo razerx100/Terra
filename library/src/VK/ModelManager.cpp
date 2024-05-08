@@ -338,3 +338,57 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 	m_pipelineLayout.Create(descriptorBuffer);
 }
+
+void ModelManagerVSIndividual::AddModel(
+	std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader
+) {
+	// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
+	// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
+	std::shared_ptr<ModelVS> tempModel = model;
+	const std::uint32_t meshIndex      = model->GetMeshIndex();
+
+	const size_t modelIndex            = m_modelBuffers.Add(std::move(model));
+
+	ModelBundleVSIndividual modelBundle{};
+	modelBundle.AddMeshDetails(tempModel, static_cast<std::uint32_t>(modelIndex));
+
+	modelBundle.SetMeshIndex(meshIndex);
+
+	// Also need to set the PSO/PSO index here.
+
+	m_modelBundles.emplace_back(std::move(modelBundle));
+}
+
+void ModelManagerVSIndividual::AddModelBundle(
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+) {
+	const size_t modelCount = std::size(modelBundle);
+
+	if (modelCount)
+	{
+		// All of the models in a bundle should have the same mesh.
+		const std::uint32_t meshIndex = modelBundle.front()->GetMeshIndex();
+
+		std::vector<std::shared_ptr<Model>> tempModelBundle{ modelCount, nullptr };
+
+		for (size_t index = 0u; index < modelCount; ++index)
+			tempModelBundle.at(index) = std::static_pointer_cast<Model>(modelBundle.at(index));
+
+		const std::vector<size_t> modelIndices = m_modelBuffers.AddMultiple(std::move(tempModelBundle));
+
+		ModelBundleVSIndividual modelBundleVS{};
+
+		for (size_t index = 0u; index < modelCount; ++index)
+		{
+			const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
+			const size_t modelIndex = modelIndices.at(index);
+
+			modelBundleVS.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
+		}
+
+		modelBundleVS.SetMeshIndex(meshIndex);
+
+		// Also need to set the PSO/PSO index here.
+		m_modelBundles.emplace_back(std::move(modelBundleVS));
+	}
+}

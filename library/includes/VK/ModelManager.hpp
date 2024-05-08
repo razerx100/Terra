@@ -360,26 +360,36 @@ template<class Derived>
 class ModelManager
 {
 public:
-	ModelManager(VkDevice device) : m_pipelineLayout{ device } {}
+	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
+		: m_pipelineLayout{ device }, m_modelBuffers{ device, memoryManager, frameCount }
+	{}
 
 	void CreatePipelineLayout(const VkDescriptorBuffer& descriptorBuffer)
 	{
 		static_cast<Derived*>(this)->CreatePipelineLayoutImpl(descriptorBuffer);
 	}
 
+	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
+	{
+		m_modelBuffers.Update(frameIndex);
+	}
+
 protected:
 	PipelineLayout m_pipelineLayout;
+	ModelBuffers   m_modelBuffers;
 
 public:
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
 
 	ModelManager(ModelManager&& other) noexcept
-		: m_pipelineLayout{ std::move(other.m_pipelineLayout) }
+		: m_pipelineLayout{ std::move(other.m_pipelineLayout) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
 		m_pipelineLayout = std::move(other.m_pipelineLayout);
+		m_modelBuffers   = std::move(other.m_modelBuffers);
 
 		return *this;
 	}
@@ -389,25 +399,33 @@ class ModelManagerVSIndividual : public ModelManager<ModelManagerVSIndividual>
 {
 	friend class ModelManager<ModelManagerVSIndividual>;
 public:
-	ModelManagerVSIndividual(VkDevice device) : ModelManager{ device }
+	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
+		: ModelManager{ device, memoryManager, frameCount }, m_modelBundles{}
 	{}
+
+	void AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader);
+	void AddModelBundle(
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+	);
 
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 
 private:
-
+	std::vector<ModelBundleVSIndividual> m_modelBundles;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
 	ModelManagerVSIndividual& operator=(const ModelManagerVSIndividual&) = delete;
 
 	ModelManagerVSIndividual(ModelManagerVSIndividual&& other) noexcept
-		: ModelManager{ std::move(other) }
+		: ModelManager{ std::move(other) },
+		m_modelBundles{ std::move(other.m_modelBundles) }
 	{}
 	ModelManagerVSIndividual& operator=(ModelManagerVSIndividual&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
+		m_modelBundles        = std::move(other.m_modelBundles);
 
 		return *this;
 	}
