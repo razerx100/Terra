@@ -12,6 +12,8 @@ public:
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) noexcept final;
 
+	using GraphicsPipelineBase::Create;
+
 protected:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(

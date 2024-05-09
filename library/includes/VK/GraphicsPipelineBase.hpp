@@ -5,6 +5,8 @@
 #include <string>
 #include <VKPipelineObject.hpp>
 #include <VkCommandQueue.hpp>
+#include <VKRenderPass.hpp>
+#include <PipelineLayout.hpp>
 
 class GraphicsPipelineBase
 {
@@ -15,6 +17,13 @@ public:
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
 	) noexcept = 0;
+
+	void Create(
+		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
+		const std::wstring& shaderPath, const std::wstring& fragmentShader
+	) noexcept {
+		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath, fragmentShader);
+	}
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 
