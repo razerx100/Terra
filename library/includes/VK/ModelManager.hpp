@@ -9,7 +9,10 @@
 #include <PipelineLayout.hpp>
 #include <memory>
 #include <ReusableVkBuffer.hpp>
+#include <GraphicsPipelineVertexShader.hpp>
 
+#include <MeshManagerVertexShader.hpp>
+#include <CommonBuffers.hpp>
 #include <Model.hpp>
 
 class ModelBundle
@@ -361,7 +364,9 @@ class ModelManager
 {
 public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: m_pipelineLayout{ device }, m_modelBuffers{ device, memoryManager, frameCount }
+		: m_pipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
+		m_modelBuffers{ device, memoryManager, frameCount },
+		m_meshBoundsBuffer{ device, memoryManager }
 	{}
 
 	void CreatePipelineLayout(const VkDescriptorBuffer& descriptorBuffer)
@@ -374,9 +379,28 @@ public:
 		m_modelBuffers.Update(frameIndex);
 	}
 
+	void UpdateWhenGPUFinished() noexcept
+	{
+		m_meshBoundsBuffer.Update();
+	}
+
+	void SetRenderPass(VKRenderPass* renderPass) noexcept
+	{
+		m_renderPass = renderPass;
+	}
+
+	void SetShaderPath(std::wstring shaderPath) noexcept
+	{
+		m_shaderPath = std::move(shaderPath);
+	}
+
 protected:
-	PipelineLayout m_pipelineLayout;
-	ModelBuffers   m_modelBuffers;
+	PipelineLayout    m_pipelineLayout;
+	VKRenderPass*     m_renderPass;
+	std::wstring      m_shaderPath;
+	ModelBuffers      m_modelBuffers;
+	// The members of MeshBounds should be implemented on the child which wants use it.
+	MeshBoundsBuffers m_meshBoundsBuffer;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -384,12 +408,18 @@ public:
 
 	ModelManager(ModelManager&& other) noexcept
 		: m_pipelineLayout{ std::move(other.m_pipelineLayout) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) }
+		m_renderPass{ other.m_renderPass },
+		m_shaderPath{ std::move(other.m_shaderPath) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) },
+		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
-		m_pipelineLayout = std::move(other.m_pipelineLayout);
-		m_modelBuffers   = std::move(other.m_modelBuffers);
+		m_pipelineLayout   = std::move(other.m_pipelineLayout);
+		m_renderPass       = other.m_renderPass;
+		m_shaderPath       = std::move(other.m_shaderPath);
+		m_modelBuffers     = std::move(other.m_modelBuffers);
+		m_meshBoundsBuffer = std::move(other.m_meshBoundsBuffer);
 
 		return *this;
 	}
@@ -400,19 +430,37 @@ class ModelManagerVSIndividual : public ModelManager<ModelManagerVSIndividual>
 	friend class ModelManager<ModelManagerVSIndividual>;
 public:
 	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ModelManager{ device, memoryManager, frameCount }, m_modelBundles{}
+		: ModelManager{ device, memoryManager, frameCount },
+		m_device{ device }, m_memoryManager { memoryManager },
+		m_modelBundles{}, m_meshBundles{}, m_graphicsPipelines{}
 	{}
 
-	void AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader);
+	void AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader);
 	void AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
 	);
+
+	void AddMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
+	);
+
+	void CleanUpTempData();
 
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 
+	[[nodiscard]]
+	std::optional<std::uint32_t> TryToGetPSOIndex(const std::wstring& fragmentShader) const noexcept;
+	[[nodiscard]]
+	// Adds a new PSO, if one can't be found.
+	std::uint32_t GetPSOIndex(const std::wstring& fragmentShader) noexcept;
+
 private:
-	std::vector<ModelBundleVSIndividual> m_modelBundles;
+	VkDevice                                    m_device;
+	MemoryManager*                              m_memoryManager;
+	std::vector<ModelBundleVSIndividual>        m_modelBundles;
+	std::vector<MeshManagerVertexShader>        m_meshBundles;
+	std::vector<GraphicsPipelineIndividualDraw> m_graphicsPipelines;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -420,12 +468,20 @@ public:
 
 	ModelManagerVSIndividual(ModelManagerVSIndividual&& other) noexcept
 		: ModelManager{ std::move(other) },
-		m_modelBundles{ std::move(other.m_modelBundles) }
+		m_device{ other.m_device },
+		m_memoryManager{ other.m_memoryManager },
+		m_modelBundles{ std::move(other.m_modelBundles) },
+		m_meshBundles{ std::move(other.m_meshBundles) },
+		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) }
 	{}
 	ModelManagerVSIndividual& operator=(ModelManagerVSIndividual&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
+		m_device              = other.m_device;
+		m_memoryManager       = other.m_memoryManager;
 		m_modelBundles        = std::move(other.m_modelBundles);
+		m_meshBundles         = std::move(other.m_meshBundles);
+		m_graphicsPipelines   = std::move(other.m_graphicsPipelines);
 
 		return *this;
 	}

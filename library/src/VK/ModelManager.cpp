@@ -340,7 +340,7 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 }
 
 void ModelManagerVSIndividual::AddModel(
-	std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader
+	std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
 ) {
 	// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 	// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
@@ -354,13 +354,16 @@ void ModelManagerVSIndividual::AddModel(
 
 	modelBundle.SetMeshIndex(meshIndex);
 
-	// Also need to set the PSO/PSO index here.
+	const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
+	modelBundle.SetPSOIndex(psoIndex);
+
+	// Need to emplace them in the correct position, so they are sorted.
 	m_modelBundles.emplace_back(std::move(modelBundle));
 }
 
 void ModelManagerVSIndividual::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -388,7 +391,63 @@ void ModelManagerVSIndividual::AddModelBundle(
 
 		modelBundleVS.SetMeshIndex(meshIndex);
 
-		// Also need to set the PSO/PSO index here.
+		const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
+
+		modelBundleVS.SetPSOIndex(psoIndex);
+
+		// Need to emplace them in the correct position, so they are sorted.
 		m_modelBundles.emplace_back(std::move(modelBundleVS));
 	}
+}
+
+void ModelManagerVSIndividual::AddMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
+) {
+	MeshManagerVertexShader meshManager{ m_device, m_memoryManager };
+
+	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan);
+
+	m_meshBundles.emplace_back(std::move(meshManager));
+}
+
+void ModelManagerVSIndividual::CleanUpTempData()
+{
+	for (auto& meshBundle : m_meshBundles)
+		meshBundle.CleanupTempData();
+}
+
+std::optional<std::uint32_t> ModelManagerVSIndividual::TryToGetPSOIndex(
+	const std::wstring& fragmentShader
+) const noexcept {
+	auto result = std::ranges::find_if(m_graphicsPipelines,
+		[&fragmentShader](const GraphicsPipelineIndividualDraw& pipeline)
+		{
+			return fragmentShader == pipeline.GetFragmentShader();
+		});
+
+	if (result != std::end(m_graphicsPipelines))
+		return static_cast<std::uint32_t>(std::distance(std::begin(m_graphicsPipelines), result));
+	else
+		return {};
+}
+
+std::uint32_t ModelManagerVSIndividual::GetPSOIndex(const std::wstring& fragmentShader) noexcept
+{
+	std::uint32_t psoIndex = 0u;
+
+	auto oPSOIndex = TryToGetPSOIndex(fragmentShader);
+
+	if (!oPSOIndex)
+	{
+		psoIndex = static_cast<std::uint32_t>(std::size(m_graphicsPipelines));
+
+		GraphicsPipelineIndividualDraw pipeline{};
+		pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
+
+		m_graphicsPipelines.emplace_back(std::move(pipeline));
+	}
+	else
+		psoIndex = oPSOIndex.value();
+
+	return psoIndex;
 }
