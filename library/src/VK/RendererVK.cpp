@@ -266,18 +266,18 @@ void RendererVK::WaitForAsyncTasks() {
 	vkDeviceWaitIdle(Terra::Get().Device().GetLogicalDevice());
 }
 
-void RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader)
+void RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader)
 {}
 
-void RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& pixelShader)
+void RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader)
 {}
 
 void RendererVK::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
 ) {}
 
 void RendererVK::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& pixelShader
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
 ) {}
 
 void RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)

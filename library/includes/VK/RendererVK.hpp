@@ -29,13 +29,13 @@ public:
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 	) override;
 
-	void AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader) override;
-	void AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& pixelShader) override;
+	void AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader) override;
+	void AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader) override;
 	void AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
 	) override;
 	void AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& pixelShader
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
 	) override;
 
 	void AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override;
