@@ -36,6 +36,8 @@ void GraphicsPipelineVertexShader::Create(
 	m_graphicsPipeline = _createGraphicsPipeline(
 		device, graphicsLayout, renderPass, shaderPath, fragmentShader
 	);
+
+	m_fragmentShader = fragmentShader;
 }
 
 // Indirect Draw

@@ -15,6 +15,8 @@ void GraphicsPipelineMeshShader::Create(
 			device, graphicsLayout, renderPass, shaderPath, fragmentShader,
 			L"MeshShader.spv"
 		);
+
+	m_fragmentShader = fragmentShader;
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipelineMS(
