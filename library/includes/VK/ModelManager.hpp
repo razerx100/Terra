@@ -422,8 +422,7 @@ public:
 
 		modelBundle.SetPSOIndex(psoIndex);
 
-		// Need to emplace them in the correct position, so they are sorted.
-		m_modelBundles.emplace_back(std::move(modelBundle));
+		AddModelBundle(std::move(modelBundle), psoIndex);
 	}
 
 	void AddModelBundle(
@@ -444,18 +443,19 @@ public:
 			const std::vector<size_t> modelIndices
 				= m_modelBuffers.AddMultiple(std::move(tempModelBundle));
 
-			ModelBundleType modelBundleVS{};
+			ModelBundleType modelBundleObj{};
 
-			static_cast<Derived*>(this)->ConfigureModelBundle(modelBundleVS, modelIndices, modelBundle);
+			static_cast<Derived*>(this)->ConfigureModelBundle(
+				modelBundleObj, modelIndices, modelBundle
+			);
 
-			modelBundleVS.SetMeshIndex(meshIndex);
+			modelBundleObj.SetMeshIndex(meshIndex);
 
 			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
-			modelBundleVS.SetPSOIndex(psoIndex);
+			modelBundleObj.SetPSOIndex(psoIndex);
 
-			// Need to emplace them in the correct position, so they are sorted.
-			m_modelBundles.emplace_back(std::move(modelBundleVS));
+			AddModelBundle(std::move(modelBundleObj), psoIndex);
 		}
 	}
 
@@ -512,6 +512,27 @@ protected:
 			psoIndex = oPSOIndex.value();
 
 		return psoIndex;
+	}
+
+private:
+	void AddModelBundle(ModelBundleType&& modelBundle, std::uint32_t psoIndex) noexcept
+	{
+		// These will be sorted by their PSO indices.
+		// Upper_bound returns the next bigger element.
+		auto result = std::ranges::upper_bound(
+			m_modelBundles, psoIndex, {},
+			[](const ModelBundleType& modelBundle)
+			{
+				return modelBundle.GetPSOIndex();
+			}
+		);
+
+		// If the result is the end it, that means there is no bigger index. So, then
+		// emplace at the back. Otherwise, insert at the end of the range of the same indices.
+		if (result == std::end(m_modelBundles))
+			m_modelBundles.emplace_back(std::move(modelBundle));
+		else
+			m_modelBundles.insert(result, std::move(modelBundle));
 	}
 
 protected:
