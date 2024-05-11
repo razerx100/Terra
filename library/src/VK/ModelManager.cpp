@@ -1,6 +1,3 @@
-#include <ranges>
-#include <algorithm>
-
 #include <ModelManager.hpp>
 
 // Model Bundle
@@ -339,115 +336,24 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 	m_pipelineLayout.Create(descriptorBuffer);
 }
 
-void ModelManagerVSIndividual::AddModel(
-	std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+void ModelManagerVSIndividual::ConfigureModel(
+	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
 ) {
-	// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
-	// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
-	std::shared_ptr<ModelVS> tempModel = model;
-	const std::uint32_t meshIndex      = model->GetMeshIndex();
-
-	const size_t modelIndex            = m_modelBuffers.Add(std::move(model));
-
-	ModelBundleVSIndividual modelBundle{};
-	modelBundle.AddMeshDetails(tempModel, static_cast<std::uint32_t>(modelIndex));
-
-	modelBundle.SetMeshIndex(meshIndex);
-
-	const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
-
-	modelBundle.SetPSOIndex(psoIndex);
-
-	// Need to emplace them in the correct position, so they are sorted.
-	m_modelBundles.emplace_back(std::move(modelBundle));
+	modelBundleObj.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
 }
 
-void ModelManagerVSIndividual::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+void ModelManagerVSIndividual::ConfigureModelBundle(
+	ModelBundleVSIndividual& modelBundleObj,
+	const std::vector<size_t>& modelIndices,
+	const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
-	if (modelCount)
+	for (size_t index = 0u; index < modelCount; ++index)
 	{
-		// All of the models in a bundle should have the same mesh.
-		const std::uint32_t meshIndex = modelBundle.front()->GetMeshIndex();
+		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
+		const size_t modelIndex               = modelIndices.at(index);
 
-		std::vector<std::shared_ptr<Model>> tempModelBundle{ modelCount, nullptr };
-
-		for (size_t index = 0u; index < modelCount; ++index)
-			tempModelBundle.at(index) = std::static_pointer_cast<Model>(modelBundle.at(index));
-
-		const std::vector<size_t> modelIndices = m_modelBuffers.AddMultiple(std::move(tempModelBundle));
-
-		ModelBundleVSIndividual modelBundleVS{};
-
-		for (size_t index = 0u; index < modelCount; ++index)
-		{
-			const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
-			const size_t modelIndex = modelIndices.at(index);
-
-			modelBundleVS.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
-		}
-
-		modelBundleVS.SetMeshIndex(meshIndex);
-
-		const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
-
-		modelBundleVS.SetPSOIndex(psoIndex);
-
-		// Need to emplace them in the correct position, so they are sorted.
-		m_modelBundles.emplace_back(std::move(modelBundleVS));
+		modelBundleObj.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
-}
-
-void ModelManagerVSIndividual::AddMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
-) {
-	MeshManagerVertexShader meshManager{ m_device, m_memoryManager };
-
-	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan);
-
-	m_meshBundles.emplace_back(std::move(meshManager));
-}
-
-void ModelManagerVSIndividual::CleanUpTempData()
-{
-	for (auto& meshBundle : m_meshBundles)
-		meshBundle.CleanupTempData();
-}
-
-std::optional<std::uint32_t> ModelManagerVSIndividual::TryToGetPSOIndex(
-	const std::wstring& fragmentShader
-) const noexcept {
-	auto result = std::ranges::find_if(m_graphicsPipelines,
-		[&fragmentShader](const GraphicsPipelineIndividualDraw& pipeline)
-		{
-			return fragmentShader == pipeline.GetFragmentShader();
-		});
-
-	if (result != std::end(m_graphicsPipelines))
-		return static_cast<std::uint32_t>(std::distance(std::begin(m_graphicsPipelines), result));
-	else
-		return {};
-}
-
-std::uint32_t ModelManagerVSIndividual::GetPSOIndex(const std::wstring& fragmentShader) noexcept
-{
-	std::uint32_t psoIndex = 0u;
-
-	auto oPSOIndex = TryToGetPSOIndex(fragmentShader);
-
-	if (!oPSOIndex)
-	{
-		psoIndex = static_cast<std::uint32_t>(std::size(m_graphicsPipelines));
-
-		GraphicsPipelineIndividualDraw pipeline{};
-		pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
-
-		m_graphicsPipelines.emplace_back(std::move(pipeline));
-	}
-	else
-		psoIndex = oPSOIndex.value();
-
-	return psoIndex;
 }
