@@ -62,6 +62,11 @@ public:
 
 	void AddMeshDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
+	void Draw(
+		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
+	) const noexcept {
+		Draw(graphicsBuffer, pipelineLayout.Get());
+	}
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
@@ -112,6 +117,11 @@ public:
 	) const noexcept;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
+	void Draw(
+		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
+	) const noexcept {
+		Draw(graphicsBuffer, pipelineLayout.Get());
+	}
 
 	void CleanupTempData() noexcept;
 
@@ -357,10 +367,6 @@ public:
 	}
 };
 
-// I will put a MeshManager, ModelBundles and PSOs in this class. Multiple ModelBundles can use a
-// single MeshManager and a single PSO. And can also change them.
-// I want to keep the bare minimum here to draw models. I want to add deferred rendering later,
-// while I think I can reuse ModelBundle, I feel like won't be able to reuse ModelManager.
 template<
 	class Derived,
 	class Pipeline,
@@ -514,6 +520,32 @@ protected:
 		return psoIndex;
 	}
 
+	void BindPipeline(
+		const ModelBundleType& modelBundle, const VKCommandBuffer& graphicsBuffer,
+		size_t& previousPSOIndex
+	) const noexcept {
+		// PSO is more costly to bind, so the modelBundles are added in a way so they are sorted
+		// by their PSO indices. And we only bind a new PSO, if the previous one was different.
+		const size_t modelPSOIndex = modelBundle.GetPSOIndex();
+
+		if (modelPSOIndex != previousPSOIndex)
+		{
+			m_graphicsPipelines.at(modelPSOIndex).Bind(graphicsBuffer);
+
+			previousPSOIndex = modelPSOIndex;
+		}
+	}
+
+	void BindMesh(
+		const ModelBundleType& modelBundle, const VKCommandBuffer& graphicsBuffer
+	) const noexcept {
+		// We could also do the same for the meshes, but we can only sort by a single thing and
+		// PSO binding is more costly, so it is better to sort the models by their PSO indices.
+		const size_t meshIndex = modelBundle.GetMeshIndex();
+
+		m_meshBundles.at(meshIndex).Bind(graphicsBuffer);
+	}
+
 private:
 	void AddModelBundle(ModelBundleType&& modelBundle, std::uint32_t psoIndex) noexcept
 	{
@@ -616,6 +648,9 @@ private:
 		const std::vector<size_t>& modelIndices,
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
+
+	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffer);
+	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;

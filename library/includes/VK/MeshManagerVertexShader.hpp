@@ -19,7 +19,7 @@ public:
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
 	);
 
-	void Bind(VKCommandBuffer& graphicsCmdBuffer) const noexcept;
+	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 	void CleanupTempData() noexcept;
 
 	[[nodiscard]]

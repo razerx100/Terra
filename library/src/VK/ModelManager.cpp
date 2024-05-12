@@ -357,3 +357,25 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 		modelBundleObj.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
 }
+
+void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffer)
+{
+	// Define the binding layouts first and later assign them to the appropriate buffers.
+}
+
+void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
+{
+	auto previousPSOIndex = std::numeric_limits<size_t>::max();
+
+	for (const auto& modelBundle : m_modelBundles)
+	{
+		// Pipeline Object.
+		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
+
+		// Mesh
+		BindMesh(modelBundle, graphicsBuffer);
+
+		// Model
+		modelBundle.Draw(graphicsBuffer, m_pipelineLayout);
+	}
+}

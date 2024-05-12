@@ -48,7 +48,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 	}
 }
 
-void MeshManagerVertexShader::Bind(VKCommandBuffer& graphicsCmdBuffer) const noexcept
+void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
 	VkBuffer vertexBuffers[]                  = { m_vertexBuffer.Get() };
 	static const VkDeviceSize vertexOffsets[] = { 0u };
