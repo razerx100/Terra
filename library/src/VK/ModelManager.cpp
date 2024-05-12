@@ -358,9 +358,33 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 	}
 }
 
-void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffer)
+void ModelManagerVSIndividual::SetDescriptorBufferLayout(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) {
+	const auto frameCount = std::size(descriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+
+		descriptorBuffer.AddLayout(
+			s_modelBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT
+		);
+	}
+}
+
+void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers)
 {
-	// Define the binding layouts first and later assign them to the appropriate buffers.
+	const auto frameCount = std::size(descriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, static_cast<VkDeviceSize>(index), s_modelBindingSlot
+		);
+	}
 }
 
 void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept

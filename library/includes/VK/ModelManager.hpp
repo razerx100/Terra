@@ -649,8 +649,14 @@ private:
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
 
-	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffer);
+	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+
+private:
+	// Need to update this when I update the shaders.
+	static constexpr std::uint32_t s_modelBindingSlot = 0u;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
