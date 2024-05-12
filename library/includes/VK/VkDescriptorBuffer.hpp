@@ -1,6 +1,7 @@
 #ifndef VK_DESCRIPTOR_BUFFER_HPP_
 #define VK_DESCRIPTOR_BUFFER_HPP_
 #include <VkResources.hpp>
+#include <VkTextureView.hpp>
 #include <VkExtensionManager.hpp>
 #include <array>
 
@@ -264,33 +265,31 @@ public:
 		);
 	}
 	void AddCombinedImageDescriptor(
-		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, size_t layoutIndex
-	)
-	{
+		const VkTextureView& textureView, const VKSampler& sampler, VkImageLayout imageLayout,
+		size_t layoutIndex
+	) {
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-			imageView, sampler, imageLayout, layoutIndex
+			textureView.GetView(), sampler.Get(), imageLayout, layoutIndex
 		);
 	}
 	void AddSampledImageDescriptor(
-		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex
-	)
-	{
+		const VkTextureView& textureView, VkImageLayout imageLayout, size_t layoutIndex
+	) {
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex
+			textureView.GetView(), VK_NULL_HANDLE, imageLayout, layoutIndex
 		);
 	}
 	void AddStorageImageDescriptor(
-		VkImageView imageView, VkImageLayout imageLayout, size_t layoutIndex
-	)
-	{
+		const VkTextureView& textureView, VkImageLayout imageLayout, size_t layoutIndex
+	) {
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
-			imageView, VK_NULL_HANDLE, imageLayout, layoutIndex
+			textureView.GetView(), VK_NULL_HANDLE, imageLayout, layoutIndex
 		);
 	}
-	void AddSamplerDescriptor(VkSampler sampler, size_t layoutIndex)
+	void AddSamplerDescriptor(const VKSampler& sampler, size_t layoutIndex)
 	{
 		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
-			VK_NULL_HANDLE, sampler, VK_IMAGE_LAYOUT_UNDEFINED, layoutIndex
+			VK_NULL_HANDLE, sampler.Get(), VK_IMAGE_LAYOUT_UNDEFINED, layoutIndex
 		);
 	}
 

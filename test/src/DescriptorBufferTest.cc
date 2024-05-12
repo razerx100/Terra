@@ -125,14 +125,14 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		);
 
 		descBuffer.AddCombinedImageDescriptor(
-			textureView.GetView(), sampler.Get(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u
+			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u
 		);
 		descBuffer.AddSampledImageDescriptor(
-			textureView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u
+			textureView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u
 		);
-		descBuffer.AddSamplerDescriptor(sampler.Get(), 2u);
+		descBuffer.AddSamplerDescriptor(sampler, 2u);
 		descBuffer.AddStorageImageDescriptor(
-			storageView.GetView(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u
+			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u
 		);
 
 		// PipelineLayout
