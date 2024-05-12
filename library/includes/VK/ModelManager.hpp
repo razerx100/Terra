@@ -373,7 +373,8 @@ template<
 	class MeshManager,
 	class MeshType,
 	class ModelBundleType,
-	class ModelType
+	class ModelType,
+	bool  TempData
 >
 class ModelManager
 {
@@ -479,6 +480,9 @@ public:
 	{
 		for (auto& meshBundle : m_meshBundles)
 			meshBundle.CleanupTempData();
+
+		if constexpr (TempData)
+			static_cast<Derived*>(this)->_cleanUpTempData();
 	}
 
 protected:
@@ -620,7 +624,8 @@ class ModelManagerVSIndividual : public
 		ModelManagerVSIndividual,
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
-		ModelBundleVSIndividual, ModelVS
+		ModelBundleVSIndividual, ModelVS,
+		false
 	>
 {
 	friend class ModelManager
@@ -628,7 +633,8 @@ class ModelManagerVSIndividual : public
 			ModelManagerVSIndividual,
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
-			ModelBundleVSIndividual, ModelVS
+			ModelBundleVSIndividual, ModelVS,
+			false
 		>;
 	friend class ModelManagerVSIndividualTest;
 public:
