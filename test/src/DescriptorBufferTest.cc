@@ -74,13 +74,13 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 
 		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
 		descBuffer.SetDescriptorBufferInfo(physicalDevice);
-		descBuffer.AddLayout(0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddLayout(1u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddLayout(
+		descBuffer.AddBinding(0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(1u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(
 			2u, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
-		descBuffer.AddLayout(3u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddLayout(4u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(3u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(4u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.CreateBuffer();
 
 		descBuffer.AddStorageBufferDescriptor(testStorage, 0u);
@@ -105,12 +105,12 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 
 		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
 		descBuffer.SetDescriptorBufferInfo(physicalDevice);
-		descBuffer.AddLayout(
+		descBuffer.AddBinding(
 			0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
-		descBuffer.AddLayout(1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddLayout(2u, VK_DESCRIPTOR_TYPE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddLayout(3u, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(2u, VK_DESCRIPTOR_TYPE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(3u, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.CreateBuffer();
 
 		VkTextureView textureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
@@ -138,5 +138,43 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		// PipelineLayout
 		PipelineLayout pipelineLayout{ logicalDevice };
 		pipelineLayout.Create(descBuffer);
+	}
+}
+
+TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
+
+	{
+		MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+		VkTextureView textureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		textureView.CreateView2D(
+			200u, 200u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+			VK_IMAGE_VIEW_TYPE_2D, {}
+		);
+
+		VkTextureView textureView1{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		textureView1.CreateView2D(
+			200u, 200u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+			VK_IMAGE_VIEW_TYPE_2D, {}
+		);
+
+		VkTextureView textureView2{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+		textureView2.CreateView2D(
+			200u, 200u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT,
+			VK_IMAGE_VIEW_TYPE_2D, {}
+		);
+
+		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
+		descBuffer.SetDescriptorBufferInfo(physicalDevice);
+		descBuffer.AddBinding(
+			0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+
+		descBuffer.CreateBuffer();
 	}
 }

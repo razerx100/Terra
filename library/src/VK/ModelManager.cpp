@@ -367,7 +367,7 @@ void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 	{
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
-		descriptorBuffer.AddLayout(
+		descriptorBuffer.AddBinding(
 			s_modelBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT
 		);
 	}
