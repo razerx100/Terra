@@ -4,6 +4,7 @@
 #include <VkTextureView.hpp>
 #include <VkExtensionManager.hpp>
 #include <array>
+#include <vector>
 
 class DescriptorSetLayout
 {
@@ -124,36 +125,89 @@ private:
 	) const noexcept;
 
 	template<VkDescriptorType type>
+	[[nodiscard]]
+	static size_t GetDescriptorSize() noexcept
+	{
+		size_t descriptorSize = 0u;
+
+		if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+			descriptorSize = s_descriptorInfo.storageBufferDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+			descriptorSize = s_descriptorInfo.uniformBufferDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER)
+			descriptorSize = s_descriptorInfo.uniformTexelBufferDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
+			descriptorSize = s_descriptorInfo.storageTexelBufferDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+			descriptorSize = s_descriptorInfo.combinedImageSamplerDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+			descriptorSize = s_descriptorInfo.storageImageDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			descriptorSize = s_descriptorInfo.sampledImageDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			descriptorSize = s_descriptorInfo.samplerDescriptorSize;
+
+		return descriptorSize;
+	}
+
+	template<VkDescriptorType type>
+	[[nodiscard]]
+	static VkDescriptorDataEXT GetDescriptorData(const VkDescriptorAddressInfoEXT& bufferInfo) noexcept
+	{
+		VkDescriptorDataEXT descData{};
+
+		if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+			descData.pStorageBuffer = &bufferInfo;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+			descData.pUniformBuffer = &bufferInfo;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER)
+			descData.pUniformTexelBuffer = &bufferInfo;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
+			descData.pStorageTexelBuffer = &bufferInfo;
+
+		return descData;
+	}
+
+	template<VkDescriptorType type>
+	[[nodiscard]]
+	static VkDescriptorDataEXT GetDescriptorData(
+		VkImageView imageView, VkSampler sampler, VkDescriptorImageInfo& imageInfo
+	) noexcept {
+		VkDescriptorDataEXT descData{};
+
+		if constexpr (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+		{
+			imageInfo.sampler              = sampler;
+			imageInfo.imageView            = imageView;
+
+			descData.pCombinedImageSampler = &imageInfo;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+		{
+			imageInfo.imageView    = imageView;
+
+			descData.pStorageImage = &imageInfo;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+		{
+			imageInfo.imageView    = imageView;
+
+			descData.pSampledImage = &imageInfo;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			descData.pSampler = &sampler;
+
+		return descData;
+	}
+
+	template<VkDescriptorType type>
 	void GetBufferToDescriptor(
 		const VkDescriptorAddressInfoEXT& bufferInfo, std::uint32_t bindingIndex,
 		std::uint32_t descriptorIndex
 	) {
 		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
 
-		VkDescriptorDataEXT descData{};
-		// Will be needed when I add multiple descriptor support.
-		size_t descriptorSize = 0u;
-
-		if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-		{
-			descData.pStorageBuffer = &bufferInfo;
-			descriptorSize          = s_descriptorInfo.storageBufferDescriptorSize;
-		}
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-		{
-			descData.pUniformBuffer = &bufferInfo;
-			descriptorSize          = s_descriptorInfo.uniformBufferDescriptorSize;
-		}
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER)
-		{
-			descData.pUniformTexelBuffer = &bufferInfo;
-			descriptorSize               = s_descriptorInfo.uniformTexelBufferDescriptorSize;
-		}
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
-		{
-			descData.pStorageTexelBuffer = &bufferInfo;
-			descriptorSize               = s_descriptorInfo.storageTexelBufferDescriptorSize;
-		}
+		VkDescriptorDataEXT descData = GetDescriptorData<type>(bufferInfo);
 
 		VkDescriptorGetInfoEXT getInfo{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
@@ -161,11 +215,12 @@ private:
 			.data  = descData
 		};
 
-		// From what I understand, the call below will populate the cpu pointer with the specific
-		// descriptor and then copy the data of getInfo to it. And possibly, once we have done that
-		// we can just copy further getInfo s with different Buffer/Texture objects and just memcpy
-		// them in. Or perhaps just memcpy the BufferObject pointer, don't have to do all these
-		// GetInfoEXT stuffs anymore.
+		size_t descriptorSize = GetDescriptorSize<type>();
+
+		// We should be able to memcpy the descriptor, but the issue is most of the descriptor sizes
+		// are 4bytes but a pointer on a 64bits device is 8bytes. So, I think to do memcpy, we have
+		// to get both X and Y descriptors with vkGetDescriptorEXT, and then we could copy them to
+		// other descriptor addresses. Idk if that will be very useful though.
 		DescBuffer::vkGetDescriptorEXT(
 			m_device, &getInfo, descriptorSize,
 			GetDescriptorAddress(bindingIndex, descriptorSize, descriptorIndex)
@@ -188,6 +243,7 @@ private:
 		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
 			bufferAddress, actualBufferSize, VK_FORMAT_UNDEFINED
 		);
+
 		GetBufferToDescriptor<type>(bufferDescAddressInfo, bindingIndex, descriptorIndex);
 	}
 
@@ -202,11 +258,12 @@ private:
 		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
 			bufferAddress, actualBufferSize, texelBufferFormat
 		);
+
 		GetBufferToDescriptor<type>(bufferDescAddressInfo, bindingIndex, descriptorIndex);
 	}
 
 	template<VkDescriptorType type>
-	void AddImageToDescriptor(
+	void GetImageToDescriptor(
 		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, std::uint32_t bindingIndex,
 		std::uint32_t descriptorIndex
 	) {
@@ -214,36 +271,7 @@ private:
 
 		VkDescriptorImageInfo imageInfo{ .imageLayout = imageLayout };
 
-		VkDescriptorDataEXT descData{};
-		size_t descriptorSize = 0u;
-
-		if constexpr (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-		{
-			imageInfo.sampler              = sampler;
-			imageInfo.imageView            = imageView;
-
-			descData.pCombinedImageSampler = &imageInfo;
-			descriptorSize                 = s_descriptorInfo.combinedImageSamplerDescriptorSize;
-		}
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-		{
-			imageInfo.imageView    = imageView;
-
-			descData.pStorageImage = &imageInfo;
-			descriptorSize         = s_descriptorInfo.storageImageDescriptorSize;
-		}
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-		{
-			imageInfo.imageView    = imageView;
-
-			descData.pSampledImage = &imageInfo;
-			descriptorSize         = s_descriptorInfo.sampledImageDescriptorSize;
-		}
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
-		{
-			descData.pSampler = &sampler;
-			descriptorSize    = s_descriptorInfo.samplerDescriptorSize;
-		}
+		VkDescriptorDataEXT descData = GetDescriptorData<type>(imageView, sampler, imageInfo);
 
 		VkDescriptorGetInfoEXT getInfo{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
@@ -251,10 +279,20 @@ private:
 			.data  = descData
 		};
 
+		size_t descriptorSize = GetDescriptorSize<type>();
+
 		DescBuffer::vkGetDescriptorEXT(
 			m_device, &getInfo, descriptorSize,
 			GetDescriptorAddress(bindingIndex, descriptorSize, descriptorIndex)
 		);
+	}
+
+	template<VkDescriptorType type>
+	void AddImageToDescriptor(
+		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, std::uint32_t bindingIndex,
+		std::uint32_t descriptorIndex
+	) {
+		GetImageToDescriptor<type>(imageView, sampler, imageLayout, bindingIndex, descriptorIndex);
 	}
 
 public:
