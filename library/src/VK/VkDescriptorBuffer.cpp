@@ -115,3 +115,10 @@ VkDeviceSize VkDescriptorBuffer::GetBindingOffset(std::uint32_t binding) const n
 
 	return offset;
 }
+
+void* VkDescriptorBuffer::GetDescriptorAddress(
+	std::uint32_t bindingIndex, size_t descriptorSize, std::uint32_t descriptorIndex
+) const noexcept {
+	return m_descriptorBuffer.CPUHandle() /* + layoutOffset */ + GetBindingOffset(bindingIndex)
+		+ (descriptorIndex * descriptorSize);
+}

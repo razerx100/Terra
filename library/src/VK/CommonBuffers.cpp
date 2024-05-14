@@ -4,7 +4,7 @@
 void MaterialBuffers::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(m_buffers, bindingSlot);
+	descriptorBuffer.AddStorageBufferDescriptor(m_buffers, bindingSlot, 0u);
 }
 
 void MaterialBuffers::CreateBuffer(size_t materialCount)
@@ -77,7 +77,7 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 void MeshBoundsBuffers::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(m_boundsBuffer, bindingSlot);
+	descriptorBuffer.AddStorageBufferDescriptor(m_boundsBuffer, bindingSlot, 0u);
 }
 
 void MeshBoundsBuffers::CreateBuffer(size_t boundsCount)

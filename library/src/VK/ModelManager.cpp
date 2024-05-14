@@ -106,7 +106,7 @@ void ModelBundleMS::CreateBuffers(StagingBufferManager& stagingBufferMan)
 void ModelBundleMS::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot);
+	descriptorBuffer.AddStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot, 0u);
 }
 
 void ModelBundleMS::CleanupTempData() noexcept
@@ -262,8 +262,12 @@ void ModelBundleCSIndirect::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer,
 	std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(m_argumentInputBuffer, argumentInputBindingSlot);
-	descriptorBuffer.AddStorageBufferDescriptor(m_cullingDataBuffer, cullingDataBindingSlot);
+	descriptorBuffer.AddStorageBufferDescriptor(
+		m_argumentInputBuffer, argumentInputBindingSlot, 0u
+	);
+	descriptorBuffer.AddStorageBufferDescriptor(
+		m_cullingDataBuffer, cullingDataBindingSlot, 0u
+	);
 }
 
 void ModelBundleCSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept

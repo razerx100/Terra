@@ -83,14 +83,14 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		descBuffer.AddBinding(4u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.CreateBuffer();
 
-		descBuffer.AddStorageBufferDescriptor(testStorage, 0u);
-		descBuffer.AddUniformBufferDescriptor(testUniform, 1u);
-		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, VK_FORMAT_R8G8B8A8_UINT);
+		descBuffer.AddStorageBufferDescriptor(testStorage, 0u, 0u);
+		descBuffer.AddUniformBufferDescriptor(testUniform, 1u, 0u);
+		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, 0u, VK_FORMAT_R8G8B8A8_UINT);
 		descBuffer.AddStorageBufferDescriptor(
-			testStorageM, 3u, 0u, static_cast<VkDeviceSize>(2_KB)
+			testStorageM, 3u, 0u, 0u, static_cast<VkDeviceSize>(2_KB)
 		);
 		descBuffer.AddStorageBufferDescriptor(
-			testStorageM, 4u,
+			testStorageM, 4u, 0u,
 			static_cast<VkDeviceAddress>(2_KB), static_cast<VkDeviceSize>(2_KB)
 		);
 	}
@@ -125,14 +125,14 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		);
 
 		descBuffer.AddCombinedImageDescriptor(
-			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u
+			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
 		);
 		descBuffer.AddSampledImageDescriptor(
-			textureView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u
+			textureView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
 		);
-		descBuffer.AddSamplerDescriptor(sampler, 2u);
+		descBuffer.AddSamplerDescriptor(sampler, 2u, 0u);
 		descBuffer.AddStorageImageDescriptor(
-			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u
+			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u, 0u
 		);
 
 		// PipelineLayout
@@ -176,5 +176,20 @@ TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
 		);
 
 		descBuffer.CreateBuffer();
+
+		VkSamplerCreateInfoBuilder samplerCreateInfo{};
+
+		VKSampler sampler{ logicalDevice };
+		sampler.CreateSampler(samplerCreateInfo.GetPtr());
+
+		descBuffer.AddCombinedImageDescriptor(
+			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+		);
+		descBuffer.AddCombinedImageDescriptor(
+			textureView1, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 1u
+		);
+		descBuffer.AddCombinedImageDescriptor(
+			textureView2, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 2u
+		);
 	}
 }
