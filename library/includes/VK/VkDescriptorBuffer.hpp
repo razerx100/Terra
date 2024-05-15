@@ -21,10 +21,13 @@ public:
 		VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags
 	) noexcept;
 
+	void UpdateBinding(
+		std::uint32_t bindingIndex, VkDescriptorType type, std::uint32_t descriptorCount,
+		VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags
+	) noexcept;
+
 	[[nodiscard]]
 	VkDescriptorSetLayout Get() const noexcept { return m_layout; }
-
-	void CleanUpTempData();
 
 private:
 	void SelfDestruct() noexcept;
@@ -73,6 +76,11 @@ public:
 	{}
 
 	VkDescriptorBuffer& AddBinding(
+		std::uint32_t bindingIndex, VkDescriptorType type, std::uint32_t descriptorCount,
+		VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags = 0u
+	) noexcept;
+
+	VkDescriptorBuffer& UpdateBinding(
 		std::uint32_t bindingIndex, VkDescriptorType type, std::uint32_t descriptorCount,
 		VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags = 0u
 	) noexcept;

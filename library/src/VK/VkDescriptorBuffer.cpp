@@ -27,6 +27,9 @@ void DescriptorSetLayout::Create()
 		.pBindings    = std::data(m_layoutBindings)
 	};
 
+	if (m_layout != VK_NULL_HANDLE)
+		SelfDestruct();
+
 	vkCreateDescriptorSetLayout(m_device, &layoutCreateInfo, nullptr, &m_layout);
 }
 
@@ -44,10 +47,33 @@ void DescriptorSetLayout::AddBinding(
 	m_layoutBindingFlags.emplace_back(bindingFlags);
 }
 
-void DescriptorSetLayout::CleanUpTempData()
-{
-	m_layoutBindings     = std::vector<VkDescriptorSetLayoutBinding>{};
-	m_layoutBindingFlags = std::vector<VkDescriptorBindingFlags>{};
+void DescriptorSetLayout::UpdateBinding(
+	std::uint32_t bindingIndex, VkDescriptorType type, std::uint32_t descriptorCount,
+	VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags
+) noexcept {
+	auto result = std::ranges::find(
+		m_layoutBindings, bindingIndex,
+		[](const VkDescriptorSetLayoutBinding& binding)
+		{
+			return binding.binding;
+		}
+	);
+
+	if (result != std::end(m_layoutBindings))
+	{
+		const auto indexInContainers = static_cast<size_t>(
+			std::distance(std::begin(m_layoutBindings), result)
+		);
+
+		m_layoutBindings.at(indexInContainers) = VkDescriptorSetLayoutBinding{
+			.binding         = bindingIndex,
+			.descriptorType  = type,
+			.descriptorCount = descriptorCount,
+			.stageFlags      = shaderFlags
+		};
+
+		m_layoutBindingFlags.at(indexInContainers) = bindingFlags;
+	}
 }
 
 // Vk Descriptor Buffer
@@ -64,12 +90,20 @@ VkDescriptorBuffer& VkDescriptorBuffer::AddBinding(
 	return *this;
 }
 
+VkDescriptorBuffer& VkDescriptorBuffer::UpdateBinding(
+	std::uint32_t bindingIndex, VkDescriptorType type, std::uint32_t descriptorCount,
+	VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags /* = 0u */
+) noexcept {
+	m_setLayout.UpdateBinding(bindingIndex, type, descriptorCount, shaderFlags, bindingFlags);
+
+	return *this;
+}
+
 void VkDescriptorBuffer::CreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices/* = {} */)
 {
 	using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
 
 	m_setLayout.Create();
-	m_setLayout.CleanUpTempData();
 
 	VkDeviceSize layoutSizeInBytes = 0u;
 

@@ -185,6 +185,12 @@ TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
 
 		descBuffer.CreateBuffer();
 
+		descBuffer.UpdateBinding(
+			1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+
+		descBuffer.CreateBuffer();
+
 		VkSamplerCreateInfoBuilder samplerCreateInfo{};
 
 		VKSampler sampler{ logicalDevice };
