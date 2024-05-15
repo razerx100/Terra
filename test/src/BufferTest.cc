@@ -74,7 +74,7 @@ TEST_F(BufferTest, VkSamplerTest)
 	VkSamplerCreateInfoBuilder createInfoBuilder{};
 
 	VKSampler sampler{ logicalDevice };
-	sampler.CreateSampler(createInfoBuilder.GetPtr());
+	sampler.Create(createInfoBuilder);
 
 	createInfoBuilder
 		.Anisotropy(2.f)
@@ -82,7 +82,7 @@ TEST_F(BufferTest, VkSamplerTest)
 		.MagFilter(VK_FILTER_NEAREST);
 
 	VKSampler sampler1{ logicalDevice };
-	sampler1.CreateSampler(createInfoBuilder.Get());
+	sampler1.Create(createInfoBuilder);
 }
 
 TEST_F(BufferTest, TextureTest)

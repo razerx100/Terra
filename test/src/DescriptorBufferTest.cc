@@ -101,7 +101,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		VkSamplerCreateInfoBuilder samplerCreateInfo{};
 
 		VKSampler sampler{ logicalDevice };
-		sampler.CreateSampler(samplerCreateInfo.GetPtr());
+		sampler.Create(samplerCreateInfo);
 
 		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
 		descBuffer.SetDescriptorBufferInfo(physicalDevice);
@@ -194,7 +194,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
 		VkSamplerCreateInfoBuilder samplerCreateInfo{};
 
 		VKSampler sampler{ logicalDevice };
-		sampler.CreateSampler(samplerCreateInfo.GetPtr());
+		sampler.Create(samplerCreateInfo);
 
 		descBuffer.AddCombinedImageDescriptor(
 			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u

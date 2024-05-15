@@ -2,6 +2,7 @@
 #define VK_TEXTURE_VIEW_HPP_
 #include <VkResources.hpp>
 
+// This is a wrapper around the Vulkan handle for VkImageView.
 class VKImageView
 {
 public:
@@ -61,6 +62,7 @@ public:
 	}
 };
 
+// This is can allocate a Texture resource and then wraps a VkImageView around it.
 class VkTextureView
 {
 public:
@@ -220,8 +222,15 @@ public:
 	VKSampler(VkDevice device) : m_device{ device }, m_sampler{ VK_NULL_HANDLE } {}
 	~VKSampler() noexcept;
 
-	void CreateSampler(const VkSamplerCreateInfo* createInfo);
-	void CreateSampler(const VkSamplerCreateInfo& createInfo);
+	void Create(const VkSamplerCreateInfo* createInfo);
+	void Create(const VkSamplerCreateInfo& createInfo)
+	{
+		Create(&createInfo);
+	}
+	void Create(const VkSamplerCreateInfoBuilder& builder)
+	{
+		Create(builder.GetPtr());
+	}
 
 	[[nodiscard]]
 	VkSampler Get() const noexcept { return m_sampler; }
