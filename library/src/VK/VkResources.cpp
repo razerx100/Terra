@@ -124,17 +124,33 @@ VkMemoryRequirements VkImageResource::GetMemoryRequirements(VkDevice device) con
 
 // Resource
 Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
-	: m_memoryManager{ memoryManager }, m_allocationInfo{}, m_resourceType{ memoryType } {}
+	: m_memoryManager{ memoryManager }, m_allocationInfo{}, m_resourceType{ memoryType },
+	m_hasAllocation{ false }
+{}
 
 Resource::~Resource() noexcept
 {
 	SelfDestruct();
 }
 
+void Resource::Deallocate() noexcept
+{
+	if (m_memoryManager && m_hasAllocation)
+	{
+		m_memoryManager->Deallocate(m_allocationInfo, m_resourceType);
+
+		m_hasAllocation = false;
+	}
+}
+
 void Resource::SelfDestruct() noexcept
 {
-	if (m_memoryManager)
-		m_memoryManager->Deallocate(m_allocationInfo, m_resourceType);
+	Deallocate();
+}
+
+void Resource::ThrowMemoryManagerException()
+{
+	throw Exception("MemoryManager Exception", "Memory manager unavailable.");
 }
 
 // Buffer
@@ -149,6 +165,14 @@ Buffer::~Buffer() noexcept
 void Buffer::SelfDestruct() noexcept
 {
 	vkDestroyBuffer(m_device, m_buffer, nullptr);
+
+	m_buffer = VK_NULL_HANDLE;
+}
+
+void Buffer::Destroy() noexcept
+{
+	SelfDestruct();
+	Deallocate();
 }
 
 void Buffer::Create(
@@ -166,14 +190,11 @@ void Buffer::Create(
 
 	// If the buffer pointer is already allocated, then free it.
 	if (m_buffer != VK_NULL_HANDLE)
-		SelfDestruct();
+		Destroy();
 
 	vkCreateBuffer(m_device, &createInfo, nullptr, &m_buffer);
 
-	if (m_memoryManager)
-		m_allocationInfo = m_memoryManager->AllocateBuffer(m_buffer, m_resourceType);
-	else
-		throw Exception("MemoryManager Exception", "Memory manager unavailable.");
+	Allocate(m_buffer);
 }
 
 VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
@@ -200,6 +221,14 @@ Texture::~Texture() noexcept
 void Texture::SelfDestruct() noexcept
 {
 	vkDestroyImage(m_device, m_image, nullptr);
+
+	m_image = VK_NULL_HANDLE;
+}
+
+void Texture::Destroy() noexcept
+{
+	SelfDestruct();
+	Deallocate();
 }
 
 void Texture::Create2D(
@@ -251,12 +280,9 @@ void Texture::Create(
 
 	// If the image pointer is already allocated, then free it.
 	if (m_image != VK_NULL_HANDLE)
-		SelfDestruct();
+		Destroy();
 
 	vkCreateImage(m_device, &createInfo, nullptr, &m_image);
 
-	if (m_memoryManager)
-		m_allocationInfo = m_memoryManager->AllocateImage(m_image, m_resourceType);
-	else
-		throw Exception("MemoryManager Exception", "Memory manager unavailable.");
+	Allocate(m_image);
 }

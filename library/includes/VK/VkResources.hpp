@@ -2,6 +2,7 @@
 #define VK_RESOURCES_HPP_
 #include <vulkan/vulkan.hpp>
 #include <queue>
+#include <type_traits>
 #include <VkAllocator.hpp>
 
 template<typename ResourceType>
@@ -82,13 +83,36 @@ public:
 	[[nodiscard]]
 	std::uint8_t* CPUHandle() const noexcept { return m_allocationInfo.cpuOffset; }
 
+protected:
+	void Deallocate() noexcept;
+
+	template<typename ResourceType>
+	void Allocate(ResourceType resource)
+	{
+		if (m_memoryManager)
+		{
+			if constexpr (std::is_same_v<ResourceType, VkImage>)
+				m_allocationInfo = m_memoryManager->AllocateImage(resource, m_resourceType);
+			else if constexpr (std::is_same_v<ResourceType, VkBuffer>)
+				m_allocationInfo = m_memoryManager->AllocateBuffer(resource, m_resourceType);
+
+			m_hasAllocation = true;
+		}
+		else
+			ThrowMemoryManagerException();
+	}
+
 private:
 	void SelfDestruct() noexcept;
+	void ThrowMemoryManagerException();
 
 protected:
 	MemoryManager*                  m_memoryManager;
 	MemoryManager::MemoryAllocation m_allocationInfo;
 	VkMemoryPropertyFlagBits        m_resourceType;
+
+private:
+	bool                            m_hasAllocation;
 
 public:
 	Resource(const Resource&) = delete;
@@ -96,9 +120,10 @@ public:
 
 	Resource(Resource&& other) noexcept
 		: m_memoryManager{ other.m_memoryManager }, m_allocationInfo{ other.m_allocationInfo },
-		m_resourceType{ other.m_resourceType }
+		m_resourceType{ other.m_resourceType }, m_hasAllocation{ other.m_hasAllocation }
 	{
 		other.m_memoryManager = nullptr;
+		other.m_hasAllocation = false;
 	}
 	Resource& operator=(Resource&& other) noexcept
 	{
@@ -107,7 +132,9 @@ public:
 		m_memoryManager       = other.m_memoryManager;
 		m_allocationInfo      = other.m_allocationInfo;
 		m_resourceType        = other.m_resourceType;
+		m_hasAllocation       = other.m_hasAllocation;
 		other.m_memoryManager = nullptr;
+		other.m_hasAllocation = false;
 
 		return *this;
 	}
@@ -123,6 +150,8 @@ public:
 		VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+
+	void Destroy() noexcept;
 
 	[[nodiscard]]
 	VkBuffer Get() const noexcept { return m_buffer; }
@@ -174,6 +203,8 @@ public:
 		std::uint32_t mipLevels, VkFormat imageFormat,
 		VkImageUsageFlags usageFlags, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
+
+	void Destroy() noexcept;
 
 	[[nodiscard]]
 	VkImage Get() const noexcept { return m_image; }
