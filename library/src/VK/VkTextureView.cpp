@@ -63,6 +63,13 @@ VKImageView::~VKImageView() noexcept
 void VKImageView::SelfDestruct() noexcept
 {
 	vkDestroyImageView(m_device, m_imageView, nullptr);
+
+	m_imageView = VK_NULL_HANDLE;
+}
+
+void VKImageView::Destroy() noexcept
+{
+	SelfDestruct();
 }
 
 void VKImageView::CreateView(
@@ -91,6 +98,9 @@ void VKImageView::CreateView(
 		.components       = componentMapping,
 		.subresourceRange = subresourceRange
 	};
+
+	if (m_imageView != VK_NULL_HANDLE)
+		SelfDestruct();
 
 	vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView);
 
@@ -137,4 +147,10 @@ void VkTextureView::CreateView(
 	m_imageView.CreateView(
 		m_texture.Get(), imageFormat, aspectFlags, imageType, mipBaseLevel, mipLevelCount
 	);
+}
+
+void VkTextureView::Destroy() noexcept
+{
+	m_imageView.Destroy();
+	m_texture.Destroy();
 }

@@ -17,6 +17,8 @@ public:
 		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
 
+	void Destroy() noexcept;
+
 	[[nodiscard]]
 	VkImageView Get() const noexcept { return m_imageView; }
 	[[nodiscard]]
@@ -88,6 +90,8 @@ public:
 		VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
 		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
 	);
+
+	void Destroy() noexcept;
 
 	[[nodiscard]]
 	const Texture& GetTexture() const noexcept { return m_texture; }
