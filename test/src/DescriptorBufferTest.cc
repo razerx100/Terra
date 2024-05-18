@@ -141,7 +141,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 	}
 }
 
-TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
+TEST_F(DescriptorBufferTest, DescriptorBufferCopyTest)
 {
 	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
@@ -170,40 +170,67 @@ TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
 		);
 
 		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
-		descBuffer.SetDescriptorBufferInfo(physicalDevice);
-		descBuffer.AddBinding(
-			1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
-		);
+		{
+			descBuffer.SetDescriptorBufferInfo(physicalDevice);
+			descBuffer.AddBinding(
+				0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
 
-		descBuffer.AddBinding(
-			0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
-		);
+			descBuffer.CreateBuffer();
 
-		descBuffer.AddBinding(
-			2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5u, VK_SHADER_STAGE_FRAGMENT_BIT
-		);
+			descBuffer.UpdateBinding(
+				0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
 
-		descBuffer.CreateBuffer();
+			descBuffer.AddBinding(
+				1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 255u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
 
-		descBuffer.UpdateBinding(
-			1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
-		);
+			descBuffer.RecreateBuffer();
+		}
 
-		descBuffer.RecreateBuffer();
+		{
+			VkDescriptorBuffer descBuffer1{ logicalDevice, &memoryManager };
+			descBuffer1.SetDescriptorBufferInfo(physicalDevice);
 
-		VkSamplerCreateInfoBuilder samplerCreateInfo{};
+			descBuffer1.AddBinding(
+				0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
 
-		VKSampler sampler{ logicalDevice };
-		sampler.Create(samplerCreateInfo);
+			descBuffer1.AddBinding(
+				1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
 
-		descBuffer.SetCombinedImageDescriptor(
-			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
-		);
-		descBuffer.SetCombinedImageDescriptor(
-			textureView1, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
-		);
-		descBuffer.SetCombinedImageDescriptor(
-			textureView2, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 2u
-		);
+			descBuffer1.CreateBuffer();
+
+			VkSamplerCreateInfoBuilder samplerCreateInfo{};
+
+			VKSampler sampler{ logicalDevice };
+			sampler.Create(samplerCreateInfo);
+
+			{
+				void const* desc = descBuffer1.GetCombinedImageDescriptor(
+					textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+				);
+
+				descBuffer.SetCombinedImageDescriptor(desc, 0u, 0u);
+			}
+
+			{
+				void const* desc = descBuffer1.GetCombinedImageDescriptor(
+					textureView1, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+				);
+
+				descBuffer.SetCombinedImageDescriptor(desc, 0u, 1u);
+			}
+
+			{
+				void const* desc = descBuffer1.GetSampledImageDescriptor(
+					textureView2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
+				);
+
+				descBuffer.SetSampledImageDescriptor(desc, 1u, 0u);
+			}
+		}
 	}
 }
