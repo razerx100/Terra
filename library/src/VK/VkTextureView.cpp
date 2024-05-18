@@ -47,10 +47,15 @@ VKSampler::~VKSampler() noexcept
 void VKSampler::SelfDestruct() noexcept
 {
 	vkDestroySampler(m_device, m_sampler, nullptr);
+
+	m_sampler = VK_NULL_HANDLE;
 }
 
 void VKSampler::Create(const VkSamplerCreateInfo* createInfo)
 {
+	if (m_sampler != VK_NULL_HANDLE)
+		SelfDestruct();
+
 	vkCreateSampler(m_device, createInfo, nullptr, &m_sampler);
 }
 

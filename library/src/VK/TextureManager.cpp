@@ -4,14 +4,15 @@
 #include <algorithm>
 
 // Texture storage
-void TextureStorage::SetBindingIndex(size_t textureIndex, std::uint32_t bindingIndex) noexcept
-{
-	if (std::size(m_textureBindingIndices) <= textureIndex)
+void TextureStorage::SetBindingIndex(
+	size_t index, std::uint32_t bindingIndex, std::vector<std::uint32_t>& bindingIndices
+) noexcept {
+	if (std::size(bindingIndices) <= index)
 	{
-		m_textureBindingIndices.resize(textureIndex + 1u);
+		bindingIndices.resize(index + 1u);
 	}
 
-	m_textureBindingIndices.at(textureIndex) = bindingIndex;
+	bindingIndices.at(index) = bindingIndex;
 }
 
 size_t TextureStorage::AddTexture(
@@ -25,18 +26,20 @@ size_t TextureStorage::AddTexture(
 	VkTextureView* textureViewPtr = nullptr;
 
 	{
-		auto result = std::ranges::find(m_availableIndices, true);
+		auto result = std::ranges::find(m_availableTextureIndices, true);
 
-		if (result != std::end(m_availableIndices))
+		if (result != std::end(m_availableTextureIndices))
 		{
-			index          = static_cast<size_t>(std::distance(std::begin(m_availableIndices), result));
+			index          = static_cast<size_t>(
+				std::distance(std::begin(m_availableTextureIndices), result)
+			);
 			textureViewPtr = &m_textures.at(index);
 		}
 		else
 		{
 			index                      = std::size(m_textures);
 			VkTextureView& returnedRef = m_textures.emplace_back(std::move(textureView));
-			m_availableIndices.emplace_back(false);
+			m_availableTextureIndices.emplace_back(false);
 			textureViewPtr             = &returnedRef;
 		}
 	}
@@ -55,6 +58,38 @@ size_t TextureStorage::AddTexture(
 	);
 
 	m_transitionQueue.push(textureViewPtr);
+
+	return index;
+}
+
+size_t TextureStorage::AddSampler(const VkSamplerCreateInfoBuilder& builder)
+{
+	VKSampler sampler{ m_device };
+
+	auto index = std::numeric_limits<size_t>::max();
+
+	VKSampler* samplerPtr = nullptr;
+
+	{
+		auto result = std::ranges::find(m_availableSamplerIndices, true);
+
+		if (result != std::end(m_availableSamplerIndices))
+		{
+			index      = static_cast<size_t>(
+				std::distance(std::begin(m_availableSamplerIndices), result)
+			);
+			samplerPtr = &m_samplers.at(index);
+		}
+		else
+		{
+			index                  = std::size(m_samplers);
+			VKSampler& returnedRef = m_samplers.emplace_back(std::move(sampler));
+			m_availableSamplerIndices.emplace_back(false);
+			samplerPtr             = &returnedRef;
+		}
+	}
+
+	samplerPtr->Create(builder);
 
 	return index;
 }
@@ -83,8 +118,14 @@ void TextureStorage::TransitionQueuedTextures(VKCommandBuffer& graphicsCmdBuffer
 
 void TextureStorage::RemoveTexture(size_t index)
 {
-	m_availableIndices.at(index) = true;
+	m_availableTextureIndices.at(index) = true;
 	m_textures.at(index).Destroy();
+}
+
+void TextureStorage::RemoveSampler(size_t index)
+{
+	m_availableSamplerIndices.at(index) = true;
+	// Don't need to destroy this like textures, as it doesn't require any buffer allocations.
 }
 
 // Texture Manager

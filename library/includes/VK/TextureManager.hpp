@@ -15,8 +15,9 @@ class TextureStorage
 public:
 	TextureStorage(VkDevice device, MemoryManager* memoryManager)
 		: m_device{ device }, m_memoryManager{ memoryManager },
-		m_defaultSampler{ device }, m_textures{}, m_availableIndices{}, m_transitionQueue{},
-		m_textureData{}, m_textureBindingIndices{}
+		m_defaultSampler{ device }, m_textures{}, m_samplers{}, m_availableTextureIndices{},
+		m_availableSamplerIndices{}, m_transitionQueue{}, m_textureData{}, m_textureBindingIndices{},
+		m_samplerBindingIndices{}
 	{
 		m_defaultSampler.Create(VkSamplerCreateInfoBuilder{});
 	}
@@ -26,10 +27,20 @@ public:
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
 		StagingBufferManager& stagingBufferManager
 	);
+	[[nodiscard]]
+	size_t AddSampler(const VkSamplerCreateInfoBuilder& builder);
 
 	void RemoveTexture(size_t index);
+	void RemoveSampler(size_t index);
 
-	void SetBindingIndex(size_t textureIndex, std::uint32_t bindingIndex) noexcept;
+	void SetTextureBindingIndex(size_t textureIndex, std::uint32_t bindingIndex) noexcept
+	{
+		SetBindingIndex(textureIndex, bindingIndex, m_textureBindingIndices);
+	}
+	void SetSamplerBindingIndex(size_t samplerIndex, std::uint32_t bindingIndex) noexcept
+	{
+		SetBindingIndex(samplerIndex, bindingIndex, m_samplerBindingIndices);
+	}
 
 	[[nodiscard]]
 	const VkTextureView& Get(size_t index) const noexcept
@@ -43,18 +54,14 @@ public:
 	}
 
 	[[nodiscard]]
-	std::uint32_t GetBindingIndex(size_t textureIndex) const noexcept
+	std::uint32_t GetTextureBindingIndex(size_t textureIndex) const noexcept
 	{
-		// The plan is to not initialise the textureBindingIndices container, if we
-		// aren't using the remove and re-adding binding feature. As a texture will be
-		// added initially and if that feature isn't used, then storing the indices will
-		// be just a waste of space. So, if the textureBindingIndices isn't populated, that
-		// will mean the every single texture here is also bound. So, their indices should
-		// be the same.
-		if (std::size(m_textureBindingIndices) > textureIndex)
-			return m_textureBindingIndices.at(textureIndex);
-		else
-			return static_cast<std::uint32_t>(textureIndex);
+		return GetBindingIndex(textureIndex, m_textureBindingIndices);
+	}
+	[[nodiscard]]
+	std::uint32_t GetSamplerBindingIndex(size_t samplerIndex) const noexcept
+	{
+		return GetBindingIndex(samplerIndex, m_samplerBindingIndices);
 	}
 
 	[[nodiscard]]
@@ -69,8 +76,41 @@ public:
 		return &m_defaultSampler;
 	}
 
+	[[nodiscard]]
+	const VKSampler& GetSampler(size_t index) const noexcept
+	{
+		return m_samplers.at(index);
+	}
+
+	[[nodiscard]]
+	VKSampler const* GetSamplerPtr(size_t index) const noexcept
+	{
+		return &m_samplers.at(index);
+	}
+
 	void CleanupTempData() noexcept;
 	void TransitionQueuedTextures(VKCommandBuffer& graphicsCmdBuffer);
+
+private:
+	[[nodiscard]]
+	static std::uint32_t GetBindingIndex(
+		size_t index, const std::vector<std::uint32_t>& bindingIndices
+	) noexcept {
+		// The plan is to not initialise the bindingIndices container, if we
+		// aren't using the remove and re-adding binding feature. As an element will be
+		// added initially and if that feature isn't used, then storing the indices will
+		// be just a waste of space. So, if the bindingIndices isn't populated, that
+		// will mean the every single element here is also bound. So, their indices should
+		// be the same.
+		if (std::size(bindingIndices) > index)
+			return bindingIndices.at(index);
+		else
+			return static_cast<std::uint32_t>(index);
+	}
+
+	static void SetBindingIndex(
+		size_t index, std::uint32_t bindingIndex, std::vector<std::uint32_t>& bindingIndices
+	) noexcept;
 
 private:
 	VkDevice                                   m_device;
@@ -78,10 +118,13 @@ private:
 	VKSampler                                  m_defaultSampler;
 	// The TextureView objects need to have the same address until their data is copied.
 	std::deque<VkTextureView>                  m_textures;
-	std::vector<bool>                          m_availableIndices;
+	std::deque<VKSampler>                      m_samplers;
+	std::vector<bool>                          m_availableTextureIndices;
+	std::vector<bool>                          m_availableSamplerIndices;
 	std::queue<VkTextureView const*>           m_transitionQueue;
 	std::vector<std::unique_ptr<std::uint8_t>> m_textureData;
 	std::vector<std::uint32_t>                 m_textureBindingIndices;
+	std::vector<std::uint32_t>                 m_samplerBindingIndices;
 
 	static constexpr VkFormat s_textureFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -93,21 +136,27 @@ public:
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
 		m_defaultSampler{ std::move(other.m_defaultSampler) },
 		m_textures{ std::move(other.m_textures) },
-		m_availableIndices{ std::move(other.m_availableIndices) },
+		m_samplers{ std::move(other.m_samplers) },
+		m_availableTextureIndices{ std::move(other.m_availableTextureIndices) },
+		m_availableSamplerIndices{ std::move(other.m_availableSamplerIndices) },
 		m_transitionQueue{ std::move(other.m_transitionQueue) },
 		m_textureData{ std::move(other.m_textureData) },
-		m_textureBindingIndices{ std::move(other.m_textureBindingIndices) }
+		m_textureBindingIndices{ std::move(other.m_textureBindingIndices) },
+		m_samplerBindingIndices{ std::move(other.m_samplerBindingIndices) }
 	{}
 	TextureStorage& operator=(TextureStorage&& other) noexcept
 	{
-		m_device                = other.m_device;
-		m_memoryManager         = other.m_memoryManager;
-		m_defaultSampler        = std::move(other.m_defaultSampler);
-		m_textures              = std::move(other.m_textures);
-		m_availableIndices      = std::move(other.m_availableIndices);
-		m_transitionQueue       = std::move(other.m_transitionQueue);
-		m_textureData           = std::move(other.m_textureData);
-		m_textureBindingIndices = std::move(other.m_textureBindingIndices);
+		m_device                  = other.m_device;
+		m_memoryManager           = other.m_memoryManager;
+		m_defaultSampler          = std::move(other.m_defaultSampler);
+		m_textures                = std::move(other.m_textures);
+		m_samplers                = std::move(other.m_samplers);
+		m_availableTextureIndices = std::move(other.m_availableTextureIndices);
+		m_availableSamplerIndices = std::move(other.m_availableSamplerIndices);
+		m_transitionQueue         = std::move(other.m_transitionQueue);
+		m_textureData             = std::move(other.m_textureData);
+		m_textureBindingIndices   = std::move(other.m_textureBindingIndices);
+		m_samplerBindingIndices   = std::move(other.m_samplerBindingIndices);
 
 		return *this;
 	}
