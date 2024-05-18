@@ -86,3 +86,138 @@ void TextureStorage::RemoveTexture(size_t index)
 	m_availableIndices.at(index) = true;
 	m_textures.at(index).Destroy();
 }
+
+// Texture Manager
+std::optional<std::uint32_t> TextureManager::AddSampledTextureForBinding(
+	VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture,
+	std::uint32_t sampledTexturesBindingSlot
+) noexcept {
+	std::optional<std::uint32_t> freeIndex = FindFreeIndex(
+		m_availableIndicesSampledTextures
+	);
+
+	if (freeIndex)
+	{
+		const std::uint32_t descIndex = *freeIndex;
+
+		descriptorBuffer.AddSampledImageDescriptor(
+			*texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, sampledTexturesBindingSlot,
+			descIndex
+		);
+		m_availableIndicesSampledTextures.at(descIndex) = false;
+
+		return descIndex;
+	}
+
+	return {};
+}
+
+std::optional<std::uint32_t> TextureManager::AddCombinedTextureForBinding(
+	VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture, VKSampler const* sampler,
+	std::uint32_t combinedTexturesBindingSlot
+) noexcept {
+	std::optional<std::uint32_t> freeIndex = FindFreeIndex(
+		m_availableIndicesCombinedTextures
+	);
+
+	if (freeIndex)
+	{
+		const std::uint32_t descIndex = *freeIndex;
+
+		descriptorBuffer.AddCombinedImageDescriptor(
+			*texture, *sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			combinedTexturesBindingSlot, descIndex
+		);
+		m_availableIndicesCombinedTextures.at(descIndex) = false;
+
+		return descIndex;
+	}
+
+	return {};
+}
+
+std::optional<std::uint32_t> TextureManager::AddSamplerForBinding(
+	VkDescriptorBuffer& descriptorBuffer, VKSampler const* sampler,
+	std::uint32_t samplersBindingSlot
+) noexcept {
+	std::optional<std::uint32_t> freeIndex = FindFreeIndex(
+		m_availableIndicesSamplers
+	);
+
+	if (freeIndex)
+	{
+		const std::uint32_t descIndex = *freeIndex;
+
+		descriptorBuffer.AddSamplerDescriptor(*sampler, samplersBindingSlot, descIndex);
+		m_availableIndicesSamplers.at(descIndex) = false;
+
+		return descIndex;
+	}
+
+	return {};
+}
+
+void TextureManager::IncreaseAvailableIndices(TextureDescType descType) noexcept
+{
+	if (descType == TextureDescType::CombinedTexture)
+		m_availableIndicesCombinedTextures.resize(s_combinedTextureDescriptorCount, true);
+	else if (descType == TextureDescType::SampledTexture)
+		m_availableIndicesSampledTextures.resize(s_sampledTextureDescriptorCount, true);
+	else if (descType == TextureDescType::Sampler)
+		m_availableIndicesSamplers.resize(s_samplerDescriptorCount, true);
+}
+
+void TextureManager::SetDescriptorBuffer(
+	VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
+	std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot
+) const noexcept {
+	const auto combinedDescCount = static_cast<std::uint32_t>(
+		std::size(m_availableIndicesCombinedTextures)
+	);
+
+	if(combinedDescCount)
+	{
+		descriptorBuffer.AddBinding(
+			combinedTexturesBindingSlot, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+		);
+	}
+
+	const auto sampledDescCount = static_cast<std::uint32_t>(
+		std::size(m_availableIndicesSampledTextures)
+	);
+
+	if (sampledDescCount)
+	{
+		descriptorBuffer.AddBinding(
+			sampledTexturesBindingSlot, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+		);
+	}
+
+	const auto samplerDescCount = static_cast<std::uint32_t>(
+		std::size(m_availableIndicesSamplers)
+	);
+
+	if (samplerDescCount)
+	{
+		descriptorBuffer.AddBinding(
+			samplersBindingSlot, VK_DESCRIPTOR_TYPE_SAMPLER,
+			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+		);
+	}
+}
+
+std::optional<std::uint32_t> TextureManager::FindFreeIndex(
+	const std::vector<bool>& availableIndices
+) noexcept {
+	auto result = std::ranges::find(availableIndices, true);
+
+	if (result != std::end(availableIndices))
+		return static_cast<std::uint32_t>(std::distance(std::begin(availableIndices), result));
+
+	return {};
+}

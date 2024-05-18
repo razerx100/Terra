@@ -113,50 +113,90 @@ public:
 	}
 };
 
+enum class TextureDescType
+{
+	CombinedTexture,
+	SampledTexture,
+	Sampler
+};
+
 // This class will decide which of the textures will be bound to the pipeline. Every texture from
 // the TextureStorage might not be bound at the same time.
 class TextureManager
 {
-	static constexpr std::uint32_t s_textureDescriptorCount = std::numeric_limits<std::uint16_t>::max();
+	static constexpr std::uint32_t s_combinedTextureDescriptorCount
+		= std::numeric_limits<std::uint16_t>::max();
+	static constexpr std::uint32_t s_sampledTextureDescriptorCount
+		= std::numeric_limits<std::uint8_t>::max();
+	static constexpr std::uint32_t s_samplerDescriptorCount
+		= std::numeric_limits<std::uint8_t>::max();
 
 public:
-	TextureManager() : m_availableIndices{} {}
+	TextureManager()
+		: m_availableIndicesCombinedTextures( s_combinedTextureDescriptorCount, true ),
+		m_availableIndicesSampledTextures{}, m_availableIndicesSamplers{}
+	{}
 
 	[[nodiscard]]
 	std::optional<std::uint32_t> AddSampledTextureForBinding(
-		VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture
+		VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture,
+		std::uint32_t sampledTexturesBindingSlot
+	) noexcept;
+	[[nodiscard]]
+	std::optional<std::uint32_t> AddSamplerForBinding(
+		VkDescriptorBuffer& descriptorBuffer, VKSampler const* sampler,
+		std::uint32_t samplersBindingSlot
 	) noexcept;
 	[[nodiscard]]
 	std::optional<std::uint32_t> AddCombinedTextureForBinding(
-		VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture, VKSampler const* sampler
+		VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture, VKSampler const* sampler,
+		std::uint32_t combinedTexturesBindingSlot
 	) noexcept;
 
-	void RemoveTextureFromBinding(size_t index)
+	void RemoveFromBinding(size_t index, TextureDescType descType)
 	{
-		m_availableIndices.at(index) = true;
+		if (descType == TextureDescType::CombinedTexture)
+			m_availableIndicesCombinedTextures.at(index) = true;
+		else if (descType == TextureDescType::SampledTexture)
+			m_availableIndicesSampledTextures.at(index) = true;
+		else if (descType == TextureDescType::Sampler)
+			m_availableIndicesSamplers.at(index) = true;
 	}
 
-	// Add s_textureDescriptorCount new entries to the available indices container. After calling
+	// Add new entries to the available indices container. After calling
 	// this, the descriptor buffer needs to be updated and recreated.
-	void IncreaseAvailableIndices() noexcept;
+	void IncreaseAvailableIndices(TextureDescType descType) noexcept;
 
 	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t texturesBindingSlot
+		VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
+		std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot
 	) const noexcept;
 
 private:
-	std::vector<bool> m_availableIndices;
+	[[nodiscard]]
+	static std::optional<std::uint32_t> FindFreeIndex(
+		const std::vector<bool>& availableIndices
+	) noexcept;
+
+private:
+	std::vector<bool> m_availableIndicesCombinedTextures;
+	std::vector<bool> m_availableIndicesSampledTextures;
+	std::vector<bool> m_availableIndicesSamplers;
 
 public:
 	TextureManager(const TextureManager&) = delete;
 	TextureManager& operator=(const TextureManager&) = delete;
 
 	TextureManager(TextureManager&& other) noexcept
-		: m_availableIndices{ std::move(other.m_availableIndices) }
+		: m_availableIndicesCombinedTextures{ std::move(other.m_availableIndicesCombinedTextures) },
+		m_availableIndicesSampledTextures{ std::move(other.m_availableIndicesSampledTextures) },
+		m_availableIndicesSamplers{ std::move(other.m_availableIndicesSamplers) }
 	{}
 	TextureManager& operator=(TextureManager&& other) noexcept
 	{
-		m_availableIndices = std::move(other.m_availableIndices);
+		m_availableIndicesCombinedTextures = std::move(other.m_availableIndicesCombinedTextures);
+		m_availableIndicesSampledTextures  = std::move(other.m_availableIndicesSampledTextures);
+		m_availableIndicesSamplers         = std::move(other.m_availableIndicesSamplers);
 
 		return *this;
 	}
