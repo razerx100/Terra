@@ -106,12 +106,10 @@ private:
 	void SelfDestruct() noexcept;
 	void ThrowMemoryManagerException();
 
-protected:
+private:
 	MemoryManager*                  m_memoryManager;
 	MemoryManager::MemoryAllocation m_allocationInfo;
 	VkMemoryPropertyFlagBits        m_resourceType;
-
-private:
 	bool                            m_hasAllocation;
 
 public:
@@ -122,17 +120,22 @@ public:
 		: m_memoryManager{ other.m_memoryManager }, m_allocationInfo{ other.m_allocationInfo },
 		m_resourceType{ other.m_resourceType }, m_hasAllocation{ other.m_hasAllocation }
 	{
+		// Setting the allocation check to null, so the other object doesn't deallocate.
+		// Don't need to deallocate our previous data, as there was none.
 		other.m_memoryManager = nullptr;
 		other.m_hasAllocation = false;
 	}
 	Resource& operator=(Resource&& other) noexcept
 	{
+		// Deallocating the already existing memory.
 		SelfDestruct();
 
 		m_memoryManager       = other.m_memoryManager;
 		m_allocationInfo      = other.m_allocationInfo;
 		m_resourceType        = other.m_resourceType;
+		// Taking the allocation data from the other object.
 		m_hasAllocation       = other.m_hasAllocation;
+		// Setting the allocation check to null, so the other object doesn't deallocate.
 		other.m_memoryManager = nullptr;
 		other.m_hasAllocation = false;
 
