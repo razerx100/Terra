@@ -83,13 +83,13 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		descBuffer.AddBinding(4u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.CreateBuffer();
 
-		descBuffer.AddStorageBufferDescriptor(testStorage, 0u, 0u);
-		descBuffer.AddUniformBufferDescriptor(testUniform, 1u, 0u);
-		descBuffer.AddStorageTexelBufferDescriptor(testTexel, 2u, 0u, VK_FORMAT_R8G8B8A8_UINT);
-		descBuffer.AddStorageBufferDescriptor(
+		descBuffer.SetStorageBufferDescriptor(testStorage, 0u, 0u);
+		descBuffer.SetUniformBufferDescriptor(testUniform, 1u, 0u);
+		descBuffer.SetStorageTexelBufferDescriptor(testTexel, 2u, 0u, VK_FORMAT_R8G8B8A8_UINT);
+		descBuffer.SetStorageBufferDescriptor(
 			testStorageM, 3u, 0u, 0u, static_cast<VkDeviceSize>(2_KB)
 		);
-		descBuffer.AddStorageBufferDescriptor(
+		descBuffer.SetStorageBufferDescriptor(
 			testStorageM, 4u, 0u,
 			static_cast<VkDeviceAddress>(2_KB), static_cast<VkDeviceSize>(2_KB)
 		);
@@ -124,14 +124,14 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 			VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_3D, {}
 		);
 
-		descBuffer.AddCombinedImageDescriptor(
+		descBuffer.SetCombinedImageDescriptor(
 			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
 		);
-		descBuffer.AddSampledImageDescriptor(
+		descBuffer.SetSampledImageDescriptor(
 			textureView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
 		);
-		descBuffer.AddSamplerDescriptor(sampler, 2u, 0u);
-		descBuffer.AddStorageImageDescriptor(
+		descBuffer.SetSamplerDescriptor(sampler, 2u, 0u);
+		descBuffer.SetStorageImageDescriptor(
 			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u, 0u
 		);
 
@@ -196,13 +196,13 @@ TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
 		VKSampler sampler{ logicalDevice };
 		sampler.Create(samplerCreateInfo);
 
-		descBuffer.AddCombinedImageDescriptor(
+		descBuffer.SetCombinedImageDescriptor(
 			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
 		);
-		descBuffer.AddCombinedImageDescriptor(
+		descBuffer.SetCombinedImageDescriptor(
 			textureView1, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
 		);
-		descBuffer.AddCombinedImageDescriptor(
+		descBuffer.SetCombinedImageDescriptor(
 			textureView2, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 2u
 		);
 	}

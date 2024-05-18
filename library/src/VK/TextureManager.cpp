@@ -141,7 +141,8 @@ std::optional<std::uint32_t> TextureManager::AddSampledTextureForBinding(
 	{
 		const std::uint32_t descIndex = *freeIndex;
 
-		descriptorBuffer.AddSampledImageDescriptor(
+		// Needs to be swapped with the other Descriptor setter.
+		descriptorBuffer.SetSampledImageDescriptor(
 			*texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, sampledTexturesBindingSlot,
 			descIndex
 		);
@@ -165,7 +166,8 @@ std::optional<std::uint32_t> TextureManager::AddCombinedTextureForBinding(
 	{
 		const std::uint32_t descIndex = *freeIndex;
 
-		descriptorBuffer.AddCombinedImageDescriptor(
+		// Needs to be swapped with the other Descriptor setter.
+		descriptorBuffer.SetCombinedImageDescriptor(
 			*texture, *sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			combinedTexturesBindingSlot, descIndex
 		);
@@ -189,7 +191,8 @@ std::optional<std::uint32_t> TextureManager::AddSamplerForBinding(
 	{
 		const std::uint32_t descIndex = *freeIndex;
 
-		descriptorBuffer.AddSamplerDescriptor(*sampler, samplersBindingSlot, descIndex);
+		// Needs to be swapped with the other Descriptor setter.
+		descriptorBuffer.SetSamplerDescriptor(*sampler, samplersBindingSlot, descIndex);
 		m_availableIndicesSamplers.at(descIndex) = false;
 
 		return descIndex;

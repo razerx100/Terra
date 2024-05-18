@@ -209,30 +209,48 @@ private:
 	}
 
 	template<VkDescriptorType type>
-	void GetBufferToDescriptor(
-		const VkDescriptorAddressInfoEXT& bufferInfo, std::uint32_t bindingIndex,
-		std::uint32_t descriptorIndex
+	[[nodiscard]]
+	void const* GetDescriptor(
+		std::uint32_t bindingIndex, std::uint32_t descriptorIndex, const VkDescriptorDataEXT& descData
 	) {
-		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
-
-		VkDescriptorDataEXT descData = GetDescriptorData<type>(bufferInfo);
-
-		VkDescriptorGetInfoEXT getInfo{
+		const VkDescriptorGetInfoEXT getInfo{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
 			.type  = type,
 			.data  = descData
 		};
 
-		size_t descriptorSize = GetDescriptorSize<type>();
+		const size_t descriptorSize = GetDescriptorSize<type>();
 
-		// We should be able to memcpy the descriptor, but the issue is most of the descriptor sizes
-		// are 4bytes but a pointer on a 64bits device is 8bytes. So, I think to do memcpy, we have
-		// to get both X and Y descriptors with vkGetDescriptorEXT, and then we could copy them to
-		// other descriptor addresses. Idk if that will be very useful though.
-		DescBuffer::vkGetDescriptorEXT(
-			m_device, &getInfo, descriptorSize,
-			GetDescriptorAddress(bindingIndex, descriptorSize, descriptorIndex)
+		void* descriptorAddress = GetDescriptorAddress(bindingIndex, descriptorSize, descriptorIndex);
+
+		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
+
+		DescBuffer::vkGetDescriptorEXT(m_device, &getInfo, descriptorSize, descriptorAddress);
+
+		return descriptorAddress;
+	}
+
+	template<VkDescriptorType type>
+	void SetDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		const size_t descriptorSize = GetDescriptorSize<type>();
+
+		memcpy(
+			GetDescriptorAddress(bindingIndex, descriptorSize, descriptorIndex),
+			descriptorAddress, descriptorSize
 		);
+	}
+
+	template<VkDescriptorType type>
+	[[nodiscard]]
+	void const* GetBufferToDescriptor(
+		const VkDescriptorAddressInfoEXT& bufferInfo, std::uint32_t bindingIndex,
+		std::uint32_t descriptorIndex
+	) {
+		const VkDescriptorDataEXT descData = GetDescriptorData<type>(bufferInfo);
+
+		return GetDescriptor<type>(bindingIndex, descriptorIndex, descData);
 	}
 
 	[[nodiscard]]
@@ -241,7 +259,7 @@ private:
 	) noexcept;
 
 	template<VkDescriptorType type>
-	void AddBufferToDescriptor(
+	void const* GetBufferToDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
 		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
@@ -252,11 +270,11 @@ private:
 			bufferAddress, actualBufferSize, VK_FORMAT_UNDEFINED
 		);
 
-		GetBufferToDescriptor<type>(bufferDescAddressInfo, bindingIndex, descriptorIndex);
+		return GetBufferToDescriptor<type>(bufferDescAddressInfo, bindingIndex, descriptorIndex);
 	}
 
 	template<VkDescriptorType type>
-	void AddTexelBufferToDescriptor(
+	void const* GetTexelBufferToDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, VkFormat texelBufferFormat,
 		std::uint32_t descriptorIndex, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
@@ -267,103 +285,214 @@ private:
 			bufferAddress, actualBufferSize, texelBufferFormat
 		);
 
-		GetBufferToDescriptor<type>(bufferDescAddressInfo, bindingIndex, descriptorIndex);
+		return GetBufferToDescriptor<type>(bufferDescAddressInfo, bindingIndex, descriptorIndex);
 	}
 
 	template<VkDescriptorType type>
-	void GetImageToDescriptor(
+	void const* GetImageToDescriptor(
 		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, std::uint32_t bindingIndex,
 		std::uint32_t descriptorIndex
 	) {
-		using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
-
 		VkDescriptorImageInfo imageInfo{ .imageLayout = imageLayout };
 
-		VkDescriptorDataEXT descData = GetDescriptorData<type>(imageView, sampler, imageInfo);
+		const VkDescriptorDataEXT descData = GetDescriptorData<type>(imageView, sampler, imageInfo);
 
-		VkDescriptorGetInfoEXT getInfo{
-			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
-			.type  = type,
-			.data  = descData
-		};
-
-		size_t descriptorSize = GetDescriptorSize<type>();
-
-		DescBuffer::vkGetDescriptorEXT(
-			m_device, &getInfo, descriptorSize,
-			GetDescriptorAddress(bindingIndex, descriptorSize, descriptorIndex)
-		);
-	}
-
-	template<VkDescriptorType type>
-	void AddImageToDescriptor(
-		VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout, std::uint32_t bindingIndex,
-		std::uint32_t descriptorIndex
-	) {
-		GetImageToDescriptor<type>(imageView, sampler, imageLayout, bindingIndex, descriptorIndex);
+		return GetDescriptor<type>(bindingIndex, descriptorIndex, descData);
 	}
 
 public:
-	void AddStorageBufferDescriptor(
+	[[nodiscard]]
+	void const* GetStorageBufferDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
 		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(
+		return GetBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(
 			buffer, bindingIndex, descriptorIndex, bufferOffset, bufferSize
 		);
 	}
-	void AddUniformBufferDescriptor(
+	[[nodiscard]]
+	void const* GetUniformBufferDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
 		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
-		AddBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(
+		return GetBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(
 			buffer, bindingIndex, descriptorIndex, bufferOffset, bufferSize
 		);
 	}
-	void AddUniformTexelBufferDescriptor(
+	[[nodiscard]]
+	void const* GetUniformTexelBufferDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
 		VkFormat texelFormat, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
-		AddTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
+		return GetTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
 			buffer, bindingIndex, texelFormat, descriptorIndex, bufferOffset, bufferSize
 		);
 	}
-	void AddStorageTexelBufferDescriptor(
+	[[nodiscard]]
+	void const* GetStorageTexelBufferDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
 		VkFormat texelFormat, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) {
-		AddTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
+		return GetTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
 			buffer, bindingIndex, texelFormat, descriptorIndex, bufferOffset, bufferSize
 		);
 	}
-	void AddCombinedImageDescriptor(
+	[[nodiscard]]
+	void const* GetCombinedImageDescriptor(
 		const VkTextureView& textureView, const VKSampler& sampler, VkImageLayout imageLayout,
 		std::uint32_t bindingIndex, std::uint32_t descriptorIndex
 	) {
-		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
 			textureView.GetView(), sampler.Get(), imageLayout, bindingIndex, descriptorIndex
 		);
 	}
-	void AddSampledImageDescriptor(
+	[[nodiscard]]
+	void const* GetSampledImageDescriptor(
 		const VkTextureView& textureView, VkImageLayout imageLayout, std::uint32_t bindingIndex,
 		std::uint32_t descriptorIndex
 	) {
-		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
 			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, descriptorIndex
 		);
 	}
-	void AddStorageImageDescriptor(
+	[[nodiscard]]
+	void const* GetStorageImageDescriptor(
 		const VkTextureView& textureView, VkImageLayout imageLayout, std::uint32_t bindingIndex,
 		std::uint32_t descriptorIndex
 	) {
-		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
+		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
 			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, descriptorIndex
 		);
 	}
-	void AddSamplerDescriptor(
+	[[nodiscard]]
+	void const* GetSamplerDescriptor(
 		const VKSampler& sampler, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
 	) {
-		AddImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
+		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
+			VK_NULL_HANDLE, sampler.Get(), VK_IMAGE_LAYOUT_UNDEFINED, bindingIndex, descriptorIndex
+		);
+	}
+
+	// The setters with the descriptor address are for getting descriptors from a different buffer and
+	// then setting them.
+	void SetStorageBufferDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetUniformBufferDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetUniformTexelBufferDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetStorageTexelBufferDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetCombinedImageDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetSampledImageDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetStorageImageDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+	void SetSamplerDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
+			descriptorAddress, bindingIndex, descriptorIndex
+		);
+	}
+
+	// The setters without the descriptor address are for directly setting the descriptors here.
+	void SetStorageBufferDescriptor(
+		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+	) {
+		GetBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_BUFFER>(
+			buffer, bindingIndex, descriptorIndex, bufferOffset, bufferSize
+		);
+	}
+	void SetUniformBufferDescriptor(
+		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
+		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+	) {
+		GetBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER>(
+			buffer, bindingIndex, descriptorIndex, bufferOffset, bufferSize
+		);
+	}
+	void SetUniformTexelBufferDescriptor(
+		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
+		VkFormat texelFormat, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+	) {
+		GetTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER>(
+			buffer, bindingIndex, texelFormat, descriptorIndex, bufferOffset, bufferSize
+		);
+	}
+	void SetStorageTexelBufferDescriptor(
+		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
+		VkFormat texelFormat, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+	) {
+		GetTexelBufferToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER>(
+			buffer, bindingIndex, texelFormat, descriptorIndex, bufferOffset, bufferSize
+		);
+	}
+	void SetCombinedImageDescriptor(
+		const VkTextureView& textureView, const VKSampler& sampler, VkImageLayout imageLayout,
+		std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+			textureView.GetView(), sampler.Get(), imageLayout, bindingIndex, descriptorIndex
+		);
+	}
+	void SetSampledImageDescriptor(
+		const VkTextureView& textureView, VkImageLayout imageLayout, std::uint32_t bindingIndex,
+		std::uint32_t descriptorIndex
+	) {
+		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, descriptorIndex
+		);
+	}
+	void SetStorageImageDescriptor(
+		const VkTextureView& textureView, VkImageLayout imageLayout, std::uint32_t bindingIndex,
+		std::uint32_t descriptorIndex
+	) {
+		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
+			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, descriptorIndex
+		);
+	}
+	void SetSamplerDescriptor(
+		const VKSampler& sampler, std::uint32_t bindingIndex, std::uint32_t descriptorIndex
+	) {
+		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLER>(
 			VK_NULL_HANDLE, sampler.Get(), VK_IMAGE_LAYOUT_UNDEFINED, bindingIndex, descriptorIndex
 		);
 	}

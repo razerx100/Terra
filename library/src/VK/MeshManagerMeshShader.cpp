@@ -36,9 +36,9 @@ void MeshManagerMeshShader::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t verticesBindingSlot,
 	std::uint32_t vertexIndicesBindingSlot, std::uint32_t primIndicesBindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(m_vertexBuffer, verticesBindingSlot, 0u);
-	descriptorBuffer.AddStorageBufferDescriptor(m_vertexIndicesBuffer, vertexIndicesBindingSlot, 0u);
-	descriptorBuffer.AddStorageBufferDescriptor(m_primIndicesBuffer, primIndicesBindingSlot, 0u);
+	descriptorBuffer.SetStorageBufferDescriptor(m_vertexBuffer, verticesBindingSlot, 0u);
+	descriptorBuffer.SetStorageBufferDescriptor(m_vertexIndicesBuffer, vertexIndicesBindingSlot, 0u);
+	descriptorBuffer.SetStorageBufferDescriptor(m_primIndicesBuffer, primIndicesBindingSlot, 0u);
 }
 
 std::vector<MeshManagerMeshShader::GLSLVertex> MeshManagerMeshShader::TransformVertices(

@@ -106,7 +106,7 @@ void ModelBundleMS::CreateBuffers(StagingBufferManager& stagingBufferMan)
 void ModelBundleMS::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot, 0u);
+	descriptorBuffer.SetStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot, 0u);
 }
 
 void ModelBundleMS::CleanupTempData() noexcept
@@ -164,10 +164,10 @@ void ModelBundleVSIndirect::SetDescriptorBuffer(
 	const auto argumentBufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_argumentBufferSize);
 	const auto counterBufferOffset  = static_cast<VkDeviceAddress>(frameIndex * m_counterBufferSize);
 
-	descriptorBuffer.AddStorageBufferDescriptor(
+	descriptorBuffer.SetStorageBufferDescriptor(
 		m_argumentBuffer, argumentsBindingSlot, argumentBufferOffset, m_argumentBufferSize
 	);
-	descriptorBuffer.AddStorageBufferDescriptor(
+	descriptorBuffer.SetStorageBufferDescriptor(
 		m_counterBuffer, counterBindingSlot, counterBufferOffset, m_counterBufferSize
 	);
 }
@@ -262,10 +262,10 @@ void ModelBundleCSIndirect::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer,
 	std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
 ) const noexcept {
-	descriptorBuffer.AddStorageBufferDescriptor(
+	descriptorBuffer.SetStorageBufferDescriptor(
 		m_argumentInputBuffer, argumentInputBindingSlot, 0u
 	);
-	descriptorBuffer.AddStorageBufferDescriptor(
+	descriptorBuffer.SetStorageBufferDescriptor(
 		m_cullingDataBuffer, cullingDataBindingSlot, 0u
 	);
 }
@@ -299,7 +299,7 @@ void ModelBuffers::SetDescriptorBuffer(
 ) const noexcept {
 	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
 
-	descriptorBuffer.AddStorageBufferDescriptor(
+	descriptorBuffer.SetStorageBufferDescriptor(
 		m_buffers, bindingSlot, bufferOffset, m_modelBuffersInstanceSize
 	);
 }
