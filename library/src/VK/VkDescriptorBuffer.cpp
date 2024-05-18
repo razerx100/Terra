@@ -109,9 +109,29 @@ void VkDescriptorBuffer::CreateBuffer(const std::vector<std::uint32_t>& queueFam
 
 	DescBuffer::vkGetDescriptorSetLayoutSizeEXT(m_device, m_setLayout.Get(), &layoutSizeInBytes);
 
-	m_bufferFlags = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+	m_descriptorBuffer.Create(layoutSizeInBytes, GetFlags(), queueFamilyIndices);
+}
 
-	m_descriptorBuffer.Create(layoutSizeInBytes, m_bufferFlags, queueFamilyIndices);
+void VkDescriptorBuffer::RecreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices/* = {} */)
+{
+	using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
+
+	m_setLayout.Create();
+
+	VkDeviceSize layoutSizeInBytes = 0u;
+
+	DescBuffer::vkGetDescriptorSetLayoutSizeEXT(m_device, m_setLayout.Get(), &layoutSizeInBytes);
+
+	Buffer newBuffer{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+	newBuffer.Create(layoutSizeInBytes, GetFlags(), queueFamilyIndices);
+
+	// All of the old descriptors will be only copied if the new buffer is larger.
+	if (newBuffer.Size() > m_descriptorBuffer.Size())
+	{
+		memcpy(newBuffer.CPUHandle(), m_descriptorBuffer.CPUHandle(), m_descriptorBuffer.Size());
+	}
+
+	m_descriptorBuffer = std::move(newBuffer);
 }
 
 void VkDescriptorBuffer::SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept

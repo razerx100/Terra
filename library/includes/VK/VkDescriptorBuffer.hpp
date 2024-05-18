@@ -69,9 +69,8 @@ class VkDescriptorBuffer
 {
 public:
 	VkDescriptorBuffer(VkDevice device, MemoryManager* memoryManager)
-		: m_device{ device }, m_setLayout{ device },
+		: m_device{ device }, m_memoryManager{ memoryManager }, m_setLayout{device},
 		m_descriptorBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-		m_bufferFlags{ 0u },
 		m_layoutOffset{ 0u } // This should be always 0u, as I have a single layout.
 	{}
 
@@ -86,6 +85,7 @@ public:
 	) noexcept;
 
 	void CreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
+	void RecreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
 
 	static void SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept;
 
@@ -95,9 +95,9 @@ public:
 		return m_descriptorBuffer.GpuPhysicalAddress();
 	}
 	[[nodiscard]]
-	VkBufferUsageFlags GetFlags() const noexcept
+	static constexpr VkBufferUsageFlags GetFlags() noexcept
 	{
-		return m_bufferFlags;
+		return VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 	}
 	[[nodiscard]]
 	VkDeviceSize const* GetLayoutOffset() const noexcept
@@ -112,9 +112,9 @@ public:
 
 private:
 	VkDevice            m_device;
+	MemoryManager*      m_memoryManager;
 	DescriptorSetLayout m_setLayout;
 	Buffer              m_descriptorBuffer;
-	VkBufferUsageFlags  m_bufferFlags;
 	VkDeviceSize        m_layoutOffset;
 
 	static VkPhysicalDeviceDescriptorBufferPropertiesEXT s_descriptorInfo;
@@ -377,17 +377,18 @@ public:
 	VkDescriptorBuffer& operator=(const VkDescriptorBuffer&) = delete;
 
 	VkDescriptorBuffer(VkDescriptorBuffer&& other) noexcept
-		: m_device{ other.m_device }, m_setLayout{ std::move(other.m_setLayout) },
+		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
+		m_setLayout{ std::move(other.m_setLayout) },
 		m_descriptorBuffer{ std::move(other.m_descriptorBuffer) },
-		m_bufferFlags{ other.m_bufferFlags }, m_layoutOffset{ other.m_layoutOffset }
+		m_layoutOffset{ other.m_layoutOffset }
 	{}
 
 	VkDescriptorBuffer& operator=(VkDescriptorBuffer&& other) noexcept
 	{
 		m_device           = other.m_device;
+		m_memoryManager    = other.m_memoryManager;
 		m_setLayout        = std::move(other.m_setLayout);
 		m_descriptorBuffer = std::move(other.m_descriptorBuffer);
-		m_bufferFlags      = other.m_bufferFlags;
 		m_layoutOffset     = other.m_layoutOffset;
 
 		return *this;

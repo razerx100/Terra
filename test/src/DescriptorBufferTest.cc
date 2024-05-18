@@ -189,7 +189,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferBindlessTest)
 			1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
 
-		descBuffer.CreateBuffer();
+		descBuffer.RecreateBuffer();
 
 		VkSamplerCreateInfoBuilder samplerCreateInfo{};
 
