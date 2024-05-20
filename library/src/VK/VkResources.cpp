@@ -124,8 +124,15 @@ VkMemoryRequirements VkImageResource::GetMemoryRequirements(VkDevice device) con
 
 // Resource
 Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
-	: m_memoryManager{ memoryManager }, m_allocationInfo{}, m_resourceType{ memoryType },
-	m_hasAllocation{ false }
+	: m_memoryManager{ memoryManager },
+	m_allocationInfo{
+		.gpuOffset = 0u,
+		.cpuOffset = nullptr,
+		.size      = 0u,
+		.alignment = 0u,
+		.memoryID  = 0u
+	},
+	m_resourceType{ memoryType }, m_hasAllocation{ false }
 {}
 
 Resource::~Resource() noexcept
