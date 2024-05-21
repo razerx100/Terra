@@ -9,7 +9,6 @@
 #include <SurfaceManager.hpp>
 #include <SwapchainManager.hpp>
 #include <IDisplayManager.hpp>
-#include <DescriptorSetManager.hpp>
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <ObjectManager.hpp>
@@ -52,8 +51,6 @@ public:
 	inline Queue& Compute() noexcept { return m_computeQueue; }
 	inline Queue& Transfer() noexcept { return m_transferQueue; }
 	inline SwapchainManager& Swapchain() noexcept { return *m_swapChain; }
-	inline DescriptorSetManager& GraphicsDesc() noexcept { return *m_graphicsDescriptorSet; }
-	inline DescriptorSetManager& ComputeDesc() noexcept { return *m_computeDescriptorSet; }
 	inline RenderEngine& Engine() noexcept { return *m_renderEngine; }
 	inline CameraManager& Camera() noexcept { return *m_cameraManager; }
 
@@ -124,8 +121,6 @@ private:
 	Queue                                    m_computeQueue;
 	Queue                                    m_transferQueue;
 	std::unique_ptr<SwapchainManager>        m_swapChain;
-	std::unique_ptr<DescriptorSetManager>    m_graphicsDescriptorSet;
-	std::unique_ptr<DescriptorSetManager>    m_computeDescriptorSet;
 	std::unique_ptr<RenderEngine>            m_renderEngine;
 	std::unique_ptr<CameraManager>           m_cameraManager;
 };

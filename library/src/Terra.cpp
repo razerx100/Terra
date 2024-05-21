@@ -43,8 +43,6 @@ Terra::Terra(Terra&& other) noexcept
 	, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
 	, m_computeQueue{ std::move(other.m_computeQueue) }
 	, m_transferQueue{ std::move(other.m_transferQueue) }, m_swapChain{ std::move(other.m_swapChain) }
-	, m_graphicsDescriptorSet{ std::move(other.m_graphicsDescriptorSet) }
-	, m_computeDescriptorSet{ std::move(other.m_computeDescriptorSet) }
 	, m_renderEngine{ std::move(other.m_renderEngine) }
 	, m_cameraManager{ std::move(other.m_cameraManager) }
 {}
@@ -61,8 +59,6 @@ Terra& Terra::operator=(Terra&& other) noexcept
 	m_computeQueue          = std::move(other.m_computeQueue);
 	m_transferQueue         = std::move(other.m_transferQueue);
 	m_swapChain             = std::move(other.m_swapChain);
-	m_graphicsDescriptorSet = std::move(other.m_graphicsDescriptorSet);
-	m_computeDescriptorSet  = std::move(other.m_computeDescriptorSet);
 	m_renderEngine          = std::move(other.m_renderEngine);
 	m_cameraManager         = std::move(other.m_cameraManager);
 
@@ -78,7 +74,7 @@ Terra::Terra(
 	, m_surface{ nullptr }, m_device{ nullptr }
 	//, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}
 	, m_swapChain{ nullptr }
-	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
+	, m_renderEngine{ nullptr }
 	, m_cameraManager{ nullptr }
 {
 	InitDisplay();
@@ -138,9 +134,6 @@ Terra::Terra(
 	Swapchain().CreateSwapchain(
 		logicalDevice, physicalDevice, nullptr /* memoryManager */, Surface()
 	);
-
-	m_objectManager.CreateObject(m_graphicsDescriptorSet, 1u, logicalDevice, bufferCount);
-	m_objectManager.CreateObject(m_computeDescriptorSet, 1u, logicalDevice, bufferCount);
 
 	InitRenderEngine(logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices());
 }

@@ -115,7 +115,7 @@ void RenderEngineIndirectDraw::ConstructPipelines() {
 	ConstructGraphicsPipelineLayout(device);
 	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
 
-	DescriptorSetManager& descManager = terra.ComputeDesc();
+	//DescriptorSetManager& descManager = terra.ComputeDesc();
 
 	/*m_computePipeline.CreateComputePipelineLayout(
 		device, descManager.GetDescriptorSetCount(), descManager.GetDescriptorSetLayouts()

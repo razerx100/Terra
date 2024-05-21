@@ -132,12 +132,11 @@ void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 		std::data(m_meshlets), meshletBufferSize, m_meshletBuffer.GetFirstUploadMemoryOffset()
 	);*/
 
-	DescriptorInfo meshletDescInfo{
+	/*DescriptorInfo meshletDescInfo{
 		.bindingSlot = 9u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
 
-	/*
 	auto meshletBufferInfos = m_meshletBuffer.GetDescBufferInfoSpread(m_bufferCount);
 
 	Terra::Get().GraphicsDesc().AddBuffersSplit(

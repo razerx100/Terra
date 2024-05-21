@@ -245,8 +245,8 @@ void RendererVK::ProcessData()
 
 	textures.SetDescriptorLayouts();*/
 
-	terra.GraphicsDesc().CreateDescriptorSets(logicalDevice);
-	terra.ComputeDesc().CreateDescriptorSets(logicalDevice);
+	//terra.GraphicsDesc().CreateDescriptorSets(logicalDevice);
+	//terra.ComputeDesc().CreateDescriptorSets(logicalDevice);
 
 	engine.ConstructPipelines();
 
