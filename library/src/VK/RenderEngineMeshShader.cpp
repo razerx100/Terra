@@ -67,7 +67,7 @@ void RenderEngineMeshShader::ConstructPipelines() {
 }
 
 void RenderEngineMeshShader::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	Terra::Get().Buffers().Update<true>(frameIndex);
+	//Terra::Get().Buffers().Update<true>(frameIndex);
 }
 
 void RenderEngineMeshShader::RecordDrawCommands(

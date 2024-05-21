@@ -16,7 +16,6 @@
 #include <VkHelperFunctions.hpp>
 
 #include <RenderEngine.hpp>
-#include <BufferManager.hpp>
 #include <CameraManager.hpp>
 
 class Terra
@@ -57,7 +56,6 @@ public:
 	inline DescriptorSetManager& GraphicsDesc() noexcept { return *m_graphicsDescriptorSet; }
 	inline DescriptorSetManager& ComputeDesc() noexcept { return *m_computeDescriptorSet; }
 	inline RenderEngine& Engine() noexcept { return *m_renderEngine; }
-	inline BufferManager& Buffers() noexcept { return *m_bufferManager; }
 	inline CameraManager& Camera() noexcept { return *m_cameraManager; }
 
 	[[nodiscard]]
@@ -173,7 +171,6 @@ private:
 	std::unique_ptr<DescriptorSetManager>    m_graphicsDescriptorSet;
 	std::unique_ptr<DescriptorSetManager>    m_computeDescriptorSet;
 	std::unique_ptr<RenderEngine>            m_renderEngine;
-	std::unique_ptr<BufferManager>           m_bufferManager;
 	std::unique_ptr<CameraManager>           m_cameraManager;
 };
 #endif

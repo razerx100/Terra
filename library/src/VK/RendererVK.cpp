@@ -145,11 +145,11 @@ void RendererVK::ProcessData()
 
 	const VkDevice logicalDevice = terra.Device().GetLogicalDevice();
 
-	BufferManager& buffers = terra.Buffers();
+	//BufferManager& buffers = terra.Buffers();
 	RenderEngine& engine = terra.Engine();
 
 	// Create Buffers
-	buffers.CreateBuffers(logicalDevice);
+	//buffers.CreateBuffers(logicalDevice);
 	engine.CreateBuffers(logicalDevice);
 
 	DeviceMemory& gpuMem = terra.Res().GPU();
@@ -172,7 +172,7 @@ void RendererVK::ProcessData()
 	*/
 
 	// Bind Buffers to memory
-	buffers.BindResourceToMemory(logicalDevice);
+	//buffers.BindResourceToMemory(logicalDevice);
 	engine.BindResourcesToMemory(logicalDevice);
 	//terra.Texture().BindMemories(logicalDevice);
 

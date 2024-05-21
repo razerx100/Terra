@@ -124,7 +124,7 @@ void RenderEngineIndirectDraw::ConstructPipelines() {
 }
 
 void RenderEngineIndirectDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	Terra::Get().Buffers().Update<false>(frameIndex);
+	//Terra::Get().Buffers().Update<false>(frameIndex);
 }
 
 void RenderEngineIndirectDraw::RecordModelDataSet(
@@ -234,7 +234,7 @@ void RenderEngineIndividualDraw::ConstructPipelines() {
 }
 
 void RenderEngineIndividualDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	Terra::Get().Buffers().Update<true>(frameIndex);
+	//Terra::Get().Buffers().Update<true>(frameIndex);
 }
 
 void RenderEngineIndividualDraw::RecordModelDataSet(
