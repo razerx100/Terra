@@ -10,7 +10,6 @@
 #include <SwapchainManager.hpp>
 #include <IDisplayManager.hpp>
 #include <DescriptorSetManager.hpp>
-#include <TextureStorage.hpp>
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <ObjectManager.hpp>
@@ -58,7 +57,6 @@ public:
 	inline DescriptorSetManager& GraphicsDesc() noexcept { return *m_graphicsDescriptorSet; }
 	inline DescriptorSetManager& ComputeDesc() noexcept { return *m_computeDescriptorSet; }
 	inline RenderEngine& Engine() noexcept { return *m_renderEngine; }
-	inline TextureStorage& Texture() noexcept { return *m_textureStorage; }
 	inline BufferManager& Buffers() noexcept { return *m_bufferManager; }
 	inline CameraManager& Camera() noexcept { return *m_cameraManager; }
 
@@ -175,7 +173,6 @@ private:
 	std::unique_ptr<DescriptorSetManager>    m_graphicsDescriptorSet;
 	std::unique_ptr<DescriptorSetManager>    m_computeDescriptorSet;
 	std::unique_ptr<RenderEngine>            m_renderEngine;
-	std::unique_ptr<TextureStorage>          m_textureStorage;
 	std::unique_ptr<BufferManager>           m_bufferManager;
 	std::unique_ptr<CameraManager>           m_cameraManager;
 };

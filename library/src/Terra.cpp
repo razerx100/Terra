@@ -66,7 +66,6 @@ Terra::Terra(Terra&& other) noexcept
 	, m_graphicsDescriptorSet{ std::move(other.m_graphicsDescriptorSet) }
 	, m_computeDescriptorSet{ std::move(other.m_computeDescriptorSet) }
 	, m_renderEngine{ std::move(other.m_renderEngine) }
-	, m_textureStorage{ std::move(other.m_textureStorage) }
 	, m_bufferManager{ std::move(other.m_bufferManager) }
 	, m_cameraManager{ std::move(other.m_cameraManager) }
 {}
@@ -87,7 +86,6 @@ Terra& Terra::operator=(Terra&& other) noexcept
 	m_graphicsDescriptorSet = std::move(other.m_graphicsDescriptorSet);
 	m_computeDescriptorSet  = std::move(other.m_computeDescriptorSet);
 	m_renderEngine          = std::move(other.m_renderEngine);
-	m_textureStorage        = std::move(other.m_textureStorage);
 	m_bufferManager         = std::move(other.m_bufferManager);
 	m_cameraManager         = std::move(other.m_cameraManager);
 
@@ -104,7 +102,7 @@ Terra::Terra(
 	//, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}
 	, m_swapChain{ nullptr }
 	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
-	, m_textureStorage{ nullptr }, m_bufferManager{ nullptr }, m_cameraManager{ nullptr }
+	, m_bufferManager{ nullptr }, m_cameraManager{ nullptr }
 {
 	InitDisplay();
 	InitSurface();
@@ -172,11 +170,6 @@ Terra::Terra(
 	m_objectManager.CreateObject(m_computeDescriptorSet, 1u, logicalDevice, bufferCount);
 
 	InitRenderEngine(logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices());
-
-	m_objectManager.CreateObject(
-		m_textureStorage, 1u,
-		logicalDevice, physicalDevice, queFamilyMan.GetTransferAndGraphicsIndices()
-	);
 
 	const bool modelDataNoBB = (engineType == RenderEngineType::IndirectDraw ? false : true);
 

@@ -174,7 +174,7 @@ void RendererVK::ProcessData()
 	// Bind Buffers to memory
 	buffers.BindResourceToMemory(logicalDevice);
 	engine.BindResourcesToMemory(logicalDevice);
-	terra.Texture().BindMemories(logicalDevice);
+	//terra.Texture().BindMemories(logicalDevice);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;
@@ -259,9 +259,12 @@ size_t RendererVK::AddTexture(
 ) {
 	Terra& terra = Terra::Get();
 
+	return 0u;
+	/*
 	return terra.Texture().AddTexture(
 		terra.Device().GetLogicalDevice(), std::move(textureData), width, height
 	);
+	*/
 }
 
 void RendererVK::WaitForAsyncTasks() {
