@@ -48,7 +48,6 @@ public:
 	inline VkInstanceManager& Instance() noexcept { return *m_vkInstance; }
 	inline SurfaceManager& Surface() noexcept { return *m_surface; }
 	inline VkDeviceManager& Device() noexcept { return *m_device; }
-	inline Resources& Res() noexcept { return m_res; }
 	inline Queue& Graphics() noexcept { return m_graphicsQueue; }
 	inline Queue& Compute() noexcept { return m_computeQueue; }
 	inline Queue& Transfer() noexcept { return m_transferQueue; }
@@ -73,48 +72,6 @@ private:
 	);
 
 public:
-	class Resources
-	{
-	public:
-		Resources();
-
-		Resources(const Resources&) = delete;
-		Resources& operator=(const Resources&) = delete;
-
-		inline Resources(Resources&& other) noexcept
-			: m_gpuOnlyMemory{ std::move(other.m_gpuOnlyMemory) },
-			m_uploadMemory{ std::move(other.m_uploadMemory) },
-			m_cpuWriteMemory{ std::move(other.m_cpuWriteMemory) }
-		{}
-
-		inline Resources& operator=(Resources&& other) noexcept
-		{
-			m_gpuOnlyMemory   = std::move(other.m_gpuOnlyMemory);
-			m_uploadMemory	  = std::move(other.m_uploadMemory);
-			m_cpuWriteMemory  = std::move(other.m_cpuWriteMemory);
-
-			return *this;
-		}
-
-		inline DeviceMemory& GPU() noexcept { return *m_gpuOnlyMemory; }
-		inline DeviceMemory& CPU() noexcept { return *m_cpuWriteMemory; }
-		inline DeviceMemory& Upload() noexcept { return *m_uploadMemory; }
-
-		void Init(
-			ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
-			ThreadPool& threadPool
-		);
-		inline void ResetUpload() noexcept
-		{
-			m_uploadMemory.reset();
-		}
-
-	private:
-		std::unique_ptr<DeviceMemory>    m_gpuOnlyMemory;
-		std::unique_ptr<DeviceMemory>    m_uploadMemory;
-		std::unique_ptr<DeviceMemory>    m_cpuWriteMemory;
-	};
-
 	class Queue
 	{
 	public:
@@ -163,7 +120,6 @@ private:
 	std::unique_ptr<VkInstanceManager>       m_vkInstance;
 	std::unique_ptr<SurfaceManager>          m_surface;
 	std::unique_ptr<VkDeviceManager>         m_device;
-	Resources                                m_res;
 	Queue                                    m_graphicsQueue;
 	Queue                                    m_computeQueue;
 	Queue                                    m_transferQueue;

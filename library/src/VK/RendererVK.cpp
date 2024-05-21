@@ -152,6 +152,7 @@ void RendererVK::ProcessData()
 	//buffers.CreateBuffers(logicalDevice);
 	engine.CreateBuffers(logicalDevice);
 
+	/*
 	DeviceMemory& gpuMem = terra.Res().GPU();
 	DeviceMemory& cpuMem = terra.Res().CPU();
 	DeviceMemory& uploadMem = terra.Res().Upload();
@@ -164,6 +165,7 @@ void RendererVK::ProcessData()
 	// Map cpu memories
 	uploadMem.MapMemoryToCPU(logicalDevice);
 	cpuMem.MapMemoryToCPU(logicalDevice);
+	*/
 
 	/*
 	// Set Upload Memory Start
@@ -251,7 +253,7 @@ void RendererVK::ProcessData()
 	// Cleanup Upload Buffers
 	engine.ReleaseUploadResources();
 	//textures.ReleaseUploadBuffers();
-	terra.Res().ResetUpload();
+	//terra.Res().ResetUpload();
 }
 
 size_t RendererVK::AddTexture(

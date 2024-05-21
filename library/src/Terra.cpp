@@ -10,26 +10,6 @@
 #include <RenderEngineVertexShader.hpp>
 #include <RenderEngineMeshShader.hpp>
 
-// Resources
-Terra::Resources::Resources()
-	: m_gpuOnlyMemory{ nullptr }, m_uploadMemory{ nullptr }, m_cpuWriteMemory{ nullptr }
-{}
-
-void Terra::Resources::Init(
-	ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice, ThreadPool& threadPool
-)
-{
-	om.CreateObject(
-		m_cpuWriteMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	);
-	om.CreateObject(
-		m_uploadMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	);
-	om.CreateObject(
-		m_gpuOnlyMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	);
-}
-
 // Queue
 Terra::Queue::Queue() : m_queue{ nullptr }, m_cmdBuffer{ nullptr }, m_syncObjects{ nullptr } {}
 
@@ -60,7 +40,7 @@ Terra::Terra(Terra&& other) noexcept
 	: m_appName{ std::move(other.m_appName) }, m_objectManager{ std::move(other.m_objectManager) },
 	m_display{ std::move(other.m_display) }, m_vkInstance{ std::move(other.m_vkInstance) }
 	, m_surface{ std::move(other.m_surface) }, m_device{ std::move(other.m_device) }
-	, m_res{ std::move(other.m_res) }, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
+	, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
 	, m_computeQueue{ std::move(other.m_computeQueue) }
 	, m_transferQueue{ std::move(other.m_transferQueue) }, m_swapChain{ std::move(other.m_swapChain) }
 	, m_graphicsDescriptorSet{ std::move(other.m_graphicsDescriptorSet) }
@@ -77,7 +57,6 @@ Terra& Terra::operator=(Terra&& other) noexcept
 	m_vkInstance            = std::move(other.m_vkInstance);
 	m_surface               = std::move(other.m_surface);
 	m_device                = std::move(other.m_device);
-	m_res                   = std::move(other.m_res);
 	m_graphicsQueue         = std::move(other.m_graphicsQueue);
 	m_computeQueue          = std::move(other.m_computeQueue);
 	m_transferQueue         = std::move(other.m_transferQueue);
@@ -96,7 +75,7 @@ Terra::Terra(
 	ThreadPool& threadPool,
 	RenderEngineType engineType
 ) : m_appName{ std::move(appName) }, m_objectManager{}, m_display{ nullptr }, m_vkInstance{ nullptr }
-	, m_surface{ nullptr }, m_device{ nullptr }, m_res{}
+	, m_surface{ nullptr }, m_device{ nullptr }
 	//, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}
 	, m_swapChain{ nullptr }
 	, m_graphicsDescriptorSet{ nullptr }, m_computeDescriptorSet{ nullptr }, m_renderEngine{ nullptr }
@@ -149,8 +128,6 @@ Terra::Terra(
 	const VkDevice logicalDevice              = Device().GetLogicalDevice();
 	const VkPhysicalDevice physicalDevice     = Device().GetPhysicalDevice();
 	const VkQueueFamilyMananger& queFamilyMan = Device().GetQueueFamilyManager();
-
-	m_res.Init(m_objectManager, physicalDevice, logicalDevice, threadPool);
 
 	InitQueues(logicalDevice, bufferCount, queFamilyMan);
 
