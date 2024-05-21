@@ -2,13 +2,13 @@
 #define DEVICE_MEMORY_HPP_
 #include <vulkan/vulkan.hpp>
 
-class DeviceMemory2
+class DeviceMemory
 {
 public:
-	DeviceMemory2(
+	DeviceMemory(
 		VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryPropertyFlagBits type
 	);
-	~DeviceMemory2() noexcept;
+	~DeviceMemory() noexcept;
 
 	[[nodiscard]]
 	VkDeviceSize Size() const noexcept { return m_size; }
@@ -35,10 +35,10 @@ private:
 	VkMemoryPropertyFlagBits m_memoryType;
 
 public:
-	DeviceMemory2(const DeviceMemory2&) = delete;
-	DeviceMemory2& operator=(const DeviceMemory2&) = delete;
+	DeviceMemory(const DeviceMemory&) = delete;
+	DeviceMemory& operator=(const DeviceMemory&) = delete;
 
-	DeviceMemory2(DeviceMemory2&& other) noexcept
+	DeviceMemory(DeviceMemory&& other) noexcept
 		: m_device{ other.m_device }, m_memory{ other.m_memory }, m_size{ other.m_size },
 		m_mappedCPUMemory{ other.m_mappedCPUMemory }, m_memoryTypeIndex{ other.m_memoryTypeIndex },
 		m_memoryType{ other.m_memoryType }
@@ -46,7 +46,7 @@ public:
 		other.m_memory = VK_NULL_HANDLE; // Otherwise the dtor will destroy it.
 	}
 
-	DeviceMemory2& operator=(DeviceMemory2&& other) noexcept
+	DeviceMemory& operator=(DeviceMemory&& other) noexcept
 	{
 		// To destroy the previous object if there is one.
 		SelfDestruct();

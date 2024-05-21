@@ -10,7 +10,7 @@
 class VkAllocator
 {
 public:
-	VkAllocator(DeviceMemory2&& memory, std::uint16_t id);
+	VkAllocator(DeviceMemory&& memory, std::uint16_t id);
 
 	[[nodiscard]]
 	// Returns false if there is not enough memory.
@@ -43,7 +43,7 @@ private:
 	std::optional<VkDeviceSize> Allocate(const VkMemoryRequirements& memoryReq) noexcept;
 
 private:
-	DeviceMemory2 m_memory;
+	DeviceMemory  m_memory;
 	Buddy         m_allocator;
 	std::uint16_t m_id;
 
@@ -99,7 +99,7 @@ private:
 
 private:
 	[[nodiscard]]
-	DeviceMemory2 CreateMemory(VkDeviceSize size, MemoryType memoryType) const;
+	DeviceMemory CreateMemory(VkDeviceSize size, MemoryType memoryType) const;
 
 	[[nodiscard]]
 	std::optional<MemoryType> GetMemoryType(

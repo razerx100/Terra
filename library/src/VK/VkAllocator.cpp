@@ -23,7 +23,7 @@ static VkMemoryRequirements GetMemoryRequirements(VkDevice device, VkImage image
 }
 
 // VkAllocator
-VkAllocator::VkAllocator(DeviceMemory2&& memory, std::uint16_t id)
+VkAllocator::VkAllocator(DeviceMemory&& memory, std::uint16_t id)
 	: m_memory{ std::move(memory) },
 	m_allocator{ 0u, static_cast<size_t>(m_memory.Size()), 256_B },
 	m_id{ id }
@@ -110,9 +110,9 @@ MemoryManager::MemoryManager(
 	}
 }
 
-DeviceMemory2 MemoryManager::CreateMemory(VkDeviceSize size, MemoryType memoryType) const
+DeviceMemory MemoryManager::CreateMemory(VkDeviceSize size, MemoryType memoryType) const
 {
-	return DeviceMemory2{ m_logicalDevice, size, memoryType.index, memoryType.type };
+	return DeviceMemory{ m_logicalDevice, size, memoryType.index, memoryType.type };
 }
 
 std::optional<MemoryManager::MemoryType> MemoryManager::GetMemoryType(

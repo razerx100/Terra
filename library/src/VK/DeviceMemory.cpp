@@ -3,26 +3,25 @@
 #include <ranges>
 #include <concepts>
 
-// DeviceMemory2
-DeviceMemory2::DeviceMemory2(
+DeviceMemory::DeviceMemory(
 	VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryPropertyFlagBits type
-) : m_device{ device }, m_memory{ VK_NULL_HANDLE }, m_size{ 0u }, m_mappedCPUMemory{ nullptr }
-	, m_memoryTypeIndex{ typeIndex }, m_memoryType{ type }
+) : m_device{ device }, m_memory{ VK_NULL_HANDLE }, m_size{ 0u }, m_mappedCPUMemory{ nullptr },
+	m_memoryTypeIndex{ typeIndex }, m_memoryType{ type }
 {
 	Allocate(size);
 }
 
-DeviceMemory2::~DeviceMemory2() noexcept
+DeviceMemory::~DeviceMemory() noexcept
 {
 	SelfDestruct();
 }
 
-void DeviceMemory2::SelfDestruct() noexcept
+void DeviceMemory::SelfDestruct() noexcept
 {
 	vkFreeMemory(m_device, m_memory, nullptr);
 }
 
-void DeviceMemory2::Allocate(VkDeviceSize size)
+void DeviceMemory::Allocate(VkDeviceSize size)
 {
 	VkMemoryAllocateFlagsInfo flagsInfo{
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
