@@ -12,7 +12,6 @@
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <ObjectManager.hpp>
-#include <VkHelperFunctions.hpp>
 
 #include <RenderEngine.hpp>
 #include <CameraManager.hpp>

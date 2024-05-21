@@ -2,7 +2,6 @@
 #include <ranges>
 #include <algorithm>
 #include <Exception.hpp>
-#include <VkHelperFunctions.hpp>
 #include <VkFeatureManager.hpp>
 
 VkDeviceManager::VkDeviceManager()
