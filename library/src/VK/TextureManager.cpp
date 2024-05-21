@@ -1,7 +1,5 @@
 #include <TextureManager.hpp>
 #include <VkResourceBarriers2.hpp>
-#include <ranges>
-#include <algorithm>
 
 // Texture storage
 void TextureStorage::SetBindingIndex(
@@ -131,84 +129,59 @@ void TextureStorage::RemoveSampler(size_t index)
 // Texture Manager
 std::optional<std::uint32_t> TextureManager::AddSampledTextureForBinding(
 	VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture,
-	std::uint32_t sampledTexturesBindingSlot
+	std::uint32_t textureIndex, std::uint32_t sampledTexturesBindingSlot
 ) noexcept {
-	std::optional<std::uint32_t> freeIndex = FindFreeIndex(
-		m_availableIndicesSampledTextures
+	// The move here is useless, just doing it to please the compiler.
+	return AddDescriptorForBinding<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+		descriptorBuffer, texture->GetView(), VK_NULL_HANDLE, sampledTexturesBindingSlot,
+		m_availableIndicesSampledTextures, m_inactiveSampledDescDetails, std::move(textureIndex)
 	);
-
-	if (freeIndex)
-	{
-		const std::uint32_t descIndex = *freeIndex;
-
-		// Needs to be swapped with the other Descriptor setter.
-		descriptorBuffer.SetSampledImageDescriptor(
-			*texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, sampledTexturesBindingSlot,
-			descIndex
-		);
-		m_availableIndicesSampledTextures.at(descIndex) = false;
-
-		return descIndex;
-	}
-
-	return {};
 }
 
 std::optional<std::uint32_t> TextureManager::AddCombinedTextureForBinding(
 	VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture, VKSampler const* sampler,
-	std::uint32_t combinedTexturesBindingSlot
+	std::uint32_t textureIndex, std::uint32_t samplerIndex, std::uint32_t combinedTexturesBindingSlot
 ) noexcept {
-	std::optional<std::uint32_t> freeIndex = FindFreeIndex(
-		m_availableIndicesCombinedTextures
+	return AddDescriptorForBinding<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+		descriptorBuffer, texture->GetView(), sampler->Get(), combinedTexturesBindingSlot,
+		m_availableIndicesCombinedTextures, m_inactiveCombinedDescDetails,
+		DescDetailsCombined{
+			.textureIndex = textureIndex,
+			.samplerIndex = samplerIndex
+		}
 	);
-
-	if (freeIndex)
-	{
-		const std::uint32_t descIndex = *freeIndex;
-
-		// Needs to be swapped with the other Descriptor setter.
-		descriptorBuffer.SetCombinedImageDescriptor(
-			*texture, *sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			combinedTexturesBindingSlot, descIndex
-		);
-		m_availableIndicesCombinedTextures.at(descIndex) = false;
-
-		return descIndex;
-	}
-
-	return {};
 }
 
 std::optional<std::uint32_t> TextureManager::AddSamplerForBinding(
 	VkDescriptorBuffer& descriptorBuffer, VKSampler const* sampler,
-	std::uint32_t samplersBindingSlot
+	std::uint32_t samplerIndex, std::uint32_t samplersBindingSlot
 ) noexcept {
-	std::optional<std::uint32_t> freeIndex = FindFreeIndex(
-		m_availableIndicesSamplers
+	// The move here is useless, just doing it to please the compiler.
+	return AddDescriptorForBinding<VK_DESCRIPTOR_TYPE_SAMPLER>(
+		descriptorBuffer, VK_NULL_HANDLE, sampler->Get(), samplersBindingSlot,
+		m_availableIndicesSamplers, m_inactiveSamplerDescDetails, std::move(samplerIndex)
 	);
-
-	if (freeIndex)
-	{
-		const std::uint32_t descIndex = *freeIndex;
-
-		// Needs to be swapped with the other Descriptor setter.
-		descriptorBuffer.SetSamplerDescriptor(*sampler, samplersBindingSlot, descIndex);
-		m_availableIndicesSamplers.at(descIndex) = false;
-
-		return descIndex;
-	}
-
-	return {};
 }
 
 void TextureManager::IncreaseAvailableIndices(TextureDescType descType) noexcept
 {
 	if (descType == TextureDescType::CombinedTexture)
-		m_availableIndicesCombinedTextures.resize(s_combinedTextureDescriptorCount, true);
+	{
+		const size_t newSize =
+			std::size(m_availableIndicesCombinedTextures) + s_combinedTextureDescriptorCount;
+		m_availableIndicesCombinedTextures.resize(newSize, true);
+	}
 	else if (descType == TextureDescType::SampledTexture)
-		m_availableIndicesSampledTextures.resize(s_sampledTextureDescriptorCount, true);
+	{
+		const size_t newSize =
+			std::size(m_availableIndicesSampledTextures) + s_sampledTextureDescriptorCount;
+		m_availableIndicesSampledTextures.resize(newSize, true);
+	}
 	else if (descType == TextureDescType::Sampler)
-		m_availableIndicesSamplers.resize(s_samplerDescriptorCount, true);
+	{
+		const size_t newSize = std::size(m_availableIndicesSamplers) + s_samplerDescriptorCount;
+		m_availableIndicesSamplers.resize(newSize, true);
+	}
 }
 
 void TextureManager::SetDescriptorBuffer(
@@ -264,4 +237,43 @@ std::optional<std::uint32_t> TextureManager::FindFreeIndex(
 		return static_cast<std::uint32_t>(std::distance(std::begin(availableIndices), result));
 
 	return {};
+}
+
+void TextureManager::RemoveSampledTextureFromBinding(
+	VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
+	std::uint32_t textureIndex, std::uint32_t sampledTexturesBindingSlot
+) {
+	// The move here is useless, just doing it to please the compiler.
+	RemoveDescriptorFromBinding<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+		descriptorBuffer, descriptorIndex, sampledTexturesBindingSlot,
+		m_availableIndicesSampledTextures, m_localSampledDescCount,
+		m_inactiveSampledDescDetails, std::move(textureIndex)
+	);
+}
+
+void TextureManager::RemoveSamplerTextureFromBinding(
+	VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
+	std::uint32_t samplerIndex, std::uint32_t samplersBindingSlot
+) {
+	// The move here is useless, just doing it to please the compiler.
+	RemoveDescriptorFromBinding<VK_DESCRIPTOR_TYPE_SAMPLER>(
+		descriptorBuffer, descriptorIndex, samplersBindingSlot,
+		m_availableIndicesSamplers, m_localSamplerDescCount,
+		m_inactiveSamplerDescDetails, std::move(samplerIndex)
+	);
+}
+
+void TextureManager::RemoveCombinedTextureFromBinding(
+	VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
+	std::uint32_t textureIndex, std::uint32_t samplerIndex, std::uint32_t combinedTexturesBindingSlot
+) {
+	RemoveDescriptorFromBinding<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+		descriptorBuffer, descriptorIndex, combinedTexturesBindingSlot,
+		m_availableIndicesCombinedTextures, m_localCombinedDescCount,
+		m_inactiveCombinedDescDetails,
+		DescDetailsCombined{
+			.textureIndex = textureIndex,
+			.samplerIndex = samplerIndex
+		}
+	);
 }
