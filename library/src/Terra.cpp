@@ -150,8 +150,6 @@ Terra::Terra(
 	const VkPhysicalDevice physicalDevice     = Device().GetPhysicalDevice();
 	const VkQueueFamilyMananger& queFamilyMan = Device().GetQueueFamilyManager();
 
-	_vkResourceView::SetBufferAlignments(physicalDevice);
-
 	m_res.Init(m_objectManager, physicalDevice, logicalDevice, threadPool);
 
 	InitQueues(logicalDevice, bufferCount, queFamilyMan);

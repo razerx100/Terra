@@ -6,7 +6,6 @@
 #include <RenderEngineBase.hpp>
 #include <GraphicsPipelineMeshShader.hpp>
 #include <MeshManagerMeshShader.hpp>
-#include <VkResourceViews.hpp>
 
 class RenderEngineMeshShader : public RenderEngineBase
 {
@@ -44,7 +43,7 @@ private:
 	std::vector<GraphicsPipeline> m_graphicsPipelines;
 
 	//VertexManagerMeshShader m_vertexManager;
-	VkUploadableBufferResourceView m_meshletBuffer;
+	//VkUploadableBufferResourceView m_meshletBuffer;
 	std::vector<Meshlet> m_meshlets;
 
 	QueueIndicesTG m_queueIndicesTG;
