@@ -12,8 +12,7 @@
 
 // Resources
 Terra::Resources::Resources()
-	: m_gpuOnlyMemory{ nullptr }, m_uploadMemory{ nullptr }, m_cpuWriteMemory{ nullptr },
-m_uploadContainer{ nullptr }
+	: m_gpuOnlyMemory{ nullptr }, m_uploadMemory{ nullptr }, m_cpuWriteMemory{ nullptr }
 {}
 
 void Terra::Resources::Init(
@@ -29,7 +28,6 @@ void Terra::Resources::Init(
 	om.CreateObject(
 		m_gpuOnlyMemory, 2u, logicalDevice, physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
-	om.CreateObject(m_uploadContainer, 0u, threadPool);
 }
 
 // Queue

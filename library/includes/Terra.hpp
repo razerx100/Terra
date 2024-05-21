@@ -13,7 +13,6 @@
 #include <TextureStorage.hpp>
 #include <memory>
 #include <DeviceMemory.hpp>
-#include <UploadContainer.hpp>
 #include <ObjectManager.hpp>
 #include <VkHelperFunctions.hpp>
 
@@ -89,8 +88,7 @@ public:
 		inline Resources(Resources&& other) noexcept
 			: m_gpuOnlyMemory{ std::move(other.m_gpuOnlyMemory) },
 			m_uploadMemory{ std::move(other.m_uploadMemory) },
-			m_cpuWriteMemory{ std::move(other.m_cpuWriteMemory) },
-			m_uploadContainer{ std::move(other.m_uploadContainer) }
+			m_cpuWriteMemory{ std::move(other.m_cpuWriteMemory) }
 		{}
 
 		inline Resources& operator=(Resources&& other) noexcept
@@ -98,7 +96,6 @@ public:
 			m_gpuOnlyMemory   = std::move(other.m_gpuOnlyMemory);
 			m_uploadMemory	  = std::move(other.m_uploadMemory);
 			m_cpuWriteMemory  = std::move(other.m_cpuWriteMemory);
-			m_uploadContainer = std::move(other.m_uploadContainer);
 
 			return *this;
 		}
@@ -106,7 +103,6 @@ public:
 		inline DeviceMemory& GPU() noexcept { return *m_gpuOnlyMemory; }
 		inline DeviceMemory& CPU() noexcept { return *m_cpuWriteMemory; }
 		inline DeviceMemory& Upload() noexcept { return *m_uploadMemory; }
-		inline UploadContainer& UploadCont()  noexcept { return *m_uploadContainer; }
 
 		void Init(
 			ObjectManager& om, VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
@@ -114,7 +110,6 @@ public:
 		);
 		inline void ResetUpload() noexcept
 		{
-			m_uploadContainer.reset();
 			m_uploadMemory.reset();
 		}
 
@@ -122,7 +117,6 @@ public:
 		std::unique_ptr<DeviceMemory>    m_gpuOnlyMemory;
 		std::unique_ptr<DeviceMemory>    m_uploadMemory;
 		std::unique_ptr<DeviceMemory>    m_cpuWriteMemory;
-		std::unique_ptr<UploadContainer> m_uploadContainer;
 	};
 
 	class Queue

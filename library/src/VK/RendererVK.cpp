@@ -165,9 +165,11 @@ void RendererVK::ProcessData()
 	uploadMem.MapMemoryToCPU(logicalDevice);
 	cpuMem.MapMemoryToCPU(logicalDevice);
 
+	/*
 	// Set Upload Memory Start
 	UploadContainer& uploadContainer = terra.Res().UploadCont();
 	uploadContainer.SetMemoryStart(uploadMem.GetMappedCPUPtr());
+	*/
 
 	// Bind Buffers to memory
 	buffers.BindResourceToMemory(logicalDevice);
@@ -177,7 +179,7 @@ void RendererVK::ProcessData()
 	// Async Copy
 	std::atomic_size_t works = 0u;
 
-	uploadContainer.CopyData(works);
+	//uploadContainer.CopyData(works);
 	engine.CopyData();
 
 	while (works != 0u);
