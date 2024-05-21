@@ -37,6 +37,22 @@ protected:
 			ThrowMemoryManagerException();
 	}
 
+	template<typename CreateInfo>
+	static void ConfigureResourceQueueAccess(
+		const std::vector<std::uint32_t>& queueFamilyIndices, CreateInfo& resourceInfo
+	) noexcept {
+		const auto queueIndicesSize = static_cast<std::uint32_t>(std::size(queueFamilyIndices));
+
+		if (queueIndicesSize > 1u)
+		{
+			resourceInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+			resourceInfo.queueFamilyIndexCount = queueIndicesSize;
+			resourceInfo.pQueueFamilyIndices   = std::data(queueFamilyIndices);
+		}
+		else
+			resourceInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	}
+
 private:
 	void SelfDestruct() noexcept;
 	void ThrowMemoryManagerException();

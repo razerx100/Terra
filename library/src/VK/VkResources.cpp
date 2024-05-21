@@ -1,23 +1,6 @@
 #include <VkResources.hpp>
 #include <Exception.hpp>
 
-// Static functions
-template<typename CreateInfo>
-static void ConfigureBufferQueueAccess(
-	const std::vector<std::uint32_t>& queueFamilyIndices, CreateInfo& bufferInfo
-) noexcept {
-	const auto queueIndicesSize = static_cast<std::uint32_t>(std::size(queueFamilyIndices));
-
-	if (queueIndicesSize > 1u)
-	{
-		bufferInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
-		bufferInfo.queueFamilyIndexCount = queueIndicesSize;
-		bufferInfo.pQueueFamilyIndices   = std::data(queueFamilyIndices);
-	}
-	else
-		bufferInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
-}
-
 // Resource
 Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: m_memoryManager{ memoryManager },
@@ -89,7 +72,7 @@ void Buffer::Create(
 		.usage = usageFlags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
 	};
 
-	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
+	ConfigureResourceQueueAccess(queueFamilyIndices, createInfo);
 
 	// If the buffer pointer is already allocated, then free it.
 	if (m_buffer != VK_NULL_HANDLE)
@@ -179,7 +162,7 @@ void Texture::Create(
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	};
 
-	ConfigureBufferQueueAccess(queueFamilyIndices, createInfo);
+	ConfigureResourceQueueAccess(queueFamilyIndices, createInfo);
 
 	// If the image pointer is already allocated, then free it.
 	if (m_image != VK_NULL_HANDLE)
