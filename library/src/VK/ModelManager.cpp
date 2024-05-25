@@ -127,10 +127,8 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 {}
 
 void ModelBundleVSIndirect::CreateBuffers(
-	std::uint32_t meshCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
+	std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
 ) {
-	m_modelCount = meshCount;
-
 	constexpr size_t strideSize = sizeof(ModelBundleCSIndirect::Argument);
 	m_argumentBufferSize        = static_cast<VkDeviceSize>(m_modelCount * strideSize);
 
@@ -372,7 +370,8 @@ void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
-			s_modelBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT
+			s_modelGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_VERTEX_BIT
 		);
 	}
 }
@@ -386,7 +385,7 @@ void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffe
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, static_cast<VkDeviceSize>(index), s_modelBindingSlot
+			descriptorBuffer, static_cast<VkDeviceSize>(index), s_modelGraphicsBindingSlot
 		);
 	}
 }
@@ -406,4 +405,51 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 		// Model
 		modelBundle.Draw(graphicsBuffer, m_pipelineLayout);
 	}
+}
+
+// Model Manager VS Indirect.
+void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
+{
+	// Descriptor pipeline layout.
+	m_pipelineLayout.Create(descriptorBuffer);
+}
+
+void ModelManagerVSIndirect::ConfigureModel(
+	ModelBundleVSIndirect& modelBundleObj,
+	size_t modelIndex, const std::shared_ptr<ModelVS>& model
+) {
+	// Have to add the model to the CS bundle first.
+	modelBundleObj.SetModelCount(1u);
+}
+
+void ModelManagerVSIndirect::ConfigureModelBundle(
+	ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
+	const std::vector<std::shared_ptr<ModelVS>>& modelBundle
+) {
+	const size_t modelCount = std::size(modelBundle);
+
+	for (size_t index = 0u; index < modelCount; ++index)
+	{
+		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
+		const size_t modelIndex               = modelIndices.at(index);
+
+
+		// Have to add the model to the CS bundle first.
+	}
+
+	modelBundleObj.SetModelCount(static_cast<std::uint32_t>(std::size(modelBundle)));
+}
+
+void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
+{
+	const std::uint32_t frameCount = m_modelBuffers.GetInstanceCount();
+
+	for (auto& modelBundle : m_modelBundles)
+		modelBundle.CreateBuffers(frameCount, stagingBufferMan);
+}
+
+void ModelManagerVSIndirect::_cleanUpTempData() noexcept
+{
+	for (auto& modelBundle : m_modelBundles)
+		modelBundle.CleanupTempData();
 }

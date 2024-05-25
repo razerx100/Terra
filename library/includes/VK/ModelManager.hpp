@@ -254,9 +254,12 @@ public:
 		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 	);
 
-	void CreateBuffers(
-		std::uint32_t modelCount, std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
-	);
+	void SetModelCount(std::uint32_t count) noexcept
+	{
+		m_modelCount = count;
+	}
+
+	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 
 	void SetDescriptorBuffer(
@@ -322,6 +325,12 @@ public:
 	) const noexcept;
 
 	void Update(VkDeviceSize bufferIndex) const noexcept;
+
+	[[nodiscard]]
+	std::uint32_t GetInstanceCount() const noexcept
+	{
+		return m_bufferInstanceCount;
+	}
 
 private:
 	struct ModelData
@@ -476,7 +485,7 @@ public:
 		m_meshBundles.emplace_back(std::move(meshManager));
 	}
 
-	void CleanUpTempData()
+	void CleanUpTempData() noexcept
 	{
 		for (auto& meshBundle : m_meshBundles)
 			meshBundle.CleanupTempData();
@@ -585,6 +594,9 @@ protected:
 	std::vector<MeshManager>     m_meshBundles;
 	std::vector<ModelBundleType> m_modelBundles;
 
+	// Need to update this when I update the shaders.
+	static constexpr std::uint32_t s_modelGraphicsBindingSlot = 0u;
+
 public:
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
@@ -660,10 +672,6 @@ private:
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
-private:
-	// Need to update this when I update the shaders.
-	static constexpr std::uint32_t s_modelBindingSlot = 0u;
-
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
 	ModelManagerVSIndividual& operator=(const ModelManagerVSIndividual&) = delete;
@@ -672,6 +680,60 @@ public:
 		: ModelManager{ std::move(other) }
 	{}
 	ModelManagerVSIndividual& operator=(ModelManagerVSIndividual&& other) noexcept
+	{
+		ModelManager::operator=(std::move(other));
+
+		return *this;
+	}
+};
+
+class ModelManagerVSIndirect : public
+	ModelManager
+	<
+		ModelManagerVSIndirect,
+		GraphicsPipelineIndirectDraw,
+		MeshManagerVertexShader, MeshBundleVS,
+		ModelBundleVSIndirect, ModelVS,
+		true
+	>
+{
+	friend class ModelManager
+		<
+			ModelManagerVSIndirect,
+			GraphicsPipelineIndirectDraw,
+			MeshManagerVertexShader, MeshBundleVS,
+			ModelBundleVSIndirect, ModelVS,
+			true
+		>;
+	friend class ModelManagerVSIndirectTest;
+public:
+	ModelManagerVSIndirect(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
+		: ModelManager{ device, memoryManager, frameCount }
+	{}
+
+	void CreateBuffers(StagingBufferManager& stagingBufferMan);
+
+private:
+	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
+
+	void ConfigureModel(
+		ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
+	);
+	void ConfigureModelBundle(
+		ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
+		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
+	);
+
+	void _cleanUpTempData() noexcept;
+
+public:
+	ModelManagerVSIndirect(const ModelManagerVSIndirect&) = delete;
+	ModelManagerVSIndirect& operator=(const ModelManagerVSIndirect&) = delete;
+
+	ModelManagerVSIndirect(ModelManagerVSIndirect&& other) noexcept
+		: ModelManager{ std::move(other) }
+	{}
+	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
 
