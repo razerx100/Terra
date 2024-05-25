@@ -18,11 +18,11 @@ VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
 }
 
 // Model Bundle VS Individual
-void ModelBundleVSIndividual::AddMeshDetails(
+void ModelBundleVSIndividual::AddModelDetails(
 	const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex
 ) noexcept {
-	m_meshDetails.emplace_back(
-		MeshDetails{
+	m_modelDetails.emplace_back(
+		ModelDetails{
 			.modelBufferIndex = modelBufferIndex,
 			.indexedArguments = GetDrawIndexedIndirectCommand(model)
 		}
@@ -34,16 +34,16 @@ void ModelBundleVSIndividual::Draw(
 ) const noexcept {
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
-	for (const auto& meshDetail : m_meshDetails)
+	for (const auto& modelDetail : m_modelDetails)
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
-			pushConstantSize, &meshDetail.modelBufferIndex
+			pushConstantSize, &modelDetail.modelBufferIndex
 		);
 
-		const VkDrawIndexedIndirectCommand& meshArgs = meshDetail.indexedArguments;
+		const VkDrawIndexedIndirectCommand& meshArgs = modelDetail.indexedArguments;
 		vkCmdDrawIndexed(
 			cmdBuffer, meshArgs.indexCount, meshArgs.instanceCount,
 			meshArgs.firstIndex, meshArgs.vertexOffset, meshArgs.firstInstance
@@ -52,14 +52,14 @@ void ModelBundleVSIndividual::Draw(
 }
 
 // Model Bundle MS
-void ModelBundleMS::AddMeshDetails(
+void ModelBundleMS::AddModelDetails(
 	std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex
 ) noexcept {
 	std::vector<Meshlet>&& meshlets = std::move(model->GetMeshDetailsMS().meshlets);
 
 	const size_t meshletCount = std::size(meshlets);
 
-	m_meshDetails.emplace_back(MeshDetails{
+	m_modelDetails.emplace_back(ModelDetails{
 			.modelBufferIndex  = modelBufferIndex,
 			.meshletOffset     = static_cast<std::uint32_t>(std::size(m_meshlets)),
 			.threadGroupCountX = static_cast<std::uint32_t>(meshletCount)
@@ -74,19 +74,19 @@ void ModelBundleMS::Draw(
 	using MS = VkDeviceExtension::VkExtMeshShader;
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
-	for (const auto& meshDetail : m_meshDetails)
+	for (const auto& modelDetail : m_modelDetails)
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
-			pushConstantSize, &meshDetail.modelBufferIndex
+			pushConstantSize, &modelDetail.modelBufferIndex
 		);
 
 		// Unlike the Compute Shader where we process the data of a model with a thread, here
 		// each group handles a Meshlet and its threads handle the vertices and primitives.
 		// So, we need a thread group for each Meshlet.
-		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, meshDetail.threadGroupCountX, 1u, 1u);
+		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, modelDetail.threadGroupCountX, 1u, 1u);
 		// It might be worth checking if we are reaching the Group Count Limit and if needed
 		// launch more Groups. Could achieve that by passing a GroupLaunch index.
 	}
@@ -126,7 +126,7 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 	m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
 {}
 
-void ModelBundleVSIndirect::AddMeshDetails(std::uint32_t modelBufferIndex) noexcept
+void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noexcept
 {}
 
 void ModelBundleVSIndirect::CreateBuffers(
@@ -218,7 +218,7 @@ ModelBundleCSIndirect::ModelBundleCSIndirect(
 	}, m_dispatchXCount{ 0u }
 {}
 
-void ModelBundleCSIndirect::AddMeshDetails(const std::shared_ptr<ModelVS>& model) noexcept
+void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept
 {
 	m_indirectArguments.emplace_back(ModelBundle::GetDrawIndexedIndirectCommand(model));
 }
@@ -337,7 +337,7 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 void ModelManagerVSIndividual::ConfigureModel(
 	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
 ) {
-	modelBundleObj.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
+	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 }
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
@@ -352,7 +352,7 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
 		const size_t modelIndex               = modelIndices.at(index);
 
-		modelBundleObj.AddMeshDetails(model, static_cast<std::uint32_t>(modelIndex));
+		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
 }
 
@@ -414,7 +414,7 @@ void ModelManagerVSIndirect::ConfigureModel(
 	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
 ) {
 	// Have to add the model to the CS bundle first.
-	modelBundleObj.AddMeshDetails(static_cast<std::uint32_t>(modelIndex));
+	modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 	modelBundleObj.SetModelCount(1u);
 }
 
@@ -430,7 +430,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		const size_t modelIndex               = modelIndices.at(index);
 
 		// Have to add the model to the CS bundle first.
-		modelBundleObj.AddMeshDetails(static_cast<std::uint32_t>(modelIndex));
+		modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 	}
 
 	modelBundleObj.SetModelCount(static_cast<std::uint32_t>(std::size(modelBundle)));

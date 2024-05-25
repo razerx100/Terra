@@ -58,9 +58,9 @@ public:
 class ModelBundleVSIndividual : public ModelBundle
 {
 public:
-	ModelBundleVSIndividual() : ModelBundle{}, m_meshDetails{} {}
+	ModelBundleVSIndividual() : ModelBundle{}, m_modelDetails{} {}
 
-	void AddMeshDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
+	void AddModelDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
@@ -75,26 +75,26 @@ public:
 	}
 
 private:
-	struct MeshDetails
+	struct ModelDetails
 	{
 		std::uint32_t                modelBufferIndex;
 		VkDrawIndexedIndirectCommand indexedArguments;
 	};
 
 private:
-	std::vector<MeshDetails> m_meshDetails;
+	std::vector<ModelDetails> m_modelDetails;
 
 public:
 	ModelBundleVSIndividual(const ModelBundleVSIndividual&) = delete;
 	ModelBundleVSIndividual& operator=(const ModelBundleVSIndividual&) = delete;
 
 	ModelBundleVSIndividual(ModelBundleVSIndividual&& other) noexcept
-		: ModelBundle{ std::move(other) }, m_meshDetails{ std::move(other.m_meshDetails) }
+		: ModelBundle{ std::move(other) }, m_modelDetails{ std::move(other.m_modelDetails) }
 	{}
 	ModelBundleVSIndividual& operator=(ModelBundleVSIndividual&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
-		m_meshDetails        = std::move(other.m_meshDetails);
+		m_modelDetails       = std::move(other.m_modelDetails);
 
 		return *this;
 	}
@@ -104,13 +104,13 @@ class ModelBundleMS : public ModelBundle
 {
 public:
 	ModelBundleMS(VkDevice device, MemoryManager* memoryManager)
-		: ModelBundle{}, m_meshDetails{},
+		: ModelBundle{}, m_modelDetails{},
 		m_meshletBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 		m_meshlets{}
 	{}
 
 	// Need this one as non-const, since I am gonna move the meshlets.
-	void AddMeshDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
+	void AddModelDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
@@ -133,7 +133,7 @@ public:
 	}
 
 private:
-	struct MeshDetails
+	struct ModelDetails
 	{
 		std::uint32_t modelBufferIndex;
 		// Since there could be meshlets of multiple Models, we need the starting point of each.
@@ -142,9 +142,9 @@ private:
 	};
 
 private:
-	std::vector<MeshDetails> m_meshDetails;
-	Buffer                   m_meshletBuffer;
-	std::vector<Meshlet>     m_meshlets;
+	std::vector<ModelDetails> m_modelDetails;
+	Buffer                    m_meshletBuffer;
+	std::vector<Meshlet>      m_meshlets;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -161,14 +161,14 @@ public:
 
 	ModelBundleMS(ModelBundleMS&& other) noexcept
 		: ModelBundle{ std::move(other) },
-		m_meshDetails{ std::move(other.m_meshDetails) },
+		m_modelDetails{ std::move(other.m_modelDetails) },
 		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
 		m_meshlets{ std::move(other.m_meshlets) }
 	{}
 	ModelBundleMS& operator=(ModelBundleMS&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
-		m_meshDetails        = std::move(other.m_meshDetails);
+		m_modelDetails       = std::move(other.m_modelDetails);
 		m_meshletBuffer      = std::move(other.m_meshletBuffer);
 		m_meshlets           = std::move(other.m_meshlets);
 
@@ -181,7 +181,7 @@ class ModelBundleCSIndirect
 public:
 	ModelBundleCSIndirect(VkDevice device, MemoryManager* memoryManager);
 
-	void AddMeshDetails(const std::shared_ptr<ModelVS>& model) noexcept;
+	void AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept;
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer,
@@ -250,7 +250,7 @@ public:
 	{
 		m_modelCount = count;
 	}
-	void AddMeshDetails(std::uint32_t modelBufferIndex) noexcept;
+	void AddModelDetails(std::uint32_t modelBufferIndex) noexcept;
 
 	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
