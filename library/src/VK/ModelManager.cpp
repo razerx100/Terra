@@ -126,10 +126,13 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 	m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
 {}
 
+void ModelBundleVSIndirect::AddMeshDetails(std::uint32_t modelBufferIndex) noexcept
+{}
+
 void ModelBundleVSIndirect::CreateBuffers(
 	std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
 ) {
-	constexpr size_t strideSize = sizeof(ModelBundleCSIndirect::Argument);
+	constexpr size_t strideSize = sizeof(VkDrawIndexedIndirectCommand);
 	m_argumentBufferSize        = static_cast<VkDeviceSize>(m_modelCount * strideSize);
 
 	const VkDeviceSize argumentBufferTotalSize = m_argumentBufferSize * frameCount;
@@ -173,8 +176,7 @@ void ModelBundleVSIndirect::SetDescriptorBuffer(
 void ModelBundleVSIndirect::Draw(
 	const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
 ) const noexcept {
-	constexpr auto strideSize =
-		static_cast<std::uint32_t>(sizeof(ModelBundleCSIndirect::Argument));
+	constexpr auto strideSize = static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
@@ -216,20 +218,14 @@ ModelBundleCSIndirect::ModelBundleCSIndirect(
 	}, m_dispatchXCount{ 0u }
 {}
 
-void ModelBundleCSIndirect::AddMeshDetails(
-	const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex
-) noexcept {
-	m_indirectArguments.emplace_back(
-		Argument{
-			.modelBufferIndex  = modelBufferIndex,
-			.indirectArguments = ModelBundle::GetDrawIndexedIndirectCommand(model)
-		}
-	);
+void ModelBundleCSIndirect::AddMeshDetails(const std::shared_ptr<ModelVS>& model) noexcept
+{
+	m_indirectArguments.emplace_back(ModelBundle::GetDrawIndexedIndirectCommand(model));
 }
 
 void ModelBundleCSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
 {
-	constexpr size_t strideSize = sizeof(Argument);
+	constexpr size_t strideSize = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount    = static_cast<std::uint32_t>(std::size(m_indirectArguments));
 	m_cullingData->commandCount = argumentCount;
 
@@ -277,7 +273,7 @@ void ModelBundleCSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const
 
 void ModelBundleCSIndirect::CleanupTempData() noexcept
 {
-	m_indirectArguments = std::vector<Argument>{};
+	m_indirectArguments = std::vector<VkDrawIndexedIndirectCommand>{};
 	m_cullingData.reset();
 }
 
@@ -415,10 +411,10 @@ void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& 
 }
 
 void ModelManagerVSIndirect::ConfigureModel(
-	ModelBundleVSIndirect& modelBundleObj,
-	size_t modelIndex, const std::shared_ptr<ModelVS>& model
+	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
 ) {
 	// Have to add the model to the CS bundle first.
+	modelBundleObj.AddMeshDetails(static_cast<std::uint32_t>(modelIndex));
 	modelBundleObj.SetModelCount(1u);
 }
 
@@ -433,8 +429,8 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
 		const size_t modelIndex               = modelIndices.at(index);
 
-
 		// Have to add the model to the CS bundle first.
+		modelBundleObj.AddMeshDetails(static_cast<std::uint32_t>(modelIndex));
 	}
 
 	modelBundleObj.SetModelCount(static_cast<std::uint32_t>(std::size(modelBundle)));

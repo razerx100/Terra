@@ -181,7 +181,7 @@ class ModelBundleCSIndirect
 public:
 	ModelBundleCSIndirect(VkDevice device, MemoryManager* memoryManager);
 
-	void AddMeshDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
+	void AddMeshDetails(const std::shared_ptr<ModelVS>& model) noexcept;
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer,
@@ -191,14 +191,6 @@ public:
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 	void CleanupTempData() noexcept;
-
-public:
-	struct Argument
-	{
-		std::uint32_t                modelBufferIndex;
-	// This object has 5, 32bits int. So, I can put another without adding any implicit paddings.
-		VkDrawIndexedIndirectCommand indirectArguments;
-	};
 
 private:
 	struct CullingData
@@ -211,11 +203,11 @@ private:
 	};
 
 private:
-	Buffer                       m_argumentInputBuffer;
-	Buffer                       m_cullingDataBuffer;
-	std::vector<Argument>        m_indirectArguments;
-	std::unique_ptr<CullingData> m_cullingData;
-	std::uint32_t                m_dispatchXCount;
+	Buffer                                    m_argumentInputBuffer;
+	Buffer                                    m_cullingDataBuffer;
+	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
+	std::unique_ptr<CullingData>              m_cullingData;
+	std::uint32_t                             m_dispatchXCount;
 
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
@@ -258,6 +250,7 @@ public:
 	{
 		m_modelCount = count;
 	}
+	void AddMeshDetails(std::uint32_t modelBufferIndex) noexcept;
 
 	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
