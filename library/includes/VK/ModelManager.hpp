@@ -246,10 +246,6 @@ public:
 		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 	);
 
-	void SetModelCount(std::uint32_t count) noexcept
-	{
-		m_modelCount = count;
-	}
 	void AddModelDetails(std::uint32_t modelBufferIndex) noexcept;
 
 	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
@@ -257,7 +253,8 @@ public:
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
-		std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot
+		std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot,
+		std::uint32_t modelIndicesBindingSlot
 	) const noexcept;
 
 	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
@@ -272,6 +269,10 @@ private:
 	Buffer                         m_argumentBuffer;
 	Buffer                         m_counterBuffer;
 	Buffer                         m_counterResetBuffer;
+	Buffer                         m_modelIndicesBuffer;
+	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
+	// to index into this buffer and that will give us the actual model index.
+	std::vector<std::uint32_t>     m_modelIndices;
 	std::unique_ptr<std::uint32_t> m_counterResetData;
 
 public:
@@ -286,6 +287,8 @@ public:
 		m_argumentBuffer{ std::move(other.m_argumentBuffer) },
 		m_counterBuffer{ std::move(other.m_counterBuffer) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
+		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
+		m_modelIndices{ std::move(other.m_modelIndices) },
 		m_counterResetData{ std::move(other.m_counterResetData) }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
@@ -298,6 +301,8 @@ public:
 		m_argumentBuffer     = std::move(other.m_argumentBuffer);
 		m_counterBuffer      = std::move(other.m_counterBuffer);
 		m_counterResetBuffer = std::move(other.m_counterResetBuffer);
+		m_modelIndicesBuffer = std::move(other.m_modelIndicesBuffer);
+		m_modelIndices       = std::move(other.m_modelIndices);
 		m_counterResetData   = std::move(other.m_counterResetData);
 
 		return *this;

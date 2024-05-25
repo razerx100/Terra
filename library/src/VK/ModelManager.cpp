@@ -123,20 +123,28 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 	m_argumentBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_counterBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
+	m_modelIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_modelIndices{}, m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
 {}
 
 void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noexcept
-{}
+{
+	m_modelIndices.emplace_back(modelBufferIndex);
+	++m_modelCount;
+}
 
 void ModelBundleVSIndirect::CreateBuffers(
 	std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
 ) {
-	constexpr size_t strideSize = sizeof(VkDrawIndexedIndirectCommand);
-	m_argumentBufferSize        = static_cast<VkDeviceSize>(m_modelCount * strideSize);
+	constexpr size_t strideSize      = sizeof(VkDrawIndexedIndirectCommand);
+	m_argumentBufferSize             = static_cast<VkDeviceSize>(m_modelCount * strideSize);
+	const auto modelIndiceBufferSize = static_cast<VkDeviceSize>(m_modelCount * sizeof(std::uint32_t));
 
 	const VkDeviceSize argumentBufferTotalSize = m_argumentBufferSize * frameCount;
 	const VkDeviceSize counterBufferTotalSize  = m_counterBufferSize * frameCount;
+
+	const std::vector<std::uint32_t> allQueueIndices
+		= m_queueIndices.ResolveQueueIndices<QueueIndices3>();
 
 	m_argumentBuffer.Create(
 		argumentBufferTotalSize,
@@ -145,32 +153,39 @@ void ModelBundleVSIndirect::CreateBuffers(
 	);
 	m_counterBuffer.Create(
 		counterBufferTotalSize,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-		m_queueIndices.ResolveQueueIndices<QueueIndices3>()
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, allQueueIndices
 	);
 	m_counterResetBuffer.Create(
-		m_counterBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		{}
+		m_counterBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	);
+	m_modelIndicesBuffer.Create(
+		modelIndiceBufferSize,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, allQueueIndices
 	);
 
 	stagingBufferMan.AddBuffer(
 		m_counterResetData.get(), m_counterBufferSize, &m_counterResetBuffer, 0u
 	);
+	stagingBufferMan.AddBuffer(
+		std::data(m_modelIndices), modelIndiceBufferSize, &m_modelIndicesBuffer, 0u
+	);
 }
 
 void ModelBundleVSIndirect::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
-	std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot
+	std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot,
+	std::uint32_t modelIndicesBindingSlot
 ) const noexcept {
 	const auto argumentBufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_argumentBufferSize);
 	const auto counterBufferOffset  = static_cast<VkDeviceAddress>(frameIndex * m_counterBufferSize);
 
 	descriptorBuffer.SetStorageBufferDescriptor(
-		m_argumentBuffer, argumentsBindingSlot, argumentBufferOffset, m_argumentBufferSize
+		m_argumentBuffer, argumentsBindingSlot, 0u, argumentBufferOffset, m_argumentBufferSize
 	);
 	descriptorBuffer.SetStorageBufferDescriptor(
-		m_counterBuffer, counterBindingSlot, counterBufferOffset, m_counterBufferSize
+		m_counterBuffer, counterBindingSlot, 0u, counterBufferOffset, m_counterBufferSize
 	);
+	descriptorBuffer.SetStorageBufferDescriptor(m_modelIndicesBuffer, modelIndicesBindingSlot, 0u);
 }
 
 void ModelBundleVSIndirect::Draw(
@@ -198,6 +213,7 @@ void ModelBundleVSIndirect::ResetCounterBuffer(
 void ModelBundleVSIndirect::CleanupTempData() noexcept
 {
 	m_counterResetData.reset();
+	m_modelIndices = std::vector<std::uint32_t>{};
 }
 
 // Model Bundle CS Indirect
@@ -238,12 +254,10 @@ void ModelBundleCSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan
 	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
 
 	m_argumentInputBuffer.Create(
-		argumentBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		{}
+		argumentBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	);
 	m_cullingDataBuffer.Create(
-		cullingDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		{}
+		cullingDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	);
 
 	stagingBufferMan.AddBuffer(
@@ -256,12 +270,8 @@ void ModelBundleCSIndirect::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer,
 	std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
 ) const noexcept {
-	descriptorBuffer.SetStorageBufferDescriptor(
-		m_argumentInputBuffer, argumentInputBindingSlot, 0u
-	);
-	descriptorBuffer.SetStorageBufferDescriptor(
-		m_cullingDataBuffer, cullingDataBindingSlot, 0u
-	);
+	descriptorBuffer.SetStorageBufferDescriptor(m_argumentInputBuffer, argumentInputBindingSlot, 0u);
+	descriptorBuffer.SetStorageBufferDescriptor(m_cullingDataBuffer, cullingDataBindingSlot, 0u);
 }
 
 void ModelBundleCSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
@@ -294,7 +304,7 @@ void ModelBuffers::SetDescriptorBuffer(
 	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
 
 	descriptorBuffer.SetStorageBufferDescriptor(
-		m_buffers, bindingSlot, bufferOffset, m_modelBuffersInstanceSize
+		m_buffers, bindingSlot, 0u, bufferOffset, m_modelBuffersInstanceSize
 	);
 }
 
@@ -415,7 +425,6 @@ void ModelManagerVSIndirect::ConfigureModel(
 ) {
 	// Have to add the model to the CS bundle first.
 	modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
-	modelBundleObj.SetModelCount(1u);
 }
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
@@ -432,8 +441,6 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		// Have to add the model to the CS bundle first.
 		modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 	}
-
-	modelBundleObj.SetModelCount(static_cast<std::uint32_t>(std::size(modelBundle)));
 }
 
 void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
