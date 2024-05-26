@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <ReusableVkBuffer.hpp>
 #include <GraphicsPipelineVertexShader.hpp>
+#include <ComputePipeline.hpp>
 
 #include <MeshManagerVertexShader.hpp>
 #include <CommonBuffers.hpp>
@@ -593,7 +594,7 @@ protected:
 	std::vector<ModelBundleType> m_modelBundles;
 
 	// Need to update this when I update the shaders.
-	static constexpr std::uint32_t s_modelGraphicsBindingSlot = 0u;
+	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -652,6 +653,11 @@ public:
 		: ModelManager{ device, memoryManager, frameCount }
 	{}
 
+	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+
+	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 
@@ -664,11 +670,6 @@ private:
 		const std::vector<size_t>& modelIndices,
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
-
-	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
-	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
-
-	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -706,10 +707,21 @@ class ModelManagerVSIndirect : public
 	friend class ModelManagerVSIndirectTest;
 public:
 	ModelManagerVSIndirect(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ModelManager{ device, memoryManager, frameCount }
+		: ModelManager{ device, memoryManager, frameCount },
+		m_pipelineLayoutCS{ device }, m_computePipeline{}, m_modelBundlesCS{}
 	{}
 
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
+	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
+
+	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+
+	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBufferCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+
+	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
@@ -724,16 +736,32 @@ private:
 
 	void _cleanUpTempData() noexcept;
 
+private:
+	PipelineLayout                     m_pipelineLayoutCS;
+	ComputePipeline                    m_computePipeline;
+	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
+
+	// Need to update these when I update the shaders.
+	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
+	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
+	static constexpr std::uint32_t s_modelIndicesCSBindingSlot      = 1u;
+
 public:
 	ModelManagerVSIndirect(const ModelManagerVSIndirect&) = delete;
 	ModelManagerVSIndirect& operator=(const ModelManagerVSIndirect&) = delete;
 
 	ModelManagerVSIndirect(ModelManagerVSIndirect&& other) noexcept
-		: ModelManager{ std::move(other) }
+		: ModelManager{ std::move(other) },
+		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
+		m_computePipeline{ std::move(other.m_computePipeline) },
+		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
+		m_pipelineLayoutCS    = std::move(other.m_pipelineLayoutCS);
+		m_computePipeline     = std::move(other.m_computePipeline);
+		m_modelBundlesCS      = std::move(other.m_modelBundlesCS);
 
 		return *this;
 	}

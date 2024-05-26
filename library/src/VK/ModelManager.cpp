@@ -376,7 +376,7 @@ void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
-			s_modelGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
 	}
@@ -389,9 +389,10 @@ void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffe
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, static_cast<VkDeviceSize>(index), s_modelGraphicsBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
 		);
 	}
 }
@@ -416,14 +417,24 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 // Model Manager VS Indirect.
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
-	// Descriptor pipeline layout.
 	m_pipelineLayout.Create(descriptorBuffer);
+}
+
+void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer)
+{
+	m_pipelineLayoutCS.Create(descriptorBuffer);
+
+	m_computePipeline.Create(m_device, m_pipelineLayoutCS, m_shaderPath);
 }
 
 void ModelManagerVSIndirect::ConfigureModel(
 	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
 ) {
-	// Have to add the model to the CS bundle first.
+	ModelBundleCSIndirect modelBundleCS{ m_device, m_memoryManager };
+	modelBundleCS.AddModelDetails(model);
+
+	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
+
 	modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 }
 
@@ -433,26 +444,95 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
+	ModelBundleCSIndirect modelBundleCS{ m_device, m_memoryManager };
+
 	for (size_t index = 0u; index < modelCount; ++index)
 	{
 		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
 		const size_t modelIndex               = modelIndices.at(index);
 
-		// Have to add the model to the CS bundle first.
+		modelBundleCS.AddModelDetails(model);
+
 		modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 	}
+
+	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 }
 
 void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
 {
 	const std::uint32_t frameCount = m_modelBuffers.GetInstanceCount();
 
-	for (auto& modelBundle : m_modelBundles)
-		modelBundle.CreateBuffers(frameCount, stagingBufferMan);
+	for (size_t index = 0u; index < std::size(m_modelBundles); ++index)
+	{
+		ModelBundleVSIndirect& modelBundleVS = m_modelBundles.at(index);
+		ModelBundleCSIndirect& modelBundleCS = m_modelBundlesCS.at(index);
+
+		modelBundleVS.CreateBuffers(frameCount, stagingBufferMan);
+		modelBundleCS.CreateBuffers(stagingBufferMan);
+	}
 }
 
 void ModelManagerVSIndirect::_cleanUpTempData() noexcept
 {
-	for (auto& modelBundle : m_modelBundles)
-		modelBundle.CleanupTempData();
+	for (size_t index = 0u; index < std::size(m_modelBundles); ++index)
+	{
+		m_modelBundles.at(index).CleanupTempData();
+		m_modelBundlesCS.at(index).CleanupTempData();
+	}
+}
+
+void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) {
+	const auto frameCount = std::size(descriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+
+		descriptorBuffer.AddBinding(
+			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_VERTEX_BIT
+		);
+		// Argument and counter here.
+		descriptorBuffer.AddBinding(
+			s_modelIndicesVSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_VERTEX_BIT
+		);
+	}
+}
+
+void ModelManagerVSIndirect::SetDescriptorBufferVS(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) {
+	const auto frameCount = std::size(descriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		const auto frameIndex                = static_cast<VkDeviceSize>(index);
+
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+		);
+
+		// This is wrong and needs to be updated.
+		for (auto& modelBundle : m_modelBundles)
+			modelBundle.SetDescriptorBuffer(
+				descriptorBuffer, frameIndex, 1u, 2u, s_modelIndicesVSBindingSlot
+			);
+	}
+}
+
+void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) {
+
+}
+
+void ModelManagerVSIndirect::SetDescriptorBufferCS(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) {
+
 }
