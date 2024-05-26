@@ -14,7 +14,8 @@ class MaterialBuffers : public ReusableVkBuffer<MaterialBuffers, std::shared_ptr
 	friend class ReusableVkBuffer<MaterialBuffers, std::shared_ptr<Material>>;
 public:
 	MaterialBuffers(VkDevice device, MemoryManager* memoryManager)
-		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
+		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		m_device{ device }, m_memoryManager{ memoryManager }
 	{}
 
 	void SetDescriptorBuffer(
@@ -50,16 +51,23 @@ private:
 	void CreateBuffer(size_t materialCount);
 	void _remove(size_t index) noexcept;
 
+private:
+	VkDevice       m_device;
+	MemoryManager* m_memoryManager;
+
 public:
 	MaterialBuffers(const MaterialBuffers&) = delete;
 	MaterialBuffers& operator=(const MaterialBuffers&) = delete;
 
 	MaterialBuffers(MaterialBuffers&& other) noexcept
-		: ReusableVkBuffer{ std::move(other) }
+		: ReusableVkBuffer{ std::move(other) },
+		m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager }
 	{}
 	MaterialBuffers& operator=(MaterialBuffers&& other) noexcept
 	{
 		ReusableVkBuffer::operator=(std::move(other));
+		m_device                  = other.m_device;
+		m_memoryManager           = other.m_memoryManager;
 
 		return *this;
 	}
@@ -69,7 +77,8 @@ class MeshBoundsBuffers
 {
 public:
 	MeshBoundsBuffers(VkDevice device, MemoryManager* memoryManager)
-		: m_boundsBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		: m_device{ device }, m_memoryManager{ memoryManager },
+		m_boundsBuffer{ GetCPUResource<Buffer>(device, memoryManager) },
 		m_boundsData{}, m_availableIndices{}
 	{}
 
@@ -121,6 +130,8 @@ private:
 	}
 
 private:
+	VkDevice               m_device;
+	MemoryManager*         m_memoryManager;
 	Buffer                 m_boundsBuffer;
 	std::queue<BoundsData> m_boundsData;
 	std::vector<bool>      m_availableIndices;
@@ -130,12 +141,15 @@ public:
 	MeshBoundsBuffers& operator=(const MeshBoundsBuffers&) = delete;
 
 	MeshBoundsBuffers(MeshBoundsBuffers&& other) noexcept
-		: m_boundsBuffer{ std::move(other.m_boundsBuffer) },
+		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
+		m_boundsBuffer{ std::move(other.m_boundsBuffer) },
 		m_boundsData{ std::move(other.m_boundsData) },
 		m_availableIndices{ std::move(other.m_availableIndices) }
 	{}
 	MeshBoundsBuffers& operator=(MeshBoundsBuffers&& other) noexcept
 	{
+		m_device           = other.m_device;
+		m_memoryManager    = other.m_memoryManager;
 		m_boundsBuffer     = std::move(other.m_boundsBuffer);
 		m_boundsData       = std::move(other.m_boundsData);
 		m_availableIndices = std::move(other.m_availableIndices);

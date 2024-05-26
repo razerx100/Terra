@@ -12,7 +12,17 @@ void MaterialBuffers::CreateBuffer(size_t materialCount)
 	constexpr size_t strideSize    = GetStride();
 	const auto materialBuffersSize = static_cast<VkDeviceSize>(strideSize * materialCount);
 
-	m_buffers.Create(materialBuffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+	Buffer newBuffer = GetCPUResource<Buffer>(m_device, m_memoryManager);
+	newBuffer.Create(materialBuffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+
+	// All of the old materials will be only copied if the new buffer is larger.
+	const VkDeviceSize oldBufferSize = m_buffers.Size();
+	if (oldBufferSize && newBuffer.Size() > oldBufferSize)
+	{
+		memcpy(newBuffer.CPUHandle(), m_buffers.CPUHandle(), m_buffers.Size());
+	}
+
+	m_buffers = std::move(newBuffer);
 }
 
 void MaterialBuffers::_remove(size_t index) noexcept
@@ -85,7 +95,17 @@ void MeshBoundsBuffers::CreateBuffer(size_t boundsCount)
 	constexpr size_t strideSize      = GetStride();
 	const auto meshBoundsBuffersSize = static_cast<VkDeviceSize>(strideSize * boundsCount);
 
-	m_boundsBuffer.Create(meshBoundsBuffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+	Buffer newBuffer = GetCPUResource<Buffer>(m_device, m_memoryManager);
+	newBuffer.Create(meshBoundsBuffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+
+	// All of the old bounds will be only copied if the new buffer is larger.
+	const VkDeviceSize oldBufferSize = m_boundsBuffer.Size();
+	if (oldBufferSize && newBuffer.Size() > oldBufferSize)
+	{
+		memcpy(newBuffer.CPUHandle(), m_boundsBuffer.CPUHandle(), m_boundsBuffer.Size());
+	}
+
+	m_boundsBuffer = std::move(newBuffer);
 }
 
 void MeshBoundsBuffers::Remove(size_t index) noexcept

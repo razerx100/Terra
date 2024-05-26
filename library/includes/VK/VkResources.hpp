@@ -207,4 +207,18 @@ public:
 		return *this;
 	}
 };
+
+template<class T>
+[[nodiscard]]
+T GetCPUResource(VkDevice device, MemoryManager* memoryManager)
+{
+	return T{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+}
+
+template<class T>
+[[nodiscard]]
+T GetGPUResource(VkDevice device, MemoryManager* memoryManager)
+{
+	return T{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+}
 #endif
