@@ -1,3 +1,6 @@
+#include <ranges>
+#include <algorithm>
+
 #include <CommonBuffers.hpp>
 
 // Material Buffers
@@ -217,4 +220,66 @@ void MeshBoundsBuffers::Update() noexcept
 
 	// Release the internal memory of the m_boundsData container, as pop wouldn't.
 	m_boundsData = std::queue<BoundsData>{};
+}
+
+// Shared Buffer
+void SharedBuffer::CreateBuffer(VkDeviceSize size)
+{
+	// Moving it into the temp, as we will want to copy it back to new bigger buffer.
+	m_tempBuffer = std::move(m_buffer);
+
+	m_buffer = GetGPUResource<Buffer>(m_device, m_memoryManager);
+	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
+}
+
+void SharedBuffer::CopyOldBuffer(VKCommandBuffer& copyBuffer) const noexcept
+{
+	copyBuffer.CopyWhole(m_tempBuffer, m_buffer);
+}
+
+void SharedBuffer::CleanupTempData() noexcept
+{
+	m_tempBuffer.Destroy();
+}
+
+VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
+{
+	auto result = std::ranges::lower_bound(
+		m_availableMemory, size, {},
+		[](const AllocInfo& info) { return info.size; }
+	);
+
+	VkDeviceSize offset = 0u;
+	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
+
+	if (result == std::end(m_availableMemory))
+	{
+		offset = m_buffer.Size();
+
+		CreateBuffer(offset + size);
+	}
+	else
+	{
+		const AllocInfo& allocInfo = *result;
+		offset = allocInfo.offset;
+
+		AddAllocInfo(offset + size, allocInfo.size - size);
+	}
+
+	return offset;
+}
+
+void SharedBuffer::AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept
+{
+	auto result = std::ranges::upper_bound(
+		m_availableMemory, size, {},
+		[](const AllocInfo& info) { return info.size; }
+	);
+
+	m_availableMemory.insert(result, AllocInfo{ offset, size });
+}
+
+void SharedBuffer::RelinquishMemory(VkDeviceSize offset, VkDeviceSize size) noexcept
+{
+	AddAllocInfo(offset, size);
 }
