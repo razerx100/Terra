@@ -180,14 +180,13 @@ public:
 class ModelBundleCSIndirect
 {
 public:
-	ModelBundleCSIndirect(VkDevice device, MemoryManager* memoryManager);
+	ModelBundleCSIndirect();
 
 	void AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept;
-	void CreateBuffers(StagingBufferManager& stagingBufferMan);
-	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer,
-		std::uint32_t argumentInputBindingSlot, std::uint32_t cullingDataBindingSlot
-	) const noexcept;
+	void CreateBuffers(
+		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedData,
+		SharedBuffer& cullingSharedData
+	);
 
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
@@ -204,8 +203,8 @@ private:
 	};
 
 private:
-	Buffer                                    m_argumentInputBuffer;
-	Buffer                                    m_cullingDataBuffer;
+	SharedBufferData                          m_argumentInputSharedData;
+	SharedBufferData                          m_cullingSharedData;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
 	std::unique_ptr<CullingData>              m_cullingData;
 	std::uint32_t                             m_dispatchXCount;
@@ -222,19 +221,19 @@ public:
 	ModelBundleCSIndirect& operator=(const ModelBundleCSIndirect&) = delete;
 
 	ModelBundleCSIndirect(ModelBundleCSIndirect&& other) noexcept
-		: m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
-		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
+		: m_argumentInputSharedData{ other.m_argumentInputSharedData },
+		m_cullingSharedData{ std::move(other.m_cullingSharedData) },
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
 		m_dispatchXCount{ other.m_dispatchXCount }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
-		m_argumentInputBuffer = std::move(other.m_argumentInputBuffer);
-		m_cullingDataBuffer   = std::move(other.m_cullingDataBuffer);
-		m_indirectArguments   = std::move(other.m_indirectArguments);
-		m_cullingData         = std::move(other.m_cullingData);
-		m_dispatchXCount      = other.m_dispatchXCount;
+		m_argumentInputSharedData = other.m_argumentInputSharedData;
+		m_cullingSharedData       = std::move(other.m_cullingSharedData);
+		m_indirectArguments       = std::move(other.m_indirectArguments);
+		m_cullingData             = std::move(other.m_cullingData);
+		m_dispatchXCount          = other.m_dispatchXCount;
 
 		return *this;
 	}
@@ -706,13 +705,15 @@ class ModelManagerVSIndirect : public
 		>;
 	friend class ModelManagerVSIndirectTest;
 public:
-	ModelManagerVSIndirect(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ModelManager{ device, memoryManager, frameCount },
-		m_pipelineLayoutCS{ device }, m_computePipeline{}, m_modelBundlesCS{}
-	{}
+	ModelManagerVSIndirect(
+		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
+		std::uint32_t frameCount
+	);
 
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
+
+	// Need a remove method and a CopyTempBuffer method.
 
 	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
@@ -737,14 +738,19 @@ private:
 	void _cleanUpTempData() noexcept;
 
 private:
+	StagingBufferManager*              m_stagingBufferMan;
+	SharedBuffer                       m_argumentInputBuffer;
+	SharedBuffer                       m_cullingDataBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
 
 	// Need to update these when I update the shaders.
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
-	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
 	static constexpr std::uint32_t s_modelIndicesCSBindingSlot      = 1u;
+	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
+	static constexpr std::uint32_t s_argumentInputBufferBindingSlot = 2u;
+	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 2u;
 
 public:
 	ModelManagerVSIndirect(const ModelManagerVSIndirect&) = delete;
@@ -752,6 +758,9 @@ public:
 
 	ModelManagerVSIndirect(ModelManagerVSIndirect&& other) noexcept
 		: ModelManager{ std::move(other) },
+		m_stagingBufferMan{ other.m_stagingBufferMan },
+		m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
+		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
@@ -759,6 +768,9 @@ public:
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
+		m_stagingBufferMan    = other.m_stagingBufferMan;
+		m_argumentInputBuffer = std::move(other.m_argumentInputBuffer);
+		m_cullingDataBuffer   = std::move(other.m_cullingDataBuffer);
 		m_pipelineLayoutCS    = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline     = std::move(other.m_computePipeline);
 		m_modelBundlesCS      = std::move(other.m_modelBundlesCS);

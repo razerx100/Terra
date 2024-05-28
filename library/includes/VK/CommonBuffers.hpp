@@ -159,6 +159,13 @@ public:
 	}
 };
 
+struct SharedBufferData
+{
+	Buffer const* bufferData;
+	VkDeviceSize  offset;
+	VkDeviceSize  size;
+};
+
 class SharedBuffer
 {
 public:
@@ -174,8 +181,22 @@ public:
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
 	VkDeviceSize AllocateMemory(VkDeviceSize size);
+	[[nodiscard]]
+	// The offset from the start of the buffer will be returned.
+	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size)
+	{
+		return SharedBufferData{
+			.bufferData = &m_buffer,
+			.offset     = AllocateMemory(size),
+			.size       = size
+		};
+	}
 
 	void RelinquishMemory(VkDeviceSize offset, VkDeviceSize size) noexcept;
+	void RelinquishMemory(const SharedBufferData& sharedData) noexcept
+	{
+		RelinquishMemory(sharedData.offset, sharedData.size);
+	}
 
 	void CopyOldBuffer(VKCommandBuffer& copyBuffer) const noexcept;
 	void CleanupTempData() noexcept;
