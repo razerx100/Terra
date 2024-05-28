@@ -571,11 +571,9 @@ private:
 		);
 
 		// If the result is the end it, that means there is no bigger index. So, then
-		// emplace at the back. Otherwise, insert at the end of the range of the same indices.
-		if (result == std::end(m_modelBundles))
-			m_modelBundles.emplace_back(std::move(modelBundle));
-		else
-			m_modelBundles.insert(result, std::move(modelBundle));
+		// insert at the back. Otherwise, insert at the end of the range of the same indices.
+		// Insert works for the end iterator, so no need to emplace_back.
+		m_modelBundles.insert(result, std::move(modelBundle));
 	}
 
 protected:
