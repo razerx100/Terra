@@ -213,7 +213,6 @@ void ModelBundleVSIndirect::ResetCounterBuffer(
 void ModelBundleVSIndirect::CleanupTempData() noexcept
 {
 	m_counterResetData.reset();
-	m_modelIndices = std::vector<std::uint32_t>{};
 }
 
 // Model Bundle CS Indirect
@@ -229,7 +228,7 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 				.zBounds      = ZBOUNDS
 			}
 		)
-	}, m_dispatchXCount{ 0u }
+	}, m_dispatchXCount{ 0u }, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
 void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept
@@ -357,6 +356,16 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 	}
 }
 
+void ModelManagerVSIndividual::ConfigureRemove(size_t bundleIndex) noexcept
+{
+	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
+
+	const auto& modelDetails = modelBundle.GetDetails();
+
+	for (const auto& modelDetail : modelDetails)
+		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+}
+
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
 ) {
@@ -440,9 +449,13 @@ void ModelManagerVSIndirect::ConfigureModel(
 
 	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
 
+	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
+
+	modelBundleCS.SetID(index32_t);
+
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
-	modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
+	modelBundleObj.AddModelDetails(index32_t);
 }
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
@@ -463,9 +476,28 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 	}
 
+	modelBundleCS.SetID(static_cast<std::uint32_t>(modelBundleObj.GetID()));
+
 	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
+}
+
+void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
+{
+	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
+
+	const auto& modelIndices = modelBundle.GetModelIndices();
+
+	for (const auto& modelIndex : modelIndices)
+		m_modelBuffers.Remove(modelIndex);
+
+	const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
+
+	std::erase_if(
+		m_modelBundlesCS,
+		[bundleID](const ModelBundleCSIndirect& bundle) { return bundleID == bundle.GetID(); }
+	);
 }
 
 void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
@@ -476,7 +508,6 @@ void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMa
 	for (size_t index = 0u; index < std::size(m_modelBundles); ++index)
 	{
 		ModelBundleVSIndirect& modelBundleVS = m_modelBundles.at(index);
-		ModelBundleCSIndirect& modelBundleCS = m_modelBundlesCS.at(index);
 
 		modelBundleVS.CreateBuffers(frameCount, stagingBufferMan);
 	}

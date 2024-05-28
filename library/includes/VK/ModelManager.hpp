@@ -59,6 +59,13 @@ public:
 class ModelBundleVSIndividual : public ModelBundle
 {
 public:
+	struct ModelDetails
+	{
+		std::uint32_t                modelBufferIndex;
+		VkDrawIndexedIndirectCommand indexedArguments;
+	};
+
+public:
 	ModelBundleVSIndividual() : ModelBundle{}, m_modelDetails{} {}
 
 	void AddModelDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
@@ -75,12 +82,21 @@ public:
 		return static_cast<std::uint32_t>(sizeof(std::uint32_t));
 	}
 
-private:
-	struct ModelDetails
+	[[nodiscard]]
+	const std::vector<ModelDetails>& GetDetails() const noexcept { return m_modelDetails; }
+
+	[[nodiscard]]
+	std::uint64_t GetID() const noexcept
 	{
-		std::uint32_t                modelBufferIndex;
-		VkDrawIndexedIndirectCommand indexedArguments;
-	};
+		// If there is no index, return an invalid one. We might have uint32_t::max models,
+		// so return uint64_t::max as the invalid index. Then, the model indices should be unique
+		// so, just returning the first one should be enough to identify the bundle, as no other bundles
+		// should have it.
+		if (!std::empty(m_modelDetails))
+			return m_modelDetails.front().modelBufferIndex;
+		else
+			return std::numeric_limits<std::uint64_t>::max();
+	}
 
 private:
 	std::vector<ModelDetails> m_modelDetails;
@@ -103,6 +119,15 @@ public:
 
 class ModelBundleMS : public ModelBundle
 {
+public:
+	struct ModelDetails
+	{
+		std::uint32_t modelBufferIndex;
+		// Since there could be meshlets of multiple Models, we need the starting point of each.
+		std::uint32_t meshletOffset;
+		std::uint32_t threadGroupCountX;
+	};
+
 public:
 	ModelBundleMS(VkDevice device, MemoryManager* memoryManager)
 		: ModelBundle{}, m_modelDetails{},
@@ -133,14 +158,21 @@ public:
 		return static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
 	}
 
-private:
-	struct ModelDetails
+	[[nodiscard]]
+	const std::vector<ModelDetails>& GetDetails() const noexcept { return m_modelDetails; }
+
+	[[nodiscard]]
+	std::uint64_t GetID() const noexcept
 	{
-		std::uint32_t modelBufferIndex;
-		// Since there could be meshlets of multiple Models, we need the starting point of each.
-		std::uint32_t meshletOffset;
-		std::uint32_t threadGroupCountX;
-	};
+		// If there is no index, return an invalid one. We might have uint32_t::max models,
+		// so return uint64_t::max as the invalid index. Then, the model indices should be unique
+		// so, just returning the first one should be enough to identify the bundle, as no other bundles
+		// should have it.
+		if (!std::empty(m_modelDetails))
+			return m_modelDetails.front().modelBufferIndex;
+		else
+			return std::numeric_limits<std::uint64_t>::max();
+	}
 
 private:
 	std::vector<ModelDetails> m_modelDetails;
@@ -192,6 +224,11 @@ public:
 
 	void CleanupTempData() noexcept;
 
+	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
+
+	[[nodiscard]]
+	std::uint32_t GetID() const noexcept { return m_bundleID; }
+
 private:
 	struct CullingData
 	{
@@ -208,6 +245,7 @@ private:
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
 	std::unique_ptr<CullingData>              m_cullingData;
 	std::uint32_t                             m_dispatchXCount;
+	std::uint32_t                             m_bundleID;
 
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
@@ -225,7 +263,8 @@ public:
 		m_cullingSharedData{ std::move(other.m_cullingSharedData) },
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
-		m_dispatchXCount{ other.m_dispatchXCount }
+		m_dispatchXCount{ other.m_dispatchXCount },
+		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
@@ -234,6 +273,7 @@ public:
 		m_indirectArguments       = std::move(other.m_indirectArguments);
 		m_cullingData             = std::move(other.m_cullingData);
 		m_dispatchXCount          = other.m_dispatchXCount;
+		m_bundleID                = other.m_bundleID;
 
 		return *this;
 	}
@@ -260,6 +300,22 @@ public:
 	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
 
 	void CleanupTempData() noexcept;
+
+	[[nodiscard]]
+	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
+
+	[[nodiscard]]
+	std::uint64_t GetID() const noexcept
+	{
+		// If there is no index, return an invalid one. We might have uint32_t::max models,
+		// so return uint64_t::max as the invalid index. Then, the model indices should be unique
+		// so, just returning the first one should be enough to identify the bundle, as no other bundles
+		// should have it.
+		if (!std::empty(m_modelIndices))
+			return m_modelIndices.front();
+		else
+			return std::numeric_limits<std::uint64_t>::max();
+	}
 
 private:
 	std::uint32_t                  m_modelCount;
@@ -418,7 +474,8 @@ public:
 		m_shaderPath = std::move(shaderPath);
 	}
 
-	void AddModel(std::shared_ptr<ModelType>&& model, const std::wstring& fragmentShader)
+	[[nodiscard]]
+	std::uint32_t AddModel(std::shared_ptr<ModelType>&& model, const std::wstring& fragmentShader)
 	{
 		// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 		// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
@@ -436,10 +493,15 @@ public:
 
 		modelBundle.SetPSOIndex(psoIndex);
 
+		const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
+
 		AddModelBundle(std::move(modelBundle), psoIndex);
+
+		return bundleID;
 	}
 
-	void AddModelBundle(
+	[[nodiscard]]
+	std::uint32_t AddModelBundle(
 		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const std::wstring& fragmentShader
 	) {
 		const size_t modelCount = std::size(modelBundle);
@@ -469,9 +531,36 @@ public:
 
 			modelBundleObj.SetPSOIndex(psoIndex);
 
+			const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
+
 			AddModelBundle(std::move(modelBundleObj), psoIndex);
+
+			return bundleID;
+		}
+
+		return std::numeric_limits<std::uint32_t>::max();
+	}
+
+	void RemoveBundle(std::uint32_t bundleID) noexcept
+	{
+		auto result = std::ranges::find(
+			m_modelBundles, bundleID, {},
+			[](const ModelBundleType& bundle) { return bundle.GetID(); }
+		);
+
+		if (result != std::end(m_modelBundles))
+		{
+			const auto modelBundleIndex = static_cast<size_t>(
+				std::distance(std::begin(m_modelBundles), result)
+			);
+
+			static_cast<Derived*>(this)->ConfigureRemove(modelBundleIndex);
+
+			m_modelBundles.erase(result);
 		}
 	}
+
+	// Need a function which can change the PSO index of a Bundle.
 
 	void AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
@@ -668,6 +757,8 @@ private:
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
 
+	void ConfigureRemove(size_t bundleIndex) noexcept;
+
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
 	ModelManagerVSIndividual& operator=(const ModelManagerVSIndividual&) = delete;
@@ -733,6 +824,8 @@ private:
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
 
+	void ConfigureRemove(size_t bundleIndex) noexcept;
+
 	void _cleanUpTempData() noexcept;
 
 private:
@@ -741,6 +834,11 @@ private:
 	SharedBuffer                       m_cullingDataBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
+	// The indices of the CS bundles won't align with the VS ones, but that shouldn't be an issue
+	// as we should be setting the correct offset in the Configure method.
+
+	// Now that I think about it, it might be better to just have a single CS bundle. But that will
+	// have the downside of managing the data for each bundle and adding new ones.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
 
 	// Need to update these when I update the shaders.
