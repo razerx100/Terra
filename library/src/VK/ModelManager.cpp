@@ -496,7 +496,19 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 
 	std::erase_if(
 		m_modelBundlesCS,
-		[bundleID](const ModelBundleCSIndirect& bundle) { return bundleID == bundle.GetID(); }
+		[bundleID, &argumentInput = m_argumentInputBuffer, &cullingData = m_cullingDataBuffer]
+		(const ModelBundleCSIndirect& bundle)
+		{
+			const bool result = bundleID == bundle.GetID();
+
+			if (result)
+			{
+				argumentInput.RelinquishMemory(bundle.GetArgumentInputSharedData());
+				cullingData.RelinquishMemory(bundle.GetCullingSharedData());
+			}
+
+			return result;
+		}
 	);
 }
 

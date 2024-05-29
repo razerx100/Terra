@@ -229,6 +229,11 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetID() const noexcept { return m_bundleID; }
 
+	[[nodiscard]]
+	SharedBufferData GetArgumentInputSharedData() const noexcept { return m_argumentInputSharedData; }
+	[[nodiscard]]
+	SharedBufferData GetCullingSharedData() const noexcept { return m_cullingSharedData; }
+
 private:
 	struct CullingData
 	{
