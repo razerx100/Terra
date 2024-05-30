@@ -535,11 +535,11 @@ public:
 			const std::vector<size_t> modelIndices
 				= m_modelBuffers.AddMultiple(std::move(tempModelBundle));
 
-			ModelBundleType modelBundleObj{};
+			auto dvThis = static_cast<Derived*>(this);
 
-			static_cast<Derived*>(this)->ConfigureModelBundle(
-				modelBundleObj, modelIndices, modelBundle
-			);
+			ModelBundleType modelBundleObj = dvThis->GetModelBundle();
+
+			dvThis->ConfigureModelBundle(modelBundleObj, modelIndices, modelBundle);
 
 			modelBundleObj.SetMeshIndex(meshIndex);
 
@@ -547,7 +547,7 @@ public:
 
 			modelBundleObj.SetPSOIndex(psoIndex);
 
-			const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
+			const auto bundleID = static_cast<std::uint32_t>(modelBundleObj.GetID());
 
 			AddModelBundle(std::move(modelBundleObj), psoIndex);
 

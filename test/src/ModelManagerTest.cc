@@ -223,7 +223,25 @@ TEST_F(ModelManagerTest, ModelBundleCSIndirectTest)
 		Constants::frameCount
 	};
 
-	auto modelVS = std::make_shared<ModelDummyVS>();
+	{
+		auto modelVS = std::make_shared<ModelDummyVS>();
 
-	std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"");
+		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"");
+		EXPECT_EQ(index, 0u) << "Index isn't 0.";
+	}
+	{
+		auto modelVS = std::make_shared<ModelDummyVS>();
+
+		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"");
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+	}
+	{
+		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+
+		for (size_t index = 0u; index < 5u; ++index)
+			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelsVS), L"H");
+		EXPECT_EQ(index, 2u) << "Index isn't 2.";
+	}
 }
