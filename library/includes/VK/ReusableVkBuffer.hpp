@@ -65,11 +65,16 @@ public:
 
 		if (newElementCount > freeIndexCount)
 		{
-			for (size_t index = freeIndexCount; index < newElementCount; ++index)
+			// Since the free indices might not be in order. But the last one should have the
+			// highest index.
+			const size_t newFreeIndex = std::empty(freeIndices) ? freeIndexCount : freeIndices.back() + 1u;
+
+			for (size_t index = freeIndexCount, freeIndex = newFreeIndex;
+				index < newElementCount; ++index, ++freeIndex)
 			{
 				m_elements.AddNewElement(std::move(elements.at(index)));
 
-				freeIndices.emplace_back(index);
+				freeIndices.emplace_back(freeIndex);
 			}
 
 			const size_t newExtraElementCount = newElementCount
