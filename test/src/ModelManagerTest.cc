@@ -244,4 +244,14 @@ TEST_F(ModelManagerTest, ModelBundleCSIndirectTest)
 		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelsVS), L"H");
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
+	vsIndirect.RemoveBundle(1u);
+	{
+		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+
+		for (size_t index = 0u; index < 7u; ++index)
+			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelsVS), L"H");
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+	}
 }

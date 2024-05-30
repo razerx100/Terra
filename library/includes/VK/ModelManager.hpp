@@ -559,9 +559,9 @@ public:
 
 	void RemoveBundle(std::uint32_t bundleID) noexcept
 	{
-		auto result = std::ranges::find(
-			m_modelBundles, bundleID, {},
-			[](const ModelBundleType& bundle) { return bundle.GetID(); }
+		auto result = std::ranges::find_if(
+			m_modelBundles,
+			[bundleID](const ModelBundleType& bundle) { return bundle.GetID() == bundleID; }
 		);
 
 		if (result != std::end(m_modelBundles))
