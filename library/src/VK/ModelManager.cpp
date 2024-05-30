@@ -228,7 +228,8 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 				.zBounds      = ZBOUNDS
 			}
 		)
-	}, m_dispatchXCount{ 0u }, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
+	}, m_dispatchXCount{ 0u }, m_bundleID{ std::numeric_limits<std::uint32_t>::max() },
+	m_argumentOffset{ 0u }
 {}
 
 void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept
@@ -417,7 +418,7 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 // Model Manager VS Indirect.
 ModelManagerVSIndirect::ModelManagerVSIndirect(
 	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-	std::uint32_t frameCount
+	QueueIndices3 queueIndices3, std::uint32_t frameCount
 ) : ModelManager{ device, memoryManager, frameCount }, m_stagingBufferMan{ stagingBufferMan },
 	m_argumentInputBuffer{
 		device, memoryManager,
@@ -426,7 +427,8 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	},
-	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_modelBundlesCS{}
+	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
+	m_modelBundlesCS{}
 {}
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)

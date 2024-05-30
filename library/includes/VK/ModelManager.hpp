@@ -226,6 +226,12 @@ public:
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
 
+	void SetArgumentOffset(std::uint32_t offset) noexcept
+	{
+		// Might be able to get the offset from m_argumentInputSharedData.
+		m_argumentOffset = offset;
+	}
+
 	[[nodiscard]]
 	std::uint32_t GetID() const noexcept { return m_bundleID; }
 
@@ -238,7 +244,7 @@ private:
 	struct CullingData
 	{
 		std::uint32_t     commandCount;
-		std::uint32_t     padding;	// Next Vec2 starts at 8bytes offset
+		std::uint32_t     commandOffset;// Next Vec2 starts at 8bytes offset
 		DirectX::XMFLOAT2 xBounds;
 		DirectX::XMFLOAT2 yBounds;
 		DirectX::XMFLOAT2 zBounds;
@@ -251,6 +257,7 @@ private:
 	std::unique_ptr<CullingData>              m_cullingData;
 	std::uint32_t                             m_dispatchXCount;
 	std::uint32_t                             m_bundleID;
+	std::uint32_t                             m_argumentOffset;
 
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
@@ -269,7 +276,8 @@ public:
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
 		m_dispatchXCount{ other.m_dispatchXCount },
-		m_bundleID{ other.m_bundleID }
+		m_bundleID{ other.m_bundleID },
+		m_argumentOffset{ other.m_argumentOffset }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
@@ -279,6 +287,7 @@ public:
 		m_cullingData             = std::move(other.m_cullingData);
 		m_dispatchXCount          = other.m_dispatchXCount;
 		m_bundleID                = other.m_bundleID;
+		m_argumentOffset          = other.m_argumentOffset;
 
 		return *this;
 	}
@@ -489,8 +498,10 @@ public:
 
 		const size_t modelIndex = m_modelBuffers.Add(std::move(model));
 
-		ModelBundleType modelBundle{};
-		static_cast<Derived*>(this)->ConfigureModel(modelBundle, modelIndex, tempModel);
+		auto dvThis = static_cast<Derived*>(this);
+
+		ModelBundleType modelBundle = dvThis->GetModelBundle();
+		dvThis->ConfigureModel(modelBundle, modelIndex, tempModel);
 
 		modelBundle.SetMeshIndex(meshIndex);
 
@@ -615,7 +626,9 @@ protected:
 			psoIndex = static_cast<std::uint32_t>(std::size(m_graphicsPipelines));
 
 			Pipeline pipeline{};
-			pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
+
+			if(m_renderPass)
+				pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
 
 			m_graphicsPipelines.emplace_back(std::move(pipeline));
 		}
@@ -764,6 +777,9 @@ private:
 
 	void ConfigureRemove(size_t bundleIndex) noexcept;
 
+	[[nodiscard]]
+	ModelBundleVSIndividual GetModelBundle() const { return ModelBundleVSIndividual{}; }
+
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
 	ModelManagerVSIndividual& operator=(const ModelManagerVSIndividual&) = delete;
@@ -801,7 +817,7 @@ class ModelManagerVSIndirect : public
 public:
 	ModelManagerVSIndirect(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-		std::uint32_t frameCount
+		QueueIndices3 queueIndices3, std::uint32_t frameCount
 	);
 
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
@@ -831,6 +847,12 @@ private:
 
 	void ConfigureRemove(size_t bundleIndex) noexcept;
 
+	[[nodiscard]]
+	ModelBundleVSIndirect GetModelBundle() const
+	{
+		return ModelBundleVSIndirect{ m_device, m_memoryManager, m_queueIndices3 };
+	}
+
 	void _cleanUpTempData() noexcept;
 
 private:
@@ -839,11 +861,9 @@ private:
 	SharedBuffer                       m_cullingDataBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
-	// The indices of the CS bundles won't align with the VS ones, but that shouldn't be an issue
-	// as we should be setting the correct offset in the Configure method.
+	QueueIndices3                      m_queueIndices3;
 
-	// Now that I think about it, it might be better to just have a single CS bundle. But that will
-	// have the downside of managing the data for each bundle and adding new ones.
+	// These CS models will have data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
 
 	// Need to update these when I update the shaders.
@@ -864,6 +884,7 @@ public:
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
+		m_queueIndices3{ other.m_queueIndices3 },
 		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
@@ -874,6 +895,7 @@ public:
 		m_cullingDataBuffer   = std::move(other.m_cullingDataBuffer);
 		m_pipelineLayoutCS    = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline     = std::move(other.m_computePipeline);
+		m_queueIndices3       = other.m_queueIndices3;
 		m_modelBundlesCS      = std::move(other.m_modelBundlesCS);
 
 		return *this;

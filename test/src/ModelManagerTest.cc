@@ -4,6 +4,7 @@
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
 #include <ModelManager.hpp>
+#include <StagingBufferManager.hpp>
 
 namespace Constants
 {
@@ -58,6 +59,27 @@ public:
 	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
+};
+
+class ModelDummyVS : public ModelVS
+{
+public:
+	[[nodiscard]]
+	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
+	[[nodiscard]]
+	DirectX::XMFLOAT3 GetModelOffset() const noexcept override { return {}; }
+	[[nodiscard]]
+	bool IsLightSource() const noexcept override { return false; }
+	[[nodiscard]]
+	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	const MeshDetailsVS& GetMeshDetailsVS() const noexcept
+	{
+		static MeshDetailsVS details{};
+		return details;
+	}
 };
 
 TEST_F(ModelManagerTest, ModelBufferTest)
@@ -173,4 +195,35 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 			}
 		}
 	}
+}
+
+TEST_F(ModelManagerTest, ModelBundleCSIndirectTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	auto queueManager = s_deviceManager->GetQueueFamilyManager();
+
+	VkCommandQueue commandQueue{
+		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
+		queueManager.GetIndex(QueueType::GraphicsQueue)
+	};
+	commandQueue.CreateCommandBuffers(Constants::frameCount);
+
+	ThreadPool threadPool{ 2u };
+
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+	};
+
+	ModelManagerVSIndirect vsIndirect{
+		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices(),
+		Constants::frameCount
+	};
+
+	auto modelVS = std::make_shared<ModelDummyVS>();
+
+	std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"");
 }
