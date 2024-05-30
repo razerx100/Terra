@@ -226,12 +226,6 @@ public:
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
 
-	void SetArgumentOffset(std::uint32_t offset) noexcept
-	{
-		// Might be able to get the offset from m_argumentInputSharedData.
-		m_argumentOffset = offset;
-	}
-
 	[[nodiscard]]
 	std::uint32_t GetID() const noexcept { return m_bundleID; }
 
@@ -257,7 +251,6 @@ private:
 	std::unique_ptr<CullingData>              m_cullingData;
 	std::uint32_t                             m_dispatchXCount;
 	std::uint32_t                             m_bundleID;
-	std::uint32_t                             m_argumentOffset;
 
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
@@ -276,8 +269,7 @@ public:
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
 		m_dispatchXCount{ other.m_dispatchXCount },
-		m_bundleID{ other.m_bundleID },
-		m_argumentOffset{ other.m_argumentOffset }
+		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
@@ -287,7 +279,6 @@ public:
 		m_cullingData             = std::move(other.m_cullingData);
 		m_dispatchXCount          = other.m_dispatchXCount;
 		m_bundleID                = other.m_bundleID;
-		m_argumentOffset          = other.m_argumentOffset;
 
 		return *this;
 	}

@@ -222,14 +222,14 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 	m_cullingData{
 		std::make_unique<CullingData>(
 			CullingData{
-				.commandCount = 0u,
-				.xBounds      = XBOUNDS,
-				.yBounds      = YBOUNDS,
-				.zBounds      = ZBOUNDS
+				.commandCount  = 0u,
+				.commandOffset = 0u,
+				.xBounds       = XBOUNDS,
+				.yBounds       = YBOUNDS,
+				.zBounds       = ZBOUNDS
 			}
 		)
-	}, m_dispatchXCount{ 0u }, m_bundleID{ std::numeric_limits<std::uint32_t>::max() },
-	m_argumentOffset{ 0u }
+	}, m_dispatchXCount{ 0u }, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
 void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept
@@ -241,9 +241,9 @@ void ModelBundleCSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedData,
 	SharedBuffer& cullingSharedData
 ) {
-	constexpr size_t strideSize = sizeof(VkDrawIndexedIndirectCommand);
-	const auto argumentCount    = static_cast<std::uint32_t>(std::size(m_indirectArguments));
-	m_cullingData->commandCount = argumentCount;
+	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
+	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
+	m_cullingData->commandCount  = argumentCount;
 
 	// ThreadBlockSize is the number of threads in a thread group. If the argumentCount/ModelCount
 	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
@@ -255,6 +255,9 @@ void ModelBundleCSIndirect::CreateBuffers(
 
 	m_argumentInputSharedData = argumentSharedData.AllocateAndGetSharedData(argumentBufferSize);
 	m_cullingSharedData       = cullingSharedData.AllocateAndGetSharedData(cullingDataSize);
+
+	m_cullingData->commandOffset
+		= static_cast<std::uint32_t>(m_argumentInputSharedData.offset / strideSize);
 
 	stagingBufferMan.AddBuffer(
 		std::data(m_indirectArguments), argumentBufferSize, m_argumentInputSharedData.bufferData,
