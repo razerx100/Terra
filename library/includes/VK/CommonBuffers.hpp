@@ -175,7 +175,8 @@ public:
 	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_buffer{ GetGPUResource<Buffer>(device, memoryManager) },
 		m_tempBuffer{ GetGPUResource<Buffer>(device, memoryManager) },
-		m_usageFlags{ usageFlags }, m_queueFamilyIndices{ queueIndices }, m_availableMemory{}
+		m_usageFlags{ usageFlags }, m_queueFamilyIndices{ queueIndices }, m_availableMemory{},
+		m_occupyingSize{ 0u }
 	{}
 
 	[[nodiscard]]
@@ -244,6 +245,9 @@ private:
 	VkBufferUsageFlags         m_usageFlags;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::vector<AllocInfo>     m_availableMemory;
+	// Since the actual size might be a bit bigger if the requested buffer has an unusal size. As
+	// the requirement size for a buffer will probably be different.
+	VkDeviceSize               m_occupyingSize;
 
 public:
 	SharedBuffer(const SharedBuffer&) = delete;
@@ -255,7 +259,8 @@ public:
 		m_tempBuffer{ std::move(other.m_tempBuffer) },
 		m_usageFlags{ other.m_usageFlags },
 		m_queueFamilyIndices{ std::move(other.m_queueFamilyIndices) },
-		m_availableMemory{ std::move(other.m_availableMemory) }
+		m_availableMemory{ std::move(other.m_availableMemory) },
+		m_occupyingSize{ other.m_occupyingSize }
 	{}
 	SharedBuffer& operator=(SharedBuffer&& other) noexcept
 	{
@@ -266,6 +271,7 @@ public:
 		m_usageFlags         = other.m_usageFlags;
 		m_queueFamilyIndices = std::move(other.m_queueFamilyIndices);
 		m_availableMemory    = std::move(other.m_availableMemory);
+		m_occupyingSize      = other.m_occupyingSize;
 
 		return *this;
 	}

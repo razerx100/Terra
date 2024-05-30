@@ -254,9 +254,11 @@ VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
 
 	if (result == std::end(m_availableMemory))
 	{
-		offset = m_buffer.Size();
+		offset = m_occupyingSize;
 
-		CreateBuffer(offset + size);
+		m_occupyingSize = offset + size;
+
+		CreateBuffer(m_occupyingSize);
 	}
 	else
 	{
