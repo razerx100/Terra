@@ -204,7 +204,7 @@ TEST_F(ModelManagerTest, ModelBundleCSIndirectTest)
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
 
-	auto queueManager = s_deviceManager->GetQueueFamilyManager();
+	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
 
 	VkCommandQueue commandQueue{
 		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),

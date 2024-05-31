@@ -229,7 +229,7 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 				.zBounds       = ZBOUNDS
 			}
 		)
-	}, m_dispatchXCount{ 0u }, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
+	}, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
 void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept
@@ -244,11 +244,6 @@ void ModelBundleCSIndirect::CreateBuffers(
 	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
 	m_cullingData->commandCount  = argumentCount;
-
-	// ThreadBlockSize is the number of threads in a thread group. If the argumentCount/ModelCount
-	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
-	// Threads 64, Model 65 = Group 2.
-	m_dispatchXCount = static_cast<std::uint32_t>(std::ceil(argumentCount / THREADBLOCKSIZE));
 
 	const auto argumentBufferSize = static_cast<VkDeviceSize>(strideSize * argumentCount);
 	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
@@ -266,13 +261,6 @@ void ModelBundleCSIndirect::CreateBuffers(
 	stagingBufferMan.AddBuffer(
 		m_cullingData.get(), cullingDataSize, m_cullingSharedData.bufferData, m_cullingSharedData.offset
 	);
-}
-
-void ModelBundleCSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
-{
-	VkCommandBuffer cmdBuffer = computeBuffer.Get();
-
-	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
 
 void ModelBundleCSIndirect::CleanupTempData() noexcept
@@ -431,7 +419,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	},
 	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
-	m_modelBundlesCS{}
+	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
 {}
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
@@ -444,6 +432,15 @@ void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descript
 	m_pipelineLayoutCS.Create(descriptorBuffer);
 
 	m_computePipeline.Create(m_device, m_pipelineLayoutCS, m_shaderPath);
+}
+
+void ModelManagerVSIndirect::UpdateDispatchX() noexcept
+{
+	// ThreadBlockSize is the number of threads in a thread group. If the argumentCount/ModelCount
+	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
+	// Threads 64, Model 65 = Group 2.
+
+	m_dispatchXCount = static_cast<std::uint32_t>(std::ceil(m_argumentCount / THREADBLOCKSIZE));
 }
 
 void ModelManagerVSIndirect::ConfigureModel(
@@ -461,6 +458,10 @@ void ModelManagerVSIndirect::ConfigureModel(
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
 	modelBundleObj.AddModelDetails(index32_t);
+
+	++m_argumentCount;
+
+	UpdateDispatchX();
 }
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
@@ -486,6 +487,10 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
+
+	m_argumentCount += static_cast<std::uint32_t>(modelCount);
+
+	UpdateDispatchX();
 }
 
 void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
@@ -496,6 +501,10 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 
 	for (const auto& modelIndex : modelIndices)
 		m_modelBuffers.Remove(modelIndex);
+
+	m_argumentCount -= static_cast<std::uint32_t>(std::size(modelIndices));
+
+	UpdateDispatchX();
 
 	const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
 
@@ -623,4 +632,11 @@ void ModelManagerVSIndirect::SetDescriptorBufferCS(
 			m_cullingDataBuffer.GetBuffer(), s_cullingDataBufferBindingSlot, 0u
 		);
 	}
+}
+
+void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
+{
+	VkCommandBuffer cmdBuffer = computeBuffer.Get();
+
+	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }

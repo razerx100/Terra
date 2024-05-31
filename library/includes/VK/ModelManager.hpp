@@ -220,8 +220,6 @@ public:
 		SharedBuffer& cullingSharedData
 	);
 
-	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
-
 	void CleanupTempData() noexcept;
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
@@ -249,15 +247,11 @@ private:
 	SharedBufferData                          m_cullingSharedData;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
 	std::unique_ptr<CullingData>              m_cullingData;
-	std::uint32_t                             m_dispatchXCount;
 	std::uint32_t                             m_bundleID;
 
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 ZBOUNDS = { 1.f, -1.f };
-
-	// Each Compute Thread Group should have 64 threads.
-	static constexpr float THREADBLOCKSIZE     = 64.f;
 
 public:
 	ModelBundleCSIndirect(const ModelBundleCSIndirect&) = delete;
@@ -268,7 +262,6 @@ public:
 		m_cullingSharedData{ std::move(other.m_cullingSharedData) },
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
-		m_dispatchXCount{ other.m_dispatchXCount },
 		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
@@ -277,7 +270,6 @@ public:
 		m_cullingSharedData       = std::move(other.m_cullingSharedData);
 		m_indirectArguments       = std::move(other.m_indirectArguments);
 		m_cullingData             = std::move(other.m_cullingData);
-		m_dispatchXCount          = other.m_dispatchXCount;
 		m_bundleID                = other.m_bundleID;
 
 		return *this;
@@ -846,6 +838,8 @@ private:
 
 	void _cleanUpTempData() noexcept;
 
+	void UpdateDispatchX() noexcept;
+
 private:
 	StagingBufferManager*              m_stagingBufferMan;
 	SharedBuffer                       m_argumentInputBuffer;
@@ -853,6 +847,8 @@ private:
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
+	std::uint32_t                      m_dispatchXCount;
+	std::uint32_t                      m_argumentCount;
 
 	// These CS models will have data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
@@ -863,6 +859,9 @@ private:
 	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
 	static constexpr std::uint32_t s_argumentInputBufferBindingSlot = 2u;
 	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 2u;
+
+	// Each Compute Thread Group should have 64 threads.
+	static constexpr float THREADBLOCKSIZE = 64.f;
 
 public:
 	ModelManagerVSIndirect(const ModelManagerVSIndirect&) = delete;
@@ -876,6 +875,8 @@ public:
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
+		m_dispatchXCount{ other.m_dispatchXCount },
+		m_argumentCount{ other.m_argumentCount },
 		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
@@ -887,6 +888,8 @@ public:
 		m_pipelineLayoutCS    = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline     = std::move(other.m_computePipeline);
 		m_queueIndices3       = other.m_queueIndices3;
+		m_dispatchXCount      = other.m_dispatchXCount;
+		m_argumentCount       = other.m_argumentCount;
 		m_modelBundlesCS      = std::move(other.m_modelBundlesCS);
 
 		return *this;
