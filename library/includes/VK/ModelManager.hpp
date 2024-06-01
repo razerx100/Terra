@@ -228,9 +228,12 @@ public:
 	std::uint32_t GetID() const noexcept { return m_bundleID; }
 
 	[[nodiscard]]
-	SharedBufferData GetArgumentInputSharedData() const noexcept { return m_argumentInputSharedData; }
+	const SharedBufferData& GetArgumentInputSharedData() const noexcept
+	{
+		return m_argumentInputSharedData;
+	}
 	[[nodiscard]]
-	SharedBufferData GetCullingSharedData() const noexcept { return m_cullingSharedData; }
+	const SharedBufferData& GetCullingSharedData() const noexcept { return m_cullingSharedData; }
 
 private:
 	struct CullingData
@@ -297,10 +300,6 @@ public:
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t modelIndicesBindingSlot
 	) const noexcept;
 
-	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
-
-	void CleanupTempData() noexcept;
-
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
 
@@ -320,16 +319,20 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetModelCount() const noexcept { return m_modelCount; }
 	[[nodiscard]]
-	SharedBufferData GetArgumentOutputSharedData() const noexcept { return m_argumentOutputSharedData; }
+	const SharedBufferData& GetArgumentOutputSharedData() const noexcept
+	{
+		return m_argumentOutputSharedData;
+	}
 	[[nodiscard]]
-	SharedBufferData GetCounterSharedData() const noexcept { return m_counterSharedData; }
+	const SharedBufferData& GetCounterSharedData() const noexcept { return m_counterSharedData; }
+
+	[[nodiscard]]
+	static VkDeviceSize GetCounterBufferSize() noexcept { return s_counterBufferSize; }
 
 private:
 	std::uint32_t                  m_modelCount;
 	QueueIndices3                  m_queueIndices;
 	VkDeviceSize                   m_argumentOutputBufferSize;
-	VkDeviceSize                   m_counterBufferSize;
-	Buffer                         m_counterResetBuffer;
 	Buffer                         m_modelIndicesBuffer;
 
 	SharedBufferData               m_argumentOutputSharedData;
@@ -338,7 +341,8 @@ private:
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
 	std::vector<std::uint32_t>     m_modelIndices;
-	std::unique_ptr<std::uint32_t> m_counterResetData;
+
+	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
 public:
 	ModelBundleVSIndirect(const ModelBundleVSIndirect&) = delete;
@@ -348,14 +352,10 @@ public:
 		: ModelBundle{ std::move(other) }, m_modelCount{ other.m_modelCount },
 		m_queueIndices{ other.m_queueIndices },
 		m_argumentOutputBufferSize{ other.m_argumentOutputBufferSize },
-		m_counterBufferSize{ other.m_counterBufferSize },
-		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_argumentOutputSharedData{ other.m_argumentOutputSharedData },
 		m_counterSharedData{ other.m_counterSharedData },
-
-		m_modelIndices{ std::move(other.m_modelIndices) },
-		m_counterResetData{ std::move(other.m_counterResetData) }
+		m_modelIndices{ std::move(other.m_modelIndices) }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
@@ -363,13 +363,10 @@ public:
 		m_modelCount               = other.m_modelCount;
 		m_queueIndices             = other.m_queueIndices;
 		m_argumentOutputBufferSize = other.m_argumentOutputBufferSize;
-		m_counterBufferSize        = other.m_counterBufferSize;
-		m_counterResetBuffer       = std::move(other.m_counterResetBuffer);
 		m_modelIndicesBuffer       = std::move(other.m_modelIndicesBuffer);
 		m_argumentOutputSharedData = other.m_argumentOutputSharedData;
 		m_counterSharedData        = other.m_counterSharedData;
 		m_modelIndices             = std::move(other.m_modelIndices);
-		m_counterResetData         = std::move(other.m_counterResetData);
 
 		return *this;
 	}
@@ -816,7 +813,8 @@ public:
 		QueueIndices3 queueIndices3, std::uint32_t frameCount
 	);
 
-	void CreateBuffers(StagingBufferManager& stagingBufferMan);
+	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
+
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
 
 	void CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept;
@@ -852,6 +850,7 @@ private:
 	void _cleanUpTempData() noexcept;
 
 	void UpdateDispatchX() noexcept;
+	void UpdateCounterResetValues();
 
 private:
 	StagingBufferManager*              m_stagingBufferMan;
@@ -859,6 +858,7 @@ private:
 	std::vector<SharedBuffer>          m_argumentOutputBuffers;
 	SharedBuffer                       m_cullingDataBuffer;
 	std::vector<SharedBuffer>          m_counterBuffers;
+	Buffer                             m_counterResetBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -894,6 +894,7 @@ public:
 		m_argumentOutputBuffers{ std::move(other.m_argumentOutputBuffers) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
+		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -909,6 +910,7 @@ public:
 		m_argumentOutputBuffers = std::move(other.m_argumentOutputBuffers);
 		m_cullingDataBuffer     = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers        = std::move(other.m_counterBuffers);
+		m_counterResetBuffer    = std::move(other.m_counterResetBuffer);
 		m_pipelineLayoutCS      = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline       = std::move(other.m_computePipeline);
 		m_queueIndices3         = other.m_queueIndices3;

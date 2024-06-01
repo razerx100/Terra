@@ -119,11 +119,9 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
 ) : ModelBundle{}, m_modelCount{ 0u }, m_queueIndices{ queueIndices },
 	m_argumentOutputBufferSize{ 0u },
-	m_counterBufferSize{ static_cast<VkDeviceSize>(sizeof(std::uint32_t)) },
-	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_modelIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_argumentOutputSharedData{}, m_counterSharedData{},
-	m_modelIndices{}, m_counterResetData{ std::make_unique<std::uint32_t>(0u) }
+	m_modelIndices{}
 {}
 
 void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noexcept
@@ -150,9 +148,7 @@ void ModelBundleVSIndirect::CreateBuffers(
 		);
 
 	for (auto& counterSharedBuffer : counterSharedBuffers)
-		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(
-			m_counterBufferSize
-		);
+		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(s_counterBufferSize);
 }
 
 void ModelBundleVSIndirect::CreateBuffers(
@@ -165,17 +161,11 @@ void ModelBundleVSIndirect::CreateBuffers(
 	const std::vector<std::uint32_t> allQueueIndices
 		= m_queueIndices.ResolveQueueIndices<QueueIndices3>();
 
-	m_counterResetBuffer.Create(
-		m_counterBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-	);
 	m_modelIndicesBuffer.Create(
 		modelIndiceBufferSize,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, allQueueIndices
 	);
 
-	stagingBufferMan.AddBuffer(
-		m_counterResetData.get(), m_counterBufferSize, &m_counterResetBuffer, 0u
-	);
 	stagingBufferMan.AddBuffer(
 		std::data(m_modelIndices), modelIndiceBufferSize, &m_modelIndicesBuffer, 0u
 	);
@@ -199,20 +189,6 @@ void ModelBundleVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const no
 		m_counterSharedData.bufferData->Get(), m_counterSharedData.offset,
 		m_modelCount, strideSize
 	);
-}
-
-void ModelBundleVSIndirect::ResetCounterBuffer(
-	VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
-) const noexcept {
-	BufferToBufferCopyBuilder builder{};
-	builder.Size(m_counterBufferSize).DstOffset(m_counterBufferSize * frameIndex);
-
-	//transferBuffer.Copy(m_counterResetBuffer, m_counterBuffer, builder);
-}
-
-void ModelBundleVSIndirect::CleanupTempData() noexcept
-{
-	m_counterResetData.reset();
 }
 
 // Model Bundle CS Indirect
@@ -419,6 +395,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_counterBuffers{},
+	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
 {
@@ -483,6 +460,8 @@ void ModelManagerVSIndirect::ConfigureModel(
 		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers
 	);
 
+	UpdateCounterResetValues();
+
 	++m_argumentCount;
 
 	UpdateDispatchX();
@@ -512,6 +491,8 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers
 	);
 
+	UpdateCounterResetValues();
+
 	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
@@ -539,12 +520,12 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 	{
 		// All of the shared data instances should have the same offset and size, so it should be
 		// fine to relinquish them with the same shared data.
-		const SharedBufferData argumentOutputSharedData = modelBundle.GetArgumentOutputSharedData();
+		const SharedBufferData& argumentOutputSharedData = modelBundle.GetArgumentOutputSharedData();
 
 		for (auto& argumentOutputBuffer : m_argumentOutputBuffers)
 			argumentOutputBuffer.RelinquishMemory(argumentOutputSharedData);
 
-		const SharedBufferData counterSharedData = modelBundle.GetCounterSharedData();
+		const SharedBufferData& counterSharedData = modelBundle.GetCounterSharedData();
 
 		for(auto& counterBuffer : m_counterBuffers)
 			counterBuffer.RelinquishMemory(counterSharedData);
@@ -568,22 +549,11 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 	);
 }
 
-void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
-{
-	// This function shouldn't exist, as we would be adding more models later.
-	for (size_t index = 0u; index < std::size(m_modelBundles); ++index)
-	{
-		ModelBundleVSIndirect& modelBundleVS = m_modelBundles.at(index);
-
-		modelBundleVS.CreateBuffers(stagingBufferMan);
-	}
-}
-
 void ModelManagerVSIndirect::_cleanUpTempData() noexcept
 {
-	for (size_t index = 0u; index < std::size(m_modelBundles); ++index)
+	// This will be cleaning all models. Might need to do something like a queue.
+	for (size_t index = 0u; index < std::size(m_modelBundlesCS); ++index)
 	{
-		m_modelBundles.at(index).CleanupTempData();
 		m_modelBundlesCS.at(index).CleanupTempData();
 	}
 }
@@ -719,5 +689,37 @@ void ModelManagerVSIndirect::CopyTempBuffers(VKCommandBuffer& transferBuffer) co
 	{
 		m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
 		m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
+	}
+}
+
+void ModelManagerVSIndirect::ResetCounterBuffer(
+	VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
+) const noexcept {
+	transferBuffer.CopyWhole(m_counterResetBuffer, m_counterBuffers.at(frameIndex).GetBuffer());
+}
+
+void ModelManagerVSIndirect::UpdateCounterResetValues()
+{
+	if (!std::empty(m_counterBuffers))
+	{
+		const SharedBuffer& counterBuffer    = m_counterBuffers.front();
+
+		const VkDeviceSize counterBufferSize = counterBuffer.Size();
+		const VkDeviceSize oldCounterSize    = m_counterResetBuffer.Size();
+
+		if (counterBufferSize > oldCounterSize)
+		{
+			const size_t counterSize = sizeof(std::uint32_t);
+
+			m_counterResetBuffer.Create(counterBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {});
+
+			constexpr std::uint32_t value = 0u;
+
+			size_t offset             = 0u;
+			std::uint8_t* bufferStart = m_counterResetBuffer.CPUHandle();
+
+			for (; offset < counterBufferSize; offset += counterSize)
+				memcpy(bufferStart + offset, &value, counterSize);
+		}
 	}
 }
