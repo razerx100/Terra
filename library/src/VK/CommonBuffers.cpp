@@ -225,8 +225,21 @@ void MeshBoundsBuffers::Update() noexcept
 // Shared Buffer
 void SharedBuffer::CreateBuffer(VkDeviceSize size)
 {
-	// Moving it into the temp, as we will want to copy it back to new bigger buffer.
-	m_tempBuffer = std::move(m_buffer);
+	// Moving it into the temp, as we will want to copy it back to the new bigger buffer.
+
+	// This part is really important. So, the temp buffer should be null after a copy is done
+	// and it has been destroyed. If it is at the beginning and the old buffer didn't have any
+	// data, just moving wouldn't be an issue. But once it has some data, if we try to increase
+	// the buffer size twice, it will move the old buffer with the data to the tempbuffer, but
+	// if the GPU copy hasn't been done before it is increased again, the old tempBuffer will
+	// be replaced with a new empty one and all data will be lost.
+	// But this check should fix everything in theory. As, if we are recreating the main buffer
+	// multiple times, the new old buffer would be empty as the gpu copy wouldn't have been done yet.
+	// So, we wouldn't need to copy it. And since the first old buffer will be stored in the temp
+	// buffer, it won't be null and so we wouldn't replace it and the data should be preserved and
+	// safely copied to the main buffer upon calling CopyOldBuffer next.
+	if (m_tempBuffer.Get() == VK_NULL_HANDLE)
+		m_tempBuffer = std::move(m_buffer);
 
 	m_buffer = GetGPUResource<Buffer>(m_device, m_memoryManager);
 	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
