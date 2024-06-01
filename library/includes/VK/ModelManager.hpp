@@ -259,7 +259,7 @@ public:
 
 	ModelBundleCSIndirect(ModelBundleCSIndirect&& other) noexcept
 		: m_argumentInputSharedData{ other.m_argumentInputSharedData },
-		m_cullingSharedData{ std::move(other.m_cullingSharedData) },
+		m_cullingSharedData{ other.m_cullingSharedData },
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
 		m_bundleID{ other.m_bundleID }
@@ -267,7 +267,7 @@ public:
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
 		m_argumentInputSharedData = other.m_argumentInputSharedData;
-		m_cullingSharedData       = std::move(other.m_cullingSharedData);
+		m_cullingSharedData       = other.m_cullingSharedData;
 		m_indirectArguments       = std::move(other.m_indirectArguments);
 		m_cullingData             = std::move(other.m_cullingData);
 		m_bundleID                = other.m_bundleID;
@@ -287,14 +287,13 @@ public:
 
 	void CreateBuffers(
 		std::uint32_t frameCount, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& argumentOutputSharedData
+		SharedBuffer& argumentOutputSharedData, SharedBuffer& counterSharedData
 	);
 	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 
 	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
-		std::uint32_t counterBindingSlot, std::uint32_t modelIndicesBindingSlot
+		VkDescriptorBuffer& descriptorBuffer, std::uint32_t modelIndicesBindingSlot
 	) const noexcept;
 
 	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
@@ -321,17 +320,19 @@ public:
 	std::uint32_t GetModelCount() const noexcept { return m_modelCount; }
 	[[nodiscard]]
 	SharedBufferData GetArgumentOutputSharedData() const noexcept { return m_argumentOutputSharedData; }
+	[[nodiscard]]
+	SharedBufferData GetCounterSharedData() const noexcept { return m_counterSharedData; }
 
 private:
 	std::uint32_t                  m_modelCount;
 	QueueIndices3                  m_queueIndices;
 	VkDeviceSize                   m_argumentOutputBufferSize;
 	VkDeviceSize                   m_counterBufferSize;
-	Buffer                         m_counterBuffer;
 	Buffer                         m_counterResetBuffer;
 	Buffer                         m_modelIndicesBuffer;
 
-	SharedBufferData              m_argumentOutputSharedData;
+	SharedBufferData               m_argumentOutputSharedData;
+	SharedBufferData               m_counterSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
@@ -347,10 +348,11 @@ public:
 		m_queueIndices{ other.m_queueIndices },
 		m_argumentOutputBufferSize{ other.m_argumentOutputBufferSize },
 		m_counterBufferSize{ other.m_counterBufferSize },
-		m_counterBuffer{ std::move(other.m_counterBuffer) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
-		m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
+		m_argumentOutputSharedData{ other.m_argumentOutputSharedData },
+		m_counterSharedData{ other.m_counterSharedData },
+
 		m_modelIndices{ std::move(other.m_modelIndices) },
 		m_counterResetData{ std::move(other.m_counterResetData) }
 	{}
@@ -361,10 +363,10 @@ public:
 		m_queueIndices             = other.m_queueIndices;
 		m_argumentOutputBufferSize = other.m_argumentOutputBufferSize;
 		m_counterBufferSize        = other.m_counterBufferSize;
-		m_counterBuffer            = std::move(other.m_counterBuffer);
 		m_counterResetBuffer       = std::move(other.m_counterResetBuffer);
 		m_modelIndicesBuffer       = std::move(other.m_modelIndicesBuffer);
-		m_argumentOutputSharedData = std::move(other.m_argumentOutputSharedData);
+		m_argumentOutputSharedData = other.m_argumentOutputSharedData;
+		m_counterSharedData        = other.m_counterSharedData;
 		m_modelIndices             = std::move(other.m_modelIndices);
 		m_counterResetData         = std::move(other.m_counterResetData);
 
@@ -855,6 +857,7 @@ private:
 	SharedBuffer                       m_argumentInputBuffer;
 	SharedBuffer                       m_argumentOutputBuffer;
 	SharedBuffer                       m_cullingDataBuffer;
+	SharedBuffer                       m_counterBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -874,6 +877,7 @@ private:
 	static constexpr std::uint32_t s_argumentInputBufferBindingSlot = 2u;
 	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 3u;
 	static constexpr std::uint32_t s_argumenOutputBindingSlot       = 4u;
+	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -888,6 +892,7 @@ public:
 		m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
 		m_argumentOutputBuffer{ std::move(other.m_argumentOutputBuffer) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
+		m_counterBuffer{ std::move(other.m_counterBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -902,6 +907,7 @@ public:
 		m_argumentInputBuffer  = std::move(other.m_argumentInputBuffer);
 		m_argumentOutputBuffer = std::move(other.m_argumentOutputBuffer);
 		m_cullingDataBuffer    = std::move(other.m_cullingDataBuffer);
+		m_counterBuffer        = std::move(other.m_counterBuffer);
 		m_pipelineLayoutCS     = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline      = std::move(other.m_computePipeline);
 		m_queueIndices3        = other.m_queueIndices3;
