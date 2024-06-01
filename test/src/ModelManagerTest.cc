@@ -197,7 +197,63 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 	}
 }
 
-TEST_F(ModelManagerTest, ModelBundleCSIndirectTest)
+TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
+
+	VkCommandQueue commandQueue{
+		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
+		queueManager.GetIndex(QueueType::GraphicsQueue)
+	};
+	commandQueue.CreateCommandBuffers(Constants::frameCount);
+
+	ThreadPool threadPool{ 2u };
+
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+	};
+
+	ModelManagerVSIndividual vsIndividual{ logicalDevice, &memoryManager, Constants::frameCount };
+
+	{
+		auto modelVS = std::make_shared<ModelDummyVS>();
+
+		std::uint32_t index = vsIndividual.AddModel(std::move(modelVS), L"");
+		EXPECT_EQ(index, 0u) << "Index isn't 0.";
+	}
+	{
+		auto modelVS = std::make_shared<ModelDummyVS>();
+
+		std::uint32_t index = vsIndividual.AddModel(std::move(modelVS), L"");
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+	}
+	{
+		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+
+		for (size_t index = 0u; index < 5u; ++index)
+			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+
+		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelsVS), L"H");
+		EXPECT_EQ(index, 2u) << "Index isn't 2.";
+	}
+	vsIndividual.RemoveBundle(1u);
+	{
+		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+
+		for (size_t index = 0u; index < 7u; ++index)
+			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+
+		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelsVS), L"H");
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+	}
+}
+
+TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 {
 	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
