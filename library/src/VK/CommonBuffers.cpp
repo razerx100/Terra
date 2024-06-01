@@ -263,15 +263,23 @@ VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
 	);
 
 	VkDeviceSize offset = 0u;
-	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
 
+	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
 	if (result == std::end(m_availableMemory))
 	{
 		offset = m_occupyingSize;
 
-		m_occupyingSize = offset + size;
+		const VkDeviceSize actualSize   = m_buffer.Size();
+		const VkDeviceSize requiredSize = m_occupyingSize + size;
 
-		CreateBuffer(m_occupyingSize);
+		m_occupyingSize = requiredSize;
+
+		// If the alignment is 16bytes, at least 16bytes will be allocated. If the requested size
+		// is bigger, then there shouldn't be any issues. But if the requested size is smaller,
+		// the offset would be correct, but the buffer would be unnecessarily recreated, even though
+		// it is not necessary. So, putting a check here.
+		if (requiredSize > actualSize)
+			CreateBuffer(requiredSize);
 	}
 	else
 	{
