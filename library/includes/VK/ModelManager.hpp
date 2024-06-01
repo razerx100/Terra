@@ -285,13 +285,16 @@ public:
 
 	void AddModelDetails(std::uint32_t modelBufferIndex) noexcept;
 
+	void CreateBuffers(
+		std::uint32_t frameCount, StagingBufferManager& stagingBufferMan,
+		SharedBuffer& argumentOutputSharedData
+	);
 	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex,
-		std::uint32_t argumentsBindingSlot, std::uint32_t counterBindingSlot,
-		std::uint32_t modelIndicesBindingSlot
+		std::uint32_t counterBindingSlot, std::uint32_t modelIndicesBindingSlot
 	) const noexcept;
 
 	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
@@ -314,15 +317,22 @@ public:
 			return std::numeric_limits<std::uint64_t>::max();
 	}
 
+	[[nodiscard]]
+	std::uint32_t GetModelCount() const noexcept { return m_modelCount; }
+	[[nodiscard]]
+	SharedBufferData GetArgumentOutputSharedData() const noexcept { return m_argumentOutputSharedData; }
+
 private:
 	std::uint32_t                  m_modelCount;
 	QueueIndices3                  m_queueIndices;
-	VkDeviceSize                   m_argumentBufferSize;
+	VkDeviceSize                   m_argumentOutputBufferSize;
 	VkDeviceSize                   m_counterBufferSize;
-	Buffer                         m_argumentBuffer;
 	Buffer                         m_counterBuffer;
 	Buffer                         m_counterResetBuffer;
 	Buffer                         m_modelIndicesBuffer;
+
+	SharedBufferData              m_argumentOutputSharedData;
+
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
 	std::vector<std::uint32_t>     m_modelIndices;
@@ -335,28 +345,28 @@ public:
 	ModelBundleVSIndirect(ModelBundleVSIndirect&& other) noexcept
 		: ModelBundle{ std::move(other) }, m_modelCount{ other.m_modelCount },
 		m_queueIndices{ other.m_queueIndices },
-		m_argumentBufferSize{ other.m_argumentBufferSize },
+		m_argumentOutputBufferSize{ other.m_argumentOutputBufferSize },
 		m_counterBufferSize{ other.m_counterBufferSize },
-		m_argumentBuffer{ std::move(other.m_argumentBuffer) },
 		m_counterBuffer{ std::move(other.m_counterBuffer) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
+		m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
 		m_modelIndices{ std::move(other.m_modelIndices) },
 		m_counterResetData{ std::move(other.m_counterResetData) }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
-		m_modelCount         = other.m_modelCount;
-		m_queueIndices       = other.m_queueIndices;
-		m_argumentBufferSize = other.m_argumentBufferSize;
-		m_counterBufferSize  = other.m_counterBufferSize;
-		m_argumentBuffer     = std::move(other.m_argumentBuffer);
-		m_counterBuffer      = std::move(other.m_counterBuffer);
-		m_counterResetBuffer = std::move(other.m_counterResetBuffer);
-		m_modelIndicesBuffer = std::move(other.m_modelIndicesBuffer);
-		m_modelIndices       = std::move(other.m_modelIndices);
-		m_counterResetData   = std::move(other.m_counterResetData);
+		m_modelCount               = other.m_modelCount;
+		m_queueIndices             = other.m_queueIndices;
+		m_argumentOutputBufferSize = other.m_argumentOutputBufferSize;
+		m_counterBufferSize        = other.m_counterBufferSize;
+		m_counterBuffer            = std::move(other.m_counterBuffer);
+		m_counterResetBuffer       = std::move(other.m_counterResetBuffer);
+		m_modelIndicesBuffer       = std::move(other.m_modelIndicesBuffer);
+		m_argumentOutputSharedData = std::move(other.m_argumentOutputSharedData);
+		m_modelIndices             = std::move(other.m_modelIndices);
+		m_counterResetData         = std::move(other.m_counterResetData);
 
 		return *this;
 	}
@@ -843,6 +853,7 @@ private:
 private:
 	StagingBufferManager*              m_stagingBufferMan;
 	SharedBuffer                       m_argumentInputBuffer;
+	SharedBuffer                       m_argumentOutputBuffer;
 	SharedBuffer                       m_cullingDataBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
@@ -850,15 +861,19 @@ private:
 	std::uint32_t                      m_dispatchXCount;
 	std::uint32_t                      m_argumentCount;
 
-	// These CS models will have data to be uploaded and the dispatching will be done on the Manager.
+	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
 
 	// Need to update these when I update the shaders.
+	// Vertex Shader ones
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
-	static constexpr std::uint32_t s_modelIndicesCSBindingSlot      = 1u;
+
+	// Compute Shader ones
 	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
+	static constexpr std::uint32_t s_modelIndicesCSBindingSlot      = 1u;
 	static constexpr std::uint32_t s_argumentInputBufferBindingSlot = 2u;
-	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 2u;
+	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 3u;
+	static constexpr std::uint32_t s_argumenOutputBindingSlot       = 4u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -871,6 +886,7 @@ public:
 		: ModelManager{ std::move(other) },
 		m_stagingBufferMan{ other.m_stagingBufferMan },
 		m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
+		m_argumentOutputBuffer{ std::move(other.m_argumentOutputBuffer) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
@@ -882,15 +898,16 @@ public:
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
-		m_stagingBufferMan    = other.m_stagingBufferMan;
-		m_argumentInputBuffer = std::move(other.m_argumentInputBuffer);
-		m_cullingDataBuffer   = std::move(other.m_cullingDataBuffer);
-		m_pipelineLayoutCS    = std::move(other.m_pipelineLayoutCS);
-		m_computePipeline     = std::move(other.m_computePipeline);
-		m_queueIndices3       = other.m_queueIndices3;
-		m_dispatchXCount      = other.m_dispatchXCount;
-		m_argumentCount       = other.m_argumentCount;
-		m_modelBundlesCS      = std::move(other.m_modelBundlesCS);
+		m_stagingBufferMan     = other.m_stagingBufferMan;
+		m_argumentInputBuffer  = std::move(other.m_argumentInputBuffer);
+		m_argumentOutputBuffer = std::move(other.m_argumentOutputBuffer);
+		m_cullingDataBuffer    = std::move(other.m_cullingDataBuffer);
+		m_pipelineLayoutCS     = std::move(other.m_pipelineLayoutCS);
+		m_computePipeline      = std::move(other.m_computePipeline);
+		m_queueIndices3        = other.m_queueIndices3;
+		m_dispatchXCount       = other.m_dispatchXCount;
+		m_argumentCount        = other.m_argumentCount;
+		m_modelBundlesCS       = std::move(other.m_modelBundlesCS);
 
 		return *this;
 	}
