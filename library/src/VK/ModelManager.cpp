@@ -133,26 +133,30 @@ void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noex
 }
 
 void ModelBundleVSIndirect::CreateBuffers(
-	std::uint32_t frameCount, StagingBufferManager& stagingBufferMan,
-	SharedBuffer& argumentOutputSharedData, SharedBuffer& counterSharedData
+	StagingBufferManager& stagingBufferMan,
+	std::vector<SharedBuffer>& argumentOutputSharedBuffers,
+	std::vector<SharedBuffer>& counterSharedBuffers
 ) {
 	constexpr size_t strideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	m_argumentOutputBufferSize       = static_cast<VkDeviceSize>(m_modelCount * strideSize);
 	const auto modelIndiceBufferSize = static_cast<VkDeviceSize>(m_modelCount * sizeof(std::uint32_t));
 
-	const VkDeviceSize argumentOutputBufferTotalSize = m_argumentOutputBufferSize * frameCount;
-	const VkDeviceSize counterBufferTotalSize        = m_counterBufferSize * frameCount;
+	// The shared data for every instance should be the same. So, we can use the last one for the
+	// other ones as well. And as we are not using the buffer object for the stagingBufferMan,
+	// it should be fine.
+	for (auto& argumentOutputSharedBuffer : argumentOutputSharedBuffers)
+		m_argumentOutputSharedData = argumentOutputSharedBuffer.AllocateAndGetSharedData(
+			m_argumentOutputBufferSize
+		);
 
-	m_argumentOutputSharedData = argumentOutputSharedData.AllocateAndGetSharedData(
-		argumentOutputBufferTotalSize
-	);
-	m_counterSharedData = counterSharedData.AllocateAndGetSharedData(
-		counterBufferTotalSize
-	);
+	for (auto& counterSharedBuffer : counterSharedBuffers)
+		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(
+			m_counterBufferSize
+		);
 }
 
 void ModelBundleVSIndirect::CreateBuffers(
-	std::uint32_t frameCount, StagingBufferManager& stagingBufferMan
+	StagingBufferManager& stagingBufferMan
 ) {
 	constexpr size_t strideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	m_argumentOutputBufferSize       = static_cast<VkDeviceSize>(m_modelCount * strideSize);
@@ -183,19 +187,16 @@ void ModelBundleVSIndirect::SetDescriptorBuffer(
 	descriptorBuffer.SetStorageBufferDescriptor(m_modelIndicesBuffer, modelIndicesBindingSlot, 0u);
 }
 
-void ModelBundleVSIndirect::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
-) const noexcept {
+void ModelBundleVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
+{
 	constexpr auto strideSize = static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
 	vkCmdDrawIndexedIndirectCount(
 		cmdBuffer,
-		m_argumentOutputSharedData.bufferData->Get(),
-		m_argumentOutputSharedData.offset + (m_argumentOutputBufferSize * frameIndex),
-		m_counterSharedData.bufferData->Get(),
-		m_counterSharedData.offset + (m_counterBufferSize * frameIndex),
+		m_argumentOutputSharedData.bufferData->Get(), m_argumentOutputSharedData.offset,
+		m_counterSharedData.bufferData->Get(), m_counterSharedData.offset,
 		m_modelCount, strideSize
 	);
 }
@@ -237,8 +238,8 @@ void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& mode
 }
 
 void ModelBundleCSIndirect::CreateBuffers(
-	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedData,
-	SharedBuffer& cullingSharedData
+	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedBuffer,
+	SharedBuffer& cullingSharedBuffer
 ) {
 	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
@@ -247,8 +248,8 @@ void ModelBundleCSIndirect::CreateBuffers(
 	const auto argumentBufferSize = static_cast<VkDeviceSize>(strideSize * argumentCount);
 	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
 
-	m_argumentInputSharedData = argumentSharedData.AllocateAndGetSharedData(argumentBufferSize);
-	m_cullingSharedData       = cullingSharedData.AllocateAndGetSharedData(cullingDataSize);
+	m_argumentInputSharedData = argumentSharedBuffer.AllocateAndGetSharedData(argumentBufferSize);
+	m_cullingSharedData       = cullingSharedBuffer.AllocateAndGetSharedData(cullingDataSize);
 
 	m_cullingData->commandOffset
 		= static_cast<std::uint32_t>(m_argumentInputSharedData.offset / strideSize);
@@ -413,21 +414,33 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	m_argumentInputBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-	}, m_argumentOutputBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
-	}, m_cullingDataBuffer{
+	}, m_argumentOutputBuffers{},
+	m_cullingDataBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-	}, m_counterBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndices3>()
-	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
+	}, m_counterBuffers{},
+	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
-{}
+{
+	for (size_t _ = 0u; _ < frameCount; ++_)
+	{
+		m_argumentOutputBuffers.emplace_back(
+			SharedBuffer{
+				m_device, m_memoryManager,
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
+			}
+		);
+		m_counterBuffers.emplace_back(
+			SharedBuffer{
+				m_device, m_memoryManager,
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				m_queueIndices3.ResolveQueueIndices<QueueIndices3>()
+			}
+		);
+	}
+}
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
@@ -466,9 +479,8 @@ void ModelManagerVSIndirect::ConfigureModel(
 
 	modelBundleObj.AddModelDetails(index32_t);
 
-	const std::uint32_t frameCount = m_modelBuffers.GetInstanceCount();
 	modelBundleObj.CreateBuffers(
-		frameCount, *m_stagingBufferMan, m_argumentOutputBuffer, m_counterBuffer
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers
 	);
 
 	++m_argumentCount;
@@ -496,9 +508,8 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	modelBundleCS.SetID(static_cast<std::uint32_t>(modelBundleObj.GetID()));
 
-	const std::uint32_t frameCount = m_modelBuffers.GetInstanceCount();
 	modelBundleObj.CreateBuffers(
-		frameCount, *m_stagingBufferMan, m_argumentOutputBuffer, m_counterBuffer
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers
 	);
 
 	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
@@ -525,8 +536,19 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 
 	const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
 
-	m_argumentOutputBuffer.RelinquishMemory(modelBundle.GetArgumentOutputSharedData());
-	m_counterBuffer.RelinquishMemory(modelBundle.GetCounterSharedData());
+	{
+		// All of the shared data instances should have the same offset and size, so it should be
+		// fine to relinquish them with the same shared data.
+		const SharedBufferData argumentOutputSharedData = modelBundle.GetArgumentOutputSharedData();
+
+		for (auto& argumentOutputBuffer : m_argumentOutputBuffers)
+			argumentOutputBuffer.RelinquishMemory(argumentOutputSharedData);
+
+		const SharedBufferData counterSharedData = modelBundle.GetCounterSharedData();
+
+		for(auto& counterBuffer : m_counterBuffers)
+			counterBuffer.RelinquishMemory(counterSharedData);
+	}
 
 	std::erase_if(
 		m_modelBundlesCS,
@@ -549,13 +571,11 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 void ModelManagerVSIndirect::CreateBuffers(StagingBufferManager& stagingBufferMan)
 {
 	// This function shouldn't exist, as we would be adding more models later.
-	const std::uint32_t frameCount = m_modelBuffers.GetInstanceCount();
-
 	for (size_t index = 0u; index < std::size(m_modelBundles); ++index)
 	{
 		ModelBundleVSIndirect& modelBundleVS = m_modelBundles.at(index);
 
-		modelBundleVS.CreateBuffers(frameCount, stagingBufferMan);
+		modelBundleVS.CreateBuffers(stagingBufferMan);
 	}
 }
 
@@ -657,12 +677,11 @@ void ModelManagerVSIndirect::SetDescriptorBufferCS(
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_cullingDataBuffer.GetBuffer(), s_cullingDataBufferBindingSlot, 0u
 		);
-		// These two are wrong.
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_argumentOutputBuffer.GetBuffer(), s_argumenOutputBindingSlot, 0u
+			m_argumentOutputBuffers.at(index).GetBuffer(), s_argumenOutputBindingSlot, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_counterBuffer.GetBuffer(), s_counterBindingSlot, 0u
+			m_counterBuffers.at(index).GetBuffer(), s_counterBindingSlot, 0u
 		);
 	}
 }
@@ -674,9 +693,8 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
 
-void ModelManagerVSIndirect::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
-) const noexcept {
+void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
+{
 	auto previousPSOIndex = std::numeric_limits<size_t>::max();
 
 	for (const auto& modelBundle : m_modelBundles)
@@ -688,7 +706,7 @@ void ModelManagerVSIndirect::Draw(
 		BindMesh(modelBundle, graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, frameIndex);
+		modelBundle.Draw(graphicsBuffer);
 	}
 }
 
@@ -696,6 +714,10 @@ void ModelManagerVSIndirect::CopyTempBuffers(VKCommandBuffer& transferBuffer) co
 {
 	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
 	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
-	m_argumentOutputBuffer.CopyOldBuffer(transferBuffer);
-	m_counterBuffer.CopyOldBuffer(transferBuffer);
+
+	for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
+	{
+		m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
+		m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
+	}
 }

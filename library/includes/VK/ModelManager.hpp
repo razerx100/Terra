@@ -216,8 +216,8 @@ public:
 
 	void AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept;
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedData,
-		SharedBuffer& cullingSharedData
+		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
+		SharedBuffer& cullingSharedBuffer
 	);
 
 	void CleanupTempData() noexcept;
@@ -286,11 +286,12 @@ public:
 	void AddModelDetails(std::uint32_t modelBufferIndex) noexcept;
 
 	void CreateBuffers(
-		std::uint32_t frameCount, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& argumentOutputSharedData, SharedBuffer& counterSharedData
+		StagingBufferManager& stagingBufferMan,
+		std::vector<SharedBuffer>& argumentOutputSharedBuffers,
+		std::vector<SharedBuffer>& counterSharedBuffers
 	);
-	void CreateBuffers(std::uint32_t frameCount, StagingBufferManager& stagingBufferMan);
-	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
+	void CreateBuffers(StagingBufferManager& stagingBufferMan);
+	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t modelIndicesBindingSlot
@@ -826,7 +827,7 @@ public:
 	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 	void SetDescriptorBufferCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
-	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
+	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 private:
@@ -855,9 +856,9 @@ private:
 private:
 	StagingBufferManager*              m_stagingBufferMan;
 	SharedBuffer                       m_argumentInputBuffer;
-	SharedBuffer                       m_argumentOutputBuffer;
+	std::vector<SharedBuffer>          m_argumentOutputBuffers;
 	SharedBuffer                       m_cullingDataBuffer;
-	SharedBuffer                       m_counterBuffer;
+	std::vector<SharedBuffer>          m_counterBuffers;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -890,9 +891,9 @@ public:
 		: ModelManager{ std::move(other) },
 		m_stagingBufferMan{ other.m_stagingBufferMan },
 		m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
-		m_argumentOutputBuffer{ std::move(other.m_argumentOutputBuffer) },
+		m_argumentOutputBuffers{ std::move(other.m_argumentOutputBuffers) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
-		m_counterBuffer{ std::move(other.m_counterBuffer) },
+		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -903,17 +904,17 @@ public:
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
-		m_stagingBufferMan     = other.m_stagingBufferMan;
-		m_argumentInputBuffer  = std::move(other.m_argumentInputBuffer);
-		m_argumentOutputBuffer = std::move(other.m_argumentOutputBuffer);
-		m_cullingDataBuffer    = std::move(other.m_cullingDataBuffer);
-		m_counterBuffer        = std::move(other.m_counterBuffer);
-		m_pipelineLayoutCS     = std::move(other.m_pipelineLayoutCS);
-		m_computePipeline      = std::move(other.m_computePipeline);
-		m_queueIndices3        = other.m_queueIndices3;
-		m_dispatchXCount       = other.m_dispatchXCount;
-		m_argumentCount        = other.m_argumentCount;
-		m_modelBundlesCS       = std::move(other.m_modelBundlesCS);
+		m_stagingBufferMan      = other.m_stagingBufferMan;
+		m_argumentInputBuffer   = std::move(other.m_argumentInputBuffer);
+		m_argumentOutputBuffers = std::move(other.m_argumentOutputBuffers);
+		m_cullingDataBuffer     = std::move(other.m_cullingDataBuffer);
+		m_counterBuffers        = std::move(other.m_counterBuffers);
+		m_pipelineLayoutCS      = std::move(other.m_pipelineLayoutCS);
+		m_computePipeline       = std::move(other.m_computePipeline);
+		m_queueIndices3         = other.m_queueIndices3;
+		m_dispatchXCount        = other.m_dispatchXCount;
+		m_argumentCount         = other.m_argumentCount;
+		m_modelBundlesCS        = std::move(other.m_modelBundlesCS);
 
 		return *this;
 	}
