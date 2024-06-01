@@ -818,7 +818,7 @@ public:
 	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
 
-	// Need a remove method and a CopyTempBuffer method.
+	void CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept;
 
 	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);

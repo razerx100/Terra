@@ -691,3 +691,11 @@ void ModelManagerVSIndirect::Draw(
 		modelBundle.Draw(graphicsBuffer, frameIndex);
 	}
 }
+
+void ModelManagerVSIndirect::CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept
+{
+	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
+	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
+	m_argumentOutputBuffer.CopyOldBuffer(transferBuffer);
+	m_counterBuffer.CopyOldBuffer(transferBuffer);
+}
