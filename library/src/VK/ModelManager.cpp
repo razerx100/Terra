@@ -663,3 +663,21 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
+
+void ModelManagerVSIndirect::Draw(
+	const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex
+) const noexcept {
+	auto previousPSOIndex = std::numeric_limits<size_t>::max();
+
+	for (const auto& modelBundle : m_modelBundles)
+	{
+		// Pipeline Object.
+		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
+
+		// Mesh
+		BindMesh(modelBundle, graphicsBuffer);
+
+		// Model
+		modelBundle.Draw(graphicsBuffer, frameIndex);
+	}
+}

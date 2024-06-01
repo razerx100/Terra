@@ -824,7 +824,7 @@ public:
 	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 	void SetDescriptorBufferCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
-	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+	void Draw(const VKCommandBuffer& graphicsBuffer, VkDeviceSize frameIndex) const noexcept;
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 private:
