@@ -288,7 +288,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	{
 		auto modelVS = std::make_shared<ModelDummyVS>();
 
-		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"");
+		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"A");
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
@@ -309,5 +309,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelsVS), L"H");
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+
+		vsIndirect.ChangePSO(index, L"A");
 	}
 }

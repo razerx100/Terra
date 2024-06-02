@@ -504,7 +504,7 @@ public:
 
 		const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
 
-		AddModelBundle(std::move(modelBundle), psoIndex);
+		AddModelBundle(std::move(modelBundle));
 
 		return bundleID;
 	}
@@ -542,7 +542,7 @@ public:
 
 			const auto bundleID = static_cast<std::uint32_t>(modelBundleObj.GetID());
 
-			AddModelBundle(std::move(modelBundleObj), psoIndex);
+			AddModelBundle(std::move(modelBundleObj));
 
 			return bundleID;
 		}
@@ -552,10 +552,7 @@ public:
 
 	void RemoveBundle(std::uint32_t bundleID) noexcept
 	{
-		auto result = std::ranges::find_if(
-			m_modelBundles,
-			[bundleID](const ModelBundleType& bundle) { return bundle.GetID() == bundleID; }
-		);
+		auto result = GetModelBundle(bundleID);
 
 		if (result != std::end(m_modelBundles))
 		{
@@ -569,7 +566,23 @@ public:
 		}
 	}
 
-	// Need a function which can change the PSO index of a Bundle.
+	void ChangePSO(std::uint32_t bundleID, const std::wstring& fragmentShader) noexcept
+	{
+		auto modelBundle = GetModelBundle(bundleID);
+
+		if (modelBundle != std::end(m_modelBundles))
+		{
+			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
+
+			modelBundle->SetPSOIndex(psoIndex);
+
+			ModelBundleType modelBundleObj = std::move(*modelBundle);
+
+			m_modelBundles.erase(modelBundle);
+
+			AddModelBundle(std::move(modelBundleObj));
+		}
+	}
 
 	void AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
@@ -657,9 +670,20 @@ protected:
 		m_meshBundles.at(meshIndex).Bind(graphicsBuffer);
 	}
 
-private:
-	void AddModelBundle(ModelBundleType&& modelBundle, std::uint32_t psoIndex) noexcept
+	[[nodiscard]]
+	std::vector<ModelBundleType>::iterator GetModelBundle(std::uint32_t bundleID) noexcept
 	{
+		return std::ranges::find_if(
+			m_modelBundles,
+			[bundleID](const ModelBundleType& bundle) { return bundle.GetID() == bundleID; }
+		);
+	}
+
+private:
+	void AddModelBundle(ModelBundleType&& modelBundle) noexcept
+	{
+		const std::uint32_t psoIndex = modelBundle.GetPSOIndex();
+
 		// These will be sorted by their PSO indices.
 		// Upper_bound returns the next bigger element.
 		auto result = std::ranges::upper_bound(
