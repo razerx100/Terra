@@ -1,5 +1,4 @@
 #include <VkShader.hpp>
-#include <fstream>
 #include <Exception.hpp>
 
 VkShader::~VkShader() noexcept
@@ -12,11 +11,22 @@ void VkShader::SelfDestruct() noexcept
 	vkDestroyShaderModule(m_device, m_shaderBinary, nullptr);
 }
 
-void VkShader::Create(const std::wstring& fileName)
+bool VkShader::Create(const std::wstring& fileName)
 {
-	std::vector<char> byteCode = LoadBinary(fileName);
+	std::ifstream shader{ fileName.c_str(), std::ios_base::binary | std::ios_base::ate };
 
-	CreateShaderModule(m_device, std::data(byteCode), std::size(byteCode));
+	bool success = false;
+
+	if (shader.is_open())
+	{
+		std::vector<char> byteCode = LoadBinary(shader);
+
+		CreateShaderModule(m_device, std::data(byteCode), std::size(byteCode));
+
+		success = true;
+	}
+
+	return success;
 }
 
 void VkShader::CreateShaderModule(
@@ -31,13 +41,8 @@ void VkShader::CreateShaderModule(
 	vkCreateShaderModule(device, &createInfo, nullptr, &m_shaderBinary);
 }
 
-std::vector<char> VkShader::LoadBinary(const std::wstring& fileName)
+std::vector<char> VkShader::LoadBinary(std::ifstream& shader) noexcept
 {
-	std::ifstream shader{ fileName.c_str(), std::ios_base::binary | std::ios_base::ate };
-
-	if (!shader.is_open())
-		throw Exception("Shader Compilation Error", "Shader couldn't be found.");
-
 	const auto shaderSize = static_cast<size_t>(shader.tellg());
 	shader.seekg(0u);
 

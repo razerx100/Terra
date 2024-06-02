@@ -24,26 +24,31 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	const std::wstring& shaderPath, const std::wstring& fragmentShader,
 	const std::wstring& meshShader, const std::wstring& taskShader /* = {} */
 ) noexcept {
-	auto ms = std::make_unique<VkShader>(device);
-	ms->Create(shaderPath + meshShader);
+	auto ms              = std::make_unique<VkShader>(device);
+	const bool msSuccess = ms->Create(shaderPath + meshShader);
 
-	auto fs = std::make_unique<VkShader>(device);
-	fs->Create(shaderPath + fragmentShader);
+	auto fs              = std::make_unique<VkShader>(device);
+	const bool fsSuccess = fs->Create(shaderPath + fragmentShader);
 
 	GraphicsPipelineBuilder builder{ graphicsLayout, renderPass };
 
+	bool tsSuccess = true;
+
 	if (!std::empty(taskShader))
 	{
-		auto ts = std::make_unique<VkShader>(device);
-		ts->Create(shaderPath + taskShader);
+		auto ts   = std::make_unique<VkShader>(device);
+		tsSuccess = ts->Create(shaderPath + taskShader);
 
 		builder.SetTaskStage(ts->Get());
 	}
 
-	builder.SetMeshStage(ms->Get(), fs->Get());
-
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateGraphicsPipeline(builder);
+
+	if (msSuccess && fsSuccess && tsSuccess)
+	{
+		builder.SetMeshStage(ms->Get(), fs->Get());
+		pso->CreateGraphicsPipeline(builder);
+	}
 
 	return pso;
 }

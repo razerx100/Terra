@@ -218,7 +218,11 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
 	};
 
+	VKRenderPass renderPass{ logicalDevice };
+	renderPass.Create(RenderPassBuilder{});
+
 	ModelManagerVSIndividual vsIndividual{ logicalDevice, &memoryManager, Constants::frameCount };
+	vsIndividual.SetRenderPass(&renderPass);
 
 	{
 		auto modelVS = std::make_shared<ModelDummyVS>();
@@ -274,10 +278,14 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
 	};
 
+	VKRenderPass renderPass{ logicalDevice };
+	renderPass.Create(RenderPassBuilder{});
+
 	ModelManagerVSIndirect vsIndirect{
 		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices(),
 		Constants::frameCount
 	};
+	vsIndirect.SetRenderPass(&renderPass);
 
 	{
 		auto modelVS = std::make_shared<ModelDummyVS>();
@@ -311,5 +319,17 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 
 		vsIndirect.ChangePSO(index, L"A");
+	}
+	{
+		auto modelVS = std::make_shared<ModelDummyVS>();
+
+		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"H");
+		EXPECT_EQ(index, 11u) << "Index isn't 11.";
+	}
+	{
+		auto modelVS = std::make_shared<ModelDummyVS>();
+
+		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"A");
+		EXPECT_EQ(index, 12u) << "Index isn't 12.";
 	}
 }

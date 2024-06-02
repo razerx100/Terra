@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <vector>
+#include <fstream>
 
 class VkShader
 {
@@ -10,7 +11,8 @@ public:
 	VkShader(VkDevice device) : m_device{ device }, m_shaderBinary{ VK_NULL_HANDLE } {}
 	~VkShader() noexcept;
 
-	void Create(const std::wstring& fileName);
+	[[nodiscard]]
+	bool Create(const std::wstring& fileName);
 
 	[[nodiscard]]
 	VkShaderModule Get() const noexcept { return m_shaderBinary; }
@@ -20,7 +22,7 @@ private:
 
 private:
 	[[nodiscard]]
-	std::vector<char> LoadBinary(const std::wstring& fileName);
+	static std::vector<char> LoadBinary(std::ifstream& shader) noexcept;
 
 	void CreateShaderModule(VkDevice device, void const* binary, size_t binarySize);
 

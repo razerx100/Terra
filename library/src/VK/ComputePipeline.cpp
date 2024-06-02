@@ -10,13 +10,13 @@ void ComputePipeline::Create(
 std::unique_ptr<VkPipelineObject> ComputePipeline::_createComputePipeline(
 	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
 ) const noexcept {
-	auto cs = std::make_unique<VkShader>(device);
-	cs->Create(shaderPath + L"ComputeShader.spv");
+	auto cs            = std::make_unique<VkShader>(device);
+	const bool success = cs->Create(shaderPath + L"ComputeShader.spv");
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
-	pso->CreateComputePipeline(
-		ComputePipelineBuilder{ computeLayout }.SetComputeStage(cs->Get())
-	);
+
+	if (success)
+		pso->CreateComputePipeline(ComputePipelineBuilder{ computeLayout }.SetComputeStage(cs->Get()));
 
 	return pso;
 }

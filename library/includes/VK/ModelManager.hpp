@@ -633,8 +633,7 @@ protected:
 
 			Pipeline pipeline{};
 
-			if(m_renderPass)
-				pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
+			pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
 
 			m_graphicsPipelines.emplace_back(std::move(pipeline));
 		}
