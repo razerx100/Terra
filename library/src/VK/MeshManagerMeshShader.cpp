@@ -4,32 +4,31 @@ MeshManagerMeshShader::MeshManagerMeshShader(VkDevice device, MemoryManager* mem
 	: m_vertexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_vertexIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_primIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_vertices{}, m_meshBundle{ nullptr }
+	m_meshBounds{}
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan
+	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	std::deque<TempData>& tempDataContainer
 ) {
-	m_meshBundle = std::move(meshBundle);
+	TempData& tempData = tempDataContainer.emplace_back(
+		TempData{
+			.meshBundle = std::move(meshBundle)
+		}
+	);
 
 	{
-		const std::vector<Vertex>& vertices = m_meshBundle->GetVertices();
+		const std::vector<Vertex>& vertices = tempData.meshBundle->GetVertices();
 
-		m_vertices = TransformVertices(vertices);
+		tempData.vertices = TransformVertices(vertices);
 
 		// No need to keep two copies of the same data.
-		m_meshBundle->CleanUpVertices();
+		tempData.meshBundle->CleanUpVertices();
 	}
 
-	ConfigureBuffer(m_vertices, m_vertexBuffer, stagingBufferMan);
-	ConfigureBuffer(m_meshBundle->GetVertexIndices(), m_vertexIndicesBuffer, stagingBufferMan);
-	ConfigureBuffer(m_meshBundle->GetPrimIndices(), m_primIndicesBuffer, stagingBufferMan);
-}
-
-void MeshManagerMeshShader::CleanupTempData() noexcept
-{
-	m_vertices = std::vector<GLSLVertex>{};
-	m_meshBundle.reset();
+	ConfigureBuffer(tempData.vertices, m_vertexBuffer, stagingBufferMan);
+	ConfigureBuffer(tempData.meshBundle->GetVertexIndices(), m_vertexIndicesBuffer, stagingBufferMan);
+	ConfigureBuffer(tempData.meshBundle->GetPrimIndices(), m_primIndicesBuffer, stagingBufferMan);
 }
 
 void MeshManagerMeshShader::SetDescriptorBuffer(

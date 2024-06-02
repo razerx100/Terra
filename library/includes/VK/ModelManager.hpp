@@ -10,6 +10,7 @@
 #include <memory>
 #include <ranges>
 #include <algorithm>
+#include <deque>
 #include <ReusableVkBuffer.hpp>
 #include <GraphicsPipelineVertexShader.hpp>
 #include <ComputePipeline.hpp>
@@ -448,12 +449,14 @@ template<
 >
 class ModelManager
 {
+	using MeshTempData = typename MeshManager::TempData;
 public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_pipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
 		m_modelBuffers{ device, memoryManager, frameCount },
-		m_meshBoundsBuffer{ device, memoryManager }, m_graphicsPipelines{}, m_modelBundles{}
+		m_meshBoundsBuffer{ device, memoryManager }, m_graphicsPipelines{},
+		m_meshBundles{}, m_meshBundleTempData{}, m_modelBundles{}
 	{}
 
 	void CreatePipelineLayout(const VkDescriptorBuffer& descriptorBuffer)
@@ -589,15 +592,14 @@ public:
 	) {
 		MeshManager meshManager{ m_device, m_memoryManager };
 
-		meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan);
+		meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
 
 		m_meshBundles.emplace_back(std::move(meshManager));
 	}
 
 	void CleanUpTempData() noexcept
 	{
-		for (auto& meshBundle : m_meshBundles)
-			meshBundle.CleanupTempData();
+		m_meshBundleTempData = std::deque<MeshTempData>{};
 
 		if constexpr (TempData)
 			static_cast<Derived*>(this)->_cleanUpTempData();
@@ -711,6 +713,7 @@ protected:
 
 	std::vector<Pipeline>        m_graphicsPipelines;
 	std::vector<MeshManager>     m_meshBundles;
+	std::deque<MeshTempData>     m_meshBundleTempData;
 	std::vector<ModelBundleType> m_modelBundles;
 
 	// Need to update this when I update the shaders.
@@ -730,20 +733,22 @@ public:
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
+		m_meshBundleTempData{ std::move(other.m_meshBundleTempData) },
 		m_modelBundles{ std::move(other.m_modelBundles) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
-		m_device            = other.m_device;
-		m_memoryManager     = other.m_memoryManager;
-		m_pipelineLayout    = std::move(other.m_pipelineLayout);
-		m_renderPass        = other.m_renderPass;
-		m_shaderPath        = std::move(other.m_shaderPath);
-		m_modelBuffers      = std::move(other.m_modelBuffers);
-		m_meshBoundsBuffer  = std::move(other.m_meshBoundsBuffer);
-		m_graphicsPipelines = std::move(other.m_graphicsPipelines);
-		m_meshBundles       = std::move(other.m_meshBundles);
-		m_modelBundles      = std::move(other.m_modelBundles);
+		m_device             = other.m_device;
+		m_memoryManager      = other.m_memoryManager;
+		m_pipelineLayout     = std::move(other.m_pipelineLayout);
+		m_renderPass         = other.m_renderPass;
+		m_shaderPath         = std::move(other.m_shaderPath);
+		m_modelBuffers       = std::move(other.m_modelBuffers);
+		m_meshBoundsBuffer   = std::move(other.m_meshBoundsBuffer);
+		m_graphicsPipelines  = std::move(other.m_graphicsPipelines);
+		m_meshBundles        = std::move(other.m_meshBundles);
+		m_meshBundleTempData = std::move(other.m_meshBundleTempData);
+		m_modelBundles       = std::move(other.m_modelBundles);
 
 		return *this;
 	}

@@ -5,17 +5,21 @@ MeshManagerVertexShader::MeshManagerVertexShader(
 ) noexcept
 	: m_vertexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_indexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_meshBundle{ nullptr }
+	m_meshBounds{}
 {}
 
 void MeshManagerVertexShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	std::deque<TempData>& tempDataContainer
 ) {
-	m_meshBundle = std::move(meshBundle);
+	m_meshBounds       = meshBundle->GetBounds();
+	TempData& tempData = tempDataContainer.emplace_back(
+		TempData{ std::move(meshBundle) }
+	);
 
 	// Vertex Buffer
 	{
-		const std::vector<Vertex>& vertices = m_meshBundle->GetVertices();
+		const std::vector<Vertex>& vertices = tempData.meshBundle->GetVertices();
 		const auto vertexBufferSize = static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(vertices));
 
 		m_vertexBuffer.Create(
@@ -32,7 +36,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 	// Index Buffer
 	{
-		const std::vector<std::uint32_t>& indices = m_meshBundle->GetIndices();
+		const std::vector<std::uint32_t>& indices = tempData.meshBundle->GetIndices();
 		const auto indexBufferSize = sizeof(std::uint32_t) * std::size(indices);
 
 		m_indexBuffer.Create(
@@ -57,9 +61,4 @@ void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) con
 
 	vkCmdBindVertexBuffers(cmdBuffer, 0u, 1u, vertexBuffers, vertexOffsets);
 	vkCmdBindIndexBuffer(cmdBuffer, m_indexBuffer.Get(), 0u, VK_INDEX_TYPE_UINT32);
-}
-
-void MeshManagerVertexShader::CleanupTempData() noexcept
-{
-	m_meshBundle.reset();
 }

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <vector>
+#include <deque>
 #include <VkResources.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
@@ -13,22 +14,28 @@
 class MeshManagerVertexShader
 {
 public:
+	struct TempData
+	{
+		std::unique_ptr<MeshBundleVS> meshBundle;
+	};
+
+public:
 	MeshManagerVertexShader(VkDevice device, MemoryManager* memoryManager) noexcept;
 
 	void SetMeshBundle(
-		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan
+		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::deque<TempData>& tempDataContainer
 	);
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
-	void CleanupTempData() noexcept;
 
 	[[nodiscard]]
-	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBundle->GetBounds(); }
+	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBounds; }
 
 private:
-	Buffer                        m_vertexBuffer;
-	Buffer                        m_indexBuffer;
-	std::unique_ptr<MeshBundleVS> m_meshBundle;
+	Buffer                  m_vertexBuffer;
+	Buffer                  m_indexBuffer;
+	std::vector<MeshBounds> m_meshBounds;
 
 public:
 	MeshManagerVertexShader(const MeshManagerVertexShader&) = delete;
@@ -37,13 +44,13 @@ public:
 	MeshManagerVertexShader(MeshManagerVertexShader&& other) noexcept
 		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
-		m_meshBundle{ std::move(other.m_meshBundle) }
+		m_meshBounds{ std::move(other.m_meshBounds) }
 	{}
 	MeshManagerVertexShader& operator=(MeshManagerVertexShader&& other) noexcept
 	{
 		m_vertexBuffer = std::move(other.m_vertexBuffer);
 		m_indexBuffer  = std::move(other.m_indexBuffer);
-		m_meshBundle   = std::move(other.m_meshBundle);
+		m_meshBounds   = std::move(other.m_meshBounds);
 
 		return *this;
 	}
