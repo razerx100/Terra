@@ -101,11 +101,7 @@ void ModelBundleMS::CreateBuffers(
 		meshletBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	);
 
-	TempData& tempData = tempDataContainer.emplace_back(
-		TempData{
-			std::move(m_meshlets)
-		}
-	);
+	TempData& tempData = tempDataContainer.emplace_back(TempData{ std::move(m_meshlets) });
 
 	stagingBufferMan.AddBuffer(std::data(tempData.meshlets), meshletBufferSize, &m_meshletBuffer, 0u);
 }
@@ -122,7 +118,7 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 ) : ModelBundle{}, m_modelCount{ 0u }, m_queueIndices{ queueIndices },
 	m_argumentOutputBufferSize{ 0u },
 	m_modelIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_argumentOutputSharedData{}, m_counterSharedData{},
+	m_argumentOutputSharedData{}, m_counterSharedData{}, m_modelIndicesSharedData{},
 	m_modelIndices{}
 {}
 
@@ -135,7 +131,7 @@ void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noex
 void ModelBundleVSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBuffer>& argumentOutputSharedBuffers,
-	std::vector<SharedBuffer>& counterSharedBuffers
+	std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer
 ) {
 	constexpr size_t strideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	m_argumentOutputBufferSize       = static_cast<VkDeviceSize>(m_modelCount * strideSize);
@@ -151,25 +147,11 @@ void ModelBundleVSIndirect::CreateBuffers(
 
 	for (auto& counterSharedBuffer : counterSharedBuffers)
 		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(s_counterBufferSize);
-}
 
-void ModelBundleVSIndirect::CreateBuffers(
-	StagingBufferManager& stagingBufferMan
-) {
-	constexpr size_t strideSize      = sizeof(VkDrawIndexedIndirectCommand);
-	m_argumentOutputBufferSize       = static_cast<VkDeviceSize>(m_modelCount * strideSize);
-	const auto modelIndiceBufferSize = static_cast<VkDeviceSize>(m_modelCount * sizeof(std::uint32_t));
-
-	const std::vector<std::uint32_t> allQueueIndices
-		= m_queueIndices.ResolveQueueIndices<QueueIndices3>();
-
-	m_modelIndicesBuffer.Create(
-		modelIndiceBufferSize,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, allQueueIndices
-	);
+	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize);
 
 	stagingBufferMan.AddBuffer(
-		std::data(m_modelIndices), modelIndiceBufferSize, &m_modelIndicesBuffer, 0u
+		std::data(m_modelIndices), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u
 	);
 }
 
@@ -400,7 +382,11 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
+	m_modelIndicesBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndices3>()
+	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}, m_modelBundleCSTempData{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
@@ -463,7 +449,7 @@ void ModelManagerVSIndirect::ConfigureModel(
 	modelBundleObj.AddModelDetails(index32_t);
 
 	modelBundleObj.CreateBuffers(
-		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer
 	);
 
 	UpdateCounterResetValues();
@@ -494,7 +480,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	modelBundleCS.SetID(static_cast<std::uint32_t>(modelBundleObj.GetID()));
 
 	modelBundleObj.CreateBuffers(
-		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer
 	);
 
 	UpdateCounterResetValues();
@@ -537,6 +523,10 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 
 		for(auto& counterBuffer : m_counterBuffers)
 			counterBuffer.RelinquishMemory(counterSharedData);
+
+		const SharedBufferData& modelIndicesSharedData = modelBundle.GetModelIndicesSharedData();
+
+		m_modelIndicesBuffer.RelinquishMemory(modelIndicesSharedData);
 	}
 
 	std::erase_if(
@@ -575,7 +565,6 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
-		// Argument and counter here.
 		descriptorBuffer.AddBinding(
 			s_modelIndicesVSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
@@ -596,10 +585,9 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
 		);
-
-		// This is wrong and needs to be updated.
-		for (auto& modelBundle : m_modelBundles)
-			modelBundle.SetDescriptorBuffer(descriptorBuffer, 2u);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesVSBindingSlot, 0u
+		);
 	}
 }
 
@@ -626,6 +614,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 		);
 		descriptorBuffer.AddBinding(
 			s_counterBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
+		descriptorBuffer.AddBinding(
+			s_modelIndicesCSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 	}
@@ -656,6 +648,9 @@ void ModelManagerVSIndirect::SetDescriptorBufferCS(
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_counterBuffers.at(index).GetBuffer(), s_counterBindingSlot, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesCSBindingSlot, 0u
 		);
 	}
 }

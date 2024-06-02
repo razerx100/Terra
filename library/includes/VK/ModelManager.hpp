@@ -301,9 +301,8 @@ public:
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBuffer>& argumentOutputSharedBuffers,
-		std::vector<SharedBuffer>& counterSharedBuffers
+		std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer
 	);
-	void CreateBuffers(StagingBufferManager& stagingBufferMan);
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 	void SetDescriptorBuffer(
@@ -335,6 +334,11 @@ public:
 	}
 	[[nodiscard]]
 	const SharedBufferData& GetCounterSharedData() const noexcept { return m_counterSharedData; }
+	[[nodiscard]]
+	const SharedBufferData& GetModelIndicesSharedData() const noexcept
+	{
+		return m_modelIndicesSharedData;
+	}
 
 	[[nodiscard]]
 	static VkDeviceSize GetCounterBufferSize() noexcept { return s_counterBufferSize; }
@@ -347,6 +351,7 @@ private:
 
 	SharedBufferData               m_argumentOutputSharedData;
 	SharedBufferData               m_counterSharedData;
+	SharedBufferData               m_modelIndicesSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
@@ -365,6 +370,7 @@ public:
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_argumentOutputSharedData{ other.m_argumentOutputSharedData },
 		m_counterSharedData{ other.m_counterSharedData },
+		m_modelIndicesSharedData{ other.m_modelIndicesSharedData },
 		m_modelIndices{ std::move(other.m_modelIndices) }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
@@ -376,6 +382,7 @@ public:
 		m_modelIndicesBuffer       = std::move(other.m_modelIndicesBuffer);
 		m_argumentOutputSharedData = other.m_argumentOutputSharedData;
 		m_counterSharedData        = other.m_counterSharedData;
+		m_modelIndicesSharedData   = other.m_modelIndicesSharedData;
 		m_modelIndices             = std::move(other.m_modelIndices);
 
 		return *this;
@@ -898,6 +905,7 @@ private:
 	SharedBuffer                       m_cullingDataBuffer;
 	std::vector<SharedBuffer>          m_counterBuffers;
 	Buffer                             m_counterResetBuffer;
+	SharedBuffer                       m_modelIndicesBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -935,6 +943,7 @@ public:
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
+		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -952,6 +961,7 @@ public:
 		m_cullingDataBuffer     = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers        = std::move(other.m_counterBuffers);
 		m_counterResetBuffer    = std::move(other.m_counterResetBuffer);
+		m_modelIndicesBuffer    = std::move(other.m_modelIndicesBuffer);
 		m_pipelineLayoutCS      = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline       = std::move(other.m_computePipeline);
 		m_queueIndices3         = other.m_queueIndices3;
