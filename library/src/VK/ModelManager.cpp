@@ -92,26 +92,28 @@ void ModelBundleMS::Draw(
 	}
 }
 
-void ModelBundleMS::CreateBuffers(StagingBufferManager& stagingBufferMan)
-{
+void ModelBundleMS::CreateBuffers(
+	StagingBufferManager& stagingBufferMan, std::deque<TempData>& tempDataContainer
+) {
 	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
 
 	m_meshletBuffer.Create(
 		meshletBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	);
 
-	stagingBufferMan.AddBuffer(std::data(m_meshlets), meshletBufferSize, &m_meshletBuffer, 0u);
+	TempData& tempData = tempDataContainer.emplace_back(
+		TempData{
+			std::move(m_meshlets)
+		}
+	);
+
+	stagingBufferMan.AddBuffer(std::data(tempData.meshlets), meshletBufferSize, &m_meshletBuffer, 0u);
 }
 
 void ModelBundleMS::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
 ) const noexcept {
 	descriptorBuffer.SetStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot, 0u);
-}
-
-void ModelBundleMS::CleanupTempData() noexcept
-{
-	m_meshlets = std::vector<Meshlet>{};
 }
 
 // Model Bundle VS Indirect
@@ -215,7 +217,7 @@ void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& mode
 
 void ModelBundleCSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedBuffer,
-	SharedBuffer& cullingSharedBuffer
+	SharedBuffer& cullingSharedBuffer, std::deque<TempData>& tempDataContainer
 ) {
 	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
@@ -230,19 +232,21 @@ void ModelBundleCSIndirect::CreateBuffers(
 	m_cullingData->commandOffset
 		= static_cast<std::uint32_t>(m_argumentInputSharedData.offset / strideSize);
 
+	TempData& tempData = tempDataContainer.emplace_back(
+		TempData{
+			.indirectArguments = std::move(m_indirectArguments),
+			.cullingData       = std::move(m_cullingData)
+		}
+	);
+
 	stagingBufferMan.AddBuffer(
-		std::data(m_indirectArguments), argumentBufferSize, m_argumentInputSharedData.bufferData,
+		std::data(tempData.indirectArguments), argumentBufferSize, m_argumentInputSharedData.bufferData,
 		m_argumentInputSharedData.offset
 	);
 	stagingBufferMan.AddBuffer(
-		m_cullingData.get(), cullingDataSize, m_cullingSharedData.bufferData, m_cullingSharedData.offset
+		tempData.cullingData.get(), cullingDataSize, m_cullingSharedData.bufferData,
+		m_cullingSharedData.offset
 	);
-}
-
-void ModelBundleCSIndirect::CleanupTempData() noexcept
-{
-	m_indirectArguments = std::vector<VkDrawIndexedIndirectCommand>{};
-	m_cullingData.reset();
 }
 
 // Model Buffers
@@ -397,7 +401,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
-	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
+	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}, m_modelBundleCSTempData{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
@@ -446,7 +450,9 @@ void ModelManagerVSIndirect::ConfigureModel(
 	ModelBundleCSIndirect modelBundleCS{};
 	modelBundleCS.AddModelDetails(model);
 
-	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
+	modelBundleCS.CreateBuffers(
+		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleCSTempData
+	);
 
 	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
 
@@ -493,7 +499,9 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	UpdateCounterResetValues();
 
-	modelBundleCS.CreateBuffers(*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer);
+	modelBundleCS.CreateBuffers(
+		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleCSTempData
+	);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
@@ -551,11 +559,7 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndirect::_cleanUpTempData() noexcept
 {
-	// This will be cleaning all models. Might need to do something like a queue.
-	for (size_t index = 0u; index < std::size(m_modelBundlesCS); ++index)
-	{
-		m_modelBundlesCS.at(index).CleanupTempData();
-	}
+	m_modelBundleCSTempData = std::deque<CSIndirectTempData>{};
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(

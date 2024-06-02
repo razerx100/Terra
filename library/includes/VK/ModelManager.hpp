@@ -129,6 +129,11 @@ public:
 		std::uint32_t threadGroupCountX;
 	};
 
+	struct TempData
+	{
+		std::vector<Meshlet> meshlets;
+	};
+
 public:
 	ModelBundleMS(VkDevice device, MemoryManager* memoryManager)
 		: ModelBundle{}, m_modelDetails{},
@@ -138,7 +143,9 @@ public:
 
 	// Need this one as non-const, since I am gonna move the meshlets.
 	void AddModelDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
-	void CreateBuffers(StagingBufferManager& stagingBufferMan);
+	void CreateBuffers(
+		StagingBufferManager& stagingBufferMan, std::deque<TempData>& tempDataContainer
+	);
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
 	) const noexcept;
@@ -149,8 +156,6 @@ public:
 	) const noexcept {
 		Draw(graphicsBuffer, pipelineLayout.Get());
 	}
-
-	void CleanupTempData() noexcept;
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
@@ -213,15 +218,29 @@ public:
 class ModelBundleCSIndirect
 {
 public:
+	struct CullingData
+	{
+		std::uint32_t     commandCount;
+		std::uint32_t     commandOffset;// Next Vec2 starts at 8bytes offset
+		DirectX::XMFLOAT2 xBounds;
+		DirectX::XMFLOAT2 yBounds;
+		DirectX::XMFLOAT2 zBounds;
+	};
+
+	struct TempData
+	{
+		std::vector<VkDrawIndexedIndirectCommand> indirectArguments;
+		std::unique_ptr<CullingData>              cullingData;
+	};
+
+public:
 	ModelBundleCSIndirect();
 
 	void AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept;
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
-		SharedBuffer& cullingSharedBuffer
+		SharedBuffer& cullingSharedBuffer, std::deque<TempData>& tempDataContainer
 	);
-
-	void CleanupTempData() noexcept;
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
 
@@ -235,16 +254,6 @@ public:
 	}
 	[[nodiscard]]
 	const SharedBufferData& GetCullingSharedData() const noexcept { return m_cullingSharedData; }
-
-private:
-	struct CullingData
-	{
-		std::uint32_t     commandCount;
-		std::uint32_t     commandOffset;// Next Vec2 starts at 8bytes offset
-		DirectX::XMFLOAT2 xBounds;
-		DirectX::XMFLOAT2 yBounds;
-		DirectX::XMFLOAT2 zBounds;
-	};
 
 private:
 	SharedBufferData                          m_argumentInputSharedData;
@@ -835,6 +844,8 @@ class ModelManagerVSIndirect : public
 			true
 		>;
 	friend class ModelManagerVSIndirectTest;
+
+	using CSIndirectTempData = ModelBundleCSIndirect::TempData;
 public:
 	ModelManagerVSIndirect(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
@@ -895,6 +906,7 @@ private:
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
+	std::deque<CSIndirectTempData>     m_modelBundleCSTempData;
 
 	// Need to update these when I update the shaders.
 	// Vertex Shader ones
@@ -928,7 +940,8 @@ public:
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
-		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
+		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) },
+		m_modelBundleCSTempData{ std::move(other.m_modelBundleCSTempData) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
@@ -945,6 +958,7 @@ public:
 		m_dispatchXCount        = other.m_dispatchXCount;
 		m_argumentCount         = other.m_argumentCount;
 		m_modelBundlesCS        = std::move(other.m_modelBundlesCS);
+		m_modelBundleCSTempData = std::move(other.m_modelBundleCSTempData);
 
 		return *this;
 	}
