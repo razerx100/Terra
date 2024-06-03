@@ -69,7 +69,7 @@ void ModelBundleMS::AddModelDetails(
 }
 
 void ModelBundleMS::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
@@ -78,9 +78,20 @@ void ModelBundleMS::Draw(
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
+		struct
+		{
+			std::uint32_t modelBufferIndex;
+			std::uint32_t meshletOffset;
+			std::uint32_t meshIndex;
+		} msConstants{
+			.modelBufferIndex = modelDetail.modelBufferIndex,
+			.meshletOffset    = modelDetail.meshletOffset,
+			.meshIndex        = GetMeshIndex()
+		};
+
 		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
-			pushConstantSize, &modelDetail.modelBufferIndex
+			cmdBuffer, pipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
+			pushConstantSize, &msConstants
 		);
 
 		// Unlike the Compute Shader where we process the data of a model with a thread, here
@@ -320,6 +331,13 @@ void ModelManagerVSIndividual::ConfigureRemove(size_t bundleIndex) noexcept
 		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
 }
 
+void ModelManagerVSIndividual::ConfigureMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshManagerVertexShader& meshManager
+) {
+	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
+}
+
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
 ) {
@@ -547,6 +565,13 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 	);
 }
 
+void ModelManagerVSIndirect::ConfigureMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshManagerVertexShader& meshManager
+) {
+	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
+}
+
 void ModelManagerVSIndirect::_cleanUpTempData() noexcept
 {
 	m_modelBundleCSTempData = std::deque<CSIndirectTempData>{};
@@ -761,7 +786,53 @@ void ModelManagerMS::ConfigureRemove(size_t bundleIndex) noexcept
 		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
 }
 
+void ModelManagerMS::ConfigureMeshBundle(
+	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshManagerMeshShader& meshManager
+) {
+	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
+
+	// Need to configure the three SharedBuffers here.
+}
+
+void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
+{
+	// Push constants needs to be serialised according to the shader stages
+	constexpr std::uint32_t pushConstantSize = ModelBundleMS::GetConstantBufferSize();
+
+	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_MESH_BIT_EXT, pushConstantSize);
+	m_pipelineLayout.Create(descriptorBuffer);
+}
+
 void ModelManagerMS::_cleanUpTempData() noexcept
 {
 
+}
+
+void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers)
+{
+
+}
+
+void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers)
+{
+
+}
+
+void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
+{
+	auto previousPSOIndex = std::numeric_limits<size_t>::max();
+
+	for (const auto& modelBundle : m_modelBundles)
+	{
+		// Pipeline Object.
+		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
+
+		// For MS, we will bind the vertices, vertexIndices and primIndices as Storage buffers.
+		// And we will find it by its index, which will be provided to the Mesh Shader via
+		// constants in the Draw function.
+
+		// Model
+		modelBundle.Draw(graphicsBuffer, m_pipelineLayout);
+	}
 }

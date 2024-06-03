@@ -5,6 +5,7 @@
 #include <VkDeviceManager.hpp>
 #include <ModelManager.hpp>
 #include <StagingBufferManager.hpp>
+#include <VkDescriptorBuffer.hpp>
 
 namespace Constants
 {
@@ -35,6 +36,12 @@ void ModelManagerTest::SetUpTestSuite()
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
 
+	{
+		VkDeviceExtensionManager& extensionManager = s_deviceManager->ExtensionManager();
+		extensionManager.AddExtensions(ModelBundleMS::GetRequiredExtensions());
+		extensionManager.AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
+	}
+
 	s_deviceManager->SetDeviceFeatures(coreVersion)
 		.SetPhysicalDeviceAutomatic(vkInstance)
 		.CreateLogicalDevice();
@@ -63,6 +70,8 @@ public:
 
 class ModelDummyVS : public ModelVS
 {
+	MeshDetailsVS m_details = {};
+
 public:
 	[[nodiscard]]
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
@@ -77,13 +86,14 @@ public:
 	[[nodiscard]]
 	const MeshDetailsVS& GetMeshDetailsVS() const noexcept override
 	{
-		static MeshDetailsVS details{};
-		return details;
+		return m_details;
 	}
 };
 
 class ModelDummyMS : public ModelMS
 {
+	MeshDetailsMS m_details = {};
+
 public:
 	[[nodiscard]]
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
@@ -98,8 +108,73 @@ public:
 	[[nodiscard]]
 	MeshDetailsMS& GetMeshDetailsMS() noexcept override
 	{
-		static MeshDetailsMS details{};
-		return details;
+		return m_details;
+	}
+};
+
+class MeshDummyVS : public MeshBundleVS
+{
+	std::vector<MeshBounds>    m_bounds   = { MeshBounds{} };
+	std::vector<Vertex>        m_vertices = { Vertex{} };
+	std::vector<std::uint32_t> m_indices  = { 0u, 1u, 2u };
+
+public:
+	[[nodiscard]]
+	const std::vector<MeshBounds>& GetBounds() const noexcept override
+	{
+		return m_bounds;
+	}
+	[[nodiscard]]
+	const std::vector<Vertex>& GetVertices() const noexcept override
+	{
+		return m_vertices;
+	}
+
+	[[nodiscard]]
+	const std::vector<std::uint32_t>& GetIndices() const noexcept override
+	{
+		return m_indices;
+	}
+
+	void CleanUpVertices() noexcept
+	{
+		m_vertices = std::vector<Vertex>{};
+	}
+};
+
+class MeshDummyMS : public MeshBundleMS
+{
+	std::vector<MeshBounds>    m_bounds        = { MeshBounds{} };
+	std::vector<Vertex>        m_vertices      = { Vertex{} };
+	std::vector<std::uint32_t> m_vertexIndices = { 0u, 1u, 2u };
+	std::vector<std::uint32_t> m_primIndices   = { 0u };
+
+public:
+	[[nodiscard]]
+	const std::vector<MeshBounds>& GetBounds() const noexcept override
+	{
+		return m_bounds;
+	}
+	[[nodiscard]]
+	const std::vector<Vertex>& GetVertices() const noexcept override
+	{
+		return m_vertices;
+	}
+
+	void CleanUpVertices() noexcept
+	{
+		m_vertices = std::vector<Vertex>{};
+	}
+
+	[[nodiscard]]
+	const std::vector<std::uint32_t>& GetVertexIndices() const noexcept override
+	{
+		return m_vertexIndices;
+	}
+	[[nodiscard]]
+	const std::vector<std::uint32_t>& GetPrimIndices() const noexcept override
+	{
+		return m_primIndices;
 	}
 };
 
@@ -225,11 +300,42 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
 
+	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
+
+	VkCommandQueue commandQueue{
+		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
+		queueManager.GetIndex(QueueType::GraphicsQueue)
+	};
+	commandQueue.CreateCommandBuffers(Constants::frameCount);
+
+	ThreadPool threadPool{ 2u };
+
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+	};
+
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
 
 	ModelManagerVSIndividual vsIndividual{ logicalDevice, &memoryManager, Constants::frameCount };
 	vsIndividual.SetRenderPass(&renderPass);
+
+	std::vector<VkDescriptorBuffer> descBuffers{};
+
+	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
+		descBuffers.emplace_back(VkDescriptorBuffer{ logicalDevice, &memoryManager });
+
+	vsIndividual.SetDescriptorBufferLayout(descBuffers);
+
+	for (auto& descBuffer : descBuffers)
+		descBuffer.CreateBuffer();
+
+	vsIndividual.CreatePipelineLayout(descBuffers.front());
+
+	{
+		auto meshVS = std::make_unique<MeshDummyVS>();
+		vsIndividual.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+	}
 
 	{
 		auto modelVS = std::make_shared<ModelDummyVS>();
@@ -293,6 +399,23 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		Constants::frameCount
 	};
 	vsIndirect.SetRenderPass(&renderPass);
+
+	std::vector<VkDescriptorBuffer> descBuffers{};
+
+	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
+		descBuffers.emplace_back(VkDescriptorBuffer{ logicalDevice, &memoryManager });
+
+	vsIndirect.SetDescriptorBufferLayoutVS(descBuffers);
+
+	for (auto& descBuffer : descBuffers)
+		descBuffer.CreateBuffer();
+
+	vsIndirect.CreatePipelineLayout(descBuffers.front());
+
+	{
+		auto meshVS = std::make_unique<MeshDummyVS>();
+		vsIndirect.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+	}
 
 	{
 		auto modelVS = std::make_shared<ModelDummyVS>();
@@ -369,6 +492,25 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		logicalDevice, &memoryManager, &stagingBufferManager, Constants::frameCount
 	};
 	managerMS.SetRenderPass(&renderPass);
+
+	/*
+	std::vector<VkDescriptorBuffer> descBuffers{};
+
+	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
+		descBuffers.emplace_back(VkDescriptorBuffer{ logicalDevice, &memoryManager });
+
+	managerMS.SetDescriptorBufferLayout(descBuffers);
+
+	for (auto& descBuffer : descBuffers)
+		descBuffer.CreateBuffer();
+
+	managerMS.CreatePipelineLayout(descBuffers.front());
+	*/
+
+	{
+		auto meshMS = std::make_unique<MeshDummyMS>();
+		managerMS.AddMeshBundle(std::move(meshMS), stagingBufferManager);
+	}
 
 	{
 		auto modelMS = std::make_shared<ModelDummyMS>();

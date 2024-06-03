@@ -152,18 +152,16 @@ public:
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
 	) const noexcept;
 
-	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
-	) const noexcept {
-		Draw(graphicsBuffer, pipelineLayout.Get());
-	}
+	) const noexcept;
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
-		// One for the modelBufferIndex and another for the meshletOffset.
-		return static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
+		// One for the modelBufferIndex, another for the meshletOffset and
+		// the last one for the MeshIndex.
+		return static_cast<std::uint32_t>(sizeof(std::uint32_t) * 3u);
 	}
 
 	[[nodiscard]]
@@ -477,6 +475,7 @@ public:
 		m_meshBundles{}, m_meshBundleTempData{}, m_modelBundles{}
 	{}
 
+	// The layout should be the same across the multiple descriptors for each frame.
 	void CreatePipelineLayout(const VkDescriptorBuffer& descriptorBuffer)
 	{
 		static_cast<Derived*>(this)->CreatePipelineLayoutImpl(descriptorBuffer);
@@ -605,12 +604,15 @@ public:
 		}
 	}
 
+	// Need a remove MeshBundle method.
 	void AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
 	) {
 		MeshManager meshManager{ m_device, m_memoryManager };
 
-		meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
+		static_cast<Derived*>(this)->ConfigureMeshBundle(
+			std::move(meshBundle), stagingBufferMan, meshManager
+		);
 
 		m_meshBundles.emplace_back(std::move(meshManager));
 	}
@@ -815,6 +817,10 @@ private:
 	);
 
 	void ConfigureRemove(size_t bundleIndex) noexcept;
+	void ConfigureMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshManagerVertexShader& meshManager
+	);
 
 	[[nodiscard]]
 	ModelBundleVSIndividual GetModelBundle() const { return ModelBundleVSIndividual{}; }
@@ -888,6 +894,10 @@ private:
 	);
 
 	void ConfigureRemove(size_t bundleIndex) noexcept;
+	void ConfigureMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshManagerVertexShader& meshManager
+	);
 
 	[[nodiscard]]
 	ModelBundleVSIndirect GetModelBundle() const
@@ -1002,7 +1012,13 @@ public:
 		std::uint32_t frameCount
 	);
 
+	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+
+	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+
 private:
+	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 	void ConfigureModel(
 		ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
 	);
@@ -1012,6 +1028,10 @@ private:
 	);
 
 	void ConfigureRemove(size_t bundleIndex) noexcept;
+	void ConfigureMeshBundle(
+		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshManagerMeshShader& meshManager
+	);
 
 	[[nodiscard]]
 	ModelBundleMS GetModelBundle() const
@@ -1020,6 +1040,11 @@ private:
 	}
 
 	void _cleanUpTempData() noexcept;
+
+private:
+	// We will need a SharedBuffer for each of these
+	// Vertices, VertexIndices, PrimIndices and Meshlets.
+	// Meshlets will be added per ModelBundle and the other three will be added once per MeshBundle.
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
