@@ -722,3 +722,46 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 		}
 	}
 }
+
+// Model Manager MS.
+ModelManagerMS::ModelManagerMS(
+	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
+	std::uint32_t frameCount
+) : ModelManager{ device, memoryManager, frameCount }
+{}
+
+void ModelManagerMS::ConfigureModel(
+	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
+) {
+	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
+}
+
+void ModelManagerMS::ConfigureModelBundle(
+	ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
+	std::vector<std::shared_ptr<ModelMS>>& modelBundle
+) {
+	const size_t modelCount = std::size(modelBundle);
+
+	for (size_t index = 0u; index < modelCount; ++index)
+	{
+		std::shared_ptr<ModelMS>& model = modelBundle.at(index);
+		const size_t modelIndex         = modelIndices.at(index);
+
+		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
+	}
+}
+
+void ModelManagerMS::ConfigureRemove(size_t bundleIndex) noexcept
+{
+	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
+
+	const auto& modelDetails = modelBundle.GetDetails();
+
+	for (const auto& modelDetail : modelDetails)
+		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+}
+
+void ModelManagerMS::_cleanUpTempData() noexcept
+{
+
+}

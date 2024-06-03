@@ -75,9 +75,30 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
-	const MeshDetailsVS& GetMeshDetailsVS() const noexcept
+	const MeshDetailsVS& GetMeshDetailsVS() const noexcept override
 	{
 		static MeshDetailsVS details{};
+		return details;
+	}
+};
+
+class ModelDummyMS : public ModelMS
+{
+public:
+	[[nodiscard]]
+	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
+	[[nodiscard]]
+	DirectX::XMFLOAT3 GetModelOffset() const noexcept override { return {}; }
+	[[nodiscard]]
+	bool IsLightSource() const noexcept override { return false; }
+	[[nodiscard]]
+	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	MeshDetailsMS& GetMeshDetailsMS() noexcept override
+	{
+		static MeshDetailsMS details{};
 		return details;
 	}
 };
@@ -204,20 +225,6 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
 
-	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
-
-	VkCommandQueue commandQueue{
-		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
-		queueManager.GetIndex(QueueType::GraphicsQueue)
-	};
-	commandQueue.CreateCommandBuffers(Constants::frameCount);
-
-	ThreadPool threadPool{ 2u };
-
-	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
-	};
-
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
 
@@ -333,3 +340,66 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		EXPECT_EQ(index, 12u) << "Index isn't 12.";
 	}
 }
+
+TEST_F(ModelManagerTest, ModelManagerMS)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
+
+	VkCommandQueue commandQueue{
+		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
+		queueManager.GetIndex(QueueType::GraphicsQueue)
+	};
+	commandQueue.CreateCommandBuffers(Constants::frameCount);
+
+	ThreadPool threadPool{ 2u };
+
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+	};
+
+	VKRenderPass renderPass{ logicalDevice };
+	renderPass.Create(RenderPassBuilder{});
+
+	ModelManagerMS managerMS{
+		logicalDevice, &memoryManager, &stagingBufferManager, Constants::frameCount
+	};
+	managerMS.SetRenderPass(&renderPass);
+
+	{
+		auto modelMS = std::make_shared<ModelDummyMS>();
+
+		std::uint32_t index = managerMS.AddModel(std::move(modelMS), L"");
+		EXPECT_EQ(index, 0u) << "Index isn't 0.";
+	}
+	{
+		auto modelMS = std::make_shared<ModelDummyMS>();
+
+		std::uint32_t index = managerMS.AddModel(std::move(modelMS), L"");
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+	}
+	{
+		std::vector<std::shared_ptr<ModelMS>> modelsMS{};
+
+		for (size_t index = 0u; index < 5u; ++index)
+			modelsMS.emplace_back(std::make_shared<ModelDummyMS>());
+
+		std::uint32_t index = managerMS.AddModelBundle(std::move(modelsMS), L"H");
+		EXPECT_EQ(index, 2u) << "Index isn't 2.";
+	}
+	managerMS.RemoveBundle(1u);
+	{
+		std::vector<std::shared_ptr<ModelMS>> modelsMS{};
+
+		for (size_t index = 0u; index < 7u; ++index)
+			modelsMS.emplace_back(std::make_shared<ModelDummyMS>());
+
+		std::uint32_t index = managerMS.AddModelBundle(std::move(modelsMS), L"H");
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+	}
+}
+

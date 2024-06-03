@@ -13,9 +13,11 @@
 #include <deque>
 #include <ReusableVkBuffer.hpp>
 #include <GraphicsPipelineVertexShader.hpp>
+#include <GraphicsPipelineMeshShader.hpp>
 #include <ComputePipeline.hpp>
 
 #include <MeshManagerVertexShader.hpp>
+#include <MeshManagerMeshShader.hpp>
 #include <CommonBuffers.hpp>
 #include <Model.hpp>
 
@@ -969,6 +971,66 @@ public:
 		m_argumentCount         = other.m_argumentCount;
 		m_modelBundlesCS        = std::move(other.m_modelBundlesCS);
 		m_modelBundleCSTempData = std::move(other.m_modelBundleCSTempData);
+
+		return *this;
+	}
+};
+
+class ModelManagerMS : public
+	ModelManager
+	<
+		ModelManagerMS,
+		GraphicsPipelineMeshShader,
+		MeshManagerMeshShader, MeshBundleMS,
+		ModelBundleMS, ModelMS,
+		true
+	>
+{
+	friend class ModelManager
+		<
+			ModelManagerMS,
+			GraphicsPipelineMeshShader,
+			MeshManagerMeshShader, MeshBundleMS,
+			ModelBundleMS, ModelMS,
+		true
+		>;
+	friend class ModelManagerMSTest;
+
+public:
+	ModelManagerMS(
+		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
+		std::uint32_t frameCount
+	);
+
+private:
+	void ConfigureModel(
+		ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
+	);
+	void ConfigureModelBundle(
+		ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
+		std::vector<std::shared_ptr<ModelMS>>& modelBundle
+	);
+
+	void ConfigureRemove(size_t bundleIndex) noexcept;
+
+	[[nodiscard]]
+	ModelBundleMS GetModelBundle() const
+	{
+		return ModelBundleMS{ m_device, m_memoryManager };
+	}
+
+	void _cleanUpTempData() noexcept;
+
+public:
+	ModelManagerMS(const ModelManagerMS&) = delete;
+	ModelManagerMS& operator=(const ModelManagerMS&) = delete;
+
+	ModelManagerMS(ModelManagerMS&& other) noexcept
+		: ModelManager{ std::move(other) }
+	{}
+	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
+	{
+		ModelManager::operator=(std::move(other));
 
 		return *this;
 	}
