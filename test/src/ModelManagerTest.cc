@@ -334,7 +334,19 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	{
 		auto meshVS = std::make_unique<MeshDummyVS>();
-		vsIndividual.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		std::uint32_t index = vsIndividual.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+	}
+	{
+		auto meshVS = std::make_unique<MeshDummyVS>();
+		std::uint32_t index = vsIndividual.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		EXPECT_EQ(index, 1u) << "Index isn't 1u";
+	}
+	vsIndividual.RemoveMeshBundle(0u);
+	{
+		auto meshVS = std::make_unique<MeshDummyVS>();
+		std::uint32_t index = vsIndividual.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 
 	{
@@ -358,7 +370,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelsVS), L"H");
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	vsIndividual.RemoveBundle(1u);
+	vsIndividual.RemoveModelBundle(1u);
 	{
 		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
 
@@ -414,7 +426,19 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	{
 		auto meshVS = std::make_unique<MeshDummyVS>();
-		vsIndirect.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		std::uint32_t index = vsIndirect.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+	}
+	{
+		auto meshVS = std::make_unique<MeshDummyVS>();
+		std::uint32_t index = vsIndirect.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		EXPECT_EQ(index, 1u) << "Index isn't 1u";
+	}
+	vsIndirect.RemoveMeshBundle(0u);
+	{
+		auto meshVS = std::make_unique<MeshDummyVS>();
+		std::uint32_t index = vsIndirect.AddMeshBundle(std::move(meshVS), stagingBufferManager);
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 
 	{
@@ -438,7 +462,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelsVS), L"H");
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	vsIndirect.RemoveBundle(1u);
+	vsIndirect.RemoveModelBundle(1u);
 	{
 		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
 
@@ -507,7 +531,24 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	{
 		auto meshMS = std::make_unique<MeshDummyMS>();
-		managerMS.AddMeshBundle(std::move(meshMS), stagingBufferManager);
+		std::uint32_t index = managerMS.AddMeshBundle(std::move(meshMS), stagingBufferManager);
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+	}
+	{
+		auto meshMS = std::make_unique<MeshDummyMS>();
+		std::uint32_t index = managerMS.AddMeshBundle(std::move(meshMS), stagingBufferManager);
+		EXPECT_EQ(index, 1u) << "Index isn't 1u";
+	}
+	managerMS.RemoveMeshBundle(0u);
+	{
+		auto meshMS = std::make_unique<MeshDummyMS>();
+		std::uint32_t index = managerMS.AddMeshBundle(std::move(meshMS), stagingBufferManager);
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+	}
+	{
+		auto meshMS = std::make_unique<MeshDummyMS>();
+		std::uint32_t index = managerMS.AddMeshBundle(std::move(meshMS), stagingBufferManager);
+		EXPECT_EQ(index, 2u) << "Index isn't 2u";
 	}
 
 	{
@@ -531,7 +572,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		std::uint32_t index = managerMS.AddModelBundle(std::move(modelsMS), L"H");
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	managerMS.RemoveBundle(1u);
+	managerMS.RemoveModelBundle(1u);
 	{
 		std::vector<std::shared_ptr<ModelMS>> modelsMS{};
 

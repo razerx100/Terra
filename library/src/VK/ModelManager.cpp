@@ -317,7 +317,7 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 	}
 }
 
-void ModelManagerVSIndividual::ConfigureRemove(size_t bundleIndex) noexcept
+void ModelManagerVSIndividual::ConfigureModelRemove(size_t bundleIndex) noexcept
 {
 	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
 
@@ -325,6 +325,11 @@ void ModelManagerVSIndividual::ConfigureRemove(size_t bundleIndex) noexcept
 
 	for (const auto& modelDetail : modelDetails)
 		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+}
+
+void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
+{
+
 }
 
 void ModelManagerVSIndividual::ConfigureMeshBundle(
@@ -510,7 +515,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	UpdateDispatchX();
 }
 
-void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
+void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 {
 	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
 
@@ -559,6 +564,11 @@ void ModelManagerVSIndirect::ConfigureRemove(size_t bundleIndex) noexcept
 			return result;
 		}
 	);
+}
+
+void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
+{
+
 }
 
 void ModelManagerVSIndirect::ConfigureMeshBundle(
@@ -780,7 +790,7 @@ void ModelManagerMS::ConfigureModelBundle(
 	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
 }
 
-void ModelManagerMS::ConfigureRemove(size_t bundleIndex) noexcept
+void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
 {
 	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
 
@@ -794,6 +804,11 @@ void ModelManagerMS::ConfigureRemove(size_t bundleIndex) noexcept
 
 		m_meshletBuffer.RelinquishMemory(meshletSharedData);
 	}
+}
+
+void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
+{
+
 }
 
 void ModelManagerMS::ConfigureMeshBundle(

@@ -20,31 +20,17 @@ public:
 	// Returns the index of the element in the ElementBuffer.
 	size_t Add(U&& element) noexcept
 	{
-		auto oElementIndex = m_elements.GetFirstAvailableIndex();
+		const size_t oldCount          = m_elements.GetCount();
+		const size_t extraElementCount = static_cast<Derived*>(this)->GetExtraElementAllocationCount();
 
-		if (oElementIndex)
-		{
-			const size_t elementIndex = oElementIndex.value();
+		const size_t elementIndex      = m_elements.Add(std::forward<U>(element), extraElementCount);
 
-			m_elements.UpdateElement(elementIndex, std::forward<U>(element));
+		const size_t newCount          = m_elements.GetCount();
 
-			return elementIndex;
-		}
-		else
-		{
-			const size_t elementIndex = GetCount();
+		if(newCount > oldCount)
+			static_cast<Derived*>(this)->CreateBuffer(newCount);
 
-			m_elements.AddNewElement(std::forward<U>(element));
-
-			const size_t newElementCount = GetCount()
-				+ static_cast<Derived*>(this)->GetExtraElementAllocationCount();
-
-			m_elements.ReserveNewElements(newElementCount);
-
-			static_cast<Derived*>(this)->CreateBuffer(newElementCount);
-
-			return elementIndex;
-		}
+		return elementIndex;
 	}
 
 	[[nodiscard]]

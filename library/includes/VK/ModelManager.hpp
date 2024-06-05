@@ -569,7 +569,7 @@ public:
 		return std::numeric_limits<std::uint32_t>::max();
 	}
 
-	void RemoveBundle(std::uint32_t bundleID) noexcept
+	void RemoveModelBundle(std::uint32_t bundleID) noexcept
 	{
 		auto result = GetModelBundle(bundleID);
 
@@ -579,7 +579,7 @@ public:
 				std::distance(std::begin(m_modelBundles), result)
 			);
 
-			static_cast<Derived*>(this)->ConfigureRemove(modelBundleIndex);
+			static_cast<Derived*>(this)->ConfigureModelRemove(modelBundleIndex);
 
 			m_modelBundles.erase(result);
 		}
@@ -603,8 +603,8 @@ public:
 		}
 	}
 
-	// Need a remove MeshBundle method.
-	void AddMeshBundle(
+	[[nodiscard]]
+	std::uint32_t AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
 	) {
 		MeshManager meshManager{ m_device, m_memoryManager };
@@ -613,7 +613,18 @@ public:
 			std::move(meshBundle), stagingBufferMan, meshManager
 		);
 
-		m_meshBundles.emplace_back(std::move(meshManager));
+		auto meshIndex = m_meshBundles.Add(std::move(meshManager));
+
+		return static_cast<std::uint32_t>(meshIndex);
+	}
+
+	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept
+	{
+		static_cast<Derived*>(this)->ConfigureRemoveMesh(bundleIndex);
+
+		// It is okay to use the non-clear function based RemoveElement, as I will be
+		// moving the Buffers out as SharedBuffer.
+		m_meshBundles.RemoveElement(bundleIndex);
 	}
 
 	void CleanUpTempData() noexcept
@@ -731,7 +742,7 @@ protected:
 	MeshBoundsBuffers            m_meshBoundsBuffer;
 
 	std::vector<Pipeline>        m_graphicsPipelines;
-	std::vector<MeshManager>     m_meshBundles;
+	ReusableVector<MeshManager>  m_meshBundles;
 	std::deque<MeshTempData>     m_meshBundleTempData;
 	std::vector<ModelBundleType> m_modelBundles;
 
@@ -815,7 +826,8 @@ private:
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
 
-	void ConfigureRemove(size_t bundleIndex) noexcept;
+	void ConfigureModelRemove(size_t bundleIndex) noexcept;
+	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerVertexShader& meshManager
@@ -892,7 +904,8 @@ private:
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
 	);
 
-	void ConfigureRemove(size_t bundleIndex) noexcept;
+	void ConfigureModelRemove(size_t bundleIndex) noexcept;
+	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerVertexShader& meshManager
@@ -1028,7 +1041,8 @@ private:
 		std::vector<std::shared_ptr<ModelMS>>& modelBundle
 	);
 
-	void ConfigureRemove(size_t bundleIndex) noexcept;
+	void ConfigureModelRemove(size_t bundleIndex) noexcept;
+	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerMeshShader& meshManager
