@@ -92,7 +92,7 @@ public:
 
 class ModelDummyMS : public ModelMS
 {
-	MeshDetailsMS m_details = {};
+	MeshDetailsMS m_details = { { Meshlet{}, Meshlet{} } };
 
 public:
 	[[nodiscard]]
@@ -493,7 +493,6 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	};
 	managerMS.SetRenderPass(&renderPass);
 
-	/*
 	std::vector<VkDescriptorBuffer> descBuffers{};
 
 	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
@@ -505,7 +504,6 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		descBuffer.CreateBuffer();
 
 	managerMS.CreatePipelineLayout(descBuffers.front());
-	*/
 
 	{
 		auto meshMS = std::make_unique<MeshDummyMS>();

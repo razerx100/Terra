@@ -104,23 +104,19 @@ void ModelBundleMS::Draw(
 }
 
 void ModelBundleMS::CreateBuffers(
-	StagingBufferManager& stagingBufferMan, std::deque<TempData>& tempDataContainer
+	StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
+	std::deque<TempData>& tempDataContainer
 ) {
 	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
 
-	m_meshletBuffer.Create(
-		meshletBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-	);
+	m_meshletSharedData = meshletSharedBuffer.AllocateAndGetSharedData(meshletBufferSize);
 
 	TempData& tempData = tempDataContainer.emplace_back(TempData{ std::move(m_meshlets) });
 
-	stagingBufferMan.AddBuffer(std::data(tempData.meshlets), meshletBufferSize, &m_meshletBuffer, 0u);
-}
-
-void ModelBundleMS::SetDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
-) const noexcept {
-	descriptorBuffer.SetStorageBufferDescriptor(m_meshletBuffer, meshBufferBindingSlot, 0u);
+	stagingBufferMan.AddBuffer(
+		std::data(tempData.meshlets), meshletBufferSize, m_meshletSharedData.bufferData,
+		m_meshletSharedData.offset
+	);
 }
 
 // Model Bundle VS Indirect
@@ -129,8 +125,8 @@ ModelBundleVSIndirect::ModelBundleVSIndirect(
 ) : ModelBundle{}, m_modelCount{ 0u }, m_queueIndices{ queueIndices },
 	m_argumentOutputBufferSize{ 0u },
 	m_modelIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_argumentOutputSharedData{}, m_counterSharedData{}, m_modelIndicesSharedData{},
-	m_modelIndices{}
+	m_argumentOutputSharedData{ nullptr, 0u, 0u }, m_counterSharedData{ nullptr, 0u, 0u },
+	m_modelIndicesSharedData{ nullptr, 0u, 0u }, m_modelIndices{}
 {}
 
 void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noexcept
@@ -752,13 +748,19 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 ModelManagerMS::ModelManagerMS(
 	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
 	std::uint32_t frameCount
-) : ModelManager{ device, memoryManager, frameCount }
+) : ModelManager{ device, memoryManager, frameCount },
+	m_stagingBufferMan{ stagingBufferMan },
+	m_meshletBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}, m_modelBundleTempData{}
 {}
 
 void ModelManagerMS::ConfigureModel(
 	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
 ) {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
+	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
 }
 
 void ModelManagerMS::ConfigureModelBundle(
@@ -774,6 +776,8 @@ void ModelManagerMS::ConfigureModelBundle(
 
 		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
+
+	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
 }
 
 void ModelManagerMS::ConfigureRemove(size_t bundleIndex) noexcept
@@ -784,6 +788,12 @@ void ModelManagerMS::ConfigureRemove(size_t bundleIndex) noexcept
 
 	for (const auto& modelDetail : modelDetails)
 		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+
+	{
+		const SharedBufferData meshletSharedData = modelBundle.GetMeshletSharedData();
+
+		m_meshletBuffer.RelinquishMemory(meshletSharedData);
+	}
 }
 
 void ModelManagerMS::ConfigureMeshBundle(
@@ -806,17 +816,45 @@ void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descript
 
 void ModelManagerMS::_cleanUpTempData() noexcept
 {
-
+	m_modelBundleTempData = std::deque<MSBundleTempData>{};
 }
 
 void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers)
 {
+	const auto frameCount = std::size(descriptorBuffers);
 
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+
+		descriptorBuffer.AddBinding(
+			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_MESH_BIT_EXT
+		);
+		descriptorBuffer.AddBinding(
+			s_meshletBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_MESH_BIT_EXT
+		);
+	}
 }
 
 void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers)
 {
+	const auto frameCount = std::size(descriptorBuffers);
 
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		const auto frameIndex = static_cast<VkDeviceSize>(index);
+
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+		);
+
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, 0u
+		);
+	}
 }
 
 void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept

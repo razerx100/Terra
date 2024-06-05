@@ -137,20 +137,16 @@ public:
 	};
 
 public:
-	ModelBundleMS(VkDevice device, MemoryManager* memoryManager)
-		: ModelBundle{}, m_modelDetails{},
-		m_meshletBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-		m_meshlets{}
+	ModelBundleMS()
+		: ModelBundle{}, m_modelDetails{}, m_meshletSharedData{ nullptr, 0u, 0u }, m_meshlets{}
 	{}
 
 	// Need this one as non-const, since I am gonna move the meshlets.
 	void AddModelDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan, std::deque<TempData>& tempDataContainer
+		StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
+		std::deque<TempData>& tempDataContainer
 	);
-	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t meshBufferBindingSlot
-	) const noexcept;
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
@@ -180,9 +176,12 @@ public:
 			return std::numeric_limits<std::uint64_t>::max();
 	}
 
+	[[nodiscard]]
+	const SharedBufferData& GetMeshletSharedData() const noexcept { return m_meshletSharedData; }
+
 private:
 	std::vector<ModelDetails> m_modelDetails;
-	Buffer                    m_meshletBuffer;
+	SharedBufferData          m_meshletSharedData;
 	std::vector<Meshlet>      m_meshlets;
 
 	static constexpr std::array s_requiredExtensions
@@ -201,14 +200,14 @@ public:
 	ModelBundleMS(ModelBundleMS&& other) noexcept
 		: ModelBundle{ std::move(other) },
 		m_modelDetails{ std::move(other.m_modelDetails) },
-		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
+		m_meshletSharedData{ other.m_meshletSharedData },
 		m_meshlets{ std::move(other.m_meshlets) }
 	{}
 	ModelBundleMS& operator=(ModelBundleMS&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
 		m_modelDetails       = std::move(other.m_modelDetails);
-		m_meshletBuffer      = std::move(other.m_meshletBuffer);
+		m_meshletSharedData  = other.m_meshletSharedData;
 		m_meshlets           = std::move(other.m_meshlets);
 
 		return *this;
@@ -1006,6 +1005,8 @@ class ModelManagerMS : public
 		>;
 	friend class ModelManagerMSTest;
 
+	using MSBundleTempData = ModelBundleMS::TempData;
+
 public:
 	ModelManagerMS(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
@@ -1036,7 +1037,7 @@ private:
 	[[nodiscard]]
 	ModelBundleMS GetModelBundle() const
 	{
-		return ModelBundleMS{ m_device, m_memoryManager };
+		return ModelBundleMS{};
 	}
 
 	void _cleanUpTempData() noexcept;
@@ -1045,17 +1046,28 @@ private:
 	// We will need a SharedBuffer for each of these
 	// Vertices, VertexIndices, PrimIndices and Meshlets.
 	// Meshlets will be added per ModelBundle and the other three will be added once per MeshBundle.
+	StagingBufferManager*        m_stagingBufferMan;
+	SharedBuffer                 m_meshletBuffer;
+	std::deque<MSBundleTempData> m_modelBundleTempData;
+
+	static constexpr std::uint32_t s_meshletBufferBindingSlot = 1u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
 	ModelManagerMS& operator=(const ModelManagerMS&) = delete;
 
 	ModelManagerMS(ModelManagerMS&& other) noexcept
-		: ModelManager{ std::move(other) }
+		: ModelManager{ std::move(other) },
+		m_stagingBufferMan{ other.m_stagingBufferMan },
+		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
+		m_modelBundleTempData{ std::move(other.m_modelBundleTempData) }
 	{}
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
+		m_stagingBufferMan    = other.m_stagingBufferMan;
+		m_meshletBuffer       = std::move(other.m_meshletBuffer);
+		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
 
 		return *this;
 	}
