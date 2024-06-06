@@ -769,6 +769,9 @@ ModelManagerMS::ModelManagerMS(
 	}, m_vertexIndicesBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}, m_primIndicesBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_modelBundleTempData {}
 {}
 
@@ -817,14 +820,14 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 	auto& meshManager = m_meshBundles.at(bundleIndex);
 
 	{
-		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
-
+		const SharedBufferData& vertexSharedData        = meshManager.GetVertexSharedData();
 		m_vertexBuffer.RelinquishMemory(vertexSharedData);
-	}
-	{
-		const SharedBufferData& vertexIndicesSharedData = meshManager.GetVertexIndicesSharedData();
 
+		const SharedBufferData& vertexIndicesSharedData = meshManager.GetVertexIndicesSharedData();
 		m_vertexIndicesBuffer.RelinquishMemory(vertexIndicesSharedData);
+
+		const SharedBufferData& primIndicesSharedData   = meshManager.GetPrimIndicesSharedData();
+		m_primIndicesBuffer.RelinquishMemory(primIndicesSharedData);
 	}
 }
 
@@ -834,7 +837,7 @@ void ModelManagerMS::ConfigureMeshBundle(
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
-		m_meshBundleTempData
+		m_primIndicesBuffer, m_meshBundleTempData
 	);
 }
 
@@ -876,6 +879,10 @@ void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& 
 			s_vertexIndicesBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
+		descriptorBuffer.AddBinding(
+			s_primIndicesBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_MESH_BIT_EXT
+		);
 	}
 }
 
@@ -900,6 +907,9 @@ void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descri
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_vertexIndicesBuffer.GetBuffer(), s_vertexIndicesBufferBindingSlot, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_primIndicesBuffer.GetBuffer(), s_primIndicesBufferBindingSlot, 0u
 		);
 	}
 }

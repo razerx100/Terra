@@ -1057,18 +1057,17 @@ private:
 	void _cleanUpTempData() noexcept;
 
 private:
-	// We will need a SharedBuffer for each of these
-	// Vertices, VertexIndices, PrimIndices and Meshlets.
-	// Meshlets will be added per ModelBundle and the other three will be added once per MeshBundle.
 	StagingBufferManager*        m_stagingBufferMan;
 	SharedBuffer                 m_meshletBuffer;
 	SharedBuffer                 m_vertexBuffer;
 	SharedBuffer                 m_vertexIndicesBuffer;
+	SharedBuffer                 m_primIndicesBuffer;
 	std::deque<MSBundleTempData> m_modelBundleTempData;
 
 	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 1u;
 	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 2u;
 	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 3u;
+	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 4u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
@@ -1080,6 +1079,7 @@ public:
 		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
+		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
 		m_modelBundleTempData{ std::move(other.m_modelBundleTempData) }
 	{}
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
@@ -1089,6 +1089,7 @@ public:
 		m_meshletBuffer       = std::move(other.m_meshletBuffer);
 		m_vertexBuffer        = std::move(other.m_vertexBuffer);
 		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
+		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
 		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
 
 		return *this;

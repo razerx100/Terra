@@ -2,14 +2,13 @@
 
 MeshManagerMeshShader::MeshManagerMeshShader(VkDevice device, MemoryManager* memoryManager)
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
-	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u },
-	m_primIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
 	m_meshBounds{}
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesBuffer,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesBuffer, SharedBuffer& primIndicesBuffer,
 	std::deque<TempData>& tempDataContainer
 ) {
 	TempData& tempData = tempDataContainer.emplace_back(
@@ -28,14 +27,18 @@ void MeshManagerMeshShader::SetMeshBundle(
 	}
 
 	const std::vector<std::uint32_t>& vertexIndices = tempData.meshBundle->GetVertexIndices();
+	const std::vector<std::uint32_t>& primIndices   = tempData.meshBundle->GetPrimIndices();
 
 	const auto vertexBufferSize
 		= static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(tempData.vertices));
 	const auto vertexIndicesBufferSize
 		= static_cast<VkDeviceSize>(sizeof(std::uint32_t) * std::size(vertexIndices));
+	const auto primIndicesBufferSize
+		= static_cast<VkDeviceSize>(sizeof(std::uint32_t) * std::size(primIndices));
 
 	m_vertexBufferSharedData        = vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize);
 	m_vertexIndicesBufferSharedData = vertexIndicesBuffer.AllocateAndGetSharedData(vertexIndicesBufferSize);
+	m_primIndicesBufferSharedData   = primIndicesBuffer.AllocateAndGetSharedData(primIndicesBufferSize);
 
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.vertices), vertexBufferSize, m_vertexBufferSharedData.bufferData,
@@ -45,15 +48,10 @@ void MeshManagerMeshShader::SetMeshBundle(
 		std::data(vertexIndices), vertexIndicesBufferSize, m_vertexIndicesBufferSharedData.bufferData,
 		m_vertexIndicesBufferSharedData.offset
 	);
-
-	//ConfigureBuffer(tempData.meshBundle->GetPrimIndices(), m_primIndicesBuffer, stagingBufferMan);
-}
-
-void MeshManagerMeshShader::SetDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t verticesBindingSlot,
-	std::uint32_t vertexIndicesBindingSlot, std::uint32_t primIndicesBindingSlot
-) const noexcept {
-	descriptorBuffer.SetStorageBufferDescriptor(m_primIndicesBuffer, primIndicesBindingSlot, 0u);
+	stagingBufferMan.AddBuffer(
+		std::data(primIndices), primIndicesBufferSize, m_primIndicesBufferSharedData.bufferData,
+		m_primIndicesBufferSharedData.offset
+	);
 }
 
 std::vector<MeshManagerMeshShader::GLSLVertex> MeshManagerMeshShader::TransformVertices(
