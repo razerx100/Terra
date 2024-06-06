@@ -45,15 +45,18 @@ void MeshManagerMeshShader::SetMeshBundle(
 
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.vertices), vertexBufferSize, m_vertexBufferSharedData.bufferData,
-		m_vertexBufferSharedData.offset
+		m_vertexBufferSharedData.offset,
+		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 	);
 	stagingBufferMan.AddBuffer(
 		std::data(vertexIndices), vertexIndicesBufferSize, m_vertexIndicesBufferSharedData.bufferData,
-		m_vertexIndicesBufferSharedData.offset
+		m_vertexIndicesBufferSharedData.offset,
+		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 	);
 	stagingBufferMan.AddBuffer(
 		std::data(primIndices), primIndicesBufferSize, m_primIndicesBufferSharedData.bufferData,
-		m_primIndicesBufferSharedData.offset
+		m_primIndicesBufferSharedData.offset,
+		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 	);
 }
 

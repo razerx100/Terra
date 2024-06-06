@@ -115,7 +115,8 @@ void ModelBundleMS::CreateBuffers(
 
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.meshlets), meshletBufferSize, m_meshletSharedData.bufferData,
-		m_meshletSharedData.offset
+		m_meshletSharedData.offset,
+		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 	);
 }
 
@@ -230,11 +231,13 @@ void ModelBundleCSIndirect::CreateBuffers(
 
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.indirectArguments), argumentBufferSize, m_argumentInputSharedData.bufferData,
-		m_argumentInputSharedData.offset
+		m_argumentInputSharedData.offset,
+		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	);
 	stagingBufferMan.AddBuffer(
 		tempData.cullingData.get(), cullingDataSize, m_cullingSharedData.bufferData,
-		m_cullingSharedData.offset
+		m_cullingSharedData.offset,
+		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	);
 }
 
