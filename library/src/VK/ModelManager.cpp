@@ -286,6 +286,15 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 }
 
 // Model Manager VS Individual
+ModelManagerVSIndividual::ModelManagerVSIndividual(
+	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount
+) : ModelManager{ device, memoryManager, frameCount },
+	m_vertexBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}
+{}
+
 void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
 	// Push constants needs to be serialised according to the shader stages
@@ -329,14 +338,23 @@ void ModelManagerVSIndividual::ConfigureModelRemove(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
+	auto& meshManager = m_meshBundles.at(bundleIndex);
 
+	{
+		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
+
+		m_vertexBuffer.RelinquishMemory(vertexSharedData);
+	}
 }
 
 void ModelManagerVSIndividual::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerVertexShader& meshManager
 ) {
-	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
+	meshManager.SetMeshBundle(
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer,
+		m_meshBundleTempData
+	);
 }
 
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(
@@ -405,6 +423,10 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
+	},
+	m_vertexBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}, m_modelBundleCSTempData{}
 {
@@ -568,14 +590,23 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
+	auto& meshManager = m_meshBundles.at(bundleIndex);
 
+	{
+		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
+
+		m_vertexBuffer.RelinquishMemory(vertexSharedData);
+	}
 }
 
 void ModelManagerVSIndirect::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerVertexShader& meshManager
 ) {
-	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
+	meshManager.SetMeshBundle(
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer,
+		m_meshBundleTempData
+	);
 }
 
 void ModelManagerVSIndirect::_cleanUpTempData() noexcept

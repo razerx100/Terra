@@ -8,6 +8,7 @@
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
 #include <VkCommandQueue.hpp>
+#include <CommonBuffers.hpp>
 
 #include <MeshBundle.hpp>
 
@@ -24,6 +25,7 @@ public:
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+		SharedBuffer& vertexSharedBuffer,
 		std::deque<TempData>& tempDataContainer
 	);
 
@@ -32,8 +34,11 @@ public:
 	[[nodiscard]]
 	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBounds; }
 
+	[[nodiscard]]
+	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
+
 private:
-	Buffer                  m_vertexBuffer;
+	SharedBufferData        m_vertexBufferSharedData;
 	Buffer                  m_indexBuffer;
 	std::vector<MeshBounds> m_meshBounds;
 
@@ -42,15 +47,15 @@ public:
 	MeshManagerVertexShader& operator=(const MeshManagerVertexShader&) = delete;
 
 	MeshManagerVertexShader(MeshManagerVertexShader&& other) noexcept
-		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
 		m_meshBounds{ std::move(other.m_meshBounds) }
 	{}
 	MeshManagerVertexShader& operator=(MeshManagerVertexShader&& other) noexcept
 	{
-		m_vertexBuffer = std::move(other.m_vertexBuffer);
-		m_indexBuffer  = std::move(other.m_indexBuffer);
-		m_meshBounds   = std::move(other.m_meshBounds);
+		m_vertexBufferSharedData = other.m_vertexBufferSharedData;
+		m_indexBuffer            = std::move(other.m_indexBuffer);
+		m_meshBounds             = std::move(other.m_meshBounds);
 
 		return *this;
 	}

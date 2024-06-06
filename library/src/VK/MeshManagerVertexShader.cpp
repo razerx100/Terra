@@ -3,13 +3,14 @@
 MeshManagerVertexShader::MeshManagerVertexShader(
 	VkDevice device, MemoryManager* memoryManager
 ) noexcept
-	: m_vertexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_indexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_meshBounds{}
 {}
 
 void MeshManagerVertexShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer,
 	std::deque<TempData>& tempDataContainer
 ) {
 	m_meshBounds       = meshBundle->GetBounds();
@@ -20,15 +21,14 @@ void MeshManagerVertexShader::SetMeshBundle(
 	// Vertex Buffer
 	{
 		const std::vector<Vertex>& vertices = tempData.meshBundle->GetVertices();
-		const auto vertexBufferSize = static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(vertices));
+		const auto vertexBufferSize
+			= static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(vertices));
 
-		m_vertexBuffer.Create(
-			static_cast<VkDeviceSize>(vertexBufferSize),
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		);
+		m_vertexBufferSharedData = vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize);
 
 		stagingBufferMan.AddBuffer(
-			std::data(vertices), vertexBufferSize, &m_vertexBuffer, 0u,
+			std::data(vertices), vertexBufferSize,
+			m_vertexBufferSharedData.bufferData, m_vertexBufferSharedData.offset,
 			QueueType::GraphicsQueue, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
 			VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
 		);
@@ -54,8 +54,8 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
-	VkBuffer vertexBuffers[]                  = { m_vertexBuffer.Get() };
-	static const VkDeviceSize vertexOffsets[] = { 0u };
+	VkBuffer vertexBuffers[]                  = { m_vertexBufferSharedData.bufferData->Get() };
+	static const VkDeviceSize vertexOffsets[] = { m_vertexBufferSharedData.offset };
 
 	VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
 

@@ -8,8 +8,8 @@ MeshManagerMeshShader::MeshManagerMeshShader(VkDevice device, MemoryManager* mem
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesBuffer, SharedBuffer& primIndicesBuffer,
-	std::deque<TempData>& tempDataContainer
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+	SharedBuffer& primIndicesSharedBuffer, std::deque<TempData>& tempDataContainer
 ) {
 	TempData& tempData = tempDataContainer.emplace_back(
 		TempData{
@@ -36,9 +36,12 @@ void MeshManagerMeshShader::SetMeshBundle(
 	const auto primIndicesBufferSize
 		= static_cast<VkDeviceSize>(sizeof(std::uint32_t) * std::size(primIndices));
 
-	m_vertexBufferSharedData        = vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize);
-	m_vertexIndicesBufferSharedData = vertexIndicesBuffer.AllocateAndGetSharedData(vertexIndicesBufferSize);
-	m_primIndicesBufferSharedData   = primIndicesBuffer.AllocateAndGetSharedData(primIndicesBufferSize);
+	m_vertexBufferSharedData
+		= vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize);
+	m_vertexIndicesBufferSharedData
+		= vertexIndicesSharedBuffer.AllocateAndGetSharedData(vertexIndicesBufferSize);
+	m_primIndicesBufferSharedData
+		= primIndicesSharedBuffer.AllocateAndGetSharedData(primIndicesBufferSize);
 
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.vertices), vertexBufferSize, m_vertexBufferSharedData.bufferData,

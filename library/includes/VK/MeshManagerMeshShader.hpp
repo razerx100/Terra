@@ -35,8 +35,8 @@ public:
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesBuffer,
-		SharedBuffer& primIndicesBuffer, std::deque<TempData>& tempDataContainer
+		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+		SharedBuffer& primIndicesSharedBuffer, std::deque<TempData>& tempDataContainer
 	);
 
 	[[nodiscard]]

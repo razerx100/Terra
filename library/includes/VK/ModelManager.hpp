@@ -804,9 +804,7 @@ class ModelManagerVSIndividual : public
 		>;
 	friend class ModelManagerVSIndividualTest;
 public:
-	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ModelManager{ device, memoryManager, frameCount }
-	{}
+	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount);
 
 	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
@@ -836,16 +834,21 @@ private:
 	[[nodiscard]]
 	ModelBundleVSIndividual GetModelBundle() const { return ModelBundleVSIndividual{}; }
 
+private:
+	SharedBuffer m_vertexBuffer;
+
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
 	ModelManagerVSIndividual& operator=(const ModelManagerVSIndividual&) = delete;
 
 	ModelManagerVSIndividual(ModelManagerVSIndividual&& other) noexcept
-		: ModelManager{ std::move(other) }
+		: ModelManager{ std::move(other) },
+		m_vertexBuffer{ std::move(other.m_vertexBuffer) }
 	{}
 	ModelManagerVSIndividual& operator=(ModelManagerVSIndividual&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
+		m_vertexBuffer        = std::move(other.m_vertexBuffer);
 
 		return *this;
 	}
@@ -930,6 +933,7 @@ private:
 	std::vector<SharedBuffer>          m_counterBuffers;
 	Buffer                             m_counterResetBuffer;
 	SharedBuffer                       m_modelIndicesBuffer;
+	SharedBuffer                       m_vertexBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -968,6 +972,7 @@ public:
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
+		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -986,6 +991,7 @@ public:
 		m_counterBuffers        = std::move(other.m_counterBuffers);
 		m_counterResetBuffer    = std::move(other.m_counterResetBuffer);
 		m_modelIndicesBuffer    = std::move(other.m_modelIndicesBuffer);
+		m_vertexBuffer          = std::move(other.m_vertexBuffer);
 		m_pipelineLayoutCS      = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline       = std::move(other.m_computePipeline);
 		m_queueIndices3         = other.m_queueIndices3;
