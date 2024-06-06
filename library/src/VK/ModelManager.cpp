@@ -766,7 +766,10 @@ ModelManagerMS::ModelManagerMS(
 	}, m_vertexBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-	},m_modelBundleTempData{}
+	}, m_vertexIndicesBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}, m_modelBundleTempData {}
 {}
 
 void ModelManagerMS::ConfigureModel(
@@ -813,9 +816,16 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
 	auto& meshManager = m_meshBundles.at(bundleIndex);
 
-	const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
+	{
+		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
 
-	m_vertexBuffer.RelinquishMemory(vertexSharedData);
+		m_vertexBuffer.RelinquishMemory(vertexSharedData);
+	}
+	{
+		const SharedBufferData& vertexIndicesSharedData = meshManager.GetVertexIndicesSharedData();
+
+		m_vertexIndicesBuffer.RelinquishMemory(vertexIndicesSharedData);
+	}
 }
 
 void ModelManagerMS::ConfigureMeshBundle(
@@ -823,7 +833,7 @@ void ModelManagerMS::ConfigureMeshBundle(
 	MeshManagerMeshShader& meshManager
 ) {
 	meshManager.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer,
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
 		m_meshBundleTempData
 	);
 }
@@ -862,6 +872,10 @@ void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& 
 			s_vertexBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
+		descriptorBuffer.AddBinding(
+			s_vertexIndicesBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_MESH_BIT_EXT
+		);
 	}
 }
 
@@ -883,6 +897,9 @@ void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descri
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_vertexBuffer.GetBuffer(), s_vertexBufferBindingSlot, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_vertexIndicesBuffer.GetBuffer(), s_vertexIndicesBufferBindingSlot, 0u
 		);
 	}
 }

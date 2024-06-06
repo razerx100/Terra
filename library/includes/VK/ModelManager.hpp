@@ -1063,10 +1063,12 @@ private:
 	StagingBufferManager*        m_stagingBufferMan;
 	SharedBuffer                 m_meshletBuffer;
 	SharedBuffer                 m_vertexBuffer;
+	SharedBuffer                 m_vertexIndicesBuffer;
 	std::deque<MSBundleTempData> m_modelBundleTempData;
 
-	static constexpr std::uint32_t s_meshletBufferBindingSlot = 1u;
-	static constexpr std::uint32_t s_vertexBufferBindingSlot  = 2u;
+	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 1u;
+	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 2u;
+	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 3u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
@@ -1077,6 +1079,7 @@ public:
 		m_stagingBufferMan{ other.m_stagingBufferMan },
 		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
 		m_modelBundleTempData{ std::move(other.m_modelBundleTempData) }
 	{}
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
@@ -1085,6 +1088,7 @@ public:
 		m_stagingBufferMan    = other.m_stagingBufferMan;
 		m_meshletBuffer       = std::move(other.m_meshletBuffer);
 		m_vertexBuffer        = std::move(other.m_vertexBuffer);
+		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
 		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
 
 		return *this;

@@ -35,7 +35,7 @@ public:
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer,
+		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesBuffer,
 		std::deque<TempData>& tempDataContainer
 	);
 
@@ -49,6 +49,11 @@ public:
 
 	[[nodiscard]]
 	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
+	[[nodiscard]]
+	const SharedBufferData& GetVertexIndicesSharedData() const noexcept
+	{
+		return m_vertexIndicesBufferSharedData;
+	}
 
 private:
 	[[nodiscard]]
@@ -56,7 +61,7 @@ private:
 
 private:
 	SharedBufferData        m_vertexBufferSharedData;
-	Buffer                  m_vertexIndicesBuffer;
+	SharedBufferData        m_vertexIndicesBufferSharedData;
 	Buffer                  m_primIndicesBuffer;
 	std::vector<MeshBounds> m_meshBounds;
 
@@ -66,17 +71,17 @@ public:
 
 	MeshManagerMeshShader(MeshManagerMeshShader&& other) noexcept
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
-		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
+		m_vertexIndicesBufferSharedData{ other.m_vertexIndicesBufferSharedData },
 		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
 		m_meshBounds{ std::move(other.m_meshBounds) }
 	{}
 
 	MeshManagerMeshShader& operator=(MeshManagerMeshShader&& other) noexcept
 	{
-		m_vertexBufferSharedData = std::move(other.m_vertexBufferSharedData);
-		m_vertexIndicesBuffer    = std::move(other.m_vertexIndicesBuffer);
-		m_primIndicesBuffer      = std::move(other.m_primIndicesBuffer);
-		m_meshBounds             = std::move(other.m_meshBounds);
+		m_vertexBufferSharedData        = other.m_vertexBufferSharedData;
+		m_vertexIndicesBufferSharedData = other.m_vertexIndicesBufferSharedData;
+		m_primIndicesBuffer             = std::move(other.m_primIndicesBuffer);
+		m_meshBounds                    = std::move(other.m_meshBounds);
 
 		return *this;
 	}
