@@ -7,6 +7,7 @@
 #include <VkResources.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
+#include <CommonBuffers.hpp>
 
 #include <MeshBundle.hpp>
 
@@ -34,6 +35,7 @@ public:
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		SharedBuffer& vertexSharedBuffer,
 		std::deque<TempData>& tempDataContainer
 	);
 
@@ -45,30 +47,15 @@ public:
 	[[nodiscard]]
 	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBounds; }
 
-private:
-	template<typename T>
-	static void ConfigureBuffer(
-		const std::vector<T>& bufferData, Buffer& buffer, StagingBufferManager& stagingBufferMan
-	) noexcept {
-		const auto bufferSize = static_cast<VkDeviceSize>(sizeof(T) * std::size(bufferData));
-
-		buffer.Create(
-			bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		);
-
-		stagingBufferMan.AddBuffer(
-			std::data(bufferData), bufferSize, &buffer, 0u,
-			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
-		);
-	}
+	[[nodiscard]]
+	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
 
 private:
 	[[nodiscard]]
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 
 private:
-	Buffer                  m_vertexBuffer;
+	SharedBufferData        m_vertexBufferSharedData;
 	Buffer                  m_vertexIndicesBuffer;
 	Buffer                  m_primIndicesBuffer;
 	std::vector<MeshBounds> m_meshBounds;
@@ -78,7 +65,7 @@ public:
 	MeshManagerMeshShader& operator=(const MeshManagerMeshShader&) = delete;
 
 	MeshManagerMeshShader(MeshManagerMeshShader&& other) noexcept
-		: m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
 		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
 		m_meshBounds{ std::move(other.m_meshBounds) }
@@ -86,10 +73,10 @@ public:
 
 	MeshManagerMeshShader& operator=(MeshManagerMeshShader&& other) noexcept
 	{
-		m_vertexBuffer        = std::move(other.m_vertexBuffer);
-		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
-		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
-		m_meshBounds          = std::move(other.m_meshBounds);
+		m_vertexBufferSharedData = std::move(other.m_vertexBufferSharedData);
+		m_vertexIndicesBuffer    = std::move(other.m_vertexIndicesBuffer);
+		m_primIndicesBuffer      = std::move(other.m_primIndicesBuffer);
+		m_meshBounds             = std::move(other.m_meshBounds);
 
 		return *this;
 	}

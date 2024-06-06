@@ -763,7 +763,10 @@ ModelManagerMS::ModelManagerMS(
 	m_meshletBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-	}, m_modelBundleTempData{}
+	}, m_vertexBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	},m_modelBundleTempData{}
 {}
 
 void ModelManagerMS::ConfigureModel(
@@ -800,7 +803,7 @@ void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
 		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
 
 	{
-		const SharedBufferData meshletSharedData = modelBundle.GetMeshletSharedData();
+		const SharedBufferData& meshletSharedData = modelBundle.GetMeshletSharedData();
 
 		m_meshletBuffer.RelinquishMemory(meshletSharedData);
 	}
@@ -808,16 +811,21 @@ void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
 
 void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
+	auto& meshManager = m_meshBundles.at(bundleIndex);
 
+	const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
+
+	m_vertexBuffer.RelinquishMemory(vertexSharedData);
 }
 
 void ModelManagerMS::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerMeshShader& meshManager
 ) {
-	meshManager.SetMeshBundle(std::move(meshBundle), stagingBufferMan, m_meshBundleTempData);
-
-	// Need to configure the three SharedBuffers here.
+	meshManager.SetMeshBundle(
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer,
+		m_meshBundleTempData
+	);
 }
 
 void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
@@ -850,6 +858,10 @@ void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& 
 			s_meshletBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
+		descriptorBuffer.AddBinding(
+			s_vertexBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_MESH_BIT_EXT
+		);
 	}
 }
 
@@ -868,6 +880,9 @@ void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descri
 
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_vertexBuffer.GetBuffer(), s_vertexBufferBindingSlot, 0u
 		);
 	}
 }

@@ -1062,9 +1062,11 @@ private:
 	// Meshlets will be added per ModelBundle and the other three will be added once per MeshBundle.
 	StagingBufferManager*        m_stagingBufferMan;
 	SharedBuffer                 m_meshletBuffer;
+	SharedBuffer                 m_vertexBuffer;
 	std::deque<MSBundleTempData> m_modelBundleTempData;
 
 	static constexpr std::uint32_t s_meshletBufferBindingSlot = 1u;
+	static constexpr std::uint32_t s_vertexBufferBindingSlot  = 2u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
@@ -1074,6 +1076,7 @@ public:
 		: ModelManager{ std::move(other) },
 		m_stagingBufferMan{ other.m_stagingBufferMan },
 		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
+		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_modelBundleTempData{ std::move(other.m_modelBundleTempData) }
 	{}
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
@@ -1081,6 +1084,7 @@ public:
 		ModelManager::operator=(std::move(other));
 		m_stagingBufferMan    = other.m_stagingBufferMan;
 		m_meshletBuffer       = std::move(other.m_meshletBuffer);
+		m_vertexBuffer        = std::move(other.m_vertexBuffer);
 		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
 
 		return *this;

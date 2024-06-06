@@ -1,7 +1,7 @@
 #include <MeshManagerMeshShader.hpp>
 
 MeshManagerMeshShader::MeshManagerMeshShader(VkDevice device, MemoryManager* memoryManager)
-	: m_vertexBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_vertexIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_primIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
 	m_meshBounds{}
@@ -9,6 +9,7 @@ MeshManagerMeshShader::MeshManagerMeshShader(VkDevice device, MemoryManager* mem
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer,
 	std::deque<TempData>& tempDataContainer
 ) {
 	TempData& tempData = tempDataContainer.emplace_back(
@@ -26,16 +27,19 @@ void MeshManagerMeshShader::SetMeshBundle(
 		tempData.meshBundle->CleanUpVertices();
 	}
 
-	ConfigureBuffer(tempData.vertices, m_vertexBuffer, stagingBufferMan);
-	ConfigureBuffer(tempData.meshBundle->GetVertexIndices(), m_vertexIndicesBuffer, stagingBufferMan);
-	ConfigureBuffer(tempData.meshBundle->GetPrimIndices(), m_primIndicesBuffer, stagingBufferMan);
+	const auto vertexBufferSize
+		= static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(tempData.vertices));
+
+	m_vertexBufferSharedData = vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize);
+
+	//ConfigureBuffer(tempData.meshBundle->GetVertexIndices(), m_vertexIndicesBuffer, stagingBufferMan);
+	//ConfigureBuffer(tempData.meshBundle->GetPrimIndices(), m_primIndicesBuffer, stagingBufferMan);
 }
 
 void MeshManagerMeshShader::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t verticesBindingSlot,
 	std::uint32_t vertexIndicesBindingSlot, std::uint32_t primIndicesBindingSlot
 ) const noexcept {
-	descriptorBuffer.SetStorageBufferDescriptor(m_vertexBuffer, verticesBindingSlot, 0u);
 	descriptorBuffer.SetStorageBufferDescriptor(m_vertexIndicesBuffer, vertexIndicesBindingSlot, 0u);
 	descriptorBuffer.SetStorageBufferDescriptor(m_primIndicesBuffer, primIndicesBindingSlot, 0u);
 }
