@@ -21,11 +21,11 @@ public:
 	};
 
 public:
-	MeshManagerVertexShader(VkDevice device, MemoryManager* memoryManager) noexcept;
+	MeshManagerVertexShader();
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer,
+		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
 		std::deque<TempData>& tempDataContainer
 	);
 
@@ -36,10 +36,12 @@ public:
 
 	[[nodiscard]]
 	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
+	[[nodiscard]]
+	const SharedBufferData& GetIndexSharedData() const noexcept { return m_indexBufferSharedData; }
 
 private:
 	SharedBufferData        m_vertexBufferSharedData;
-	Buffer                  m_indexBuffer;
+	SharedBufferData        m_indexBufferSharedData;
 	std::vector<MeshBounds> m_meshBounds;
 
 public:
@@ -48,13 +50,13 @@ public:
 
 	MeshManagerVertexShader(MeshManagerVertexShader&& other) noexcept
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
-		m_indexBuffer{ std::move(other.m_indexBuffer) },
+		m_indexBufferSharedData{ other.m_indexBufferSharedData },
 		m_meshBounds{ std::move(other.m_meshBounds) }
 	{}
 	MeshManagerVertexShader& operator=(MeshManagerVertexShader&& other) noexcept
 	{
 		m_vertexBufferSharedData = other.m_vertexBufferSharedData;
-		m_indexBuffer            = std::move(other.m_indexBuffer);
+		m_indexBufferSharedData  = other.m_indexBufferSharedData;
 		m_meshBounds             = std::move(other.m_meshBounds);
 
 		return *this;

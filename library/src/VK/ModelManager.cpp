@@ -295,6 +295,9 @@ ModelManagerVSIndividual::ModelManagerVSIndividual(
 	m_vertexBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}, m_indexBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}
 {}
 
@@ -345,8 +348,10 @@ void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 	{
 		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
-
 		m_vertexBuffer.RelinquishMemory(vertexSharedData);
+
+		const SharedBufferData& indexSharedData = meshManager.GetIndexSharedData();
+		m_indexBuffer.RelinquishMemory(indexSharedData);
 	}
 }
 
@@ -355,7 +360,7 @@ void ModelManagerVSIndividual::ConfigureMeshBundle(
 	MeshManagerVertexShader& meshManager
 ) {
 	meshManager.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer,
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
 		m_meshBundleTempData
 	);
 }
@@ -430,6 +435,9 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	m_vertexBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}, m_indexBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}, m_modelBundleCSTempData{}
 {
@@ -597,8 +605,10 @@ void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 	{
 		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
-
 		m_vertexBuffer.RelinquishMemory(vertexSharedData);
+
+		const SharedBufferData& indexSharedData = meshManager.GetIndexSharedData();
+		m_indexBuffer.RelinquishMemory(indexSharedData);
 	}
 }
 
@@ -607,7 +617,7 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 	MeshManagerVertexShader& meshManager
 ) {
 	meshManager.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer,
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
 		m_meshBundleTempData
 	);
 }

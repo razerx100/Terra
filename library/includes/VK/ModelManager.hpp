@@ -607,7 +607,7 @@ public:
 	std::uint32_t AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
 	) {
-		MeshManager meshManager{ m_device, m_memoryManager };
+		MeshManager meshManager{};
 
 		static_cast<Derived*>(this)->ConfigureMeshBundle(
 			std::move(meshBundle), stagingBufferMan, meshManager
@@ -836,6 +836,7 @@ private:
 
 private:
 	SharedBuffer m_vertexBuffer;
+	SharedBuffer m_indexBuffer;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -843,12 +844,14 @@ public:
 
 	ModelManagerVSIndividual(ModelManagerVSIndividual&& other) noexcept
 		: ModelManager{ std::move(other) },
-		m_vertexBuffer{ std::move(other.m_vertexBuffer) }
+		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		m_indexBuffer{ std::move(other.m_indexBuffer) }
 	{}
 	ModelManagerVSIndividual& operator=(ModelManagerVSIndividual&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
 		m_vertexBuffer        = std::move(other.m_vertexBuffer);
+		m_indexBuffer         = std::move(other.m_indexBuffer);
 
 		return *this;
 	}
@@ -934,6 +937,7 @@ private:
 	Buffer                             m_counterResetBuffer;
 	SharedBuffer                       m_modelIndicesBuffer;
 	SharedBuffer                       m_vertexBuffer;
+	SharedBuffer                       m_indexBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -973,6 +977,7 @@ public:
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
+		m_indexBuffer{ std::move(other.m_indexBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -992,6 +997,7 @@ public:
 		m_counterResetBuffer    = std::move(other.m_counterResetBuffer);
 		m_modelIndicesBuffer    = std::move(other.m_modelIndicesBuffer);
 		m_vertexBuffer          = std::move(other.m_vertexBuffer);
+		m_indexBuffer           = std::move(other.m_indexBuffer);
 		m_pipelineLayoutCS      = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline       = std::move(other.m_computePipeline);
 		m_queueIndices3         = other.m_queueIndices3;

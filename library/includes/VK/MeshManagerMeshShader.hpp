@@ -31,7 +31,7 @@ public:
 	};
 
 public:
-	MeshManagerMeshShader(VkDevice device, MemoryManager* memoryManager);
+	MeshManagerMeshShader();
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
