@@ -156,9 +156,12 @@ void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
 		const Buffer& tempBuffer     = m_tempBufferToBuffer.at(index);
 
 		BufferToBufferCopyBuilder bufferBuilder = BufferToBufferCopyBuilder{}
-		.DstOffset(bufferData.offset);
+		.Size(bufferData.bufferSize).DstOffset(bufferData.offset);
 
-		copyCmdBuffer.CopyWhole(tempBuffer, *bufferData.dst, bufferBuilder);
+		// I am making a new buffer for each copy but if the buffer alignment for example is
+		// 16 bytes and the buffer size is 4bytes, copyWhole would be wrong as it would go over
+		// the reserved size in the destination buffer.
+		copyCmdBuffer.Copy(tempBuffer, *bufferData.dst, bufferBuilder);
 	}
 
 	for(size_t index = 0u; index < std::size(m_textureData); ++index)
@@ -169,6 +172,9 @@ void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
 		BufferToImageCopyBuilder bufferBuilder = BufferToImageCopyBuilder{}
 		.ImageOffset(textureData.offset).ImageMipLevel(textureData.mipLevelIndex);
 
+		// CopyWhole would not be a problem for textures, as the destination buffer would be a texture
+		// and will be using the dimension of the texture instead of its size to copy. And there should
+		// be only a single texture in a texture buffer.
 		copyCmdBuffer.CopyWhole(tempBuffer, *textureData.dst, bufferBuilder);
 	}
 }
