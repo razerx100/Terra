@@ -1,34 +1,79 @@
 #ifndef CAMERA_MANAGER_HPP_
 #define CAMERA_MANAGER_HPP_
 #include <cstdint>
+#include <memory>
+#include <vector>
+#include <VkResources.hpp>
+#include <VkDescriptorBuffer.hpp>
 
 #include <Camera.hpp>
 #include <DirectXMath.h>
 
-struct CameraMatrices
-{
-	DirectX::XMMATRIX view;
-	DirectX::XMMATRIX projection;
-};
-
 class CameraManager
 {
 public:
-	CameraManager() noexcept;
+	CameraManager(VkDevice device, MemoryManager* memoryManager);
 
-	void CopyData(std::uint8_t* cpuHandle) noexcept;
+	[[nodiscard]]
+	std::uint32_t SetCamera(std::shared_ptr<Camera> camera) noexcept;
 
-	void SetCamera(const CameraMatrices& camera) noexcept;
-	void SetSceneResolution(std::uint32_t width, std::uint32_t height) noexcept;
+	void SetCamera(std::uint32_t index) noexcept { m_activeCameraIndex = index; }
+
+	void RemoveCamera(std::uint32_t index) noexcept;
+
+	void CreateBuffer(
+		const std::vector<std::uint32_t>& queueIndices, std::uint32_t frameCount
+	);
+
+	void Update(VkDeviceSize index) const noexcept;
+
+	void SetDescriptorBufferLayoutGraphics(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+		VkShaderStageFlagBits shaderStage
+	) const noexcept;
+	void SetDescriptorBufferLayoutCompute(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+	) const noexcept;
+
+	void SetDescriptorBufferGraphics(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+	) const;
+	void SetDescriptorBufferCompute(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+	) const;
 
 private:
-	void SetProjectionMatrix() noexcept;
-	void FetchCameraData() noexcept;
+	// Not actually using this. Just using it to get the struct size.
+	struct CameraBufferData
+	{
+		DirectX::XMMATRIX view;
+		DirectX::XMMATRIX projection;
+	};
 
 private:
-	CameraMatrices m_cameraMatrices;
-	float m_fovRadian;
-	float m_sceneWidth;
-	float m_sceneHeight;
+	size_t                               m_activeCameraIndex;
+	VkDeviceSize                         m_cameraBufferInstanceSize;
+	Buffer                               m_cameraBuffer;
+	std::vector<std::shared_ptr<Camera>> m_cameras;
+
+public:
+	CameraManager(const CameraManager&) = delete;
+	CameraManager& operator=(const CameraManager&) = delete;
+
+	CameraManager(CameraManager&& other) noexcept
+		: m_activeCameraIndex{ other.m_activeCameraIndex },
+		m_cameraBufferInstanceSize{ other.m_cameraBufferInstanceSize },
+		m_cameraBuffer{ std::move(other.m_cameraBuffer) },
+		m_cameras{ std::move(other.m_cameras) }
+	{}
+	CameraManager& operator=(CameraManager&& other) noexcept
+	{
+		m_activeCameraIndex        = other.m_activeCameraIndex;
+		m_cameraBufferInstanceSize = other.m_cameraBufferInstanceSize;
+		m_cameraBuffer             = std::move(other.m_cameraBuffer);
+		m_cameras                  = std::move(other.m_cameras);
+
+		return *this;
+	}
 };
 #endif

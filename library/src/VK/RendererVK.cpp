@@ -23,7 +23,6 @@ RendererVK::RendererVK(
 
 	terra.Engine().ResizeViewportAndScissor(width, height);
 
-	terra.Camera().SetSceneResolution(width, height);
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
@@ -120,8 +119,6 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 		);
 
 		engine.ResizeViewportAndScissor(width, height);
-
-		terra.Camera().SetSceneResolution(width, height);
 	}
 }
 
