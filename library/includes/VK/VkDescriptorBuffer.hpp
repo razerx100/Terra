@@ -209,17 +209,6 @@ private:
 		return descData;
 	}
 
-	template<VkDescriptorType type>
-	[[nodiscard]]
-	void const* GetBufferToDescriptor(
-		const VkDescriptorAddressInfoEXT& bufferInfo, std::uint32_t bindingIndex,
-		std::uint32_t descriptorIndex
-	) const {
-		const VkDescriptorDataEXT descData = GetDescriptorData<type>(bufferInfo);
-
-		return GetDescriptor<type>(bindingIndex, descriptorIndex, descData);
-	}
-
 	[[nodiscard]]
 	static VkDescriptorAddressInfoEXT GetBufferDescAddressInfo(
 		VkDeviceAddress bufferStartingAddress, VkDeviceSize bufferSize, VkFormat texelBufferFormat
@@ -269,6 +258,19 @@ public:
 		);
 	}
 
+private:
+	template<VkDescriptorType type>
+	[[nodiscard]]
+	void const* GetBufferToDescriptor(
+		const VkDescriptorAddressInfoEXT& bufferInfo, std::uint32_t bindingIndex,
+		std::uint32_t descriptorIndex
+	) const {
+		const VkDescriptorDataEXT descData = GetDescriptorData<type>(bufferInfo);
+
+		return GetDescriptor<type>(bindingIndex, descriptorIndex, descData);
+	}
+
+public:
 	template<VkDescriptorType type>
 	void const* GetBufferToDescriptor(
 		const Buffer& buffer, std::uint32_t bindingIndex, std::uint32_t descriptorIndex,
