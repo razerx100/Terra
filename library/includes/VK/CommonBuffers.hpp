@@ -21,7 +21,7 @@ public:
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
-	) const noexcept;
+	) const;
 
 	// Shouldn't be called on every frame. Only updates the index specified.
 	void Update(size_t index) const noexcept;
@@ -85,7 +85,7 @@ public:
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
-	) const noexcept;
+	) const;
 
 	[[nodiscard]]
 	// Returns the index of the Bounds in the BoundsBuffer.

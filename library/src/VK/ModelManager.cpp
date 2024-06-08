@@ -254,7 +254,7 @@ void ModelBuffers::CreateBuffer(size_t modelCount)
 
 void ModelBuffers::SetDescriptorBuffer(
 	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
-) const noexcept {
+) const {
 	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
 
 	descriptorBuffer.SetStorageBufferDescriptor(
@@ -312,7 +312,7 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 
 void ModelManagerVSIndividual::ConfigureModel(
 	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
-) {
+) const noexcept {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 }
 
@@ -320,7 +320,7 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 	ModelBundleVSIndividual& modelBundleObj,
 	const std::vector<size_t>& modelIndices,
 	const std::vector<std::shared_ptr<ModelVS>>& modelBundle
-) {
+) const noexcept {
 	const size_t modelCount = std::size(modelBundle);
 
 	for (size_t index = 0u; index < modelCount; ++index)
@@ -629,7 +629,7 @@ void ModelManagerVSIndirect::_cleanUpTempData() noexcept
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
-) {
+) const noexcept {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -649,7 +649,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 
 void ModelManagerVSIndirect::SetDescriptorBufferVS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
-) {
+) const {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -668,7 +668,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
-) {
+) const noexcept {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -700,7 +700,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 
 void ModelManagerVSIndirect::SetDescriptorBufferCS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
-) {
+) const {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -899,8 +899,9 @@ void ModelManagerMS::_cleanUpTempData() noexcept
 	m_modelBundleTempData = std::deque<MSBundleTempData>{};
 }
 
-void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers)
-{
+void ModelManagerMS::SetDescriptorBufferLayout(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) const noexcept {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -930,7 +931,7 @@ void ModelManagerMS::SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& 
 	}
 }
 
-void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers)
+void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers) const
 {
 	const auto frameCount = std::size(descriptorBuffers);
 

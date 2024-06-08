@@ -36,7 +36,7 @@ void CameraManager::CreateBuffer(
 
 void CameraManager::Update(VkDeviceSize index) const noexcept
 {
-	std::uint8_t* bufferAddress = m_cameraBuffer.CPUHandle() + (m_cameraBufferInstanceSize * index);
+	std::uint8_t* bufferAddress = m_cameraBuffer.CPUHandle() + m_cameraBufferInstanceSize * index;
 
 	constexpr size_t matrixSize = sizeof(DirectX::XMMATRIX);
 

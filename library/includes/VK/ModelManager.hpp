@@ -399,7 +399,7 @@ public:
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
-	) const noexcept;
+	) const;
 
 	void Update(VkDeviceSize bufferIndex) const noexcept;
 
@@ -817,12 +817,12 @@ private:
 	void ConfigureModel(
 		ModelBundleVSIndividual& modelBundleObj,
 		size_t modelIndex, const std::shared_ptr<ModelVS>& model
-	);
+	) const noexcept;
 	void ConfigureModelBundle(
 		ModelBundleVSIndividual& modelBundleObj,
 		const std::vector<size_t>& modelIndices,
 		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
-	);
+	) const noexcept;
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
@@ -832,7 +832,7 @@ private:
 	);
 
 	[[nodiscard]]
-	ModelBundleVSIndividual GetModelBundle() const { return ModelBundleVSIndividual{}; }
+	static ModelBundleVSIndividual GetModelBundle() { return ModelBundleVSIndividual{}; }
 
 private:
 	SharedBuffer m_vertexBuffer;
@@ -890,11 +890,11 @@ public:
 
 	void CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept;
 
-	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
-	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
+	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
-	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
-	void SetDescriptorBufferCS(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
+	void SetDescriptorBufferCS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
@@ -1038,8 +1038,8 @@ public:
 		std::uint32_t frameCount
 	);
 
-	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
-	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
+	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
@@ -1061,10 +1061,7 @@ private:
 	);
 
 	[[nodiscard]]
-	ModelBundleMS GetModelBundle() const
-	{
-		return ModelBundleMS{};
-	}
+	static ModelBundleMS GetModelBundle() { return ModelBundleMS{}; }
 
 	void _cleanUpTempData() noexcept;
 
