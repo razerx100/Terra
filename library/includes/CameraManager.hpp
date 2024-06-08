@@ -2,6 +2,7 @@
 #define CAMERA_MANAGER_HPP_
 #include <cstdint>
 
+#include <Camera.hpp>
 #include <DirectXMath.h>
 
 struct CameraMatrices
