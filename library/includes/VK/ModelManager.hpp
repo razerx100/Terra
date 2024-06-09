@@ -233,6 +233,7 @@ public:
 	struct TempData
 	{
 		std::vector<VkDrawIndexedIndirectCommand> indirectArguments;
+		std::vector<std::uint32_t>                modelBundleIndices;
 		std::unique_ptr<CullingData>              cullingData;
 	};
 
@@ -242,7 +243,8 @@ public:
 	void AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept;
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
-		SharedBuffer& cullingSharedBuffer, std::deque<TempData>& tempDataContainer
+		SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
+		std::deque<TempData>& tempDataContainer
 	);
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
@@ -257,10 +259,16 @@ public:
 	}
 	[[nodiscard]]
 	const SharedBufferData& GetCullingSharedData() const noexcept { return m_cullingSharedData; }
+	[[nodiscard]]
+	const SharedBufferData& GetModelBundleIndexSharedData() const noexcept
+	{
+		return m_modelBundleIndexSharedData;
+	}
 
 private:
 	SharedBufferData                          m_argumentInputSharedData;
 	SharedBufferData                          m_cullingSharedData;
+	SharedBufferData                          m_modelBundleIndexSharedData;
 	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
 	std::unique_ptr<CullingData>              m_cullingData;
 	std::uint32_t                             m_bundleID;
@@ -276,17 +284,19 @@ public:
 	ModelBundleCSIndirect(ModelBundleCSIndirect&& other) noexcept
 		: m_argumentInputSharedData{ other.m_argumentInputSharedData },
 		m_cullingSharedData{ other.m_cullingSharedData },
+		m_modelBundleIndexSharedData{ other.m_modelBundleIndexSharedData },
 		m_indirectArguments{ std::move(other.m_indirectArguments) },
 		m_cullingData{ std::move(other.m_cullingData) },
 		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
-		m_argumentInputSharedData = other.m_argumentInputSharedData;
-		m_cullingSharedData       = other.m_cullingSharedData;
-		m_indirectArguments       = std::move(other.m_indirectArguments);
-		m_cullingData             = std::move(other.m_cullingData);
-		m_bundleID                = other.m_bundleID;
+		m_argumentInputSharedData    = other.m_argumentInputSharedData;
+		m_cullingSharedData          = other.m_cullingSharedData;
+		m_modelBundleIndexSharedData = other.m_modelBundleIndexSharedData;
+		m_indirectArguments          = std::move(other.m_indirectArguments);
+		m_cullingData                = std::move(other.m_cullingData);
+		m_bundleID                   = other.m_bundleID;
 
 		return *this;
 	}
@@ -942,6 +952,7 @@ private:
 	SharedBuffer                       m_modelIndicesBuffer;
 	SharedBuffer                       m_vertexBuffer;
 	SharedBuffer                       m_indexBuffer;
+	SharedBuffer                       m_modelBundleIndexBuffer;
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -963,6 +974,7 @@ private:
 	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 3u;
 	static constexpr std::uint32_t s_argumenOutputBindingSlot       = 4u;
 	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
+	static constexpr std::uint32_t s_modelBundleIndexBindingSlot    = 6u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -982,6 +994,7 @@ public:
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
+		m_modelBundleIndexBuffer{ std::move(other.m_modelBundleIndexBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -993,22 +1006,23 @@ public:
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
-		m_stagingBufferMan      = other.m_stagingBufferMan;
-		m_argumentInputBuffer   = std::move(other.m_argumentInputBuffer);
-		m_argumentOutputBuffers = std::move(other.m_argumentOutputBuffers);
-		m_cullingDataBuffer     = std::move(other.m_cullingDataBuffer);
-		m_counterBuffers        = std::move(other.m_counterBuffers);
-		m_counterResetBuffer    = std::move(other.m_counterResetBuffer);
-		m_modelIndicesBuffer    = std::move(other.m_modelIndicesBuffer);
-		m_vertexBuffer          = std::move(other.m_vertexBuffer);
-		m_indexBuffer           = std::move(other.m_indexBuffer);
-		m_pipelineLayoutCS      = std::move(other.m_pipelineLayoutCS);
-		m_computePipeline       = std::move(other.m_computePipeline);
-		m_queueIndices3         = other.m_queueIndices3;
-		m_dispatchXCount        = other.m_dispatchXCount;
-		m_argumentCount         = other.m_argumentCount;
-		m_modelBundlesCS        = std::move(other.m_modelBundlesCS);
-		m_modelBundleCSTempData = std::move(other.m_modelBundleCSTempData);
+		m_stagingBufferMan       = other.m_stagingBufferMan;
+		m_argumentInputBuffer    = std::move(other.m_argumentInputBuffer);
+		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
+		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
+		m_counterBuffers         = std::move(other.m_counterBuffers);
+		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
+		m_modelIndicesBuffer     = std::move(other.m_modelIndicesBuffer);
+		m_vertexBuffer           = std::move(other.m_vertexBuffer);
+		m_indexBuffer            = std::move(other.m_indexBuffer);
+		m_modelBundleIndexBuffer = std::move(other.m_modelBundleIndexBuffer);
+		m_pipelineLayoutCS       = std::move(other.m_pipelineLayoutCS);
+		m_computePipeline        = std::move(other.m_computePipeline);
+		m_queueIndices3          = other.m_queueIndices3;
+		m_dispatchXCount         = other.m_dispatchXCount;
+		m_argumentCount          = other.m_argumentCount;
+		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
+		m_modelBundleCSTempData  = std::move(other.m_modelBundleCSTempData);
 
 		return *this;
 	}

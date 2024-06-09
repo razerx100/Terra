@@ -183,7 +183,7 @@ void ModelBundleVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const no
 // Model Bundle CS Indirect
 ModelBundleCSIndirect::ModelBundleCSIndirect()
 	: m_argumentInputSharedData{ nullptr, 0u, 0u }, m_cullingSharedData{ nullptr, 0u, 0u },
-	m_indirectArguments{},
+	m_modelBundleIndexSharedData{ nullptr, 0u, 0u }, m_indirectArguments{},
 	m_cullingData{
 		std::make_unique<CullingData>(
 			CullingData{
@@ -204,7 +204,8 @@ void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& mode
 
 void ModelBundleCSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedBuffer,
-	SharedBuffer& cullingSharedBuffer, std::deque<TempData>& tempDataContainer
+	SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
+	std::deque<TempData>& tempDataContainer
 ) {
 	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
@@ -212,17 +213,29 @@ void ModelBundleCSIndirect::CreateBuffers(
 
 	const auto argumentBufferSize = static_cast<VkDeviceSize>(strideSize * argumentCount);
 	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
+	const auto modelIndexDataSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t) * argumentCount);
 
-	m_argumentInputSharedData = argumentSharedBuffer.AllocateAndGetSharedData(argumentBufferSize);
-	m_cullingSharedData       = cullingSharedBuffer.AllocateAndGetSharedData(cullingDataSize);
+	m_argumentInputSharedData    = argumentSharedBuffer.AllocateAndGetSharedData(argumentBufferSize);
+	m_cullingSharedData          = cullingSharedBuffer.AllocateAndGetSharedData(cullingDataSize);
+	m_modelBundleIndexSharedData = modelBundleIndexSharedBuffer.AllocateAndGetSharedData(
+		modelIndexDataSize
+	);
+
+	const auto modelBundleIndex
+		= static_cast<std::uint32_t>(m_cullingSharedData.offset / cullingDataSize);
 
 	m_cullingData->commandOffset
 		= static_cast<std::uint32_t>(m_argumentInputSharedData.offset / strideSize);
 
 	TempData& tempData = tempDataContainer.emplace_back(
 		TempData{
-			.indirectArguments = std::move(m_indirectArguments),
-			.cullingData       = std::move(m_cullingData)
+			.indirectArguments  = std::move(m_indirectArguments),
+			// Each thread will process a single model independently. And since we are trying to
+			// cull all the models across all the bundles with a single call to dispatch, we can't
+			// set the index as constantData per bundle. So, we will be giving each model the index
+			// of its bundle so each thread can work independently.
+			.modelBundleIndices = std::vector<std::uint32_t>(argumentCount, modelBundleIndex),
+			.cullingData        = std::move(m_cullingData)
 		}
 	);
 
@@ -234,6 +247,11 @@ void ModelBundleCSIndirect::CreateBuffers(
 	stagingBufferMan.AddBuffer(
 		tempData.cullingData.get(), cullingDataSize, m_cullingSharedData.bufferData,
 		m_cullingSharedData.offset,
+		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+	);
+	stagingBufferMan.AddBuffer(
+		std::data(tempData.modelBundleIndices), modelIndexDataSize,
+		m_modelBundleIndexSharedData.bufferData, m_modelBundleIndexSharedData.offset,
 		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	);
 }
@@ -428,13 +446,15 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
-	},
-	m_vertexBuffer{
+	}, m_vertexBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_indexBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+	}, m_modelBundleIndexBuffer{
+		device, memoryManager,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}, m_modelBundleCSTempData{}
 {
@@ -486,7 +506,8 @@ void ModelManagerVSIndirect::ConfigureModel(
 	modelBundleCS.AddModelDetails(model);
 
 	modelBundleCS.CreateBuffers(
-		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleCSTempData
+		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
+		m_modelBundleCSTempData
 	);
 
 	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
@@ -535,7 +556,8 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	UpdateCounterResetValues();
 
 	modelBundleCS.CreateBuffers(
-		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleCSTempData
+		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
+		m_modelBundleCSTempData
 	);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
@@ -580,7 +602,8 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 
 	std::erase_if(
 		m_modelBundlesCS,
-		[bundleID, &argumentInput = m_argumentInputBuffer, &cullingData = m_cullingDataBuffer]
+		[bundleID, &argumentInput = m_argumentInputBuffer,
+		&cullingData = m_cullingDataBuffer, &bundleIndices = m_modelBundleIndexBuffer]
 		(const ModelBundleCSIndirect& bundle)
 		{
 			const bool result = bundleID == bundle.GetID();
@@ -589,6 +612,7 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 			{
 				argumentInput.RelinquishMemory(bundle.GetArgumentInputSharedData());
 				cullingData.RelinquishMemory(bundle.GetCullingSharedData());
+				bundleIndices.RelinquishMemory(bundle.GetModelBundleIndexSharedData());
 			}
 
 			return result;
@@ -692,6 +716,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			s_modelIndicesCSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
+		descriptorBuffer.AddBinding(
+			s_modelBundleIndexBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
 	}
 }
 
@@ -723,6 +751,9 @@ void ModelManagerVSIndirect::SetDescriptorBufferCS(
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesCSBindingSlot, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
 		);
 	}
 }
