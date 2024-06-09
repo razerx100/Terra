@@ -78,19 +78,16 @@ void ModelBundleMS::Draw(
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
-		struct
+		const RenderData msConstants
 		{
-			std::uint32_t modelBufferIndex;
-			std::uint32_t meshletOffset;
-			std::uint32_t meshIndex;
-		} msConstants{
 			.modelBufferIndex = modelDetail.modelBufferIndex,
-			.meshletOffset    = modelDetail.meshletOffset,
-			.meshIndex        = GetMeshIndex()
+			.meshletOffset    = modelDetail.meshletOffset
 		};
 
+		constexpr std::uint32_t offset = MeshManagerMeshShader::GetConstantBufferSize();
+
 		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
+			cmdBuffer, pipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, offset,
 			pushConstantSize, &msConstants
 		);
 
@@ -888,9 +885,12 @@ void ModelManagerMS::ConfigureMeshBundle(
 void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
 	// Push constants needs to be serialised according to the shader stages
-	constexpr std::uint32_t pushConstantSize = ModelBundleMS::GetConstantBufferSize();
+	constexpr std::uint32_t meshConstantSize  = MeshManagerMeshShader::GetConstantBufferSize();
+	constexpr std::uint32_t modelConstantSize = ModelBundleMS::GetConstantBufferSize();
 
-	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_MESH_BIT_EXT, pushConstantSize);
+	m_pipelineLayout.AddPushConstantRange(
+		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
+	);
 	m_pipelineLayout.Create(descriptorBuffer);
 }
 
@@ -968,9 +968,20 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		// Pipeline Object.
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
-		// For MS, we will bind the vertices, vertexIndices and primIndices as Storage buffers.
-		// And we will find it by its index, which will be provided to the Mesh Shader via
-		// constants in the Draw function.
+		{
+			const size_t meshIndex                  = modelBundle.GetMeshIndex();
+			const MeshManagerMeshShader& meshBundle = m_meshBundles.at(meshIndex);
+			constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
+
+			const MeshManagerMeshShader::MeshDetails meshDetails = meshBundle.GetMeshDetails();
+
+			VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+
+			vkCmdPushConstants(
+				cmdBuffer, m_pipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
+				constBufferSize, &meshDetails
+			);
+		}
 
 		// Model
 		modelBundle.Draw(graphicsBuffer, m_pipelineLayout);

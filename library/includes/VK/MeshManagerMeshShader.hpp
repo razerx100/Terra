@@ -24,6 +24,15 @@ public:
 		float padding3[2];
 	};
 
+	// The offset should be enough to identify the mesh. We wouldn't really need the size
+	// as the meshlets should already have that data.
+	struct MeshDetails
+	{
+		std::uint32_t vertexOffset;
+		std::uint32_t vertexIndicesOffset;
+		std::uint32_t primIndicesOffset;
+	};
+
 	struct TempData
 	{
 		std::vector<GLSLVertex>       vertices;
@@ -55,6 +64,15 @@ public:
 		return m_primIndicesBufferSharedData;
 	}
 
+	[[nodiscard]]
+	MeshDetails GetMeshDetails() const noexcept { return m_meshDetails; }
+
+	[[nodiscard]]
+	static consteval std::uint32_t GetConstantBufferSize() noexcept
+	{
+		return static_cast<std::uint32_t>(sizeof(MeshDetails));
+	}
+
 private:
 	[[nodiscard]]
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
@@ -64,6 +82,7 @@ private:
 	SharedBufferData        m_vertexIndicesBufferSharedData;
 	SharedBufferData        m_primIndicesBufferSharedData;
 	std::vector<MeshBounds> m_meshBounds;
+	MeshDetails             m_meshDetails;
 
 public:
 	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;
@@ -73,7 +92,8 @@ public:
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_vertexIndicesBufferSharedData{ other.m_vertexIndicesBufferSharedData },
 		m_primIndicesBufferSharedData{ other.m_primIndicesBufferSharedData },
-		m_meshBounds{ std::move(other.m_meshBounds) }
+		m_meshBounds{ std::move(other.m_meshBounds) },
+		m_meshDetails{ other.m_meshDetails }
 	{}
 
 	MeshManagerMeshShader& operator=(MeshManagerMeshShader&& other) noexcept
@@ -82,6 +102,7 @@ public:
 		m_vertexIndicesBufferSharedData = other.m_vertexIndicesBufferSharedData;
 		m_primIndicesBufferSharedData   = other.m_primIndicesBufferSharedData;
 		m_meshBounds                    = std::move(other.m_meshBounds);
+		m_meshDetails                   = other.m_meshDetails;
 
 		return *this;
 	}

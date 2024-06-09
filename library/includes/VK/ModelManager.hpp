@@ -131,6 +131,12 @@ public:
 		std::uint32_t threadGroupCountX;
 	};
 
+	struct RenderData
+	{
+		std::uint32_t modelBufferIndex;
+		std::uint32_t meshletOffset;
+	};
+
 	struct TempData
 	{
 		std::vector<Meshlet> meshlets;
@@ -155,9 +161,7 @@ public:
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
-		// One for the modelBufferIndex, another for the meshletOffset and
-		// the last one for the MeshIndex.
-		return static_cast<std::uint32_t>(sizeof(std::uint32_t) * 3u);
+		return static_cast<std::uint32_t>(sizeof(RenderData));
 	}
 
 	[[nodiscard]]

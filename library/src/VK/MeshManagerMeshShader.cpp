@@ -3,7 +3,7 @@
 MeshManagerMeshShader::MeshManagerMeshShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
-	m_meshBounds{}
+	m_meshBounds{}, m_meshDetails{ 0u, 0u, 0u }
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
@@ -26,37 +26,39 @@ void MeshManagerMeshShader::SetMeshBundle(
 		tempData.meshBundle->CleanUpVertices();
 	}
 
+	auto ConfigureBuffer = []<typename T>
+		(
+			const std::vector<T>& elements, StagingBufferManager& stagingBufferMan,
+			SharedBuffer& sharedBuffer, SharedBufferData& sharedData, std::uint32_t& detailOffset
+		)
+	{
+		constexpr auto stride = static_cast<VkDeviceSize>(sizeof(T));
+		const auto bufferSize = static_cast<VkDeviceSize>(stride * std::size(elements));
+
+		sharedData   = sharedBuffer.AllocateAndGetSharedData(bufferSize);
+		detailOffset = static_cast<std::uint32_t>(sharedData.offset / stride);
+
+		stagingBufferMan.AddBuffer(
+			std::data(elements), bufferSize, sharedData.bufferData, sharedData.offset,
+			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
+			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+		);
+	};
+
 	const std::vector<std::uint32_t>& vertexIndices = tempData.meshBundle->GetVertexIndices();
 	const std::vector<std::uint32_t>& primIndices   = tempData.meshBundle->GetPrimIndices();
 
-	const auto vertexBufferSize
-		= static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(tempData.vertices));
-	const auto vertexIndicesBufferSize
-		= static_cast<VkDeviceSize>(sizeof(std::uint32_t) * std::size(vertexIndices));
-	const auto primIndicesBufferSize
-		= static_cast<VkDeviceSize>(sizeof(std::uint32_t) * std::size(primIndices));
-
-	m_vertexBufferSharedData
-		= vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize);
-	m_vertexIndicesBufferSharedData
-		= vertexIndicesSharedBuffer.AllocateAndGetSharedData(vertexIndicesBufferSize);
-	m_primIndicesBufferSharedData
-		= primIndicesSharedBuffer.AllocateAndGetSharedData(primIndicesBufferSize);
-
-	stagingBufferMan.AddBuffer(
-		std::data(tempData.vertices), vertexBufferSize, m_vertexBufferSharedData.bufferData,
-		m_vertexBufferSharedData.offset,
-		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+	ConfigureBuffer(
+		tempData.vertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
+		m_meshDetails.vertexOffset
 	);
-	stagingBufferMan.AddBuffer(
-		std::data(vertexIndices), vertexIndicesBufferSize, m_vertexIndicesBufferSharedData.bufferData,
-		m_vertexIndicesBufferSharedData.offset,
-		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+	ConfigureBuffer(
+		vertexIndices, stagingBufferMan, vertexIndicesSharedBuffer, m_vertexIndicesBufferSharedData,
+		m_meshDetails.vertexIndicesOffset
 	);
-	stagingBufferMan.AddBuffer(
-		std::data(primIndices), primIndicesBufferSize, m_primIndicesBufferSharedData.bufferData,
-		m_primIndicesBufferSharedData.offset,
-		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+	ConfigureBuffer(
+		primIndices, stagingBufferMan, primIndicesSharedBuffer, m_primIndicesBufferSharedData,
+		m_meshDetails.primIndicesOffset
 	);
 }
 
