@@ -1057,7 +1057,11 @@ public:
 	);
 
 	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
-	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+
+	// Should be called after a new Mesh has been added.
+	void SetDescriptorBufferOfMeshes(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+	// Should be called after a new Model has been added.
+	void SetDescriptorBufferOfModels(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 

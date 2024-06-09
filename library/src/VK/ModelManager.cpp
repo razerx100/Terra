@@ -962,8 +962,9 @@ void ModelManagerMS::SetDescriptorBufferLayout(
 	}
 }
 
-void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers) const
-{
+void ModelManagerMS::SetDescriptorBufferOfModels(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) const {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -978,6 +979,14 @@ void ModelManagerMS::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descri
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, 0u
 		);
+	}
+}
+
+void ModelManagerMS::SetDescriptorBufferOfMeshes(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) const {
+	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
+	{
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_vertexBuffer.GetBuffer(), s_vertexBufferBindingSlot, 0u
 		);
