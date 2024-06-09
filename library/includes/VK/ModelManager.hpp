@@ -942,6 +942,8 @@ private:
 	SharedBuffer                       m_vertexBuffer;
 	SharedBuffer                       m_indexBuffer;
 	SharedBuffer                       m_modelBundleIndexBuffer;
+	// I will added a SharedBuffer for the MeshBounds. And a host coherent BoundsDetails buffer
+	// which will be written to before the call to dispatch.
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;

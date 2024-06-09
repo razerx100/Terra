@@ -33,10 +33,22 @@ public:
 		std::uint32_t primIndicesOffset;
 	};
 
+	struct BoundsDetails
+	{
+		std::uint32_t offset;
+		std::uint32_t count;
+	};
+
 	struct TempData
 	{
 		std::vector<GLSLVertex>       vertices;
 		std::unique_ptr<MeshBundleMS> meshBundle;
+	};
+
+	struct TempDataBounds
+	{
+		TempData               tempData;
+		std::vector<MeshBound> bounds;
 	};
 
 public:
@@ -47,9 +59,19 @@ public:
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 		SharedBuffer& primIndicesSharedBuffer, std::deque<TempData>& tempDataContainer
 	);
-
-	[[nodiscard]]
-	const std::vector<MeshBound>& GetBounds() const noexcept { return m_meshBounds; }
+	void SetMeshBundle(
+		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
+		std::deque<TempDataBounds>& tempDataContainer,
+		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
+	);
+	void SetMeshBundle(
+		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
+		std::deque<TempDataBounds>& tempDataContainer
+	);
 
 	[[nodiscard]]
 	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
@@ -63,6 +85,11 @@ public:
 	{
 		return m_primIndicesBufferSharedData;
 	}
+	[[nodiscard]]
+	const SharedBufferData& GetBoundsSharedData() const noexcept { return m_meshBoundsSharedData; }
+
+	[[nodiscard]]
+	BoundsDetails GetBoundsDetails() const noexcept;
 
 	[[nodiscard]]
 	MeshDetails GetMeshDetails() const noexcept { return m_meshDetails; }
@@ -74,15 +101,21 @@ public:
 	}
 
 private:
+	void SetMeshBundle(
+		StagingBufferManager& stagingBufferMan,
+		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+		SharedBuffer& primIndicesSharedBuffer, TempData& tempData
+	);
+
 	[[nodiscard]]
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 
 private:
-	SharedBufferData       m_vertexBufferSharedData;
-	SharedBufferData       m_vertexIndicesBufferSharedData;
-	SharedBufferData       m_primIndicesBufferSharedData;
-	std::vector<MeshBound> m_meshBounds;
-	MeshDetails            m_meshDetails;
+	SharedBufferData m_vertexBufferSharedData;
+	SharedBufferData m_vertexIndicesBufferSharedData;
+	SharedBufferData m_primIndicesBufferSharedData;
+	SharedBufferData m_meshBoundsSharedData;
+	MeshDetails      m_meshDetails;
 
 public:
 	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;
@@ -92,7 +125,7 @@ public:
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_vertexIndicesBufferSharedData{ other.m_vertexIndicesBufferSharedData },
 		m_primIndicesBufferSharedData{ other.m_primIndicesBufferSharedData },
-		m_meshBounds{ std::move(other.m_meshBounds) },
+		m_meshBoundsSharedData{ other.m_meshBoundsSharedData },
 		m_meshDetails{ other.m_meshDetails }
 	{}
 
@@ -101,7 +134,7 @@ public:
 		m_vertexBufferSharedData        = other.m_vertexBufferSharedData;
 		m_vertexIndicesBufferSharedData = other.m_vertexIndicesBufferSharedData;
 		m_primIndicesBufferSharedData   = other.m_primIndicesBufferSharedData;
-		m_meshBounds                    = std::move(other.m_meshBounds);
+		m_meshBoundsSharedData          = other.m_meshBoundsSharedData;
 		m_meshDetails                   = other.m_meshDetails;
 
 		return *this;

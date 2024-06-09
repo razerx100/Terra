@@ -2,19 +2,14 @@
 
 MeshManagerVertexShader::MeshManagerVertexShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u }, m_indexBufferSharedData{ nullptr, 0u, 0u },
-	m_meshBounds{}
+	m_meshBoundsSharedData{ nullptr, 0u, 0u }
 {}
 
 void MeshManagerVertexShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-	std::deque<TempData>& tempDataContainer
+	TempData& tempData
 ) {
-	m_meshBounds       = meshBundle->GetBounds();
-	TempData& tempData = tempDataContainer.emplace_back(
-		TempData{ std::move(meshBundle) }
-	);
-
 	// Vertex Buffer
 	{
 		const std::vector<Vertex>& vertices = tempData.meshBundle->GetVertices();
@@ -46,6 +41,74 @@ void MeshManagerVertexShader::SetMeshBundle(
 	}
 }
 
+void MeshManagerVertexShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
+	std::deque<TempData>& tempDataContainer
+) {
+	TempData& tempData = tempDataContainer.emplace_back(
+		TempData{ std::move(meshBundle) }
+	);
+
+	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempData);
+}
+
+void MeshManagerVertexShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
+	SharedBuffer& boundsSharedBuffer, std::deque<TempDataBounds>& tempDataContainer,
+	QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
+) {
+	TempDataBounds& tempDataBounds = tempDataContainer.emplace_back(
+		TempDataBounds{
+			.tempData = std::move(meshBundle)
+		}
+	);
+	TempData& tempData = tempDataBounds.tempData;
+
+	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempData);
+
+	const std::vector<MeshBound>& bounds = tempData.meshBundle->GetBounds();
+
+	constexpr auto boundStride = sizeof(MeshBound);
+	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
+
+	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize);
+
+	stagingBufferMan.AddBuffer(
+		std::data(bounds), boundSize,
+		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset,
+		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage
+	);
+}
+
+void MeshManagerVertexShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
+	SharedBuffer& boundsSharedBuffer, std::deque<TempDataBounds>& tempDataContainer
+) {
+	TempDataBounds& tempDataBounds = tempDataContainer.emplace_back(
+		TempDataBounds{
+			.tempData = std::move(meshBundle)
+		}
+	);
+	TempData& tempData = tempDataBounds.tempData;
+
+	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempData);
+
+	const std::vector<MeshBound>& bounds = tempData.meshBundle->GetBounds();
+
+	constexpr auto boundStride = sizeof(MeshBound);
+	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
+
+	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize);
+
+	stagingBufferMan.AddBuffer(
+		std::data(bounds), boundSize,
+		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset
+	);
+}
+
 void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
 	VkBuffer vertexBuffers[]                  = { m_vertexBufferSharedData.bufferData->Get() };
@@ -58,4 +121,14 @@ void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) con
 		cmdBuffer, m_indexBufferSharedData.bufferData->Get(), m_indexBufferSharedData.offset,
 		VK_INDEX_TYPE_UINT32
 	);
+}
+
+MeshManagerVertexShader::BoundsDetails MeshManagerVertexShader::GetBoundsDetails() const noexcept
+{
+	constexpr auto stride = sizeof(MeshBound);
+
+	return BoundsDetails{
+		.offset = static_cast<std::uint32_t>(m_meshBoundsSharedData.offset / stride),
+		.count  = static_cast<std::uint32_t>(m_meshBoundsSharedData.size / stride)
+	};
 }

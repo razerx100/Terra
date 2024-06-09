@@ -3,20 +3,14 @@
 MeshManagerMeshShader::MeshManagerMeshShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
-	m_meshBounds{}, m_meshDetails{ 0u, 0u, 0u }
+	m_meshBoundsSharedData{ nullptr, 0u, 0u }, m_meshDetails{ 0u, 0u, 0u }
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-	SharedBuffer& primIndicesSharedBuffer, std::deque<TempData>& tempDataContainer
+	SharedBuffer& primIndicesSharedBuffer, TempData& tempData
 ) {
-	TempData& tempData = tempDataContainer.emplace_back(
-		TempData{
-			.meshBundle = std::move(meshBundle)
-		}
-	);
-
 	{
 		const std::vector<Vertex>& vertices = tempData.meshBundle->GetVertices();
 
@@ -62,6 +56,87 @@ void MeshManagerMeshShader::SetMeshBundle(
 	);
 }
 
+void MeshManagerMeshShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+	SharedBuffer& primIndicesSharedBuffer, std::deque<TempData>& tempDataContainer
+) {
+	TempData& tempData = tempDataContainer.emplace_back(
+		TempData{
+			.meshBundle = std::move(meshBundle)
+		}
+	);
+
+	SetMeshBundle(
+		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
+		tempData
+	);
+}
+
+void MeshManagerMeshShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+	SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
+	std::deque<TempDataBounds>& tempDataContainer,
+	QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
+) {
+	TempDataBounds& tempDataBounds = tempDataContainer.emplace_back(
+		TempDataBounds{
+			.tempData = TempData{ .meshBundle = std::move(meshBundle) }
+		}
+	);
+	TempData& tempData = tempDataBounds.tempData;
+
+	SetMeshBundle(
+		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
+		tempData
+	);
+
+	const std::vector<MeshBound>& bounds = tempData.meshBundle->GetBounds();
+
+	constexpr auto boundStride = sizeof(MeshBound);
+	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
+
+	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize);
+
+	stagingBufferMan.AddBuffer(
+		std::data(bounds), boundSize,
+		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset,
+		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage
+	);
+}
+
+void MeshManagerMeshShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
+	SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
+	std::deque<TempDataBounds>& tempDataContainer
+) {
+	TempDataBounds& tempDataBounds = tempDataContainer.emplace_back(
+		TempDataBounds{
+			.tempData = TempData{ .meshBundle = std::move(meshBundle) }
+		}
+	);
+	TempData& tempData = tempDataBounds.tempData;
+
+	SetMeshBundle(
+		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
+		tempData
+	);
+
+	const std::vector<MeshBound>& bounds = tempData.meshBundle->GetBounds();
+
+	constexpr auto boundStride = sizeof(MeshBound);
+	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
+
+	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize);
+
+	stagingBufferMan.AddBuffer(
+		std::data(bounds), boundSize,
+		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset
+	);
+}
+
 std::vector<MeshManagerMeshShader::GLSLVertex> MeshManagerMeshShader::TransformVertices(
 	const std::vector<Vertex>& vertices
 ) noexcept {
@@ -74,4 +149,14 @@ std::vector<MeshManagerMeshShader::GLSLVertex> MeshManagerMeshShader::TransformV
 	}
 
 	return glslVertices;
+}
+
+MeshManagerMeshShader::BoundsDetails MeshManagerMeshShader::GetBoundsDetails() const noexcept
+{
+	constexpr auto stride = sizeof(MeshBound);
+
+	return BoundsDetails{
+		.offset = static_cast<std::uint32_t>(m_meshBoundsSharedData.offset / stride),
+		.count  = static_cast<std::uint32_t>(m_meshBoundsSharedData.size / stride)
+	};
 }
