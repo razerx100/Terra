@@ -483,8 +483,7 @@ public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_pipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
-		m_modelBuffers{ device, memoryManager, frameCount },
-		m_meshBoundsBuffer{ device, memoryManager }, m_graphicsPipelines{},
+		m_modelBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
 		m_meshBundles{}, m_meshBundleTempData{}, m_modelBundles{}
 	{}
 
@@ -497,11 +496,6 @@ public:
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
 		m_modelBuffers.Update(frameIndex);
-	}
-
-	void UpdateWhenGPUFinished() noexcept
-	{
-		m_meshBoundsBuffer.Update();
 	}
 
 	void SetRenderPass(VKRenderPass* renderPass) noexcept
@@ -752,9 +746,6 @@ protected:
 	VKRenderPass*                m_renderPass;
 	std::wstring                 m_shaderPath;
 	ModelBuffers                 m_modelBuffers;
-	// The members of MeshBounds should be implemented on the child which wants use it.
-	MeshBoundsBuffers            m_meshBoundsBuffer;
-
 	std::vector<Pipeline>        m_graphicsPipelines;
 	ReusableVector<MeshManager>  m_meshBundles;
 	std::deque<MeshTempData>     m_meshBundleTempData;
@@ -774,7 +765,6 @@ public:
 		m_renderPass{ other.m_renderPass },
 		m_shaderPath{ std::move(other.m_shaderPath) },
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
-		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_meshBundleTempData{ std::move(other.m_meshBundleTempData) },
@@ -788,7 +778,6 @@ public:
 		m_renderPass         = other.m_renderPass;
 		m_shaderPath         = std::move(other.m_shaderPath);
 		m_modelBuffers       = std::move(other.m_modelBuffers);
-		m_meshBoundsBuffer   = std::move(other.m_meshBoundsBuffer);
 		m_graphicsPipelines  = std::move(other.m_graphicsPipelines);
 		m_meshBundles        = std::move(other.m_meshBundles);
 		m_meshBundleTempData = std::move(other.m_meshBundleTempData);

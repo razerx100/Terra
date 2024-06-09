@@ -49,7 +49,7 @@ public:
 	);
 
 	[[nodiscard]]
-	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBounds; }
+	const std::vector<MeshBound>& GetBounds() const noexcept { return m_meshBounds; }
 
 	[[nodiscard]]
 	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
@@ -78,11 +78,11 @@ private:
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 
 private:
-	SharedBufferData        m_vertexBufferSharedData;
-	SharedBufferData        m_vertexIndicesBufferSharedData;
-	SharedBufferData        m_primIndicesBufferSharedData;
-	std::vector<MeshBounds> m_meshBounds;
-	MeshDetails             m_meshDetails;
+	SharedBufferData       m_vertexBufferSharedData;
+	SharedBufferData       m_vertexIndicesBufferSharedData;
+	SharedBufferData       m_primIndicesBufferSharedData;
+	std::vector<MeshBound> m_meshBounds;
+	MeshDetails            m_meshDetails;
 
 public:
 	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;

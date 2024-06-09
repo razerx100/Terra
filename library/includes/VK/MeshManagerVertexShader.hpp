@@ -32,7 +32,7 @@ public:
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 
 	[[nodiscard]]
-	const std::vector<MeshBounds>& GetBounds() const noexcept { return m_meshBounds; }
+	const std::vector<MeshBound>& GetBounds() const noexcept { return m_meshBounds; }
 
 	[[nodiscard]]
 	const SharedBufferData& GetVertexSharedData() const noexcept { return m_vertexBufferSharedData; }
@@ -40,9 +40,9 @@ public:
 	const SharedBufferData& GetIndexSharedData() const noexcept { return m_indexBufferSharedData; }
 
 private:
-	SharedBufferData        m_vertexBufferSharedData;
-	SharedBufferData        m_indexBufferSharedData;
-	std::vector<MeshBounds> m_meshBounds;
+	SharedBufferData       m_vertexBufferSharedData;
+	SharedBufferData       m_indexBufferSharedData;
+	std::vector<MeshBound> m_meshBounds;
 
 public:
 	MeshManagerVertexShader(const MeshManagerVertexShader&) = delete;

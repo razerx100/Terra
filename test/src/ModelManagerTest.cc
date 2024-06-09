@@ -114,13 +114,13 @@ public:
 
 class MeshDummyVS : public MeshBundleVS
 {
-	std::vector<MeshBounds>    m_bounds   = { MeshBounds{} };
+	std::vector<MeshBound>     m_bounds   = { MeshBound{} };
 	std::vector<Vertex>        m_vertices = { Vertex{} };
 	std::vector<std::uint32_t> m_indices  = { 0u, 1u, 2u };
 
 public:
 	[[nodiscard]]
-	const std::vector<MeshBounds>& GetBounds() const noexcept override
+	const std::vector<MeshBound>& GetBounds() const noexcept override
 	{
 		return m_bounds;
 	}
@@ -144,14 +144,14 @@ public:
 
 class MeshDummyMS : public MeshBundleMS
 {
-	std::vector<MeshBounds>    m_bounds        = { MeshBounds{} };
+	std::vector<MeshBound>     m_bounds        = { MeshBound{} };
 	std::vector<Vertex>        m_vertices      = { Vertex{} };
 	std::vector<std::uint32_t> m_vertexIndices = { 0u, 1u, 2u };
 	std::vector<std::uint32_t> m_primIndices   = { 0u };
 
 public:
 	[[nodiscard]]
-	const std::vector<MeshBounds>& GetBounds() const noexcept override
+	const std::vector<MeshBound>& GetBounds() const noexcept override
 	{
 		return m_bounds;
 	}
