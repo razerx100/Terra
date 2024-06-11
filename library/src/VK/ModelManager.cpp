@@ -287,7 +287,7 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 		const ModelData modelData{
 			.modelMatrix   = model->GetModelMatrix(),
 			.modelOffset   = model->GetModelOffset(),
-			.materialIndex = model->GetMaterialIndex(),
+			.materialIndex = model->GetMaterialIndex()
 		};
 
 		memcpy(bufferOffset + modelOffset, &modelData, strideSize);
@@ -723,7 +723,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 	}
 }
 
-void ModelManagerVSIndirect::SetDescriptorBufferCS(
+void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers
 ) const {
 	const auto frameCount = std::size(descriptorBuffers);
@@ -755,10 +755,16 @@ void ModelManagerVSIndirect::SetDescriptorBufferCS(
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
 		);
+	}
+}
+
+void ModelManagerVSIndirect::SetDescriptorBufferCSOfMeshes(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers
+) const {
+	for (auto& descriptorBuffer : descriptorBuffers)
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_meshBoundsBuffer.GetBuffer(), s_meshBoundingBindingSlot, 0u
 		);
-	}
 }
 
 void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept

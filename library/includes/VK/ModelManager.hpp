@@ -403,18 +403,14 @@ public:
 	void Update(VkDeviceSize bufferIndex) const noexcept;
 
 	[[nodiscard]]
-	std::uint32_t GetInstanceCount() const noexcept
-	{
-		return m_bufferInstanceCount;
-	}
+	std::uint32_t GetInstanceCount() const noexcept { return m_bufferInstanceCount; }
 
 private:
 	struct ModelData
 	{
 		DirectX::XMMATRIX modelMatrix;
 		DirectX::XMFLOAT3 modelOffset;
-		float             padding;
-		// GLSL vec3 is actually vec4.
+		// GLSL vec3 is actually vec4, so the materialIndex must be grabbed from the z component.
 		std::uint32_t     materialIndex;
 	};
 
@@ -889,7 +885,9 @@ public:
 	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
 	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
-	void SetDescriptorBufferCS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+
+	void SetDescriptorBufferCSOfModels(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+	void SetDescriptorBufferCSOfMeshes(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
@@ -924,6 +922,7 @@ private:
 	SharedBuffer                       m_cullingDataBuffer;
 	std::vector<SharedBuffer>          m_counterBuffers;
 	Buffer                             m_counterResetBuffer;
+	// Buffer m_meshIndexBuffer;
 	SharedBuffer                       m_modelIndicesBuffer;
 	SharedBuffer                       m_vertexBuffer;
 	SharedBuffer                       m_indexBuffer;
@@ -951,6 +950,7 @@ private:
 	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
 	static constexpr std::uint32_t s_modelBundleIndexBindingSlot    = 6u;
 	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 7u;
+	static constexpr std::uint32_t s_meshIndicesBindingSlot         = 8u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
