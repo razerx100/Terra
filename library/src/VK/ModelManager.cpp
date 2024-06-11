@@ -630,6 +630,9 @@ void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 		const SharedBufferData& indexSharedData = meshManager.GetIndexSharedData();
 		m_indexBuffer.RelinquishMemory(indexSharedData);
+
+		const SharedBufferData& meshBoundsSharedData = meshManager.GetBoundsSharedData();
+		m_meshBoundsBuffer.RelinquishMemory(meshBoundsSharedData);
 	}
 }
 
@@ -638,8 +641,9 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 	MeshManagerVertexShader& meshManager
 ) {
 	meshManager.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
-		m_meshBundleTempData
+		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_meshBoundsBuffer,
+		m_meshBundleTempData,
+		QueueType::ComputeQueue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	);
 }
 
@@ -720,6 +724,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			s_modelBundleIndexBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
+		descriptorBuffer.AddBinding(
+			s_meshBoundingBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
 	}
 }
 
@@ -754,6 +762,9 @@ void ModelManagerVSIndirect::SetDescriptorBufferCS(
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_meshBoundsBuffer.GetBuffer(), s_meshBoundingBindingSlot, 0u
 		);
 	}
 }

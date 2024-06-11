@@ -474,17 +474,23 @@ template<
 	class MeshType,
 	class ModelBundleType,
 	class ModelType,
-	bool  TempData
+	bool  TempData, bool meshBounds
 >
 class ModelManager
 {
-	using MeshTempData = typename MeshManager::TempData;
+	using MeshTempData = std::conditional_t<
+		meshBounds ,typename MeshManager::TempDataBounds, typename MeshManager::TempData
+	>;
+
 public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_pipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
 		m_modelBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
-		m_meshBundles{}, m_meshBundleTempData{}, m_modelBundles{}
+		m_meshBundles{}, m_meshBoundsBuffer{
+			device, memoryManager,
+			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		}, m_meshBundleTempData{}, m_modelBundles{}
 	{}
 
 	// The layout should be the same across the multiple descriptors for each frame.
@@ -748,6 +754,8 @@ protected:
 	ModelBuffers                 m_modelBuffers;
 	std::vector<Pipeline>        m_graphicsPipelines;
 	ReusableVector<MeshManager>  m_meshBundles;
+	// Configure this buffer in the child class, if desired.
+	SharedBuffer                 m_meshBoundsBuffer;
 	std::deque<MeshTempData>     m_meshBundleTempData;
 	std::vector<ModelBundleType> m_modelBundles;
 
@@ -767,6 +775,7 @@ public:
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
+		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
 		m_meshBundleTempData{ std::move(other.m_meshBundleTempData) },
 		m_modelBundles{ std::move(other.m_modelBundles) }
 	{}
@@ -780,6 +789,7 @@ public:
 		m_modelBuffers       = std::move(other.m_modelBuffers);
 		m_graphicsPipelines  = std::move(other.m_graphicsPipelines);
 		m_meshBundles        = std::move(other.m_meshBundles);
+		m_meshBoundsBuffer   = std::move(other.m_meshBoundsBuffer);
 		m_meshBundleTempData = std::move(other.m_meshBundleTempData);
 		m_modelBundles       = std::move(other.m_modelBundles);
 
@@ -794,7 +804,7 @@ class ModelManagerVSIndividual : public
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndividual, ModelVS,
-		false
+		false, false
 	>
 {
 	friend class ModelManager
@@ -803,7 +813,7 @@ class ModelManagerVSIndividual : public
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndividual, ModelVS,
-			false
+			false, false
 		>;
 	friend class ModelManagerVSIndividualTest;
 public:
@@ -867,7 +877,7 @@ class ModelManagerVSIndirect : public
 		GraphicsPipelineIndirectDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndirect, ModelVS,
-		true
+		true, true
 	>
 {
 	friend class ModelManager
@@ -876,7 +886,7 @@ class ModelManagerVSIndirect : public
 			GraphicsPipelineIndirectDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndirect, ModelVS,
-			true
+			true, true
 		>;
 	friend class ModelManagerVSIndirectTest;
 
@@ -942,8 +952,6 @@ private:
 	SharedBuffer                       m_vertexBuffer;
 	SharedBuffer                       m_indexBuffer;
 	SharedBuffer                       m_modelBundleIndexBuffer;
-	// I will added a SharedBuffer for the MeshBounds. And a host coherent BoundsDetails buffer
-	// which will be written to before the call to dispatch.
 	PipelineLayout                     m_pipelineLayoutCS;
 	ComputePipeline                    m_computePipeline;
 	QueueIndices3                      m_queueIndices3;
@@ -966,6 +974,7 @@ private:
 	static constexpr std::uint32_t s_argumenOutputBindingSlot       = 4u;
 	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
 	static constexpr std::uint32_t s_modelBundleIndexBindingSlot    = 6u;
+	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 7u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -1026,7 +1035,7 @@ class ModelManagerMS : public
 		GraphicsPipelineMeshShader,
 		MeshManagerMeshShader, MeshBundleMS,
 		ModelBundleMS, ModelMS,
-		true
+		true, false
 	>
 {
 	friend class ModelManager
@@ -1035,7 +1044,7 @@ class ModelManagerMS : public
 			GraphicsPipelineMeshShader,
 			MeshManagerMeshShader, MeshBundleMS,
 			ModelBundleMS, ModelMS,
-		true
+			true, false
 		>;
 	friend class ModelManagerMSTest;
 
