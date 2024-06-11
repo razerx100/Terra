@@ -305,9 +305,7 @@ public:
 class ModelBundleVSIndirect : public ModelBundle
 {
 public:
-	ModelBundleVSIndirect(
-		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
-	);
+	ModelBundleVSIndirect();
 
 	void AddModelDetails(std::uint32_t modelBufferIndex) noexcept;
 
@@ -317,10 +315,6 @@ public:
 		std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer
 	);
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
-
-	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t modelIndicesBindingSlot
-	) const noexcept;
 
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
@@ -357,18 +351,14 @@ public:
 	static VkDeviceSize GetCounterBufferSize() noexcept { return s_counterBufferSize; }
 
 private:
-	std::uint32_t                  m_modelCount;
-	QueueIndices3                  m_queueIndices;
-	VkDeviceSize                   m_argumentOutputBufferSize;
-	Buffer                         m_modelIndicesBuffer;
-
-	SharedBufferData               m_argumentOutputSharedData;
-	SharedBufferData               m_counterSharedData;
-	SharedBufferData               m_modelIndicesSharedData;
+	std::uint32_t              m_modelCount;
+	SharedBufferData           m_argumentOutputSharedData;
+	SharedBufferData           m_counterSharedData;
+	SharedBufferData           m_modelIndicesSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
-	std::vector<std::uint32_t>     m_modelIndices;
+	std::vector<std::uint32_t> m_modelIndices;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
@@ -377,10 +367,8 @@ public:
 	ModelBundleVSIndirect& operator=(const ModelBundleVSIndirect&) = delete;
 
 	ModelBundleVSIndirect(ModelBundleVSIndirect&& other) noexcept
-		: ModelBundle{ std::move(other) }, m_modelCount{ other.m_modelCount },
-		m_queueIndices{ other.m_queueIndices },
-		m_argumentOutputBufferSize{ other.m_argumentOutputBufferSize },
-		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
+		: ModelBundle{ std::move(other) },
+		m_modelCount{ other.m_modelCount },
 		m_argumentOutputSharedData{ other.m_argumentOutputSharedData },
 		m_counterSharedData{ other.m_counterSharedData },
 		m_modelIndicesSharedData{ other.m_modelIndicesSharedData },
@@ -390,9 +378,6 @@ public:
 	{
 		ModelBundle::operator=(std::move(other));
 		m_modelCount               = other.m_modelCount;
-		m_queueIndices             = other.m_queueIndices;
-		m_argumentOutputBufferSize = other.m_argumentOutputBufferSize;
-		m_modelIndicesBuffer       = std::move(other.m_modelIndicesBuffer);
 		m_argumentOutputSharedData = other.m_argumentOutputSharedData;
 		m_counterSharedData        = other.m_counterSharedData;
 		m_modelIndicesSharedData   = other.m_modelIndicesSharedData;
@@ -526,7 +511,7 @@ public:
 
 		auto dvThis = static_cast<Derived*>(this);
 
-		ModelBundleType modelBundle = dvThis->GetModelBundle();
+		ModelBundleType modelBundle{};
 		dvThis->ConfigureModel(modelBundle, modelIndex, tempModel);
 
 		modelBundle.SetMeshIndex(meshIndex);
@@ -563,7 +548,7 @@ public:
 
 			auto dvThis = static_cast<Derived*>(this);
 
-			ModelBundleType modelBundleObj = dvThis->GetModelBundle();
+			ModelBundleType modelBundleObj{};
 
 			dvThis->ConfigureModelBundle(modelBundleObj, modelIndices, modelBundle);
 
@@ -844,9 +829,6 @@ private:
 		MeshManagerVertexShader& meshManager
 	);
 
-	[[nodiscard]]
-	static ModelBundleVSIndividual GetModelBundle() { return ModelBundleVSIndividual{}; }
-
 private:
 	SharedBuffer m_vertexBuffer;
 	SharedBuffer m_indexBuffer;
@@ -929,12 +911,6 @@ private:
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerVertexShader& meshManager
 	);
-
-	[[nodiscard]]
-	ModelBundleVSIndirect GetModelBundle() const
-	{
-		return ModelBundleVSIndirect{ m_device, m_memoryManager, m_queueIndices3 };
-	}
 
 	void _cleanUpTempData() noexcept;
 
@@ -1081,9 +1057,6 @@ private:
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerMeshShader& meshManager
 	);
-
-	[[nodiscard]]
-	static ModelBundleMS GetModelBundle() { return ModelBundleMS{}; }
 
 	void _cleanUpTempData() noexcept;
 

@@ -118,11 +118,8 @@ void ModelBundleMS::CreateBuffers(
 }
 
 // Model Bundle VS Indirect
-ModelBundleVSIndirect::ModelBundleVSIndirect(
-	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices
-) : ModelBundle{}, m_modelCount{ 0u }, m_queueIndices{ queueIndices },
-	m_argumentOutputBufferSize{ 0u },
-	m_modelIndicesBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
+ModelBundleVSIndirect::ModelBundleVSIndirect()
+	: ModelBundle{}, m_modelCount{ 0u },
 	m_argumentOutputSharedData{ nullptr, 0u, 0u }, m_counterSharedData{ nullptr, 0u, 0u },
 	m_modelIndicesSharedData{ nullptr, 0u, 0u }, m_modelIndices{}
 {}
@@ -138,16 +135,17 @@ void ModelBundleVSIndirect::CreateBuffers(
 	std::vector<SharedBuffer>& argumentOutputSharedBuffers,
 	std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer
 ) {
-	constexpr size_t strideSize      = sizeof(VkDrawIndexedIndirectCommand);
-	m_argumentOutputBufferSize       = static_cast<VkDeviceSize>(m_modelCount * strideSize);
-	const auto modelIndiceBufferSize = static_cast<VkDeviceSize>(m_modelCount * sizeof(std::uint32_t));
+	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
+	constexpr size_t indexStrideSize    = sizeof(std::uint32_t);
+	const auto argumentOutputBufferSize = static_cast<VkDeviceSize>(m_modelCount * argStrideSize);
+	const auto modelIndiceBufferSize    = static_cast<VkDeviceSize>(m_modelCount * indexStrideSize);
 
 	// The shared data for every instance should be the same. So, we can use the last one for the
 	// other ones as well. And as we are not using the buffer object for the stagingBufferMan,
 	// it should be fine.
 	for (auto& argumentOutputSharedBuffer : argumentOutputSharedBuffers)
 		m_argumentOutputSharedData = argumentOutputSharedBuffer.AllocateAndGetSharedData(
-			m_argumentOutputBufferSize
+			argumentOutputBufferSize
 		);
 
 	for (auto& counterSharedBuffer : counterSharedBuffers)
@@ -158,12 +156,6 @@ void ModelBundleVSIndirect::CreateBuffers(
 	stagingBufferMan.AddBuffer(
 		std::data(m_modelIndices), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u
 	);
-}
-
-void ModelBundleVSIndirect::SetDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t modelIndicesBindingSlot
-) const noexcept {
-	descriptorBuffer.SetStorageBufferDescriptor(m_modelIndicesBuffer, modelIndicesBindingSlot, 0u);
 }
 
 void ModelBundleVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
