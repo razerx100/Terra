@@ -213,8 +213,7 @@ void ModelBundleCSIndirect::CreateBuffers(
 		modelIndexDataSize
 	);
 
-	const auto modelBundleIndex
-		= static_cast<std::uint32_t>(m_cullingSharedData.offset / cullingDataSize);
+	const auto modelBundleIndex = GetModelBundleIndex();
 
 	m_cullingData->commandOffset
 		= static_cast<std::uint32_t>(m_argumentInputSharedData.offset / strideSize);
@@ -434,6 +433,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+	m_meshIndexBuffer{ device, memoryManager },
 	m_modelIndicesBuffer{
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -502,6 +502,11 @@ void ModelManagerVSIndirect::ConfigureModel(
 		m_modelBundleCSTempData
 	);
 
+	const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
+
+	// This will need to be updated later, as I will probably update the Mesh Index setting logic.
+	m_meshIndexBuffer.Add(modelBundleIndexInBuffer, model->GetMeshIndex());
+
 	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
 
 	modelBundleCS.SetID(index32_t);
@@ -551,6 +556,14 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
 		m_modelBundleCSTempData
 	);
+
+	if(modelCount)
+	{
+		const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
+
+		// This will need to be updated later, as I will probably update the Mesh Index setting logic.
+		m_meshIndexBuffer.Add(modelBundleIndexInBuffer, modelBundle.front()->GetMeshIndex());
+	}
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
@@ -720,6 +733,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			s_meshBoundingBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
+		descriptorBuffer.AddBinding(
+			s_meshIndicesBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
 	}
 }
 
@@ -755,6 +772,8 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
 		);
+
+		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndicesBindingSlot);
 	}
 }
 

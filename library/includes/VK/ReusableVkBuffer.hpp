@@ -105,4 +105,86 @@ public:
 		return *this;
 	}
 };
+
+template<typename T>
+class ReusableCPUBuffer
+{
+private:
+	[[nodiscard]]
+	static consteval size_t GetStride() noexcept { return sizeof(T); }
+	[[nodiscard]]
+	// Chose 4 for not particular reason.
+	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
+
+	void CreateBuffer(size_t elementCount)
+	{
+		constexpr size_t strideSize = GetStride();
+		const auto buffersSize      = static_cast<VkDeviceSize>(strideSize * elementCount);
+
+		Buffer newBuffer = GetCPUResource<Buffer>(m_device, m_memoryManager);
+		newBuffer.Create(buffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+
+		const VkDeviceSize oldBufferSize = m_buffer.Size();
+		if (oldBufferSize)
+			memcpy(newBuffer.CPUHandle(), m_buffer.CPUHandle(), m_buffer.Size());
+
+		m_buffer = std::move(newBuffer);
+	}
+
+	void CreateBufferIfNecessary(size_t index)
+	{
+		const VkDeviceSize currentSize = m_buffer.Size();
+		constexpr size_t strideSize    = GetStride();
+
+		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(index * strideSize + strideSize);
+
+		if (currentSize < minimumSpaceRequirement)
+			CreateBuffer(index + 1u + GetExtraElementAllocationCount());
+	}
+
+public:
+	ReusableCPUBuffer(VkDevice device, MemoryManager* memoryManager)
+		: m_device{ device }, m_memoryManager{ memoryManager },
+		m_buffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
+	{}
+
+	void SetDescriptorBuffer(
+		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
+	) const {
+		descriptorBuffer.SetStorageBufferDescriptor(m_buffer, bindingSlot, 0u);
+	}
+
+	void Add(size_t index, const T& value)
+	{
+		CreateBufferIfNecessary(index);
+
+		std::uint8_t* bufferOffsetPtr = m_buffer.CPUHandle();
+		constexpr size_t strideSize   = GetStride();
+		const size_t bufferOffset     = index * strideSize;
+
+		memcpy(bufferOffsetPtr + bufferOffset, &value, strideSize);
+	}
+
+private:
+	VkDevice       m_device;
+	MemoryManager* m_memoryManager;
+	Buffer         m_buffer;
+
+public:
+	ReusableCPUBuffer(const ReusableCPUBuffer&) = delete;
+	ReusableCPUBuffer& operator=(const ReusableCPUBuffer&) = delete;
+
+	ReusableCPUBuffer(ReusableCPUBuffer&& other) noexcept
+		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
+		m_buffer{ std::move(other.m_buffer) }
+	{}
+	ReusableCPUBuffer& operator=(ReusableCPUBuffer&& other) noexcept
+	{
+		m_device        = other.m_device;
+		m_memoryManager = other.m_memoryManager;
+		m_buffer        = std::move(other.m_buffer);
+
+		return *this;
+	}
+};
 #endif

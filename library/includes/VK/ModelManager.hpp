@@ -253,6 +253,13 @@ public:
 	std::uint32_t GetID() const noexcept { return m_bundleID; }
 
 	[[nodiscard]]
+	// Must be called after the buffers have been created.
+	std::uint32_t GetModelBundleIndex() const noexcept
+	{
+		return static_cast<std::uint32_t>(m_cullingSharedData.offset / sizeof(CullingData));
+	}
+
+	[[nodiscard]]
 	const SharedBufferData& GetArgumentInputSharedData() const noexcept
 	{
 		return m_argumentInputSharedData;
@@ -922,7 +929,7 @@ private:
 	SharedBuffer                       m_cullingDataBuffer;
 	std::vector<SharedBuffer>          m_counterBuffers;
 	Buffer                             m_counterResetBuffer;
-	// Buffer m_meshIndexBuffer;
+	ReusableCPUBuffer<std::uint32_t>   m_meshIndexBuffer;
 	SharedBuffer                       m_modelIndicesBuffer;
 	SharedBuffer                       m_vertexBuffer;
 	SharedBuffer                       m_indexBuffer;
@@ -967,6 +974,7 @@ public:
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
+		m_meshIndexBuffer{ std::move(other.m_meshIndexBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
@@ -988,6 +996,7 @@ public:
 		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
+		m_meshIndexBuffer        = std::move(other.m_meshIndexBuffer);
 		m_modelIndicesBuffer     = std::move(other.m_modelIndicesBuffer);
 		m_vertexBuffer           = std::move(other.m_vertexBuffer);
 		m_indexBuffer            = std::move(other.m_indexBuffer);
