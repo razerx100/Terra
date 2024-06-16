@@ -18,7 +18,7 @@ public:
 	template<typename U>
 	[[nodiscard]]
 	// Returns the index of the element in the ElementBuffer.
-	size_t Add(U&& element) noexcept
+	size_t Add(U&& element)
 	{
 		const size_t oldCount          = m_elements.GetCount();
 		const size_t extraElementCount = static_cast<Derived*>(this)->GetExtraElementAllocationCount();
@@ -35,7 +35,7 @@ public:
 
 	[[nodiscard]]
 	// Returns the indices of the elements in the ElementBuffer.
-	std::vector<size_t> AddMultiple(std::vector<T>&& elements) noexcept
+	std::vector<size_t> AddMultiple(std::vector<T>&& elements)
 	{
 		std::vector<size_t> freeIndices = m_elements.GetAvailableIndices();
 

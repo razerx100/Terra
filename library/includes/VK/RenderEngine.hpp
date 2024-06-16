@@ -1,6 +1,15 @@
 #ifndef RENDER_ENGINE_HPP_
 #define RENDER_ENGINE_HPP_
-#include <vulkan/vulkan.hpp>
+#include <memory>
+#include <VkDeviceManager.hpp>
+#include <VkCommandQueue.hpp>
+#include <StagingBufferManager.hpp>
+#include <VkDescriptorBuffer.hpp>
+#include <TextureManager.hpp>
+#include <CommonBuffers.hpp>
+#include <CameraManager.hpp>
+#include <DepthBuffer.hpp>
+#include <VKRenderPass.hpp>
 
 /*
 class RenderEngine {
@@ -43,12 +52,84 @@ public:
 	virtual void CopyData() noexcept;
 	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept;
 
-	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 	void SetShaderPath(const wchar_t* path) noexcept;
 
 protected:
-	VkClearColorValue m_backgroundColour;
 	std::wstring m_shaderPath;
 };
 */
+
+class RenderEngine
+{
+public:
+	RenderEngine(
+		VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
+		VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
+	);
+	virtual ~RenderEngine() = default;
+
+	[[nodiscard]]
+	size_t AddMaterial(std::shared_ptr<Material> material);
+	[[nodiscard]]
+	std::vector<size_t> AddMaterials(std::vector<std::shared_ptr<Material>>&& materials);
+
+	void UpdateMaterial(size_t index) const noexcept { m_materialBuffers.Update(index); }
+	void RemoveMaterial(size_t index) noexcept { m_materialBuffers.Remove(index); }
+
+	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
+
+protected:
+	std::shared_ptr<ThreadPool>     m_threadPool;
+	MemoryManager                   m_memoryManager;
+	VkCommandQueue                  m_graphicsQueue;
+	VkCommandQueue                  m_transferQueue;
+	StagingBufferManager            m_stagingManager;
+	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
+	TextureStorage                  m_textureStorage;
+	TextureManager                  m_textureManager;
+	MaterialBuffers                 m_materialBuffers;
+	CameraManager                   m_cameraManager;
+	DepthBuffer                     m_depthBuffers;
+	VKRenderPass                    m_renderPass;
+	VkClearColorValue               m_backgroundColour;
+
+public:
+	RenderEngine(const RenderEngine&) = delete;
+	RenderEngine& operator=(const RenderEngine&) = delete;
+
+	RenderEngine(RenderEngine&& other) noexcept
+		: m_threadPool{ std::move(other.m_threadPool) },
+		m_memoryManager{ std::move(other.m_memoryManager) },
+		m_graphicsQueue{ std::move(other.m_graphicsQueue) },
+		m_transferQueue{ std::move(other.m_transferQueue) },
+		m_stagingManager{ std::move(other.m_stagingManager) },
+		m_graphicsDescriptorBuffers{ std::move(other.m_graphicsDescriptorBuffers) },
+		m_textureStorage{ std::move(other.m_textureStorage) },
+		m_textureManager{ std::move(other.m_textureManager) },
+		m_materialBuffers{ std::move(other.m_materialBuffers) },
+		m_cameraManager{ std::move(other.m_cameraManager) },
+		m_depthBuffers{ std::move(other.m_depthBuffers) },
+		m_renderPass{ std::move(other.m_renderPass) },
+		m_backgroundColour{ other.m_backgroundColour }
+	{}
+	RenderEngine& operator=(RenderEngine&& other) noexcept
+	{
+		m_threadPool                = std::move(other.m_threadPool);
+		m_memoryManager             = std::move(other.m_memoryManager);
+		m_graphicsQueue             = std::move(other.m_graphicsQueue);
+		m_transferQueue             = std::move(other.m_transferQueue);
+		m_stagingManager            = std::move(other.m_stagingManager);
+		m_graphicsDescriptorBuffers = std::move(other.m_graphicsDescriptorBuffers);
+		m_textureStorage            = std::move(other.m_textureStorage);
+		m_textureManager            = std::move(other.m_textureManager);
+		m_materialBuffers           = std::move(other.m_materialBuffers);
+		m_cameraManager             = std::move(other.m_cameraManager);
+		m_depthBuffers              = std::move(other.m_depthBuffers);
+		m_renderPass                = std::move(other.m_renderPass);
+		m_backgroundColour          = other.m_backgroundColour;
+
+		return *this;
+	}
+};
 #endif

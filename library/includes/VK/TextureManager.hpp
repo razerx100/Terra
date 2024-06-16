@@ -134,7 +134,7 @@ public:
 	TextureStorage(const TextureStorage&) = delete;
 	TextureStorage& operator=(const TextureStorage&) = delete;
 
-	TextureStorage(TextureStorage& other) noexcept
+	TextureStorage(TextureStorage&& other) noexcept
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
 		m_defaultSampler{ std::move(other.m_defaultSampler) },
 		m_textures{ std::move(other.m_textures) },
