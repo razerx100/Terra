@@ -43,7 +43,6 @@ Terra::Terra(Terra&& other) noexcept
 	, m_graphicsQueue{ std::move(other.m_graphicsQueue) }
 	, m_computeQueue{ std::move(other.m_computeQueue) }
 	, m_transferQueue{ std::move(other.m_transferQueue) }, m_swapChain{ std::move(other.m_swapChain) }
-	, m_renderEngine{ std::move(other.m_renderEngine) }
 	, m_cameraManager{ std::move(other.m_cameraManager) }
 {}
 
@@ -59,7 +58,6 @@ Terra& Terra::operator=(Terra&& other) noexcept
 	m_computeQueue          = std::move(other.m_computeQueue);
 	m_transferQueue         = std::move(other.m_transferQueue);
 	m_swapChain             = std::move(other.m_swapChain);
-	m_renderEngine          = std::move(other.m_renderEngine);
 	m_cameraManager         = std::move(other.m_cameraManager);
 
 	return *this;
@@ -74,7 +72,6 @@ Terra::Terra(
 	, m_surface{ nullptr }, m_device{ nullptr }
 	//, m_graphicsQueue{}, m_computeQueue{}, m_transferQueue{}
 	, m_swapChain{ nullptr }
-	, m_renderEngine{ nullptr }
 	, m_cameraManager{ nullptr }
 {
 	InitDisplay();
@@ -135,7 +132,7 @@ Terra::Terra(
 		logicalDevice, physicalDevice, nullptr /* memoryManager */, Surface()
 	);
 
-	InitRenderEngine(logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices());
+	//InitRenderEngine(logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices());
 }
 
 Terra& Terra::Get() { return *sTerra; }
@@ -187,35 +184,4 @@ void Terra::InitQueues(
 		queFamily.GetQueue(TransferQueue), device, queFamily.GetIndex(TransferQueue), m_objectManager,
 		m_transferQueue
 	);
-}
-
-void Terra::InitRenderEngine(
-	VkDevice device, RenderEngineType engineType, std::uint32_t bufferCount, QueueIndices3 queueIndices
-)
-{
-	switch (engineType)
-	{
-	case RenderEngineType::IndirectDraw:
-	{
-		m_objectManager.CreateObject<RenderEngine, RenderEngineIndirectDraw>(
-			m_renderEngine, 1u, device, bufferCount, queueIndices
-		);
-		break;
-	}
-	case RenderEngineType::MeshDraw:
-	{
-		m_objectManager.CreateObject<RenderEngine, RenderEngineMeshShader>(
-			m_renderEngine, 1u, device, bufferCount, queueIndices
-		);
-		break;
-	}
-	case RenderEngineType::IndividualDraw:
-	default:
-	{
-		m_objectManager.CreateObject<RenderEngine, RenderEngineIndividualDraw>(
-			m_renderEngine, 1u, device, queueIndices
-		);
-		break;
-	}
-	}
 }

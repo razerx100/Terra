@@ -50,7 +50,6 @@ public:
 	inline Queue& Compute() noexcept { return m_computeQueue; }
 	inline Queue& Transfer() noexcept { return m_transferQueue; }
 	inline SwapchainManager& Swapchain() noexcept { return *m_swapChain; }
-	inline RenderEngine& Engine() noexcept { return *m_renderEngine; }
 	inline CameraManager& Camera() noexcept { return *m_cameraManager; }
 
 	[[nodiscard]]
@@ -61,10 +60,6 @@ private:
 	void InitSurface();
 	void InitQueues(
 		VkDevice device, std::uint32_t bufferCount, const VkQueueFamilyMananger& queFamily
-	);
-	void InitRenderEngine(
-		VkDevice device, RenderEngineType engineType, std::uint32_t bufferCount,
-		QueueIndices3 queueIndices
 	);
 
 public:
@@ -120,7 +115,6 @@ private:
 	Queue                                    m_computeQueue;
 	Queue                                    m_transferQueue;
 	std::unique_ptr<SwapchainManager>        m_swapChain;
-	std::unique_ptr<RenderEngine>            m_renderEngine;
 	std::unique_ptr<CameraManager>           m_cameraManager;
 };
 #endif

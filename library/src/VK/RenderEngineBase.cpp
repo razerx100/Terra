@@ -1,7 +1,6 @@
 #include <RenderEngineBase.hpp>
 
-#include <Terra.hpp>
-
+/*
 void RenderEngineBase::Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) {
 	vkCmdEndRenderPass(graphicsCmdBuffer);
 
@@ -44,23 +43,22 @@ void RenderEngineBase::ExecutePreGraphicsStage(
 }
 
 void RenderEngineBase::ConstructGraphicsPipelineLayout(VkDevice device) {
-	/*DescriptorSetManager& descManager = Terra::Get().GraphicsDesc();
+	DescriptorSetManager& descManager = Terra::Get().GraphicsDesc();
 
 	m_graphicsPipelineLayout = CreateGraphicsPipelineLayout(
 		device, descManager.GetDescriptorSetCount(), descManager.GetDescriptorSetLayouts()
-	);*/
+	);
 }
 
 void RenderEngineBase::BindGraphicsDescriptorSets(
 	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
 ) {
-	/*
 	VkDescriptorSet descSets[] = { Terra::Get().GraphicsDesc().GetDescriptorSet(frameIndex) };
 	vkCmdBindDescriptorSets(
 		graphicsCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 		m_graphicsPipelineLayout->Get(), 0u, 1u,
 		descSets, 0u, nullptr
-	); */
+	);
 }
 
 void RenderEngineBase::ResizeViewportAndScissor(
@@ -97,13 +95,14 @@ void RenderEngineBase::RecordModelDataSet(
 	[[maybe_unused]] const std::wstring& fragmentShader
 ) noexcept {}
 
-/*void RenderEngineBase::AddMeshletModelSet(
+void RenderEngineBase::AddMeshletModelSet(
 	[[maybe_unused]] std::vector<MeshletModel>& meshletModels,
 	[[maybe_unused]] const std::wstring& fragmentShader
-) noexcept {}*/
+) noexcept {}
 
 void RenderEngineBase::AddGVerticesAndPrimIndices(
 	[[maybe_unused]] VkDevice device, [[maybe_unused]] std::vector<Vertex>&& gVertices,
 	[[maybe_unused]] std::vector<std::uint32_t>&& gVerticesIndices,
 	[[maybe_unused]] std::vector<std::uint32_t>&& gPrimIndices
 ) noexcept {}
+*/

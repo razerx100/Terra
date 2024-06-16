@@ -1,7 +1,6 @@
-
-#include <Terra.hpp>
 #include <RenderEngineVertexShader.hpp>
 
+/*
 // Vertex Shader
 RenderEngineVertexShader::RenderEngineVertexShader(
 	VkDevice device, QueueIndicesTG queueIndices
@@ -39,17 +38,17 @@ void RenderEngineVertexShader::ReleaseUploadResources() noexcept {
 void RenderEngineVertexShader::AcquireOwnerShipGraphics(
 	VkCommandBuffer graphicsCmdBuffer
 ) noexcept {
-	/*m_vertexManager.AcquireOwnerShips(
+	m_vertexManager.AcquireOwnerShips(
 		graphicsCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);*/
+	);
 }
 
 void RenderEngineVertexShader::ReleaseOwnership(
 	VkCommandBuffer transferCmdBuffer
 ) noexcept {
-	/*m_vertexManager.ReleaseOwnerships(
+	m_vertexManager.ReleaseOwnerships(
 		transferCmdBuffer, m_queueIndices.transfer, m_queueIndices.graphics
-	);*/
+	);
 	_releaseOwnership(transferCmdBuffer);
 }
 
@@ -117,10 +116,10 @@ void RenderEngineIndirectDraw::ConstructPipelines() {
 
 	//DescriptorSetManager& descManager = terra.ComputeDesc();
 
-	/*m_computePipeline.CreateComputePipelineLayout(
+	m_computePipeline.CreateComputePipelineLayout(
 		device, descManager.GetDescriptorSetCount(), descManager.GetDescriptorSetLayouts()
 	);
-	m_computePipeline.CreateComputePipeline(device, m_shaderPath);*/
+	m_computePipeline.CreateComputePipeline(device, m_shaderPath);
 }
 
 void RenderEngineIndirectDraw::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
@@ -132,10 +131,10 @@ void RenderEngineIndirectDraw::RecordModelDataSet(
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndirectDraw>();
 	// old currentModelCount hold the modelCountOffset value
-	/*graphicsPipeline->ConfigureGraphicsPipeline(
+	graphicsPipeline->ConfigureGraphicsPipeline(
 		fragmentShader, static_cast<std::uint32_t>(std::size(models)),
 		m_computePipeline.GetCurrentModelCount(), m_computePipeline.GetCounterCount()
-	);*/
+	);
 
 	//m_computePipeline.RecordIndirectArguments(models);
 
@@ -199,12 +198,12 @@ void RenderEngineIndirectDraw::ExecuteComputeStage(size_t frameIndex) {
 	//	frameIndex
 	//);
 
-	/*m_computePipeline.ResetCounterBuffer(vkComputeCommandBuffer, frameIndex);
+	m_computePipeline.ResetCounterBuffer(vkComputeCommandBuffer, frameIndex);
 	m_computePipeline.BindComputePipeline(vkComputeCommandBuffer, frameIndex);
 	m_computePipeline.DispatchCompute(vkComputeCommandBuffer);
 
 	computeCmdBuffer.CloseBuffer(frameIndex);
-	compute.Que().SubmitCommandBuffer(vkComputeCommandBuffer, compute.SyncObj().GetFrontSemaphore());*/
+	compute.Que().SubmitCommandBuffer(vkComputeCommandBuffer, compute.SyncObj().GetFrontSemaphore());
 }
 
 // Individual Draw
@@ -241,10 +240,10 @@ void RenderEngineIndividualDraw::RecordModelDataSet(
 	const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineIndividualDraw>();
-	/*graphicsPipeline->ConfigureGraphicsPipeline(
+	graphicsPipeline->ConfigureGraphicsPipeline(
 		fragmentShader, static_cast<std::uint32_t>(std::size(models)),
 		std::size(m_modelArguments)
-	);*/
+	);
 
 	RecordModelArguments(models);
 
@@ -268,4 +267,4 @@ void RenderEngineIndividualDraw::RecordModelArguments(
 
 		m_modelArguments.emplace_back(arguments);
 	}
-}
+}*/

@@ -1,20 +1,16 @@
 #ifndef RENDER_ENGINE_MESH_SHADER_HPP_
 #define RENDER_ENGINE_MESH_SHADER_HPP_
-#include <memory>
-#include <vector>
-#include <PipelineLayout.hpp>
 #include <RenderEngineBase.hpp>
-#include <GraphicsPipelineMeshShader.hpp>
-#include <MeshManagerMeshShader.hpp>
 
+/*
 class RenderEngineMeshShader : public RenderEngineBase
 {
 public:
 	RenderEngineMeshShader(VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices);
 
-	/*void AddMeshletModelSet(
+	void AddMeshletModelSet(
 		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
-	) noexcept override;*/
+	) noexcept override;
 	void AddGVerticesAndPrimIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices,
 		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
@@ -49,4 +45,5 @@ private:
 	QueueIndicesTG m_queueIndicesTG;
 	std::uint32_t m_bufferCount;
 };
+*/
 #endif

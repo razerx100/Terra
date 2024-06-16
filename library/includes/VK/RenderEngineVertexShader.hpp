@@ -1,13 +1,8 @@
 #ifndef RENDER_ENGINE_VERTEX_SHADER_HPP_
 #define RENDER_ENGINE_VERTEX_SHADER_HPP_
-#include <PipelineLayout.hpp>
-#include <vector>
-#include <GraphicsPipelineVertexShader.hpp>
-#include <MeshManagerVertexShader.hpp>
-
 #include <RenderEngineBase.hpp>
-#include <ComputePipeline.hpp>
 
+/*
 class RenderEngineVertexShader : public RenderEngineBase {
 public:
 	RenderEngineVertexShader(VkDevice device, QueueIndicesTG queueIndices);
@@ -101,4 +96,5 @@ private:
 
 	std::vector<VkDrawIndexedIndirectCommand> m_modelArguments;
 };
+*/
 #endif

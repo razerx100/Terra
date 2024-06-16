@@ -21,12 +21,12 @@ RendererVK::RendererVK(
 	);
 	Terra& terra = Terra::Get();
 
-	terra.Engine().ResizeViewportAndScissor(width, height);
+	//terra.Engine().ResizeViewportAndScissor(width, height);
 
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
-	Terra::Get().Engine().SetBackgroundColour(colourVector);
+	//Terra::Get().Engine().SetBackgroundColour(colourVector);
 }
 
 /*void RendererVK::AddModelSet(
@@ -79,7 +79,7 @@ void RendererVK::Update()
 	);
 	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
 
-	terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
+	//terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
 }
 
 void RendererVK::Render() {
@@ -93,9 +93,9 @@ void RendererVK::Render() {
 
 	engine.ExecutePreRenderStage(graphicsCommandBuffer, imageIndex);
 	engine.RecordDrawCommands(graphicsCommandBuffer, imageIndex);
-	engine.Present(graphicsCommandBuffer, imageIndex);*/
+	engine.Present(graphicsCommandBuffer, imageIndex);
 	RenderEngine& engine = terra.Engine();
-	engine.ExecutePostRenderStage();
+	engine.ExecutePostRenderStage();*/
 }
 
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
@@ -109,16 +109,18 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 
 		vkDeviceWaitIdle(device.GetLogicalDevice());
 
+		/*
 		RenderEngine& engine = terra.Engine();
 
 		SwapchainManager& swapchain = terra.Swapchain();
 
 		swapchain.CreateSwapchain(
 			device.GetLogicalDevice(), device.GetPhysicalDevice(),
-			nullptr /* memoryManager */, terra.Surface()
+			memoryManager, terra.Surface()
 		);
 
 		engine.ResizeViewportAndScissor(width, height);
+		*/
 	}
 }
 
@@ -133,7 +135,7 @@ Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
-	Terra::Get().Engine().SetShaderPath(path);
+	//Terra::Get().Engine().SetShaderPath(path);
 }
 
 void RendererVK::ProcessData()
@@ -143,11 +145,11 @@ void RendererVK::ProcessData()
 	const VkDevice logicalDevice = terra.Device().GetLogicalDevice();
 
 	//BufferManager& buffers = terra.Buffers();
-	RenderEngine& engine = terra.Engine();
+	//RenderEngine& engine = terra.Engine();
 
 	// Create Buffers
 	//buffers.CreateBuffers(logicalDevice);
-	engine.CreateBuffers(logicalDevice);
+	//engine.CreateBuffers(logicalDevice);
 
 	/*
 	DeviceMemory& gpuMem = terra.Res().GPU();
@@ -172,14 +174,14 @@ void RendererVK::ProcessData()
 
 	// Bind Buffers to memory
 	//buffers.BindResourceToMemory(logicalDevice);
-	engine.BindResourcesToMemory(logicalDevice);
+	//engine.BindResourcesToMemory(logicalDevice);
 	//terra.Texture().BindMemories(logicalDevice);
 
 	// Async Copy
 	std::atomic_size_t works = 0u;
 
 	//uploadContainer.CopyData(works);
-	engine.CopyData();
+	//engine.CopyData();
 
 	while (works != 0u);
 
@@ -245,10 +247,10 @@ void RendererVK::ProcessData()
 	//terra.GraphicsDesc().CreateDescriptorSets(logicalDevice);
 	//terra.ComputeDesc().CreateDescriptorSets(logicalDevice);
 
-	engine.ConstructPipelines();
+	//engine.ConstructPipelines();
 
 	// Cleanup Upload Buffers
-	engine.ReleaseUploadResources();
+	//engine.ReleaseUploadResources();
 	//textures.ReleaseUploadBuffers();
 	//terra.Res().ResetUpload();
 }

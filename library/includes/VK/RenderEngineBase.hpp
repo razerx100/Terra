@@ -1,15 +1,8 @@
 #ifndef RENDER_ENGINE_BASE_HPP_
 #define RENDER_ENGINE_BASE_HPP_
-#include <memory>
-#include <concepts>
-#include <span>
-#include <PipelineLayout.hpp>
-#include <GraphicsPipelineBase.hpp>
 #include <RenderEngine.hpp>
-#include <VKRenderPass.hpp>
-#include <ViewportAndScissorManager.hpp>
-#include <DepthBuffer.hpp>
 
+/*
 class RenderEngineBase : public RenderEngine {
 public:
 	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) override;
@@ -23,9 +16,9 @@ public:
 	void RecordModelDataSet(
 		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
 	) noexcept override;
-	/*void AddMeshletModelSet(
+	void AddMeshletModelSet(
 		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
-	) noexcept override;*/
+	) noexcept override;
 	void AddGVerticesAndPrimIndices(
 		VkDevice device, std::vector<Vertex>&& gVertices,
 		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
@@ -54,18 +47,18 @@ protected:
 	) const noexcept {
 		VkPipelineLayout graphicsLayout = m_graphicsPipelineLayout->Get();
 
-		/*graphicsPipeline0->CreateGraphicsPipeline(
+		graphicsPipeline0->CreateGraphicsPipeline(
 			device, graphicsLayout, GetRenderPass(), m_shaderPath
 		);
 		for (auto& graphicsPipeline : graphicsPipelines)
 			graphicsPipeline->CreateGraphicsPipeline(
 				device, graphicsLayout, GetRenderPass(), m_shaderPath
 			);
-		*/
 	}
 
 private:
 	std::unique_ptr<PipelineLayout> m_graphicsPipelineLayout;
 	ViewportAndScissorManager m_viewportAndScissor;
 };
+*/
 #endif

@@ -1,7 +1,6 @@
 #include <RenderEngineMeshShader.hpp>
 
-#include <Terra.hpp>
-
+/*
 RenderEngineMeshShader::RenderEngineMeshShader(
 	VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
 //) : m_vertexManager{ device, bufferCount, queueIndices }, m_meshletBuffer{ device },
@@ -22,7 +21,7 @@ std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLa
 	return pipelineLayout;
 }
 
-/*void RenderEngineMeshShader::AddMeshletModelSet(
+void RenderEngineMeshShader::AddMeshletModelSet(
 	std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
 ) noexcept {
 	auto graphicsPipeline = std::make_unique<GraphicsPipelineMeshShader>();
@@ -48,15 +47,15 @@ std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLa
 		m_graphicsPipeline0 = std::move(graphicsPipeline);
 	else
 		m_graphicsPipelines.emplace_back(std::move(graphicsPipeline));
-}*/
+}
 
 void RenderEngineMeshShader::AddGVerticesAndPrimIndices(
 	VkDevice device, std::vector<Vertex>&& gVertices,
 	std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
 ) noexcept {
-	/*m_vertexManager.AddGVerticesAndPrimIndices(
+	m_vertexManager.AddGVerticesAndPrimIndices(
 		device, std::move(gVertices), std::move(gVerticesIndices), std::move(gPrimIndices)
-	);*/
+	);
 }
 
 void RenderEngineMeshShader::ConstructPipelines() {
@@ -104,35 +103,33 @@ void RenderEngineMeshShader::AcquireOwnerShipGraphics(
 	VkCommandBuffer graphicsCmdBuffer
 ) noexcept {
 	//m_vertexManager.AcquireOwnerShips(graphicsCmdBuffer);
-	/*m_meshletBuffer.AcquireOwnership(
+	m_meshletBuffer.AcquireOwnership(
 		graphicsCmdBuffer, m_queueIndicesTG.transfer, m_queueIndicesTG.graphics,
 		VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT
-	);*/
+	);
 }
 
 void RenderEngineMeshShader::ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {
 	//m_vertexManager.ReleaseOwnerships(transferCmdBuffer);
-	/*m_meshletBuffer.ReleaseOwnerShip(
+	m_meshletBuffer.ReleaseOwnerShip(
 		transferCmdBuffer, m_queueIndicesTG.transfer, m_queueIndicesTG.graphics
-	);*/
+	);
 }
 
 void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 	const auto meshletBufferSize =
 		static_cast<VkDeviceSize>(sizeof(Meshlet) * std::size(m_meshlets));
 
-	/*
 	m_meshletBuffer.CreateResource(
 		device, meshletBufferSize, 1u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 	);
 	m_meshletBuffer.SetMemoryOffsetAndType(device);
-	*/
 
-	/*Terra::Get().Res().UploadCont().AddMemory(
+	Terra::Get().Res().UploadCont().AddMemory(
 		std::data(m_meshlets), meshletBufferSize, m_meshletBuffer.GetFirstUploadMemoryOffset()
-	);*/
+	);
 
-	/*DescriptorInfo meshletDescInfo{
+	DescriptorInfo meshletDescInfo{
 		.bindingSlot = 9u,
 		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
 	};
@@ -142,5 +139,5 @@ void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
 	Terra::Get().GraphicsDesc().AddBuffersSplit(
 		meshletDescInfo, std::move(meshletBufferInfos), VK_SHADER_STAGE_MESH_BIT_EXT
 	);
-	*/
 }
+*/
