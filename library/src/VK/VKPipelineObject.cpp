@@ -10,14 +10,14 @@ void VkPipelineObject::SelfDestruct() noexcept
 	vkDestroyPipeline(m_device, m_pipeline, nullptr);
 }
 
-void VkPipelineObject::CreateGraphicsPipeline(const GraphicsPipelineBuilder& builder) noexcept
+void VkPipelineObject::CreateGraphicsPipeline(const GraphicsPipelineBuilder& builder)
 {
 	vkCreateGraphicsPipelines(
 		m_device, VK_NULL_HANDLE, 1u, builder.GetRef(), nullptr, &m_pipeline
 	);
 }
 
-void VkPipelineObject::CreateComputePipeline(const ComputePipelineBuilder& builder) noexcept
+void VkPipelineObject::CreateComputePipeline(const ComputePipelineBuilder& builder)
 {
 	vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1u, builder.GetRef(), nullptr, &m_pipeline);
 }
@@ -51,9 +51,13 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetInputAssembler(
 	VkPrimitiveTopology topology /* = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST */,
 	VkBool32 primitiveRestart /* = VK_FALSE */
 ) noexcept {
-	m_vertexLayout                           = vertexLayout;
-	m_pipelineCreateInfo.pVertexInputState   = m_vertexLayout.GetRef();
-	m_pipelineCreateInfo.pInputAssemblyState = &m_inputAssemblerInfo;
+	m_vertexLayout                              = vertexLayout;
+
+	m_inputAssemblerInfo.topology               = topology;
+	m_inputAssemblerInfo.primitiveRestartEnable = primitiveRestart;
+
+	m_pipelineCreateInfo.pVertexInputState      = m_vertexLayout.GetRef();
+	m_pipelineCreateInfo.pInputAssemblyState    = &m_inputAssemblerInfo;
 
 	return *this;
 }

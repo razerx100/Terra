@@ -41,7 +41,7 @@ void VkShader::CreateShaderModule(
 	vkCreateShaderModule(device, &createInfo, nullptr, &m_shaderBinary);
 }
 
-std::vector<char> VkShader::LoadBinary(std::ifstream& shader) noexcept
+std::vector<char> VkShader::LoadBinary(std::ifstream& shader)
 {
 	const auto shaderSize = static_cast<size_t>(shader.tellg());
 	shader.seekg(0u);

@@ -12,7 +12,7 @@ public:
 	void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) noexcept final;
+	) final;
 
 	using GraphicsPipelineBase::Create;
 
@@ -22,7 +22,7 @@ private:
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader,
 		const std::wstring& meshShader, const std::wstring& taskShader = {}
-	) noexcept;
+	);
 
 private:
 	bool m_useTaskShader;

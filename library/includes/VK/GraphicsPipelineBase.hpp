@@ -16,12 +16,12 @@ public:
 	virtual void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) noexcept = 0;
+	) = 0;
 
 	void Create(
 		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) noexcept {
+	) {
 		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath, fragmentShader);
 	}
 

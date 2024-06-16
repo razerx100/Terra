@@ -587,12 +587,12 @@ public:
 		}
 	}
 
-	void AddPSO(const std::wstring& fragmentShader) noexcept
+	void AddPSO(const std::wstring& fragmentShader)
 	{
 		GetPSOIndex(fragmentShader);
 	}
 
-	void ChangePSO(std::uint32_t bundleID, const std::wstring& fragmentShader) noexcept
+	void ChangePSO(std::uint32_t bundleID, const std::wstring& fragmentShader)
 	{
 		auto modelBundle = GetModelBundle(bundleID);
 
@@ -659,7 +659,7 @@ protected:
 	}
 
 	// Adds a new PSO, if one can't be found.
-	std::uint32_t GetPSOIndex(const std::wstring& fragmentShader) noexcept
+	std::uint32_t GetPSOIndex(const std::wstring& fragmentShader)
 	{
 		std::uint32_t psoIndex = 0u;
 

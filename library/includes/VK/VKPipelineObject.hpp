@@ -352,8 +352,8 @@ public:
 	VkPipelineObject(VkDevice device) noexcept : m_device{ device }, m_pipeline{ VK_NULL_HANDLE } {}
 	~VkPipelineObject() noexcept;
 
-	void CreateGraphicsPipeline(const GraphicsPipelineBuilder& builder) noexcept;
-	void CreateComputePipeline(const ComputePipelineBuilder& builder) noexcept;
+	void CreateGraphicsPipeline(const GraphicsPipelineBuilder& builder);
+	void CreateComputePipeline(const ComputePipelineBuilder& builder);
 
 	[[nodiscard]]
 	VkPipeline Get() const noexcept { return m_pipeline; }

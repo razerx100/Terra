@@ -22,7 +22,7 @@ private:
 
 private:
 	[[nodiscard]]
-	static std::vector<char> LoadBinary(std::ifstream& shader) noexcept;
+	static std::vector<char> LoadBinary(std::ifstream& shader);
 
 	void CreateShaderModule(VkDevice device, void const* binary, size_t binarySize);
 

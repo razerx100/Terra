@@ -10,7 +10,7 @@ public:
 	void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) noexcept final;
+	) final;
 
 	using GraphicsPipelineBase::Create;
 
@@ -20,12 +20,12 @@ protected:
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader,
 		const std::wstring& vertexShader
-	) noexcept;
+	);
 	[[nodiscard]]
 	virtual std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) const noexcept = 0;
+	) const = 0;
 
 public:
 	GraphicsPipelineVertexShader(const GraphicsPipelineVertexShader&) = delete;
@@ -52,7 +52,7 @@ private:
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) const noexcept final;
+	) const final;
 
 public:
 	GraphicsPipelineIndirectDraw(const GraphicsPipelineIndirectDraw&) = delete;
@@ -79,7 +79,7 @@ private:
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const std::wstring& fragmentShader
-	) const noexcept final;
+	) const final;
 
 public:
 	GraphicsPipelineIndividualDraw(const GraphicsPipelineIndividualDraw&) = delete;

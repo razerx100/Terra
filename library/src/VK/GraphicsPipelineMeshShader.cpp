@@ -4,7 +4,7 @@
 void GraphicsPipelineMeshShader::Create(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader
-) noexcept {
+) {
 	if (m_useTaskShader)
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
 			device, graphicsLayout, renderPass, shaderPath, fragmentShader,
@@ -23,7 +23,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader,
 	const std::wstring& meshShader, const std::wstring& taskShader /* = {} */
-) noexcept {
+) {
 	auto ms              = std::make_unique<VkShader>(device);
 	const bool msSuccess = ms->Create(shaderPath + meshShader);
 

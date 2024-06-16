@@ -6,7 +6,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader,
 	const std::wstring& vertexShader
-) noexcept {
+) {
 	auto vs              = std::make_unique<VkShader>(device);
 	const bool vsSuccess = vs->Create(shaderPath + vertexShader);
 
@@ -34,7 +34,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 void GraphicsPipelineVertexShader::Create(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader
-) noexcept {
+) {
 	m_graphicsPipeline = _createGraphicsPipeline(
 		device, graphicsLayout, renderPass, shaderPath, fragmentShader
 	);
@@ -46,7 +46,7 @@ void GraphicsPipelineVertexShader::Create(
 std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader
-) const noexcept {
+) const {
 	return CreateGraphicsPipelineVS(
 		device, graphicsLayout, renderPass, shaderPath, fragmentShader,
 		L"VertexShaderIndirect.spv"
@@ -57,7 +57,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsP
 std::unique_ptr<VkPipelineObject> GraphicsPipelineIndividualDraw::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader
-) const noexcept {
+) const {
 	return CreateGraphicsPipelineVS(
 		device, graphicsLayout, renderPass, shaderPath, fragmentShader,
 		L"VertexShaderIndividual.spv"
