@@ -14,14 +14,16 @@
 // But can be removed and re-added.
 class TextureStorage
 {
+	static constexpr size_t s_defaultSamplerIndex = 0u;
 public:
 	TextureStorage(VkDevice device, MemoryManager* memoryManager)
 		: m_device{ device }, m_memoryManager{ memoryManager },
-		m_defaultSampler{ device }, m_textures{}, m_samplers{}, m_availableTextureIndices{},
+		m_textures{}, m_samplers{}, m_availableTextureIndices{},
 		m_availableSamplerIndices{}, m_transitionQueue{}, m_textureData{}, m_textureBindingIndices{},
 		m_samplerBindingIndices{}
 	{
-		m_defaultSampler.Create(VkSamplerCreateInfoBuilder{});
+		VKSampler& defaultSampler = m_samplers.emplace_back(device);
+		defaultSampler.Create(VkSamplerCreateInfoBuilder{});
 	}
 
 	[[nodiscard]]
@@ -65,17 +67,22 @@ public:
 	{
 		return GetBindingIndex(samplerIndex, m_samplerBindingIndices);
 	}
+	[[nodiscard]]
+	static constexpr std::uint32_t GetDefaultSamplerIndex() noexcept
+	{
+		return static_cast<std::uint32_t>(s_defaultSamplerIndex);
+	}
 
 	[[nodiscard]]
 	const VKSampler& GetDefaultSampler() const noexcept
 	{
-		return m_defaultSampler;
+		return m_samplers.at(s_defaultSamplerIndex);
 	}
 
 	[[nodiscard]]
 	VKSampler const* GetDefaultSamplerPtr() const noexcept
 	{
-		return &m_defaultSampler;
+		return &m_samplers.at(s_defaultSamplerIndex);
 	}
 
 	[[nodiscard]]
@@ -117,7 +124,6 @@ private:
 private:
 	VkDevice                                   m_device;
 	MemoryManager*                             m_memoryManager;
-	VKSampler                                  m_defaultSampler;
 	// The TextureView objects need to have the same address until their data is copied.
 	std::deque<VkTextureView>                  m_textures;
 	std::deque<VKSampler>                      m_samplers;
@@ -136,7 +142,6 @@ public:
 
 	TextureStorage(TextureStorage&& other) noexcept
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
-		m_defaultSampler{ std::move(other.m_defaultSampler) },
 		m_textures{ std::move(other.m_textures) },
 		m_samplers{ std::move(other.m_samplers) },
 		m_availableTextureIndices{ std::move(other.m_availableTextureIndices) },
@@ -150,7 +155,6 @@ public:
 	{
 		m_device                  = other.m_device;
 		m_memoryManager           = other.m_memoryManager;
-		m_defaultSampler          = std::move(other.m_defaultSampler);
 		m_textures                = std::move(other.m_textures);
 		m_samplers                = std::move(other.m_samplers);
 		m_availableTextureIndices = std::move(other.m_availableTextureIndices);
@@ -194,47 +198,16 @@ public:
 		m_localSamplerDescCount{ 0u }
 	{}
 
-	[[nodiscard]]
-	std::optional<std::uint32_t> AddSampledTextureForBinding(
-		VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture,
-		std::uint32_t textureIndex, std::uint32_t sampledTexturesBindingSlot
-	) noexcept;
-	[[nodiscard]]
-	std::optional<std::uint32_t> AddSamplerForBinding(
-		VkDescriptorBuffer& descriptorBuffer, VKSampler const* sampler,
-		std::uint32_t samplerIndex, std::uint32_t samplersBindingSlot
-	) noexcept;
-	[[nodiscard]]
-	std::optional<std::uint32_t> AddCombinedTextureForBinding(
-		VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture, VKSampler const* sampler,
-		std::uint32_t textureIndex, std::uint32_t samplerIndex,
-		std::uint32_t combinedTexturesBindingSlot
-	) noexcept;
-
-	void RemoveSampledTextureFromBinding(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-		std::uint32_t textureIndex, std::uint32_t sampledTexturesBindingSlot
-	);
-	void RemoveSamplerTextureFromBinding(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-		std::uint32_t samplerIndex, std::uint32_t samplersBindingSlot
-	);
-	void RemoveCombinedTextureFromBinding(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-		std::uint32_t textureIndex, std::uint32_t samplerIndex,
-		std::uint32_t combinedTexturesBindingSlot
-	);
-
 	// Add new entries to the available indices container. After calling
 	// this, the descriptor buffer needs to be updated and recreated.
 	void IncreaseAvailableIndices(TextureDescType descType) noexcept;
 
-	void SetDescriptorBuffer(
+	void SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
 		std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot
 	) const noexcept;
 
-private:
+public:
 	struct DescDetailsCombined
 	{
 		std::uint32_t textureIndex;
@@ -278,92 +251,131 @@ private:
 			return TextureDescType::CombinedTexture;
 	}
 
-	template<VkDescriptorType type, typename T>
-	void RemoveDescriptorFromBinding(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-		std::uint32_t bindingSlot,
-		std::vector<bool>& availableIndices, std::uint32_t& localDescCount,
-		std::vector<T>& inactiveDescDetails, T&& descDetails
-	) {
-		constexpr TextureDescType descType = GetTextureDescType<type>();
-		const auto localBindingSlot        = static_cast<std::uint32_t>(descType);
-
-		availableIndices.at(descriptorIndex) = true;
-
-		auto localDescIndex = static_cast<std::uint32_t>(std::size(inactiveDescDetails));
-
-		if (localDescCount >= localDescIndex + 1u)
-		{
-			// Need to always keep the count of binding more or equal to the number of elements
-			// in the inactiveDescDetails container.
-			localDescCount += s_localDescriptorCount;
-
-			m_localDescBuffer.AddBinding(
-				localBindingSlot, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
-			);
-
-			m_localDescBuffer.RecreateBuffer();
-		}
-
-		void const* descriptorAddress = descriptorBuffer.GetDescriptor<type>(
-			bindingSlot, descriptorIndex
-		);
-
-		m_localDescBuffer.SetDescriptor<type>(descriptorAddress, localBindingSlot, localDescIndex);
-
-		inactiveDescDetails.emplace_back(std::forward<T>(descDetails));
+	template<VkDescriptorType type>
+	const std::vector<bool>& GetAvailableIndices() const noexcept
+	{
+		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			return m_availableIndicesSampledTextures;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			return m_availableIndicesSamplers;
+		else
+			return m_availableIndicesCombinedTextures;
 	}
 
+	template<VkDescriptorType type>
+	std::vector<bool>& GetAvailableIndices() noexcept
+	{
+		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			return m_availableIndicesSampledTextures;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			return m_availableIndicesSamplers;
+		else
+			return m_availableIndicesCombinedTextures;
+	}
+
+	template<VkDescriptorType type>
+	auto& GetInactiveDetails() noexcept
+	{
+		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			return m_inactiveSampledDescDetails;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			return m_inactiveSamplerDescDetails;
+		else
+			return m_inactiveCombinedDescDetails;
+	}
+
+	template<VkDescriptorType type>
+	std::uint32_t& GetLocalDescCount() noexcept
+	{
+		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			return m_localSampledDescCount;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			return m_localSamplerDescCount;
+		else
+			return m_localCombinedDescCount;
+	}
+
+public:
 	template<VkDescriptorType type, typename T>
 	[[nodiscard]]
-	std::optional<std::uint32_t> AddDescriptorForBinding(
-		VkDescriptorBuffer& descriptorBuffer, VkImageView texture, VkSampler sampler,
-		std::uint32_t bindingSlot,
-		std::vector<bool>& availableIndices, std::vector<T>& inactiveDescDetails,
-		T&& descDetails
-	) noexcept {
-		constexpr TextureDescType descType = GetTextureDescType<type>();
-		const auto localBindingSlot        = static_cast<std::uint32_t>(descType);
+	std::optional<void const*> GetLocalDescriptor(const T& descDetails) noexcept
+	{
+		constexpr TextureDescType descType  = GetTextureDescType<type>();
+		const auto localBindingSlot         = static_cast<std::uint32_t>(descType);
+		std::vector<T>& inactiveDescDetails = GetInactiveDetails<type>();
 
-		const std::optional<std::uint32_t> freeIndex = FindFreeIndex(
-			availableIndices
-		);
+		auto result = std::ranges::find(inactiveDescDetails, descDetails);
 
-		if (freeIndex)
+		if (result != std::end(inactiveDescDetails))
 		{
-			const std::uint32_t descIndex = *freeIndex;
+			const auto localDescIndex = static_cast<std::uint32_t>(
+				std::distance(std::begin(inactiveDescDetails), result)
+			);
 
-			// Look for cached descriptor.
-			auto result = std::ranges::find(inactiveDescDetails, std::forward<T>(descDetails));
+			inactiveDescDetails.erase(result);
 
-			if (result != std::end(inactiveDescDetails))
-			{
-				const auto localDescIndex = static_cast<std::uint32_t>(
-					std::distance(std::begin(inactiveDescDetails), result)
-					);
-
-				void const* descriptorAddress = m_localDescBuffer.GetDescriptor<type>(
-					localBindingSlot, localDescIndex
-				);
-
-				descriptorBuffer.SetDescriptor<type>(descriptorAddress, bindingSlot, descIndex);
-
-				inactiveDescDetails.erase(result);
-			}
-			else
-				// An image layout isn't necessary for a sampler and it will be ignored. Still keeping
-				// it here to have one less parameter.
-				descriptorBuffer.GetImageToDescriptor<type>(
-					texture, sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, bindingSlot, descIndex
-				);
-
-			availableIndices.at(descIndex) = false;
-
-			return descIndex;
+			return m_localDescBuffer.GetDescriptor<type>(localBindingSlot, localDescIndex);
 		}
 
 		return {};
 	}
+
+	template<VkDescriptorType type, typename T>
+	void SetLocalDescriptor(void const* descriptor, const T& descDetails)
+	{
+		constexpr TextureDescType descType  = GetTextureDescType<type>();
+		// The local buffer will have a binding for each descriptor type.
+		const auto localBindingSlot         = static_cast<std::uint32_t>(descType);
+		std::vector<T>& inactiveDescDetails = GetInactiveDetails<type>();
+		std::uint32_t& localDescCount       = GetLocalDescCount<type>();
+
+		// We add any new items to the end of the inactiveDetails. The actual buffer might
+		// be able to house more items, as we will erase the inactive detail when it is active
+		// so let's check if the buffer can house the new number of inactive details. If not
+		// recreate the buffer to be bigger.
+		auto localDescIndex = static_cast<std::uint32_t>(std::size(inactiveDescDetails));
+
+		if (localDescCount >= localDescIndex + 1u)
+		{
+			localDescCount += s_localDescriptorCount;
+
+			m_localDescBuffer.UpdateBinding(
+				localBindingSlot, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+
+			// Add binding will add a new binding to the Layout and we use the layout size to
+			// create the buffer. So, we don't need to pass a size.
+			m_localDescBuffer.RecreateBuffer();
+		}
+
+		m_localDescBuffer.SetDescriptor<type>(descriptor, localBindingSlot, localDescIndex);
+
+		inactiveDescDetails.emplace_back(descDetails);
+	}
+
+	template<VkDescriptorType type>
+	[[nodiscard]]
+	// Returns the descriptor index if there is an available index. Otherwise, returns empty. In such
+	// case, the available indices should be increased and the descriptor buffer should be recreated.
+	// This will only work if this object is the only object which is managing all the texture
+	// descriptors across all the descriptor buffers which are passed to it.
+	std::optional<std::uint32_t> GetFreeGlobalDescriptorIndex() const noexcept
+	{
+		const std::vector<bool>& availableIndices = GetAvailableIndices<type>();
+
+		return FindFreeIndex(availableIndices);
+	}
+
+	template<VkDescriptorType type>
+	void SetAvailableIndex(std::uint32_t descriptorIndex, bool availablity) noexcept
+	{
+		std::vector<bool>& availableIndices = GetAvailableIndices<type>();
+
+		availableIndices.at(static_cast<size_t>(descriptorIndex)) = availablity;
+	}
+
+	// Use the global index to set the descriptor in the desired global descriptor buffer. If
+	// there was a local descriptor, copy it, otherwise create a new descriptor.
 
 public:
 	TextureManager(const TextureManager&) = delete;

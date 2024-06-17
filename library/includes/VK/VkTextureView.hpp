@@ -105,9 +105,9 @@ public:
 	std::uint32_t GetMipBaseLevel() const noexcept { return m_imageView.GetMipBaseLevel(); }
 
 private:
-	VkDevice           m_device;
-	Texture            m_texture;
-	VKImageView        m_imageView;
+	VkDevice    m_device;
+	Texture     m_texture;
+	VKImageView m_imageView;
 
 public:
 	VkTextureView(const VkTextureView&) = delete;
@@ -119,9 +119,9 @@ public:
 	{}
 	VkTextureView& operator=(VkTextureView&& other) noexcept
 	{
-		m_device        = other.m_device;
-		m_texture       = std::move(other.m_texture);
-		m_imageView     = std::move(other.m_imageView);
+		m_device    = other.m_device;
+		m_texture   = std::move(other.m_texture);
+		m_imageView = std::move(other.m_imageView);
 
 		return *this;
 	}

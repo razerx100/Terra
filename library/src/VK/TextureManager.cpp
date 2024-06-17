@@ -49,8 +49,10 @@ size_t TextureStorage::AddTexture(
 		VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, {}
 	);
 
+	std::unique_ptr<std::uint8_t>& cTextureData = m_textureData.emplace_back(std::move(textureData));
+
 	stagingBufferManager.AddTextureView(
-		textureData.get(), textureViewPtr->GetTexture().Size(), textureViewPtr, {},
+		cTextureData.get(), textureViewPtr->GetTexture().Size(), textureViewPtr, {},
 		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
 		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 	);
@@ -122,47 +124,12 @@ void TextureStorage::RemoveTexture(size_t index)
 
 void TextureStorage::RemoveSampler(size_t index)
 {
-	m_availableSamplerIndices.at(index) = true;
+	if (index != s_defaultSamplerIndex)
+		m_availableSamplerIndices.at(index) = true;
 	// Don't need to destroy this like textures, as it doesn't require any buffer allocations.
 }
 
 // Texture Manager
-std::optional<std::uint32_t> TextureManager::AddSampledTextureForBinding(
-	VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture,
-	std::uint32_t textureIndex, std::uint32_t sampledTexturesBindingSlot
-) noexcept {
-	// The move here is useless, just doing it to please the compiler.
-	return AddDescriptorForBinding<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-		descriptorBuffer, texture->GetView(), VK_NULL_HANDLE, sampledTexturesBindingSlot,
-		m_availableIndicesSampledTextures, m_inactiveSampledDescDetails, std::move(textureIndex)
-	);
-}
-
-std::optional<std::uint32_t> TextureManager::AddCombinedTextureForBinding(
-	VkDescriptorBuffer& descriptorBuffer, VkTextureView const* texture, VKSampler const* sampler,
-	std::uint32_t textureIndex, std::uint32_t samplerIndex, std::uint32_t combinedTexturesBindingSlot
-) noexcept {
-	return AddDescriptorForBinding<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-		descriptorBuffer, texture->GetView(), sampler->Get(), combinedTexturesBindingSlot,
-		m_availableIndicesCombinedTextures, m_inactiveCombinedDescDetails,
-		DescDetailsCombined{
-			.textureIndex = textureIndex,
-			.samplerIndex = samplerIndex
-		}
-	);
-}
-
-std::optional<std::uint32_t> TextureManager::AddSamplerForBinding(
-	VkDescriptorBuffer& descriptorBuffer, VKSampler const* sampler,
-	std::uint32_t samplerIndex, std::uint32_t samplersBindingSlot
-) noexcept {
-	// The move here is useless, just doing it to please the compiler.
-	return AddDescriptorForBinding<VK_DESCRIPTOR_TYPE_SAMPLER>(
-		descriptorBuffer, VK_NULL_HANDLE, sampler->Get(), samplersBindingSlot,
-		m_availableIndicesSamplers, m_inactiveSamplerDescDetails, std::move(samplerIndex)
-	);
-}
-
 void TextureManager::IncreaseAvailableIndices(TextureDescType descType) noexcept
 {
 	if (descType == TextureDescType::CombinedTexture)
@@ -184,7 +151,7 @@ void TextureManager::IncreaseAvailableIndices(TextureDescType descType) noexcept
 	}
 }
 
-void TextureManager::SetDescriptorBuffer(
+void TextureManager::SetDescriptorBufferLayout(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
 	std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot
 ) const noexcept {
@@ -237,43 +204,4 @@ std::optional<std::uint32_t> TextureManager::FindFreeIndex(
 		return static_cast<std::uint32_t>(std::distance(std::begin(availableIndices), result));
 
 	return {};
-}
-
-void TextureManager::RemoveSampledTextureFromBinding(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-	std::uint32_t textureIndex, std::uint32_t sampledTexturesBindingSlot
-) {
-	// The move here is useless, just doing it to please the compiler.
-	RemoveDescriptorFromBinding<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-		descriptorBuffer, descriptorIndex, sampledTexturesBindingSlot,
-		m_availableIndicesSampledTextures, m_localSampledDescCount,
-		m_inactiveSampledDescDetails, std::move(textureIndex)
-	);
-}
-
-void TextureManager::RemoveSamplerTextureFromBinding(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-	std::uint32_t samplerIndex, std::uint32_t samplersBindingSlot
-) {
-	// The move here is useless, just doing it to please the compiler.
-	RemoveDescriptorFromBinding<VK_DESCRIPTOR_TYPE_SAMPLER>(
-		descriptorBuffer, descriptorIndex, samplersBindingSlot,
-		m_availableIndicesSamplers, m_localSamplerDescCount,
-		m_inactiveSamplerDescDetails, std::move(samplerIndex)
-	);
-}
-
-void TextureManager::RemoveCombinedTextureFromBinding(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t descriptorIndex,
-	std::uint32_t textureIndex, std::uint32_t samplerIndex, std::uint32_t combinedTexturesBindingSlot
-) {
-	RemoveDescriptorFromBinding<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-		descriptorBuffer, descriptorIndex, combinedTexturesBindingSlot,
-		m_availableIndicesCombinedTextures, m_localCombinedDescCount,
-		m_inactiveCombinedDescDetails,
-		DescDetailsCombined{
-			.textureIndex = textureIndex,
-			.samplerIndex = samplerIndex
-		}
-	);
 }

@@ -74,6 +74,8 @@ void DescriptorSetLayout::UpdateBinding(
 
 		m_layoutBindingFlags.at(indexInContainers) = bindingFlags;
 	}
+	else
+		AddBinding(bindingIndex, type, descriptorCount, shaderFlags, bindingFlags);
 }
 
 // Vk Descriptor Buffer
