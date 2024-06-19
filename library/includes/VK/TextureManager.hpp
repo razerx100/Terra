@@ -296,6 +296,37 @@ private:
 	}
 
 public:
+	template<VkDescriptorType type>
+	void RemoveLocalDescriptor(std::uint32_t resourceIndex) noexcept
+	{
+		static_assert(
+			type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			"Use the specilised function for combined textures."
+		);
+
+		std::vector<std::uint32_t>& inactiveDescDetails = GetInactiveDetails<type>();
+
+		std::erase(inactiveDescDetails, resourceIndex);
+	}
+
+	void RemoveCombinedLocalDescriptorTexture(std::uint32_t index) noexcept
+	{
+		auto result = std::ranges::remove(
+			m_inactiveCombinedDescDetails, index,
+			[](const DescDetailsCombined& details) { return details.textureIndex; }
+		);
+		m_inactiveCombinedDescDetails.erase(std::begin(result), std::end(result));
+	}
+
+	void RemoveCombinedLocalDescriptorSampler(std::uint32_t index) noexcept
+	{
+		auto result = std::ranges::remove(
+			m_inactiveCombinedDescDetails, index,
+			[](const DescDetailsCombined& details) { return details.samplerIndex; }
+		);
+		m_inactiveCombinedDescDetails.erase(std::begin(result), std::end(result));
+	}
+
 	template<VkDescriptorType type, typename T>
 	[[nodiscard]]
 	std::optional<void const*> GetLocalDescriptor(const T& descDetails) noexcept
@@ -371,7 +402,8 @@ public:
 	{
 		std::vector<bool>& availableIndices = GetAvailableIndices<type>();
 
-		availableIndices.at(static_cast<size_t>(descriptorIndex)) = availablity;
+		if (std::size(availableIndices) > descriptorIndex)
+			availableIndices.at(static_cast<size_t>(descriptorIndex)) = availablity;
 	}
 
 	// Use the global index to set the descriptor in the desired global descriptor buffer. If

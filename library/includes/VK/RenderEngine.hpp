@@ -79,6 +79,29 @@ public:
 
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 
+	[[nodiscard]]
+	size_t AddTextureAsCombined(std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height);
+	[[nodiscard]]
+	size_t AddTextureAsCombined(
+		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
+		size_t samplerIndex
+	);
+
+	void UnbindCombinedTexture(size_t index);
+	void UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex);
+	void BindCombinedTexture(size_t index);
+	void BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
+
+	void RemoveTexture(size_t index);
+
+protected:
+	[[nodiscard]]
+	virtual std::uint32_t GetCombinedTextureBindingSlot() const noexcept = 0;
+	[[nodiscard]]
+	virtual std::uint32_t GetSampledTextureBindingSlot() const noexcept = 0;
+	[[nodiscard]]
+	virtual std::uint32_t GetSamplerBindingSlot() const noexcept = 0;
+
 protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;
 	MemoryManager                   m_memoryManager;
