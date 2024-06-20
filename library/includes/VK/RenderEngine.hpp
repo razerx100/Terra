@@ -10,6 +10,7 @@
 #include <CameraManager.hpp>
 #include <DepthBuffer.hpp>
 #include <VKRenderPass.hpp>
+#include <ViewportAndScissorManager.hpp>
 
 /*
 class RenderEngine {
@@ -116,6 +117,7 @@ protected:
 	DepthBuffer                     m_depthBuffers;
 	VKRenderPass                    m_renderPass;
 	VkClearColorValue               m_backgroundColour;
+	ViewportAndScissorManager       m_viewportAndScissors;
 
 public:
 	RenderEngine(const RenderEngine&) = delete;
@@ -134,7 +136,8 @@ public:
 		m_cameraManager{ std::move(other.m_cameraManager) },
 		m_depthBuffers{ std::move(other.m_depthBuffers) },
 		m_renderPass{ std::move(other.m_renderPass) },
-		m_backgroundColour{ other.m_backgroundColour }
+		m_backgroundColour{ other.m_backgroundColour },
+		m_viewportAndScissors{ other.m_viewportAndScissors }
 	{}
 	RenderEngine& operator=(RenderEngine&& other) noexcept
 	{
@@ -151,6 +154,7 @@ public:
 		m_depthBuffers              = std::move(other.m_depthBuffers);
 		m_renderPass                = std::move(other.m_renderPass);
 		m_backgroundColour          = other.m_backgroundColour;
+		m_viewportAndScissors       = other.m_viewportAndScissors;
 
 		return *this;
 	}

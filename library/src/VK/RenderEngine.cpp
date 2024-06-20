@@ -23,7 +23,7 @@ RenderEngine::RenderEngine(
 	m_materialBuffers{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
 	m_depthBuffers{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
-	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }
+	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 		m_graphicsDescriptorBuffers.emplace_back(logicalDevice, &m_memoryManager);
