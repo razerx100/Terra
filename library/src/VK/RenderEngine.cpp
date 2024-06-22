@@ -203,6 +203,8 @@ void RenderEngine::Resize(
 			.AddDepthAttachment(m_depthBuffer.GetFormat())
 			.Build()
 		);
+
+	m_viewportAndScissors.Resize(width, height);
 }
 
 void RenderEngine::BeginRenderPass(
