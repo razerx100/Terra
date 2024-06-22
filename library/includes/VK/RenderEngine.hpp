@@ -11,54 +11,7 @@
 #include <DepthBuffer.hpp>
 #include <VKRenderPass.hpp>
 #include <ViewportAndScissorManager.hpp>
-
-/*
-class RenderEngine {
-public:
-	RenderEngine() noexcept;
-	virtual ~RenderEngine() = default;
-
-	virtual void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
-	virtual void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
-	virtual void Present(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) = 0;
-	virtual void ExecutePostRenderStage() = 0;
-	virtual void ConstructPipelines() = 0;
-	virtual void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept = 0;
-
-	virtual void ResizeViewportAndScissor(
-		std::uint32_t width, std::uint32_t height
-	) noexcept = 0;
-
-	virtual void AddGVerticesAndIndices(
-		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
-	) noexcept = 0;
-	virtual void RecordModelDataSet(
-		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
-	) noexcept = 0;
-	virtual void AddMeshletModelSet(
-		std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
-	) noexcept = 0;
-	virtual void AddGVerticesAndPrimIndices(
-		VkDevice device, std::vector<Vertex>&& gVertices,
-		std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
-	) noexcept = 0;
-
-	virtual void BindResourcesToMemory(VkDevice device) = 0;
-	virtual void RecordCopy(VkCommandBuffer transferBuffer) noexcept = 0;
-	virtual void ReleaseUploadResources() noexcept = 0;
-	virtual void AcquireOwnerShipGraphics(VkCommandBuffer graphicsCmdBuffer) noexcept = 0;
-	virtual void ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept = 0;
-
-	virtual void CreateBuffers(VkDevice device) noexcept;
-	virtual void CopyData() noexcept;
-	virtual void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept;
-
-	void SetShaderPath(const wchar_t* path) noexcept;
-
-protected:
-	std::wstring m_shaderPath;
-};
-*/
+#include <Model.hpp>
 
 class RenderEngine
 {
@@ -92,8 +45,52 @@ public:
 	void UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex);
 	void BindCombinedTexture(size_t index);
 	void BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
-
 	void RemoveTexture(size_t index);
+
+	[[nodiscard]]
+	std::uint32_t AddCamera(std::shared_ptr<Camera> camera) noexcept
+	{
+		return m_cameraManager.AddCamera(std::move(camera));
+	}
+	void SetCamera(std::uint32_t index) noexcept { m_cameraManager.SetCamera(index); }
+	void RemoveCamera(std::uint32_t index) noexcept { m_cameraManager.RemoveCamera(index); }
+
+	void WaitForQueues() { m_graphicsQueue.WaitForQueueToFinish(); }
+
+	virtual void SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept = 0;
+	virtual void SetShaderPath(const std::wstring& shaderPath) noexcept = 0;
+	virtual void AddFragmentShader(const std::wstring& fragmentShader) = 0;
+	virtual void ChangeFragmentShader(
+		std::uint32_t modelBundleID, const std::wstring& fragmentShader
+	) = 0;
+
+	virtual void Render(VkDeviceSize frameIndex) = 0;
+
+	[[nodiscard]]
+	virtual std::uint32_t AddModel(
+		std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+	);
+	[[nodiscard]]
+	virtual std::uint32_t AddModelBundle(
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+	);
+	[[nodiscard]]
+	virtual std::uint32_t AddModel(
+		std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader
+	);
+	[[nodiscard]]
+	virtual std::uint32_t AddModelBundle(
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
+	);
+
+	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
+
+	[[nodiscard]]
+	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle);
+	[[nodiscard]]
+	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle);
+
+	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
 
 protected:
 	[[nodiscard]]
@@ -106,7 +103,7 @@ protected:
 protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;
 	MemoryManager                   m_memoryManager;
-	VkCommandQueue                  m_graphicsQueue;
+	VkGraphicsQueue                 m_graphicsQueue;
 	VkCommandQueue                  m_transferQueue;
 	StagingBufferManager            m_stagingManager;
 	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
