@@ -8,7 +8,7 @@ CameraManager::CameraManager(VkDevice device, MemoryManager* memoryManager)
 	m_cameras{}
 {}
 
-std::uint32_t CameraManager::SetCamera(std::shared_ptr<Camera> camera) noexcept
+std::uint32_t CameraManager::AddCamera(std::shared_ptr<Camera> camera) noexcept
 {
 	const auto index = static_cast<std::uint32_t>(std::size(m_cameras));
 

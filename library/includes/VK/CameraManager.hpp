@@ -15,7 +15,7 @@ public:
 	CameraManager(VkDevice device, MemoryManager* memoryManager);
 
 	[[nodiscard]]
-	std::uint32_t SetCamera(std::shared_ptr<Camera> camera) noexcept;
+	std::uint32_t AddCamera(std::shared_ptr<Camera> camera) noexcept;
 
 	void SetCamera(std::uint32_t index) noexcept { m_activeCameraIndex = index; }
 
