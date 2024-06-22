@@ -22,7 +22,7 @@ RenderEngine::RenderEngine(
 	m_textureManager{ logicalDevice, &m_memoryManager },
 	m_materialBuffers{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
-	m_depthBuffers{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
+	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
 	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
@@ -188,6 +188,33 @@ void RenderEngine::RemoveTexture(size_t index)
 	);
 
 	m_textureStorage.RemoveTexture(index);
+}
+
+void RenderEngine::Resize(
+	std::uint32_t width, std::uint32_t height,
+	bool hasSwapchainFormatChanged, VkFormat swapchainFormat
+) {
+	m_depthBuffer.Create(width, height);
+
+	if (hasSwapchainFormatChanged)
+		m_renderPass.Create(
+			RenderPassBuilder{}
+			.AddColourAttachment(swapchainFormat)
+			.AddDepthAttachment(m_depthBuffer.GetFormat())
+			.Build()
+		);
+}
+
+void RenderEngine::BeginRenderPass(
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+) {
+	std::array<VkClearValue, 2> clearValues{};
+	clearValues[0].color        = m_backgroundColour;
+	clearValues[1].depthStencil = m_depthBuffer.GetClearValues();
+
+	VkCommandBuffer cmdBuffer   = m_graphicsQueue.GetCommandBuffer(frameIndex).Get();
+
+	m_renderPass.BeginPass(cmdBuffer, frameBuffer.Get(), renderArea, clearValues);
 }
 
 std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)

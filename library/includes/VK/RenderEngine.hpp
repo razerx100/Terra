@@ -64,7 +64,14 @@ public:
 		std::uint32_t modelBundleID, const std::wstring& fragmentShader
 	) = 0;
 
+	void BeginRenderPass(
+		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+	);
 	virtual void Render(VkDeviceSize frameIndex) = 0;
+	virtual void Resize(
+		std::uint32_t width, std::uint32_t height,
+		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
+	);
 
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
@@ -111,7 +118,7 @@ protected:
 	TextureManager                  m_textureManager;
 	MaterialBuffers                 m_materialBuffers;
 	CameraManager                   m_cameraManager;
-	DepthBuffer                     m_depthBuffers;
+	DepthBuffer                     m_depthBuffer;
 	VKRenderPass                    m_renderPass;
 	VkClearColorValue               m_backgroundColour;
 	ViewportAndScissorManager       m_viewportAndScissors;
@@ -131,7 +138,7 @@ public:
 		m_textureManager{ std::move(other.m_textureManager) },
 		m_materialBuffers{ std::move(other.m_materialBuffers) },
 		m_cameraManager{ std::move(other.m_cameraManager) },
-		m_depthBuffers{ std::move(other.m_depthBuffers) },
+		m_depthBuffer{ std::move(other.m_depthBuffer) },
 		m_renderPass{ std::move(other.m_renderPass) },
 		m_backgroundColour{ other.m_backgroundColour },
 		m_viewportAndScissors{ other.m_viewportAndScissors }
@@ -148,7 +155,7 @@ public:
 		m_textureManager            = std::move(other.m_textureManager);
 		m_materialBuffers           = std::move(other.m_materialBuffers);
 		m_cameraManager             = std::move(other.m_cameraManager);
-		m_depthBuffers              = std::move(other.m_depthBuffers);
+		m_depthBuffer               = std::move(other.m_depthBuffer);
 		m_renderPass                = std::move(other.m_renderPass);
 		m_backgroundColour          = other.m_backgroundColour;
 		m_viewportAndScissors       = other.m_viewportAndScissors;

@@ -98,6 +98,9 @@ void VKRenderPass::SelfDestruct() noexcept
 
 void VKRenderPass::Create(const RenderPassBuilder& renderPassBuilder)
 {
+	if (m_renderPass != VK_NULL_HANDLE)
+		SelfDestruct();
+
 	vkCreateRenderPass(m_device, renderPassBuilder.GetRef(), nullptr, &m_renderPass);
 }
 

@@ -124,13 +124,9 @@ Terra::Terra(
 
 	InitQueues(logicalDevice, bufferCount, queFamilyMan);
 
-	m_objectManager.CreateObject(
-		m_swapChain, 1u, logicalDevice,
-		queFamilyMan.GetQueue(GraphicsQueue), bufferCount, nullptr /* memoryManager */
-	);
-	Swapchain().CreateSwapchain(
-		logicalDevice, physicalDevice, nullptr /* memoryManager */, Surface()
-	);
+	/*Swapchain().CreateSwapchain(
+		logicalDevice, physicalDevice, nullptr memoryManager , Surface()
+	);*/
 
 	//InitRenderEngine(logicalDevice, engineType, bufferCount, queFamilyMan.GetAllIndices());
 }

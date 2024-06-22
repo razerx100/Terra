@@ -13,19 +13,22 @@ void VKFramebuffer::SelfDestruct() noexcept
 }
 
 void VKFramebuffer::Create(
-	VkRenderPass renderPass, std::uint32_t width, std::uint32_t height,
+	const VKRenderPass& renderPass, std::uint32_t width, std::uint32_t height,
 	std::span<VkImageView> attachments
 ) {
 	VkFramebufferCreateInfo frameBufferInfo
 	{
 		.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-		.renderPass      = renderPass,
+		.renderPass      = renderPass.Get(),
 		.attachmentCount = static_cast<std::uint32_t>(std::size(attachments)),
 		.pAttachments    = std::data(attachments),
 		.width           = width,
 		.height          = height,
 		.layers          = 1u
 	};
+
+	if (m_framebuffer != VK_NULL_HANDLE)
+		SelfDestruct();
 
 	vkCreateFramebuffer(m_device, &frameBufferInfo, nullptr, &m_framebuffer);
 }
@@ -41,13 +44,15 @@ VkSwapchain::VkSwapchain(VkDevice device, std::uint32_t bufferCount)
 	m_frameBuffers.reserve(static_cast<size_t>(bufferCount));
 }
 
-VkSwapchain& VkSwapchain::Create(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
-	const VkSurfaceCapabilitiesKHR& surfaceCapabilities
+void VkSwapchain::Create(
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
 ) {
 	// Create the swapchain.
 	const VkPresentModeKHR swapPresentMode = surface.GetPresentMode(physicalDevice);
 	const VkSurfaceFormatKHR surfaceFormat = surface.GetSurfaceFormat(physicalDevice);
+	const VkSurfaceCapabilitiesKHR surfaceCapabilities = surface.GetSurfaceCapabilities(
+		physicalDevice
+	);
 
 	{
 		const std::uint32_t imageCount = std::max(
@@ -72,6 +77,9 @@ VkSwapchain& VkSwapchain::Create(
 			.oldSwapchain     = VK_NULL_HANDLE
 		};
 
+		if (m_swapchain != VK_NULL_HANDLE)
+			SelfDestruct();
+
 		vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &m_swapchain);
 
 		m_swapchainExtent = swapExtent;
@@ -88,30 +96,40 @@ VkSwapchain& VkSwapchain::Create(
 
 	// Make the ImageViews.
 	{
-		for (size_t index = 0u; index < std::size(m_swapchainImages); ++index)
-			m_swapchainImageViews.emplace_back(logicalDevice).CreateView(
+		const size_t swapImageCount     = std::size(m_swapchainImages);
+		const size_t swapImageViewCount = std::size(m_swapchainImageViews);
+
+		// Only add new image views if there are new images.
+		for (size_t index = swapImageViewCount; index < swapImageCount; ++index)
+			m_swapchainImageViews.emplace_back(logicalDevice);
+
+		for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
+			m_swapchainImageViews.at(index).CreateView(
 				m_swapchainImages.at(index), surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT,
 				VK_IMAGE_VIEW_TYPE_2D
 			);
 
 		m_swapImageViewFormat = surfaceFormat.format;
 	}
-
-	return *this;
 }
 
-VkSwapchain& VkSwapchain::CreateFramebuffers(
-	VkDevice device, VkRenderPass renderPass, VkImageView depthImageView,
+void VkSwapchain::CreateFramebuffers(
+	VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
 	std::uint32_t width, std::uint32_t height
 ) {
-	for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
+	const size_t swapImageViewCount = std::size(m_swapchainImageViews);
+	const size_t frameBufferCount   = std::size(m_frameBuffers);
+
+	// Only add new frame buffers if there are new imageviews.
+	for (size_t index = frameBufferCount; index < swapImageViewCount; ++index)
+		m_frameBuffers.emplace_back(device);
+
+	for (size_t index = 0u; index < std::size(m_frameBuffers); ++index)
 	{
-		VkImageView attachments[] = { m_swapchainImageViews.at(index).Get(), depthImageView };
+		VkImageView attachments[] = { m_swapchainImageViews.at(index).Get(), depthBuffer.GetView() };
 
-		m_frameBuffers.emplace_back(device).Create(renderPass, width, height, attachments);
+		m_frameBuffers.at(index).Create(renderPass, width, height, attachments);
 	}
-
-	return *this;
 }
 
 VkSwapchain::~VkSwapchain() noexcept
@@ -125,12 +143,9 @@ void VkSwapchain::SelfDestruct() noexcept
 }
 
 // Swapchain Manager
-SwapchainManager::SwapchainManager(
-	VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount, MemoryManager* memoryManager
-)
-	: m_presentQueue{ presentQueue }, m_renderPass{ device },
-	m_depthBuffer{ device, memoryManager }, m_swapchain{ device, bufferCount }, m_waitSemaphores{},
-	m_nextImageIndex{ 0u }
+SwapchainManager::SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount)
+	: m_presentQueue{ presentQueue }, m_swapchain{ device, bufferCount }, m_waitSemaphores{},
+	m_nextImageIndex{ 0u }, m_hasSwapchainFormatChanged{ false }
 {
 	for (std::uint32_t _ = 0u; _ < bufferCount; ++_)
 	{
@@ -159,52 +174,24 @@ void SwapchainManager::PresentImage(std::uint32_t imageIndex) const noexcept
 }
 
 void SwapchainManager::CreateSwapchain(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, MemoryManager* memoryManager,
-	const SurfaceManager& surface
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
 ) {
-	const VkSurfaceCapabilitiesKHR surfaceCapabilities = surface.GetSurfaceCapabilities(
-		physicalDevice
-	);
-
-	const std::uint32_t width  = surfaceCapabilities.currentExtent.width;
-	const std::uint32_t height = surfaceCapabilities.currentExtent.height;
-
-	m_depthBuffer = DepthBuffer{ logicalDevice, memoryManager };
-	m_depthBuffer.Create(width, height);
-
 	const VkFormat oldFormat = m_swapchain.GetFormat();
 
-	m_swapchain = VkSwapchain{ logicalDevice, m_swapchain.GetImageCount() };
-	m_swapchain.Create(logicalDevice, physicalDevice, surface, surfaceCapabilities);
+	m_swapchain.Create(logicalDevice, physicalDevice, surface);
 
 	const VkFormat newFormat = m_swapchain.GetFormat();
 
-	if (oldFormat != newFormat)
-	{
-		m_renderPass = VKRenderPass{ logicalDevice };
-		m_renderPass.Create(
-			RenderPassBuilder{}
-			.AddColourAttachment(newFormat)
-			.AddDepthAttachment(m_depthBuffer.GetFormat())
-			.Build()
-		);
-	}
-
-	m_swapchain.CreateFramebuffers(
-		logicalDevice, m_renderPass.Get(), m_depthBuffer.GetView(), width, height
-	);
+	m_hasSwapchainFormatChanged = oldFormat != newFormat;
 }
 
-void SwapchainManager::BeginRenderPass(
-	VkCommandBuffer graphicsCmdBuffer, const VkClearColorValue& clearColour, size_t frameIndex
+void SwapchainManager::CreateFramebuffers(
+	VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
 ) {
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color        = clearColour;
-	clearValues[1].depthStencil = m_depthBuffer.GetClearValues();
+	const VkExtent2D swapchainExtent = GetCurrentSwapchainExtent();
 
-	m_renderPass.BeginPass(
-		graphicsCmdBuffer, m_swapchain.GetFramebuffer(frameIndex), m_swapchain.GetExtent(),
-		clearValues
+	m_swapchain.CreateFramebuffers(
+		device, renderPass, depthBuffer, swapchainExtent.width, swapchainExtent.height
 	);
 }
 

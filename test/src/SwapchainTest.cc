@@ -112,16 +112,48 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 100_MB, 20_MB };
 
+	VKRenderPass renderPass{ logicalDevice };
+
+	DepthBuffer depthBuffer{ logicalDevice, &memoryManager };
+
 	SwapchainManager swapchain{
 		logicalDevice, device.GetQueueFamilyManager().GetQueue(QueueType::GraphicsQueue),
-		Constants::bufferCount, &memoryManager
+		Constants::bufferCount
 	};
 
-	swapchain.CreateSwapchain(logicalDevice, physicalDevice, &memoryManager, *s_surfaceManager);
+	swapchain.CreateSwapchain(logicalDevice, physicalDevice, *s_surfaceManager);
+
+	{
+		depthBuffer.Create(Constants::width, Constants::height);
+
+		renderPass.Create(
+			RenderPassBuilder{}
+			.AddColourAttachment(swapchain.GetSwapchainFormat())
+			.AddDepthAttachment(depthBuffer.GetFormat())
+			.Build()
+		);
+	}
+
+	swapchain.CreateFramebuffers(logicalDevice, renderPass, depthBuffer);
+
 	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
 
 	s_window->SetWindowResolution(2560u, 1440u);
 
-	swapchain.CreateSwapchain(logicalDevice, physicalDevice, &memoryManager, *s_surfaceManager);
+	swapchain.CreateSwapchain(logicalDevice, physicalDevice, *s_surfaceManager);
+
+	{
+		depthBuffer.Create(2560u, 1440u);
+
+		renderPass.Create(
+			RenderPassBuilder{}
+			.AddColourAttachment(swapchain.GetSwapchainFormat())
+			.AddDepthAttachment(depthBuffer.GetFormat())
+			.Build()
+		);
+	}
+
+	swapchain.CreateFramebuffers(logicalDevice, renderPass, depthBuffer);
+
 	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain re-creation failed.";
 }
