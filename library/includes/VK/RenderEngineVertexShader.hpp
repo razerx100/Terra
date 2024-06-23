@@ -1,100 +1,75 @@
 #ifndef RENDER_ENGINE_VERTEX_SHADER_HPP_
 #define RENDER_ENGINE_VERTEX_SHADER_HPP_
-#include <RenderEngineBase.hpp>
+#include <RenderEngine.hpp>
+#include <ModelManager.hpp>
 
-/*
-class RenderEngineVertexShader : public RenderEngineBase {
-public:
-	RenderEngineVertexShader(VkDevice device, QueueIndicesTG queueIndices);
-
-	void AddGVerticesAndIndices(
-		VkDevice device, std::vector<Vertex>&& gVertices, std::vector<std::uint32_t>&& gIndices
-	) noexcept final;
-
-	void BindResourcesToMemory(VkDevice device) final;
-	void RecordCopy(VkCommandBuffer transferBuffer) noexcept final;
-	void ReleaseUploadResources() noexcept final;
-	void AcquireOwnerShipGraphics(VkCommandBuffer graphicsCmdBuffer) noexcept final;
-	void ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept final;
-
-protected:
-	void BindGraphicsBuffers(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex);
-
-	virtual void _bindResourcesToMemory(VkDevice device);
-	virtual void _recordCopy(VkCommandBuffer transferBuffer) noexcept;
-	virtual void _releaseUploadResources() noexcept;
-	virtual void _releaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept;
-
-private:
-	[[nodiscard]]
-	std::unique_ptr<PipelineLayout> CreateGraphicsPipelineLayout(
-		VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
-	) const noexcept final;
-
-private:
-	//VertexManagerVertexShader m_vertexManager;
-	QueueIndicesTG m_queueIndices;
-};
-
-class RenderEngineIndirectDraw final : public RenderEngineVertexShader
+class RenderEngineVSIndividual : public RenderEngine
 {
 public:
-	RenderEngineIndirectDraw(VkDevice device, std::uint32_t bufferCount, QueueIndices3 queueIndices);
+	RenderEngineVSIndividual(
+		VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
+		VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
+	);
 
-	void ExecutePreRenderStage(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
-	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
-	void ConstructPipelines() final;
-	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
-
-	void RecordModelDataSet(
-		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
-	) noexcept final;
-	void CreateBuffers(VkDevice device) noexcept final;
-	void CopyData() noexcept final;
-	void AcquireOwnerShipCompute(VkCommandBuffer computeCmdBuffer) noexcept final;
-
-private:
-	void _bindResourcesToMemory(VkDevice device) override;
-	void _recordCopy(VkCommandBuffer transferBuffer) noexcept override;
-	void _releaseUploadResources() noexcept override;
-	void _releaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept override;
-
-	void ExecuteComputeStage(size_t frameIndex);
+	void SetShaderPath(const std::wstring& shaderPath) noexcept override
+	{
+		m_modelManager.SetShaderPath(shaderPath);
+	}
+	void AddFragmentShader(const std::wstring& fragmentShader) override
+	{
+		m_modelManager.AddPSO(fragmentShader);
+	}
+	void ChangeFragmentShader(
+		std::uint32_t modelBundleID, const std::wstring& fragmentShader
+	) override {
+		m_modelManager.ChangePSO(modelBundleID, fragmentShader);
+	}
 
 	[[nodiscard]]
-	WaitSemaphoreData GetWaitSemaphores() const noexcept override;
+	std::uint32_t AddModel(
+		std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+	) override;
+	[[nodiscard]]
+	std::uint32_t AddModelBundle(
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+	) override;
 
-	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndirectDraw>;
+	void RemoveModelBundle(std::uint32_t bundleID) noexcept override
+	{
+		m_modelManager.RemoveModelBundle(bundleID);
+	}
+
+	[[nodiscard]]
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override
+	{
+		return m_modelManager.AddMeshBundle(std::move(meshBundle), m_stagingManager);
+	}
+
+	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
+	{
+		m_modelManager.RemoveMeshBundle(bundleIndex);
+	}
+
+	void Render(VkDeviceSize frameIndex) override;
 
 private:
-	//ComputePipelineIndirectDraw m_computePipeline;
-	GraphicsPipeline m_graphicsPipeline0;
-	std::vector<GraphicsPipeline> m_graphicsPipelines;
-};
+	ModelManagerVSIndividual m_modelManager;
 
-class RenderEngineIndividualDraw final : public RenderEngineVertexShader
-{
 public:
-	RenderEngineIndividualDraw(VkDevice device, QueueIndicesTG queueIndices);
+	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
+	RenderEngineVSIndividual& operator=(const RenderEngineVSIndividual&) = delete;
 
-	void RecordDrawCommands(VkCommandBuffer graphicsCmdBuffer, size_t frameIndex) final;
-	void ConstructPipelines() final;
-	void UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept final;
+	RenderEngineVSIndividual(RenderEngineVSIndividual&& other) noexcept
+		: RenderEngine{ std::move(other) },
+		m_modelManager{ std::move(other.m_modelManager) }
+	{}
+	RenderEngineVSIndividual& operator=(RenderEngineVSIndividual&& other) noexcept
+	{
+		RenderEngine::operator=(std::move(other));
+		m_modelManager = std::move(other.m_modelManager);
 
-	void RecordModelDataSet(
-		const std::vector<std::shared_ptr<Model>>& models, const std::wstring& fragmentShader
-	) noexcept final;
-
-private:
-	void RecordModelArguments(const std::vector<std::shared_ptr<Model>>& models) noexcept;
-
-	using GraphicsPipeline = std::unique_ptr<GraphicsPipelineIndividualDraw>;
-
-private:
-	GraphicsPipeline m_graphicsPipeline0;
-	std::vector<GraphicsPipeline> m_graphicsPipelines;
-
-	std::vector<VkDrawIndexedIndirectCommand> m_modelArguments;
+		return *this;
+	}
 };
-*/
 #endif

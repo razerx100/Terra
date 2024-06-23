@@ -10,11 +10,12 @@ RenderEngine::RenderEngine(
 		logicalDevice,
 		queueFamilyManager->GetQueue(QueueType::GraphicsQueue),
 		queueFamilyManager->GetIndex(QueueType::GraphicsQueue)
-	}, m_transferQueue{
+	}, m_graphicsWait{},
+	m_transferQueue {
 		logicalDevice,
 		queueFamilyManager->GetQueue(QueueType::TransferQueue),
 		queueFamilyManager->GetIndex(QueueType::TransferQueue)
-	},
+	}, m_transferWait{},
 	m_stagingManager{
 		logicalDevice, &m_memoryManager, &m_transferQueue, m_threadPool.get(), queueFamilyManager
 	}, m_graphicsDescriptorBuffers{},
@@ -26,10 +27,22 @@ RenderEngine::RenderEngine(
 	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
+	{
 		m_graphicsDescriptorBuffers.emplace_back(logicalDevice, &m_memoryManager);
 
-	m_graphicsQueue.CreateCommandBuffers(static_cast<std::uint32_t>(frameCount));
-	m_transferQueue.CreateCommandBuffers(1u);
+		// The graphics Wait semaphores will be used by the Swapchain, which doesn't support
+		// timeline semaphores.
+		m_graphicsWait.emplace_back(logicalDevice).Create(false);
+		// Setting the Transfer ones to non-timeline as well, as I don't plan on signalling from
+		// the cpu and otherwise, we would need to track the current value to know which value to
+		// wait on.
+		m_transferWait.emplace_back(logicalDevice).Create(false);
+	}
+
+	const auto frameCountU32 = static_cast<std::uint32_t>(frameCount);
+
+	m_graphicsQueue.CreateCommandBuffers(frameCountU32);
+	m_transferQueue.CreateCommandBuffers(frameCountU32);
 }
 
 size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
@@ -217,6 +230,11 @@ void RenderEngine::BeginRenderPass(
 	VkCommandBuffer cmdBuffer   = m_graphicsQueue.GetCommandBuffer(frameIndex).Get();
 
 	m_renderPass.BeginPass(cmdBuffer, frameBuffer.Get(), renderArea, clearValues);
+}
+
+void RenderEngine::SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept
+{
+	deviceManager.ExtensionManager().AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
 }
 
 std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)

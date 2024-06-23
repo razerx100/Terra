@@ -5,7 +5,6 @@
 #include <VkTextureView.hpp>
 #include <VkResourceBarriers2.hpp>
 #include <VkSyncObjects.hpp>
-#include <SwapchainManager.hpp>
 #include <array>
 #include <cassert>
 
@@ -513,21 +512,6 @@ public:
 	void WaitForSubmission(size_t bufferIndex);
 	void WaitForQueueToFinish();
 	void CreateCommandBuffers(std::uint32_t bufferCount) override;
-
-	template<std::uint32_t WaitCount = 0u>
-	void SubmitCommandBuffer(
-		size_t bufferIndex, SwapchainManager& swapchain,
-		QueueSubmitBuilder<WaitCount, 1u>&& builder = {}
-	) const noexcept {
-		m_fences.at(bufferIndex).Reset();
-
-		SubmitCommandBuffer<WaitCount, 1u>(
-			builder.CommandBuffer(GetCommandBuffer(bufferIndex))
-			// Since this semaphore is a Binary Semaphore, its value doesn't matter.
-			.SignalSemaphore(swapchain.GetSwapchainWaitSemaphore(bufferIndex))
-			, m_fences.at(bufferIndex)
-		);
-	}
 
 private:
 	std::vector<VKFence> m_fences;

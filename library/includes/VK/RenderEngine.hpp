@@ -12,6 +12,7 @@
 #include <VKRenderPass.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <Model.hpp>
+#include <SwapchainManager.hpp>
 
 class RenderEngine
 {
@@ -57,7 +58,7 @@ public:
 
 	void WaitForQueues() { m_graphicsQueue.WaitForQueueToFinish(); }
 
-	virtual void SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept = 0;
+	virtual void SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept;
 	virtual void SetShaderPath(const std::wstring& shaderPath) noexcept = 0;
 	virtual void AddFragmentShader(const std::wstring& fragmentShader) = 0;
 	virtual void ChangeFragmentShader(
@@ -111,7 +112,9 @@ protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;
 	MemoryManager                   m_memoryManager;
 	VkGraphicsQueue                 m_graphicsQueue;
+	std::vector<VKSemaphore>        m_graphicsWait;
 	VkCommandQueue                  m_transferQueue;
+	std::vector<VKSemaphore>        m_transferWait;
 	StagingBufferManager            m_stagingManager;
 	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
 	TextureStorage                  m_textureStorage;
@@ -131,7 +134,9 @@ public:
 		: m_threadPool{ std::move(other.m_threadPool) },
 		m_memoryManager{ std::move(other.m_memoryManager) },
 		m_graphicsQueue{ std::move(other.m_graphicsQueue) },
+		m_graphicsWait{ std::move(other.m_graphicsWait) },
 		m_transferQueue{ std::move(other.m_transferQueue) },
+		m_transferWait{ std::move(other.m_transferWait) },
 		m_stagingManager{ std::move(other.m_stagingManager) },
 		m_graphicsDescriptorBuffers{ std::move(other.m_graphicsDescriptorBuffers) },
 		m_textureStorage{ std::move(other.m_textureStorage) },
@@ -148,7 +153,9 @@ public:
 		m_threadPool                = std::move(other.m_threadPool);
 		m_memoryManager             = std::move(other.m_memoryManager);
 		m_graphicsQueue             = std::move(other.m_graphicsQueue);
+		m_graphicsWait              = std::move(other.m_graphicsWait);
 		m_transferQueue             = std::move(other.m_transferQueue);
+		m_transferWait              = std::move(other.m_transferWait);
 		m_stagingManager            = std::move(other.m_stagingManager);
 		m_graphicsDescriptorBuffers = std::move(other.m_graphicsDescriptorBuffers);
 		m_textureStorage            = std::move(other.m_textureStorage);
