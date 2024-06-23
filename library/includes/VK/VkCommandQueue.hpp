@@ -513,6 +513,9 @@ public:
 	void WaitForQueueToFinish();
 	void CreateCommandBuffers(std::uint32_t bufferCount) override;
 
+	[[nodiscard]]
+	VKFence& GetFence(size_t index) noexcept { return m_fences.at(index); }
+
 private:
 	std::vector<VKFence> m_fences;
 

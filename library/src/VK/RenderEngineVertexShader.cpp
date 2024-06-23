@@ -89,6 +89,9 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
 
-		m_graphicsQueue.SubmitCommandBuffer(graphicsSubmitBuilder);
+		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndexUz);
+		signalFence.Reset();
+
+		m_graphicsQueue.SubmitCommandBuffer(graphicsSubmitBuilder, signalFence);
 	}
 }
