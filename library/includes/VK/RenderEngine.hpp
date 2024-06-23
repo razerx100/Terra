@@ -58,6 +58,9 @@ public:
 
 	void WaitForQueues() { m_graphicsQueue.WaitForQueueToFinish(); }
 
+	[[nodiscard]]
+	const VKSemaphore& GetGraphicsWait(size_t index) const noexcept { return m_graphicsWait.at(index); }
+
 	virtual void SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept;
 	virtual void SetShaderPath(const std::wstring& shaderPath) noexcept = 0;
 	virtual void AddFragmentShader(const std::wstring& fragmentShader) = 0;

@@ -112,20 +112,14 @@ void VkSwapchain::SelfDestruct() noexcept
 
 // Swapchain Manager
 SwapchainManager::SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount)
-	: m_presentQueue{ presentQueue }, m_swapchain{ device, bufferCount }, m_waitSemaphores{},
-	m_nextImageIndex{ 0u }, m_hasSwapchainFormatChanged{ false }
-{
-	for (std::uint32_t _ = 0u; _ < bufferCount; ++_)
-	{
-		VKSemaphore semaphore{ device };
-		semaphore.Create();
-		m_waitSemaphores.emplace_back(std::move(semaphore));
-	}
-}
+	: m_presentQueue{ presentQueue }, m_swapchain{ device, bufferCount }, m_nextImageIndex{ 0u },
+	m_hasSwapchainFormatChanged{ false }
+{}
 
-void SwapchainManager::PresentImage(std::uint32_t imageIndex) const noexcept
-{
-	const VkSemaphore semapohores[]   = { m_waitSemaphores.at(imageIndex).Get() };
+void SwapchainManager::Present(
+	std::uint32_t imageIndex, const VKSemaphore& waitSemaphore
+) const noexcept {
+	const VkSemaphore semapohores[]   = { waitSemaphore.Get() };
 	const VkSwapchainKHR swapchains[] = { m_swapchain.Get() };
 
 	VkPresentInfoKHR presentInfo{

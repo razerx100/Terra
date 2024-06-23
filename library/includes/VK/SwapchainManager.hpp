@@ -89,7 +89,7 @@ class SwapchainManager
 public:
 	SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount);
 
-	void PresentImage(std::uint32_t imageIndex) const noexcept;
+	void Present(std::uint32_t imageIndex, const VKSemaphore& waitSemaphore) const noexcept;
 	void CreateSwapchain(
 		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
 	);
@@ -111,21 +111,16 @@ public:
 	[[nodiscard]]
 	VkSwapchainKHR GetSwapchain() const noexcept { return m_swapchain.Get(); }
 	[[nodiscard]]
-	const VKSemaphore& GetSwapchainWaitSemaphore(size_t index) const noexcept
-	{
-		return m_waitSemaphores.at(index);
-	}
 	const VKFramebuffer& GetFramebuffer(size_t imageIndex) const noexcept
 	{
 		return m_swapchain.GetFramebuffer(imageIndex);
 	}
 
 private:
-	VkQueue                  m_presentQueue;
-	VkSwapchain              m_swapchain;
-	std::vector<VKSemaphore> m_waitSemaphores;
-	std::uint32_t            m_nextImageIndex;
-	bool                     m_hasSwapchainFormatChanged;
+	VkQueue       m_presentQueue;
+	VkSwapchain   m_swapchain;
+	std::uint32_t m_nextImageIndex;
+	bool          m_hasSwapchainFormatChanged;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -143,7 +138,6 @@ public:
 	SwapchainManager(SwapchainManager&& other) noexcept
 		: m_presentQueue{ other.m_presentQueue },
 		m_swapchain{ std::move(other.m_swapchain) },
-		m_waitSemaphores{ std::move(other.m_waitSemaphores) },
 		m_nextImageIndex{ other.m_nextImageIndex },
 		m_hasSwapchainFormatChanged{ other.m_hasSwapchainFormatChanged }
 	{}
@@ -151,7 +145,6 @@ public:
 	{
 		m_presentQueue              = other.m_presentQueue;
 		m_swapchain                 = std::move(other.m_swapchain);
-		m_waitSemaphores            = std::move(other.m_waitSemaphores);
 		m_nextImageIndex            = other.m_nextImageIndex;
 		m_hasSwapchainFormatChanged = other.m_hasSwapchainFormatChanged;
 
