@@ -6,51 +6,9 @@
 #include <VkExtensionManager.hpp>
 #include <VkTextureView.hpp>
 #include <SurfaceManager.hpp>
-#include <VKRenderPass.hpp>
 #include <DepthBuffer.hpp>
+#include <VkFramebuffer.hpp>
 #include <VkSyncObjects.hpp>
-
-class VKFramebuffer
-{
-public:
-	VKFramebuffer(VkDevice device) : m_device{ device }, m_framebuffer{ VK_NULL_HANDLE } {}
-	~VKFramebuffer() noexcept;
-
-	void Create(
-		const VKRenderPass& renderPass, std::uint32_t width, std::uint32_t height,
-		std::span<VkImageView> attachments
-	);
-
-	[[nodiscard]]
-	VkFramebuffer Get() const noexcept { return m_framebuffer; }
-
-private:
-	void SelfDestruct() noexcept;
-
-private:
-	VkDevice      m_device;
-	VkFramebuffer m_framebuffer;
-
-public:
-	VKFramebuffer(const VKFramebuffer&) = delete;
-	VKFramebuffer& operator=(const VKFramebuffer&) = delete;
-
-	VKFramebuffer(VKFramebuffer&& other) noexcept
-		: m_device{ other.m_device }, m_framebuffer{ other.m_framebuffer }
-	{
-		other.m_framebuffer = VK_NULL_HANDLE;
-	}
-	VKFramebuffer& operator=(VKFramebuffer&& other) noexcept
-	{
-		SelfDestruct();
-
-		m_device            = other.m_device;
-		m_framebuffer       = other.m_framebuffer;
-		other.m_framebuffer = VK_NULL_HANDLE;
-
-		return *this;
-	}
-};
 
 class VkSwapchain
 {

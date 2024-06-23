@@ -12,7 +12,7 @@
 #include <VKRenderPass.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <Model.hpp>
-#include <SwapchainManager.hpp>
+#include <VkFramebuffer.hpp>
 
 class RenderEngine
 {
