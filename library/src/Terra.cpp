@@ -11,7 +11,7 @@
 #include <RenderEngineMeshShader.hpp>
 
 // Queue
-Terra::Queue::Queue() : m_queue{ nullptr }, m_cmdBuffer{ nullptr }, m_syncObjects{ nullptr } {}
+Terra::Queue::Queue() : m_queue{ nullptr }, m_cmdBuffer{ nullptr } {}
 
 void InitGraphicsQueue(
 	VkQueue vkQueue, VkDevice logicalDevice, std::uint32_t queueIndex,

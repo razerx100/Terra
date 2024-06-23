@@ -72,21 +72,19 @@ public:
 		Queue& operator=(const Queue&) = delete;
 
 		inline Queue(Queue&& other) noexcept
-			: m_queue{ std::move(other.m_queue) }, m_cmdBuffer{ std::move(other.m_cmdBuffer) },
-			m_syncObjects{ std::move(other.m_syncObjects) } {}
+			: m_queue{ std::move(other.m_queue) }, m_cmdBuffer{ std::move(other.m_cmdBuffer) }
+		{}
 
 		inline Queue& operator=(Queue&& other) noexcept
 		{
 			m_queue	      = std::move(other.m_queue);
 			m_cmdBuffer	  = std::move(other.m_cmdBuffer);
-			m_syncObjects = std::move(other.m_syncObjects);
 
 			return *this;
 		}
 
 		inline VkCommandQueue& Que() noexcept { return *m_queue; }
 		inline VKCommandBuffer& CmdBuffer() noexcept { return *m_cmdBuffer; }
-		inline VkSyncObjects& SyncObj() noexcept { return *m_syncObjects; }
 
 	private:
 		friend void InitGraphicsQueue(
@@ -101,7 +99,6 @@ public:
 	private:
 		std::unique_ptr<VkCommandQueue>  m_queue;
 		std::unique_ptr<VKCommandBuffer> m_cmdBuffer;
-		std::unique_ptr<VkSyncObjects>   m_syncObjects;
 	};
 
 private:

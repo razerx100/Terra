@@ -73,10 +73,10 @@ void RendererVK::Update()
 {
 	Terra& terra = Terra::Get();
 
-	terra.Swapchain().QueryNextImageIndex(
+	/*terra.Swapchain().QueryNextImageIndex(
 		terra.Device().GetLogicalDevice(),
 		terra.Graphics().SyncObj().GetFrontSemaphore()
-	);
+	);*/
 	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
 
 	//terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
