@@ -50,8 +50,8 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 {
 	const auto frameIndexUz = static_cast<size_t>(frameIndex);
 
-	m_graphicsQueue.WaitForSubmission(frameIndexUz);
 	// Wait for the previous Graphics queue to finish.
+	m_graphicsQueue.WaitForSubmission(frameIndexUz);
 
 	// Transfer Phase
 	VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndexUz);
@@ -69,7 +69,7 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
 	}
 
-	// Compute Phase
+	// Compute Phase (Not using atm)
 
 	// Graphics Phase
 	VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndexUz);
@@ -84,7 +84,9 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
+			// The graphics queue should wait for the transfer queue finish and then start the
+			// Input Assembler Stage.
+			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		m_graphicsQueue.SubmitCommandBuffer(graphicsSubmitBuilder);
