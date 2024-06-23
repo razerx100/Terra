@@ -50,7 +50,7 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 {
 	const auto frameIndexUz = static_cast<size_t>(frameIndex);
 
-	// Wait for the previous Graphics queue to finish.
+	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndexUz);
 
 	// Transfer Phase
