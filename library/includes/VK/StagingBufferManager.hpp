@@ -15,7 +15,8 @@ public:
 		ThreadPool* threadPool, VkQueueFamilyMananger const* queueFamilyManager
 	) : m_device{ device }, m_memoryManager{ memoryManager }, m_copyQueue{ copyQueue },
 		m_threadPool{ threadPool }, m_queueFamilyManager{ queueFamilyManager },
-		m_bufferData{}, m_tempBufferToBuffer{}, m_textureData{}, m_tempBufferToTexture{}
+		m_bufferData{}, m_tempBufferToBuffer{}, m_textureData{}, m_tempBufferToTexture{},
+		m_copyRecorded{ false }
 	{}
 
 	StagingBufferManager& AddTextureView(
@@ -57,6 +58,8 @@ public:
 	void CleanUpTempBuffers();
 	void CleanUpTempData();
 
+	void SetCopyRecorded() noexcept { m_copyRecorded = true; }
+
 private:
 	void CopyCPU();
 	void CopyGPU(size_t currentCmdBufferIndex);
@@ -95,6 +98,7 @@ private:
 	std::vector<Buffer>          m_tempBufferToBuffer;
 	std::vector<TextureData>     m_textureData;
 	std::vector<Buffer>          m_tempBufferToTexture;
+	bool                         m_copyRecorded;
 
 public:
 	StagingBufferManager(const StagingBufferManager&) = delete;
@@ -108,20 +112,22 @@ public:
 		m_bufferData{ std::move(other.m_bufferData) },
 		m_tempBufferToBuffer{ std::move(other.m_tempBufferToBuffer) },
 		m_textureData{ std::move(other.m_textureData) },
-		m_tempBufferToTexture{ std::move(other.m_tempBufferToTexture) }
+		m_tempBufferToTexture{ std::move(other.m_tempBufferToTexture) },
+		m_copyRecorded{ other.m_copyRecorded }
 	{}
 
 	StagingBufferManager& operator=(StagingBufferManager&& other) noexcept
 	{
-		m_device                = other.m_device;
-		m_memoryManager         = other.m_memoryManager;
-		m_copyQueue             = other.m_copyQueue;
-		m_threadPool            = other.m_threadPool;
-		m_queueFamilyManager    = other.m_queueFamilyManager;
-		m_bufferData            = std::move(other.m_bufferData);
-		m_tempBufferToBuffer    = std::move(other.m_tempBufferToBuffer);
-		m_textureData           = std::move(other.m_textureData);
-		m_tempBufferToTexture   = std::move(other.m_tempBufferToTexture);
+		m_device              = other.m_device;
+		m_memoryManager       = other.m_memoryManager;
+		m_copyQueue           = other.m_copyQueue;
+		m_threadPool          = other.m_threadPool;
+		m_queueFamilyManager  = other.m_queueFamilyManager;
+		m_bufferData          = std::move(other.m_bufferData);
+		m_tempBufferToBuffer  = std::move(other.m_tempBufferToBuffer);
+		m_textureData         = std::move(other.m_textureData);
+		m_tempBufferToTexture = std::move(other.m_tempBufferToTexture);
+		m_copyRecorded        = other.m_copyRecorded;
 
 		return *this;
 	}

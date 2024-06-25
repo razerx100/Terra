@@ -57,7 +57,13 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 	VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndexUz);
 
 	{
-		// Do all kinda gpu copying here.
+		transferCmdBuffer.Reset();
+
+		m_stagingManager.Copy(frameIndexUz);
+
+		m_stagingManager.ReleaseOwnership(frameIndexUz);
+
+		transferCmdBuffer.Close();
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndexUz);
@@ -75,7 +81,13 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 	VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndexUz);
 
 	{
-		// Do all kinda gpu rendering here.
+		graphicsCmdBuffer.Reset();
+
+		m_stagingManager.AcquireOwnership(frameIndexUz, m_graphicsQueue);
+
+		m_modelManager.Draw(graphicsCmdBuffer);
+
+		graphicsCmdBuffer.Close();
 	}
 
 	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndexUz);

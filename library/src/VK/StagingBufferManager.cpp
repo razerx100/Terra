@@ -8,6 +8,17 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 	std::uint32_t mipLevelIndex/* = 0u */
 ) {
+	if (m_copyRecorded)
+	{
+		// If this boolean is set, that would mean the temp buffers have already been recorded
+		// and this function should only be called after the queues have finished. So, it should
+		// be okay to clean them up.
+		CleanUpTempBuffers();
+		CleanUpTempData();
+
+		m_copyRecorded = false;
+	}
+
 	m_textureData.emplace_back(
 		TextureData{
 			cpuHandle, bufferSize, dst, offset, mipLevelIndex,
@@ -27,6 +38,17 @@ StagingBufferManager& StagingBufferManager::AddBuffer(
 	void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
 ) {
+	if (m_copyRecorded)
+	{
+		// If this boolean is set, that would mean the temp buffers have already been recorded
+		// and this function should only be called after the queues have finished. So, it should
+		// be okay to clean them up.
+		CleanUpTempBuffers();
+		CleanUpTempData();
+
+		m_copyRecorded = false;
+	}
+
 	m_bufferData.emplace_back(
 		BufferData{ cpuHandle, bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
 	);
