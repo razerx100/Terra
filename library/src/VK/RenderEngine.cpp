@@ -237,6 +237,11 @@ void RenderEngine::SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept
 	deviceManager.ExtensionManager().AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
 }
 
+void RenderEngine::Update(VkDeviceSize frameIndex)
+{
+	m_cameraManager.Update(frameIndex);
+}
+
 std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)
 {
 	return std::numeric_limits<std::uint32_t>::max();

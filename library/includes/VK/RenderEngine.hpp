@@ -71,7 +71,7 @@ public:
 	void BeginRenderPass(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
 	);
-	virtual void Render(VkDeviceSize frameIndex) = 0;
+	virtual void Render(size_t frameIndex) = 0;
 	virtual void Resize(
 		std::uint32_t width, std::uint32_t height,
 		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
@@ -110,6 +110,8 @@ protected:
 	virtual std::uint32_t GetSampledTextureBindingSlot() const noexcept = 0;
 	[[nodiscard]]
 	virtual std::uint32_t GetSamplerBindingSlot() const noexcept = 0;
+
+	virtual void Update(VkDeviceSize frameIndex);
 
 protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;

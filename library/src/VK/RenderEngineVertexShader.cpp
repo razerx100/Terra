@@ -46,27 +46,34 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	return index;
 }
 
-void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
+void RenderEngineVSIndividual::Update(VkDeviceSize frameIndex)
 {
-	const auto frameIndexUz = static_cast<size_t>(frameIndex);
+	RenderEngine::Update(frameIndex);
 
+	m_modelManager.UpdatePerFrame(frameIndex);
+}
+
+void RenderEngineVSIndividual::Render(size_t frameIndex)
+{
 	// Wait for the previous Graphics command buffer to finish.
-	m_graphicsQueue.WaitForSubmission(frameIndexUz);
+	m_graphicsQueue.WaitForSubmission(frameIndex);
+
+	Update(static_cast<VkDeviceSize>(frameIndex));
 
 	// Transfer Phase
-	VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndexUz);
+	VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
 	{
 		transferCmdBuffer.Reset();
 
-		m_stagingManager.Copy(frameIndexUz);
+		m_stagingManager.Copy(frameIndex);
 
-		m_stagingManager.ReleaseOwnership(frameIndexUz);
+		m_stagingManager.ReleaseOwnership(frameIndex);
 
 		transferCmdBuffer.Close();
 	}
 
-	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndexUz);
+	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
 
 	{
 		QueueSubmitBuilder<0u, 1u> transferSubmitBuilder{};
@@ -78,19 +85,19 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 	// Compute Phase (Not using atm)
 
 	// Graphics Phase
-	VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndexUz);
+	VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndex);
 
 	{
 		graphicsCmdBuffer.Reset();
 
-		m_stagingManager.AcquireOwnership(frameIndexUz, m_graphicsQueue);
+		m_stagingManager.AcquireOwnership(frameIndex, m_graphicsQueue);
 
 		m_modelManager.Draw(graphicsCmdBuffer);
 
 		graphicsCmdBuffer.Close();
 	}
 
-	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndexUz);
+	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);
 
 	{
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
@@ -101,7 +108,7 @@ void RenderEngineVSIndividual::Render(VkDeviceSize frameIndex)
 			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
 
-		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndexUz);
+		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
 		signalFence.Reset();
 
 		m_graphicsQueue.SubmitCommandBuffer(graphicsSubmitBuilder, signalFence);

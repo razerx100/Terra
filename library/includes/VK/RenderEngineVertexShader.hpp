@@ -51,7 +51,10 @@ public:
 		m_modelManager.RemoveMeshBundle(bundleIndex);
 	}
 
-	void Render(VkDeviceSize frameIndex) override;
+	void Render(size_t frameIndex) override;
+
+private:
+	void Update(VkDeviceSize frameIndex) override;
 
 private:
 	ModelManagerVSIndividual m_modelManager;
