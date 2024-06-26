@@ -137,7 +137,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 
 		// PipelineLayout
 		PipelineLayout pipelineLayout{ logicalDevice };
-		pipelineLayout.Create(descBuffer);
+		pipelineLayout.Create(descBuffer.GetLayout());
 	}
 }
 

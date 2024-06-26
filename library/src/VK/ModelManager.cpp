@@ -313,7 +313,7 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 	constexpr std::uint32_t pushConstantSize = ModelBundleVSIndividual::GetConstantBufferSize();
 
 	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
-	m_pipelineLayout.Create(descriptorBuffer);
+	m_pipelineLayout.Create(descriptorBuffer.GetLayout());
 }
 
 void ModelManagerVSIndividual::ConfigureModel(
@@ -472,12 +472,12 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
-	m_pipelineLayout.Create(descriptorBuffer);
+	m_pipelineLayout.Create(descriptorBuffer.GetLayout());
 }
 
 void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer)
 {
-	m_pipelineLayoutCS.Create(descriptorBuffer);
+	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayout());
 
 	m_computePipeline.Create(m_device, m_pipelineLayoutCS, m_shaderPath);
 }
@@ -950,7 +950,7 @@ void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descript
 	m_pipelineLayout.AddPushConstantRange(
 		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
 	);
-	m_pipelineLayout.Create(descriptorBuffer);
+	m_pipelineLayout.Create(descriptorBuffer.GetLayout());
 }
 
 void ModelManagerMS::_cleanUpTempData() noexcept

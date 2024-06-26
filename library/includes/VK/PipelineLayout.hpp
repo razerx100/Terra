@@ -2,7 +2,7 @@
 #define PIPELINE_LAYOUT_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
-#include <VkDescriptorBuffer.hpp>
+#include <DescriptorSetLayout.hpp>
 
 class PipelineLayout
 {
@@ -14,7 +14,7 @@ public:
 	void AddPushConstantRange(VkShaderStageFlags shaderFlag, std::uint32_t rangeSize) noexcept;
 
 	void Create(const std::vector<DescriptorSetLayout>& setLayouts);
-	void Create(const VkDescriptorBuffer& descBuffer);
+	void Create(const DescriptorSetLayout& setLayout);
 	void Create(VkDescriptorSetLayout const* setLayouts, std::uint32_t layoutCount);
 
 	[[nodiscard]]

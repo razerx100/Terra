@@ -487,6 +487,12 @@ public:
 		static_cast<Derived*>(this)->CreatePipelineLayoutImpl(descriptorBuffer);
 	}
 
+	[[nodiscard]]
+	VkPipelineLayout GetGraphicsPipelineLayout() const noexcept
+	{
+		return m_pipelineLayout.Get();
+	}
+
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
 		m_modelBuffers.Update(frameIndex);

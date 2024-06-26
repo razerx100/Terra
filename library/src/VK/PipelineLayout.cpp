@@ -49,8 +49,8 @@ void PipelineLayout::Create(const std::vector<DescriptorSetLayout>& setLayouts)
 	Create(std::data(vkSetLayouts), static_cast<std::uint32_t>(layoutCount));
 }
 
-void PipelineLayout::Create(const VkDescriptorBuffer& descBuffer)
+void PipelineLayout::Create(const DescriptorSetLayout& setLayout)
 {
-	VkDescriptorSetLayout vkLayout = descBuffer.GetLayout().Get();
-	Create(&vkLayout, 1u);
+	VkDescriptorSetLayout vkSetLayout[] = { setLayout.Get() };
+	Create(vkSetLayout, 1u);
 }
