@@ -62,14 +62,14 @@ void RenderEngineVSIndividual::Render(
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
 	// Transfer Phase
-	VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
+	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
 	{
-		CommandBufferScope cmdBufferScope{ transferCmdBuffer };
+		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-		m_stagingManager.Copy(transferCmdBuffer);
+		m_stagingManager.Copy(transferCmdBufferScope);
 
-		m_stagingManager.ReleaseOwnership(transferCmdBuffer, m_transferQueue.GetFamilyIndex());
+		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
@@ -84,25 +84,25 @@ void RenderEngineVSIndividual::Render(
 	// Compute Phase (Not using atm)
 
 	// Graphics Phase
-	VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndex);
+	const VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndex);
 
 	{
-		CommandBufferScope cmdBufferScope{ graphicsCmdBuffer };
+		const CommandBufferScope graphicsCmdBufferScope{ graphicsCmdBuffer };
 
 		m_stagingManager.AcquireOwnership(
-			graphicsCmdBuffer, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
 		);
 
-		m_viewportAndScissors.BindViewportAndScissor(graphicsCmdBuffer);
+		m_viewportAndScissors.BindViewportAndScissor(graphicsCmdBufferScope);
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
-			m_graphicsDescriptorBuffers.at(frameIndex), graphicsCmdBuffer,
+			m_graphicsDescriptorBuffers.at(frameIndex), graphicsCmdBufferScope,
 			VK_PIPELINE_BIND_POINT_GRAPHICS, m_modelManager.GetGraphicsPipelineLayout()
 		);
 
-		BeginRenderPass(graphicsCmdBuffer, frameBuffer, renderArea);
+		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
-		m_modelManager.Draw(graphicsCmdBuffer);
+		m_modelManager.Draw(graphicsCmdBufferScope);
 	}
 
 	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);

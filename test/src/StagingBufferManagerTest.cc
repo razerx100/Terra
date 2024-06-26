@@ -95,11 +95,10 @@ TEST_F(StagingBufferTest, StagingTest)
 		textureData.get(), testTextureView.GetTexture().Size(), &testTextureView, {}
 	);
 
-	VKCommandBuffer& transferCmdBuffer = transferQueue.GetCommandBuffer(0u);
 	{
-		CommandBufferScope cmdBufferScope{ transferCmdBuffer };
+		const CommandBufferScope cmdBufferScope{ transferQueue.GetCommandBuffer(0u) };
 
-		stagingBufferMan.Copy(transferCmdBuffer);
+		stagingBufferMan.Copy(cmdBufferScope);
 	}
 
 	VKFence waitFence{ logicalDevice };
