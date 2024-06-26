@@ -145,96 +145,87 @@ public:
 
 	void Create(VkDevice device, VkCommandPool commandPool);
 
-	VKCommandBuffer& Reset() noexcept;
-	VKCommandBuffer& Close() noexcept;
+	void Reset() const noexcept;
+	void Close() const noexcept;
 
-	VKCommandBuffer& Copy(
+	void Copy(
 		const Buffer& src, const Buffer& dst, const BufferToBufferCopyBuilder& builder
-	) noexcept;
-	VKCommandBuffer& CopyWhole(
+	) const noexcept;
+	void CopyWhole(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder& builder
-	) noexcept;
-	VKCommandBuffer& Copy(
+	) const noexcept;
+	void Copy(
 		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
-	) noexcept;
-	VKCommandBuffer& CopyWhole(
+	) const noexcept;
+	void CopyWhole(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
-	) noexcept;
+	) const noexcept;
 
-	VKCommandBuffer& Copy(
+	void Copy(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
-	) noexcept {
-		return Copy(src, dst, builder);
-	}
-	VKCommandBuffer& CopyWhole(
+	) const noexcept { Copy(src, dst, builder); }
+	void CopyWhole(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder = {}
-	) noexcept
-	{
-		return CopyWhole(src, dst, builder);
-	}
-	VKCommandBuffer& Copy(
+	) const noexcept { CopyWhole(src, dst, builder); }
+	void Copy(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
-	) noexcept {
-		return Copy(src, dst, builder);
-	}
-	VKCommandBuffer& CopyWhole(
+	) const noexcept { Copy(src, dst, builder); }
+	void CopyWhole(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder = {}
-	) noexcept {
-		return CopyWhole(src, dst, builder);
-	}
+	) const noexcept { CopyWhole(src, dst, builder); }
 
-	VKCommandBuffer& AcquireOwnership(
+	void AcquireOwnership(
 		const Buffer& buffer,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
-	) noexcept;
-	VKCommandBuffer& AcquireOwnership(
+	) const noexcept;
+	void AcquireOwnership(
 		const VkTextureView& textureView,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
 		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	) noexcept;
-	VKCommandBuffer& ReleaseOwnership(
+	) const noexcept;
+	void ReleaseOwnership(
 		const Buffer& buffer, std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex
-	) noexcept;
-	VKCommandBuffer& ReleaseOwnership(
+	) const noexcept;
+	void ReleaseOwnership(
 		const VkTextureView& textureView,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	) noexcept;
-	VKCommandBuffer& AcquireOwnership(
+	) const noexcept;
+	void AcquireOwnership(
 		const Buffer& buffer,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
-	) noexcept;
-	VKCommandBuffer& AcquireOwnership(
+	) const noexcept;
+	void AcquireOwnership(
 		const VkTextureView& textureView,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
 		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	) noexcept;
-	VKCommandBuffer& ReleaseOwnership(
+	) const noexcept;
+	void ReleaseOwnership(
 		const Buffer& buffer, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
-	) noexcept;
-	VKCommandBuffer& ReleaseOwnership(
+	) const noexcept;
+	void ReleaseOwnership(
 		const VkTextureView& textureView,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
 		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	) noexcept;
+	) const noexcept;
 
 	template<std::uint32_t BarrierCount = 1u>
-	VKCommandBuffer& AddBarrier(const VkBufferBarrier2<BarrierCount>& barrier) noexcept
+	const VKCommandBuffer& AddBarrier(const VkBufferBarrier2<BarrierCount>& barrier) const noexcept
 	{
 		barrier.RecordBarriers(m_commandBuffer);
 
 		return *this;
 	}
 	template<std::uint32_t BarrierCount = 1u>
-	VKCommandBuffer& AddBarrier(const VkImageBarrier2<BarrierCount>& barrier) noexcept
+	const VKCommandBuffer& AddBarrier(const VkImageBarrier2<BarrierCount>& barrier) const noexcept
 	{
 		barrier.RecordBarriers(m_commandBuffer);
 
