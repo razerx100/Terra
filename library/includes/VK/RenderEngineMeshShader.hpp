@@ -1,6 +1,7 @@
 #ifndef RENDER_ENGINE_MESH_SHADER_HPP_
 #define RENDER_ENGINE_MESH_SHADER_HPP_
-#include <RenderEngineBase.hpp>
+#include <RenderEngine.hpp>
+#include <ModelManager.hpp>
 
 /*
 class RenderEngineMeshShader : public RenderEngineBase
