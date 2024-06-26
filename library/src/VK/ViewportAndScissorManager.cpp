@@ -26,3 +26,12 @@ void ViewportAndScissorManager::ResizeScissor(std::uint32_t width, std::uint32_t
 {
 	m_scissor.extent = VkExtent2D{ .width = width, .height = height };
 }
+
+void ViewportAndScissorManager::BindViewportAndScissor(
+	const VKCommandBuffer& graphicsCmdBuffer
+) const noexcept {
+	VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
+
+	vkCmdSetViewport(cmdBuffer, 0u, 1u, &m_viewport);
+	vkCmdSetScissor(cmdBuffer, 0u, 1u, &m_scissor);
+}

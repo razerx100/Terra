@@ -2,22 +2,16 @@
 #define VIEWPORT_AND_SCISSOR_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <cstdint>
+#include <VkCommandQueue.hpp>
 
 class ViewportAndScissorManager
 {
 public:
 	ViewportAndScissorManager();
 
-	[[nodiscard]]
-	VkViewport GetViewport() const noexcept { return m_viewport; }
-	[[nodiscard]]
-	VkRect2D GetScissor() const noexcept { return m_scissor; }
-	[[nodiscard]]
-	const VkViewport* GetViewportRef() const noexcept { return &m_viewport; }
-	[[nodiscard]]
-	const VkRect2D* GetScissorRef() const noexcept { return &m_scissor; }
-
 	void Resize(std::uint32_t width, std::uint32_t height) noexcept;
+
+	void BindViewportAndScissor(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 
 private:
 	void ResizeViewport(std::uint32_t width, std::uint32_t height) noexcept;
