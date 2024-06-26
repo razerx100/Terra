@@ -21,8 +21,7 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 
 	m_textureData.emplace_back(
 		TextureData{
-			cpuHandle, bufferSize, dst, offset, mipLevelIndex,
-			dstQueueType, dstAccess, dstStage
+			cpuHandle, bufferSize, dst, offset, mipLevelIndex, dstQueueType, dstAccess, dstStage
 		}
 	);
 
@@ -233,31 +232,25 @@ void StagingBufferManager::ReleaseOwnership(
 	// the acquire and release commands need to be executed on different queues, which won't
 	// happen at the same time.
 
-	for (const auto& bufferData : m_bufferData)
-		if (bufferData.dstQueueType != QueueType::None)
-		{
-			const std::uint32_t dstFamilyIndex = m_queueFamilyManager->GetIndex(
-				bufferData.dstQueueType
-			);
-
-			if (dstFamilyIndex != transferFamilyIndex)
-				transferCmdBuffer.ReleaseOwnership(
-					*bufferData.dst, transferFamilyIndex, dstFamilyIndex
+	auto ReleaseFunction = [&transferCmdBuffer, transferFamilyIndex,
+		queueFamilyManager = m_queueFamilyManager] <typename T> (const std::vector<T>& bufferData)
+	{
+		for (const auto& bufferDatum : bufferData)
+			if (bufferDatum.dstQueueType != QueueType::None)
+			{
+				const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
+					bufferDatum.dstQueueType
 				);
-		}
 
-	for (const auto& textureData : m_textureData)
-		if (textureData.dstQueueType != QueueType::None)
-		{
-			const std::uint32_t dstFamilyIndex = m_queueFamilyManager->GetIndex(
-				textureData.dstQueueType
-			);
+				if (dstFamilyIndex != transferFamilyIndex)
+					transferCmdBuffer.ReleaseOwnership(
+						*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
+					);
+			}
+	};
 
-			if (dstFamilyIndex != transferFamilyIndex)
-				transferCmdBuffer.ReleaseOwnership(
-					*textureData.dst, transferFamilyIndex, dstFamilyIndex
-				);
-		}
+	ReleaseFunction(m_bufferData);
+	ReleaseFunction(m_textureData);
 }
 
 void StagingBufferManager::AcquireOwnership(
@@ -267,48 +260,25 @@ void StagingBufferManager::AcquireOwnership(
 	// This function would most likely be called after the Release function. So, gonna erase the
 	// data once they are recorded for this command.
 
+	auto eraseFunction = [&ownerQueueCmdBuffer, transferFamilyIndex, ownerQueueFamilyIndex,
+		queueFamilyManager = m_queueFamilyManager] <typename T> (const T & bufferData) -> bool
+	{
+		const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(bufferData.dstQueueType);
+
+		if (ownerQueueFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
+		{
+			ownerQueueCmdBuffer.AcquireOwnership(
+				*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
+				bufferData.dstAccess, bufferData.dstStage
+			);
+
+			return true;
+		}
+
+		return false;
+	};
+
 	// Erase_if shouldn't reduce the capacity.
-	std::erase_if(
-		m_bufferData, [&ownerQueueCmdBuffer, transferFamilyIndex, ownerQueueFamilyIndex,
-		queueFamilyManager = m_queueFamilyManager]
-		(const BufferData& bufferData)
-		{
-			const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
-				bufferData.dstQueueType
-			);
-			if (ownerQueueFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
-			{
-				ownerQueueCmdBuffer.AcquireOwnership(
-					*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
-					bufferData.dstAccess, bufferData.dstStage
-				);
-
-				return true;
-			}
-
-			return false;
-		}
-	);
-
-	std::erase_if(
-		m_textureData, [&ownerQueueCmdBuffer, transferFamilyIndex, ownerQueueFamilyIndex,
-		queueFamilyManager = m_queueFamilyManager]
-		(const TextureData& textureData)
-		{
-			const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
-				textureData.dstQueueType
-			);
-			if (ownerQueueFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
-			{
-				ownerQueueCmdBuffer.AcquireOwnership(
-					*textureData.dst, transferFamilyIndex, dstFamilyIndex,
-					textureData.dstAccess, textureData.dstStage
-				);
-
-				return true;
-			}
-
-			return false;
-		}
-	);
+	std::erase_if(m_bufferData, eraseFunction);
+	std::erase_if(m_textureData, eraseFunction);
 }

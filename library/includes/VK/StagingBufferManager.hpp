@@ -55,7 +55,6 @@ public:
 	);
 	// This function should be run once in the Compute Queue and once in the Graphics Queue,
 	// as to acquire ownership, this command needs to be run on a queue from the owning queue family.
-	// CleanUp the TempData afterwards.
 	void AcquireOwnership(
 		const VKCommandBuffer& ownerQueueCmdBuffer, std::uint32_t ownerQueueFamilyIndex,
 		std::uint32_t transferFamilyIndex
