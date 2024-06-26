@@ -312,8 +312,8 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 	// Push constants needs to be serialised according to the shader stages
 	constexpr std::uint32_t pushConstantSize = ModelBundleVSIndividual::GetConstantBufferSize();
 
-	m_pipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
-	m_pipelineLayout.Create(descriptorBuffer.GetLayout());
+	m_graphicsPipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
+	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
 }
 
 void ModelManagerVSIndividual::ConfigureModel(
@@ -415,7 +415,7 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 		BindMesh(modelBundle, graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_pipelineLayout);
+		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
 	}
 }
 
@@ -472,7 +472,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
-	m_pipelineLayout.Create(descriptorBuffer.GetLayout());
+	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
 }
 
 void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer)
@@ -947,10 +947,10 @@ void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descript
 	constexpr std::uint32_t meshConstantSize  = MeshManagerMeshShader::GetConstantBufferSize();
 	constexpr std::uint32_t modelConstantSize = ModelBundleMS::GetConstantBufferSize();
 
-	m_pipelineLayout.AddPushConstantRange(
+	m_graphicsPipelineLayout.AddPushConstantRange(
 		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
 	);
-	m_pipelineLayout.Create(descriptorBuffer.GetLayout());
+	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
 }
 
 void ModelManagerMS::_cleanUpTempData() noexcept
@@ -1046,12 +1046,12 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 			VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
 			vkCmdPushConstants(
-				cmdBuffer, m_pipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
+				cmdBuffer, m_graphicsPipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
 				constBufferSize, &meshDetails
 			);
 		}
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_pipelineLayout);
+		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
 	}
 }

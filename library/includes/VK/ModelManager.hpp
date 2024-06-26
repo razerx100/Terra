@@ -473,7 +473,7 @@ class ModelManager
 public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
-		m_pipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
+		m_graphicsPipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
 		m_modelBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
 		m_meshBundles{}, m_meshBoundsBuffer{
 			device, memoryManager,
@@ -488,9 +488,9 @@ public:
 	}
 
 	[[nodiscard]]
-	VkPipelineLayout GetGraphicsPipelineLayout() const noexcept
+	const PipelineLayout& GetGraphicsPipelineLayout() const noexcept
 	{
-		return m_pipelineLayout.Get();
+		return m_graphicsPipelineLayout;
 	}
 
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
@@ -677,7 +677,9 @@ protected:
 
 			Pipeline pipeline{};
 
-			pipeline.Create(m_device, m_pipelineLayout, *m_renderPass, m_shaderPath, fragmentShader);
+			pipeline.Create(
+				m_device, m_graphicsPipelineLayout, *m_renderPass, m_shaderPath, fragmentShader
+			);
 
 			m_graphicsPipelines.emplace_back(std::move(pipeline));
 		}
@@ -746,7 +748,7 @@ private:
 protected:
 	VkDevice                     m_device;
 	MemoryManager*               m_memoryManager;
-	PipelineLayout               m_pipelineLayout;
+	PipelineLayout               m_graphicsPipelineLayout;
 	VKRenderPass*                m_renderPass;
 	std::wstring                 m_shaderPath;
 	ModelBuffers                 m_modelBuffers;
@@ -767,7 +769,7 @@ public:
 	ModelManager(ModelManager&& other) noexcept
 		: m_device{ other.m_device },
 		m_memoryManager{ other.m_memoryManager },
-		m_pipelineLayout{ std::move(other.m_pipelineLayout) },
+		m_graphicsPipelineLayout{ std::move(other.m_graphicsPipelineLayout) },
 		m_renderPass{ other.m_renderPass },
 		m_shaderPath{ std::move(other.m_shaderPath) },
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
@@ -779,17 +781,17 @@ public:
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
-		m_device             = other.m_device;
-		m_memoryManager      = other.m_memoryManager;
-		m_pipelineLayout     = std::move(other.m_pipelineLayout);
-		m_renderPass         = other.m_renderPass;
-		m_shaderPath         = std::move(other.m_shaderPath);
-		m_modelBuffers       = std::move(other.m_modelBuffers);
-		m_graphicsPipelines  = std::move(other.m_graphicsPipelines);
-		m_meshBundles        = std::move(other.m_meshBundles);
-		m_meshBoundsBuffer   = std::move(other.m_meshBoundsBuffer);
-		m_meshBundleTempData = std::move(other.m_meshBundleTempData);
-		m_modelBundles       = std::move(other.m_modelBundles);
+		m_device                 = other.m_device;
+		m_memoryManager          = other.m_memoryManager;
+		m_graphicsPipelineLayout = std::move(other.m_graphicsPipelineLayout);
+		m_renderPass             = other.m_renderPass;
+		m_shaderPath             = std::move(other.m_shaderPath);
+		m_modelBuffers           = std::move(other.m_modelBuffers);
+		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
+		m_meshBundles            = std::move(other.m_meshBundles);
+		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
+		m_meshBundleTempData     = std::move(other.m_meshBundleTempData);
+		m_modelBundles           = std::move(other.m_modelBundles);
 
 		return *this;
 	}
