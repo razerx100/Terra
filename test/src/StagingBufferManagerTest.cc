@@ -70,8 +70,7 @@ TEST_F(StagingBufferTest, StagingTest)
 	ThreadPool threadPool{ 8u };
 
 	StagingBufferManager stagingBufferMan{
-		logicalDevice, &memoryManager, &transferQueue, &threadPool,
-		s_deviceManager->GetQueueFamilyManagerRef()
+		logicalDevice, &memoryManager, &threadPool, s_deviceManager->GetQueueFamilyManagerRef()
 	};
 
 	Buffer testStorage{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
@@ -97,11 +96,11 @@ TEST_F(StagingBufferTest, StagingTest)
 	);
 
 	VKCommandBuffer& transferCmdBuffer = transferQueue.GetCommandBuffer(0u);
-	transferCmdBuffer.Reset();
+	{
+		CommandBufferScope cmdBufferScope{ transferCmdBuffer };
 
-	stagingBufferMan.Copy(0u);
-
-	transferCmdBuffer.Close();
+		stagingBufferMan.Copy(transferCmdBuffer);
+	}
 
 	VKFence waitFence{ logicalDevice };
 	waitFence.Create(false);

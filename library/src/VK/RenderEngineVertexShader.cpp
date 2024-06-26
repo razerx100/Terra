@@ -67,9 +67,9 @@ void RenderEngineVSIndividual::Render(
 	{
 		CommandBufferScope cmdBufferScope{ transferCmdBuffer };
 
-		m_stagingManager.Copy(frameIndex);
+		m_stagingManager.Copy(transferCmdBuffer);
 
-		m_stagingManager.ReleaseOwnership(frameIndex);
+		m_stagingManager.ReleaseOwnership(transferCmdBuffer, m_transferQueue.GetFamilyIndex());
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
@@ -89,7 +89,9 @@ void RenderEngineVSIndividual::Render(
 	{
 		CommandBufferScope cmdBufferScope{ graphicsCmdBuffer };
 
-		m_stagingManager.AcquireOwnership(frameIndex, m_graphicsQueue);
+		m_stagingManager.AcquireOwnership(
+			graphicsCmdBuffer, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+		);
 
 		m_viewportAndScissors.BindViewportAndScissor(graphicsCmdBuffer);
 

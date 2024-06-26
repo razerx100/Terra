@@ -302,16 +302,10 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
 
-	VkCommandQueue commandQueue{
-		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
-		queueManager.GetIndex(QueueType::GraphicsQueue)
-	};
-	commandQueue.CreateCommandBuffers(Constants::frameCount);
-
 	ThreadPool threadPool{ 2u };
 
 	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+		logicalDevice, &memoryManager, &threadPool, &queueManager
 	};
 
 	VKRenderPass renderPass{ logicalDevice };
@@ -391,16 +385,10 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
 
-	VkCommandQueue commandQueue{
-		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
-		queueManager.GetIndex(QueueType::GraphicsQueue)
-	};
-	commandQueue.CreateCommandBuffers(Constants::frameCount);
-
 	ThreadPool threadPool{ 2u };
 
 	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+		logicalDevice, &memoryManager,  &threadPool, &queueManager
 	};
 
 	VKRenderPass renderPass{ logicalDevice };
@@ -497,16 +485,10 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	const auto& queueManager = s_deviceManager->GetQueueFamilyManager();
 
-	VkCommandQueue commandQueue{
-		logicalDevice, queueManager.GetQueue(QueueType::GraphicsQueue),
-		queueManager.GetIndex(QueueType::GraphicsQueue)
-	};
-	commandQueue.CreateCommandBuffers(Constants::frameCount);
-
 	ThreadPool threadPool{ 2u };
 
 	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager, &commandQueue, &threadPool, &queueManager
+		logicalDevice, &memoryManager, &threadPool, &queueManager
 	};
 
 	VKRenderPass renderPass{ logicalDevice };

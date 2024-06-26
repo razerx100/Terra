@@ -11,9 +11,9 @@ class StagingBufferManager
 {
 public:
 	StagingBufferManager(
-		VkDevice device, MemoryManager* memoryManager, VkCommandQueue* copyQueue,
-		ThreadPool* threadPool, VkQueueFamilyMananger const* queueFamilyManager
-	) : m_device{ device }, m_memoryManager{ memoryManager }, m_copyQueue{ copyQueue },
+		VkDevice device, MemoryManager* memoryManager, ThreadPool* threadPool,
+		VkQueueFamilyMananger const* queueFamilyManager
+	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_threadPool{ threadPool }, m_queueFamilyManager{ queueFamilyManager },
 		m_bufferData{}, m_tempBufferToBuffer{}, m_textureData{}, m_tempBufferToTexture{},
 		m_copyRecorded{ false }
@@ -47,14 +47,19 @@ public:
 		);
 	}
 
-	void Copy(size_t currentCmdBufferIndex);
+	void Copy(const VKCommandBuffer& transferCmdBuffer);
 	// This function should be run after the Copy function. The ownership transfer is done via a
 	// barrier. So, I shouldn't need any extra syncing.
-	void ReleaseOwnership(size_t currentSrcCmdBufferIndex);
+	void ReleaseOwnership(
+		const VKCommandBuffer& transferCmdBuffer, std::uint32_t transferFamilyIndex
+	);
 	// This function should be run once in the Compute Queue and once in the Graphics Queue,
 	// as to acquire ownership, this command needs to be run on a queue from the owning queue family.
 	// CleanUp the TempData afterwards.
-	void AcquireOwnership(size_t currentDstCmdBufferIndex, VkCommandQueue& dstCmdQueue);
+	void AcquireOwnership(
+		const VKCommandBuffer& ownerQueueCmdBuffer, std::uint32_t ownerQueueFamilyIndex,
+		std::uint32_t transferFamilyIndex
+	);
 	void CleanUpTempBuffers();
 	void CleanUpTempData();
 
@@ -62,7 +67,7 @@ public:
 
 private:
 	void CopyCPU();
-	void CopyGPU(size_t currentCmdBufferIndex);
+	void CopyGPU(const VKCommandBuffer& transferCmdBuffer);
 
 private:
 	struct BufferData
@@ -91,7 +96,6 @@ private:
 private:
 	VkDevice                     m_device;
 	MemoryManager*               m_memoryManager;
-	VkCommandQueue*              m_copyQueue;
 	ThreadPool*                  m_threadPool;
 	VkQueueFamilyMananger const* m_queueFamilyManager;
 	std::vector<BufferData>      m_bufferData;
@@ -106,7 +110,6 @@ public:
 
 	StagingBufferManager(StagingBufferManager&& other) noexcept
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
-		m_copyQueue{ other.m_copyQueue },
 		m_threadPool{ other.m_threadPool },
 		m_queueFamilyManager{ other.m_queueFamilyManager },
 		m_bufferData{ std::move(other.m_bufferData) },
@@ -120,7 +123,6 @@ public:
 	{
 		m_device              = other.m_device;
 		m_memoryManager       = other.m_memoryManager;
-		m_copyQueue           = other.m_copyQueue;
 		m_threadPool          = other.m_threadPool;
 		m_queueFamilyManager  = other.m_queueFamilyManager;
 		m_bufferData          = std::move(other.m_bufferData);

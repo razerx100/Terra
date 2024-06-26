@@ -167,11 +167,9 @@ void StagingBufferManager::CopyCPU()
 	batches.clear();
 }
 
-void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
+void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 {
 	// Assuming the command buffer has been reset before this.
-	VKCommandBuffer& copyCmdBuffer = m_copyQueue->GetCommandBuffer(currentCmdBufferIndex);
-
 	for(size_t index = 0u; index < std::size(m_bufferData); ++index)
 	{
 		const BufferData& bufferData = m_bufferData.at(index);
@@ -183,7 +181,7 @@ void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
 		// I am making a new buffer for each copy but if the buffer alignment for example is
 		// 16 bytes and the buffer size is 4bytes, copyWhole would be wrong as it would go over
 		// the reserved size in the destination buffer.
-		copyCmdBuffer.Copy(tempBuffer, *bufferData.dst, bufferBuilder);
+		transferCmdBuffer.Copy(tempBuffer, *bufferData.dst, bufferBuilder);
 	}
 
 	for(size_t index = 0u; index < std::size(m_textureData); ++index)
@@ -197,11 +195,11 @@ void StagingBufferManager::CopyGPU(size_t currentCmdBufferIndex)
 		// CopyWhole would not be a problem for textures, as the destination buffer would be a texture
 		// and will be using the dimension of the texture instead of its size to copy. And there should
 		// be only a single texture in a texture buffer.
-		copyCmdBuffer.CopyWhole(tempBuffer, *textureData.dst, bufferBuilder);
+		transferCmdBuffer.CopyWhole(tempBuffer, *textureData.dst, bufferBuilder);
 	}
 }
 
-void StagingBufferManager::Copy(size_t currentCmdBufferIndex)
+void StagingBufferManager::Copy(const VKCommandBuffer& transferCmdBuffer)
 {
 	// Since these are first copied to temp buffers and those are
 	// copied on the GPU, we don't need any cpu synchronisation.
@@ -210,7 +208,7 @@ void StagingBufferManager::Copy(size_t currentCmdBufferIndex)
 	if (!std::empty(m_textureData) || !std::empty(m_bufferData))
 	{
 		CopyCPU();
-		CopyGPU(currentCmdBufferIndex);
+		CopyGPU(transferCmdBuffer);
 	}
 }
 
@@ -227,14 +225,13 @@ void StagingBufferManager::CleanUpTempData()
 	m_textureData.clear();
 }
 
-void StagingBufferManager::ReleaseOwnership(size_t currentSrcCmdBufferIndex)
-{
+void StagingBufferManager::ReleaseOwnership(
+		const VKCommandBuffer& transferCmdBuffer, std::uint32_t transferFamilyIndex
+) {
 	// If the dstQueue is not None, that should mean the resource has exclusive ownership
 	// and needs an ownership transfer. The reason I have two separate functions is because
 	// the acquire and release commands need to be executed on different queues, which won't
 	// happen at the same time.
-	VKCommandBuffer& copyCmdBuffer          = m_copyQueue->GetCommandBuffer(currentSrcCmdBufferIndex);
-	const std::uint32_t transferFamilyIndex = m_copyQueue->GetFamilyIndex();
 
 	for (const auto& bufferData : m_bufferData)
 		if (bufferData.dstQueueType != QueueType::None)
@@ -244,7 +241,9 @@ void StagingBufferManager::ReleaseOwnership(size_t currentSrcCmdBufferIndex)
 			);
 
 			if (dstFamilyIndex != transferFamilyIndex)
-				copyCmdBuffer.ReleaseOwnership(*bufferData.dst, transferFamilyIndex, dstFamilyIndex);
+				transferCmdBuffer.ReleaseOwnership(
+					*bufferData.dst, transferFamilyIndex, dstFamilyIndex
+				);
 		}
 
 	for (const auto& textureData : m_textureData)
@@ -255,31 +254,31 @@ void StagingBufferManager::ReleaseOwnership(size_t currentSrcCmdBufferIndex)
 			);
 
 			if (dstFamilyIndex != transferFamilyIndex)
-				copyCmdBuffer.ReleaseOwnership(*textureData.dst, transferFamilyIndex, dstFamilyIndex);
+				transferCmdBuffer.ReleaseOwnership(
+					*textureData.dst, transferFamilyIndex, dstFamilyIndex
+				);
 		}
 }
 
 void StagingBufferManager::AcquireOwnership(
-	size_t currentDstCmdBufferIndex, VkCommandQueue& dstCmdQueue
+	const VKCommandBuffer& ownerQueueCmdBuffer, std::uint32_t ownerQueueFamilyIndex,
+	std::uint32_t transferFamilyIndex
 ) {
 	// This function would most likely be called after the Release function. So, gonna erase the
 	// data once they are recorded for this command.
-	VKCommandBuffer& dstCmdBuffer             = dstCmdQueue.GetCommandBuffer(currentDstCmdBufferIndex);
-	const std::uint32_t transferFamilyIndex   = m_copyQueue->GetFamilyIndex();
-	const std::uint32_t currentDstFamilyIndex = dstCmdQueue.GetFamilyIndex();
 
 	// Erase_if shouldn't reduce the capacity.
 	std::erase_if(
-		m_bufferData, [&dstCmdBuffer, transferFamilyIndex, currentDstFamilyIndex,
+		m_bufferData, [&ownerQueueCmdBuffer, transferFamilyIndex, ownerQueueFamilyIndex,
 		queueFamilyManager = m_queueFamilyManager]
 		(const BufferData& bufferData)
 		{
 			const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
 				bufferData.dstQueueType
 			);
-			if (currentDstFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
+			if (ownerQueueFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
 			{
-				dstCmdBuffer.AcquireOwnership(
+				ownerQueueCmdBuffer.AcquireOwnership(
 					*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
 					bufferData.dstAccess, bufferData.dstStage
 				);
@@ -292,16 +291,16 @@ void StagingBufferManager::AcquireOwnership(
 	);
 
 	std::erase_if(
-		m_textureData, [&dstCmdBuffer, transferFamilyIndex, currentDstFamilyIndex,
+		m_textureData, [&ownerQueueCmdBuffer, transferFamilyIndex, ownerQueueFamilyIndex,
 		queueFamilyManager = m_queueFamilyManager]
 		(const TextureData& textureData)
 		{
 			const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
 				textureData.dstQueueType
 			);
-			if (currentDstFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
+			if (ownerQueueFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
 			{
-				dstCmdBuffer.AcquireOwnership(
+				ownerQueueCmdBuffer.AcquireOwnership(
 					*textureData.dst, transferFamilyIndex, dstFamilyIndex,
 					textureData.dstAccess, textureData.dstStage
 				);
