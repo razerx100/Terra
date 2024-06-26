@@ -265,6 +265,19 @@ public:
 	}
 };
 
+// The command buffer will be reset at creation of an object and closed at destruction.
+struct CommandBufferScope
+{
+	CommandBufferScope(VKCommandBuffer& commandBuffer) : m_commandBuffer{ commandBuffer }
+	{
+		m_commandBuffer.Reset();
+	}
+
+	~CommandBufferScope() noexcept { m_commandBuffer.Close(); }
+
+	VKCommandBuffer& m_commandBuffer;
+};
+
 template<std::uint32_t WaitCount = 0u, std::uint32_t SignalCount = 0u, std::uint32_t CommandBufferCount = 1u>
 class QueueSubmitBuilder
 {
