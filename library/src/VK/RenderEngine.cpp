@@ -26,6 +26,8 @@ RenderEngine::RenderEngine(
 	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
 	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{}
 {
+	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
+
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
 		m_graphicsDescriptorBuffers.emplace_back(logicalDevice, &m_memoryManager);
@@ -221,13 +223,14 @@ void RenderEngine::Resize(
 }
 
 void RenderEngine::BeginRenderPass(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+	const VKCommandBuffer& graphicsCmdBuffer, const VKFramebuffer& frameBuffer,
+	VkExtent2D renderArea
 ) {
 	std::array<VkClearValue, 2> clearValues{};
 	clearValues[0].color        = m_backgroundColour;
 	clearValues[1].depthStencil = m_depthBuffer.GetClearValues();
 
-	VkCommandBuffer cmdBuffer   = m_graphicsQueue.GetCommandBuffer(frameIndex).Get();
+	VkCommandBuffer cmdBuffer   = graphicsCmdBuffer.Get();
 
 	m_renderPass.BeginPass(cmdBuffer, frameBuffer.Get(), renderArea, clearValues);
 }

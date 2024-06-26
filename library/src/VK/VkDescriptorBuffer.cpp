@@ -104,7 +104,7 @@ void* VkDescriptorBuffer::GetDescriptorAddress(
 
 void VkDescriptorBuffer::BindDescriptorBuffer(
 	const VkDescriptorBuffer& descriptorBuffer, const VKCommandBuffer& cmdBuffer,
-	const PipelineLayout& pipelineLayout
+	VkPipelineBindPoint bindPoint, const PipelineLayout& pipelineLayout
 ) noexcept {
 	using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
 
@@ -124,7 +124,6 @@ void VkDescriptorBuffer::BindDescriptorBuffer(
 	static constexpr VkDeviceSize  bufferOffsets[]      = { 0u };
 
 	DescBuffer::vkCmdSetDescriptorBufferOffsetsEXT(
-		commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout,
-		0u, 1u, bindingInfoIndices, bufferOffsets
+		commandBuffer, bindPoint, layout, 0u, 1u, bindingInfoIndices, bufferOffsets
 	);
 }

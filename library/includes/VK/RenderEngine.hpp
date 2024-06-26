@@ -69,9 +69,12 @@ public:
 	) = 0;
 
 	void BeginRenderPass(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+		const VKCommandBuffer& graphicsCmdBuffer, const VKFramebuffer& frameBuffer,
+		VkExtent2D renderArea
 	);
-	virtual void Render(size_t frameIndex) = 0;
+	virtual void Render(
+		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+	) = 0;
 	virtual void Resize(
 		std::uint32_t width, std::uint32_t height,
 		bool hasSwapchainFormatChanged, VkFormat swapchainFormat

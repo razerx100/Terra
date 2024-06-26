@@ -56,7 +56,7 @@ public:
 
 	static void BindDescriptorBuffer(
 		const VkDescriptorBuffer& descriptorBuffer, const VKCommandBuffer& cmdBuffer,
-		const PipelineLayout& pipelineLayout
+		VkPipelineBindPoint bindPoint, const PipelineLayout& pipelineLayout
 	) noexcept;
 
 private:

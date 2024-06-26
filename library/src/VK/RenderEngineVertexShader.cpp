@@ -53,8 +53,9 @@ void RenderEngineVSIndividual::Update(VkDeviceSize frameIndex)
 	m_modelManager.UpdatePerFrame(frameIndex);
 }
 
-void RenderEngineVSIndividual::Render(size_t frameIndex)
-{
+void RenderEngineVSIndividual::Render(
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
 
@@ -91,6 +92,15 @@ void RenderEngineVSIndividual::Render(size_t frameIndex)
 		graphicsCmdBuffer.Reset();
 
 		m_stagingManager.AcquireOwnership(frameIndex, m_graphicsQueue);
+
+		m_viewportAndScissors.BindViewportAndScissor(graphicsCmdBuffer);
+
+		VkDescriptorBuffer::BindDescriptorBuffer(
+			m_graphicsDescriptorBuffers.at(frameIndex), graphicsCmdBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS, m_modelManager.GetGraphicsPipelineLayout()
+		);
+
+		BeginRenderPass(graphicsCmdBuffer, frameBuffer, renderArea);
 
 		m_modelManager.Draw(graphicsCmdBuffer);
 
