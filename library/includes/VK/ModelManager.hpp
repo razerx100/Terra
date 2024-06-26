@@ -898,6 +898,12 @@ public:
 
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
 
+	[[nodiscard]]
+	const PipelineLayout& GetComputePipelineLayout() const noexcept
+	{
+		return m_pipelineLayoutCS;
+	}
+
 	void CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept;
 
 	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
