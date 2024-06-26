@@ -54,7 +54,7 @@ public:
 	void Render(size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea) override;
 
 private:
-	void Update(VkDeviceSize frameIndex) override;
+	void Update(VkDeviceSize frameIndex) const noexcept override;
 
 private:
 	ModelManagerVSIndividual m_modelManager;

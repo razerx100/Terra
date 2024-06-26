@@ -114,7 +114,7 @@ protected:
 	[[nodiscard]]
 	virtual std::uint32_t GetSamplerBindingSlot() const noexcept = 0;
 
-	virtual void Update(VkDeviceSize frameIndex);
+	virtual void Update(VkDeviceSize frameIndex) const noexcept;
 
 protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;

@@ -239,7 +239,7 @@ void RenderEngine::SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept
 	deviceManager.ExtensionManager().AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
 }
 
-void RenderEngine::Update(VkDeviceSize frameIndex)
+void RenderEngine::Update(VkDeviceSize frameIndex) const noexcept
 {
 	m_cameraManager.Update(frameIndex);
 }

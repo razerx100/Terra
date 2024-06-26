@@ -46,7 +46,7 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	return index;
 }
 
-void RenderEngineVSIndividual::Update(VkDeviceSize frameIndex)
+void RenderEngineVSIndividual::Update(VkDeviceSize frameIndex) const noexcept
 {
 	RenderEngine::Update(frameIndex);
 
