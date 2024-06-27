@@ -1,5 +1,21 @@
 #include <RenderEngine.hpp>
 
+void RenderEngineDeviceExtension::SetDeviceExtensions(
+	VkDeviceExtensionManager& extensionManager
+) noexcept {
+	extensionManager.AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
+}
+
+RenderEngine::RenderEngine(
+	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+) : RenderEngine {
+		deviceManager.GetPhysicalDevice(),
+		deviceManager.GetLogicalDevice(),
+		deviceManager.GetQueueFamilyManagerRef(),
+		std::move(threadPool), frameCount
+	}
+{}
+
 RenderEngine::RenderEngine(
 	VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
 	VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
@@ -232,11 +248,6 @@ void RenderEngine::BeginRenderPass(
 	VkCommandBuffer cmdBuffer   = graphicsCmdBuffer.Get();
 
 	m_renderPass.BeginPass(cmdBuffer, frameBuffer.Get(), renderArea, clearValues);
-}
-
-void RenderEngine::SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept
-{
-	deviceManager.ExtensionManager().AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
 }
 
 void RenderEngine::Update(VkDeviceSize frameIndex) const noexcept

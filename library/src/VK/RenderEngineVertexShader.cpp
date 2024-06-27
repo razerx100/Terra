@@ -1,12 +1,10 @@
 #include <RenderEngineVertexShader.hpp>
 
 RenderEngineVSIndividual::RenderEngineVSIndividual(
-	VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
-	VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
-	size_t frameCount
-) : RenderEngine{ physicalDevice, logicalDevice, queueFamilyManager, std::move(threadPool), frameCount },
+	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
 	m_modelManager{
-		logicalDevice, &m_memoryManager, static_cast<std::uint32_t>(frameCount)
+		deviceManager.GetLogicalDevice(), &m_memoryManager, static_cast<std::uint32_t>(frameCount)
 	}
 {
 	// The layout shouldn't change throughout the runtime.

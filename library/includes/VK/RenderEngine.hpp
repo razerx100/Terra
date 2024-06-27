@@ -14,13 +14,31 @@
 #include <Model.hpp>
 #include <VkFramebuffer.hpp>
 
-class RenderEngine
+// This needs to be a separate class, since the actual Engine will need the device to be created
+// first. And these extensions must be added before the device is created. Each implemention may
+// have different requirements. But you can't override a static function. And a virtual function
+// can only be called after the object has been created.
+class RenderEngineDeviceExtension
 {
 public:
+	virtual ~RenderEngineDeviceExtension() = default;
+
+	virtual void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept;
+};
+
+class RenderEngine
+{
+	// Getting the values from the same values from the deviceManager for each member is kinda
+	// dumb, so keeping this constructor but making it private.
 	RenderEngine(
 		VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
 		VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
 		size_t frameCount
+	);
+
+public:
+	RenderEngine(
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 	);
 	virtual ~RenderEngine() = default;
 
@@ -61,7 +79,6 @@ public:
 	[[nodiscard]]
 	const VKSemaphore& GetGraphicsWait(size_t index) const noexcept { return m_graphicsWait.at(index); }
 
-	virtual void SetDeviceExtensions(VkDeviceManager& deviceManager) noexcept;
 	virtual void SetShaderPath(const std::wstring& shaderPath) noexcept = 0;
 	virtual void AddFragmentShader(const std::wstring& fragmentShader) = 0;
 	virtual void ChangeFragmentShader(

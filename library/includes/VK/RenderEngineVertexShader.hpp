@@ -3,13 +3,13 @@
 #include <RenderEngine.hpp>
 #include <ModelManager.hpp>
 
+class RenderEngineVSIndividualDeviceExtension : public RenderEngineDeviceExtension {};
+
 class RenderEngineVSIndividual : public RenderEngine
 {
 public:
 	RenderEngineVSIndividual(
-		VkPhysicalDevice physicalDevice, VkDevice logicalDevice,
-		VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
-		size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 	);
 
 	void SetShaderPath(const std::wstring& shaderPath) noexcept override
@@ -54,7 +54,23 @@ public:
 	void Render(size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea) override;
 
 private:
+	// These might not work. As a binding slot with variable descriptor count must be at the end.
+	// But lets see.
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 1u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 2u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 3u;
+
+private:
 	void Update(VkDeviceSize frameIndex) const noexcept override;
+
+	[[nodiscard]]
+	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
+	{ return s_combinedTextureBindingSlot; }
+	[[nodiscard]]
+	std::uint32_t GetSampledTextureBindingSlot() const noexcept override
+	{ return s_sampledTextureBindingSlot; }
+	[[nodiscard]]
+	std::uint32_t GetSamplerBindingSlot() const noexcept override { return s_samplerBindingSlot; }
 
 private:
 	ModelManagerVSIndividual m_modelManager;
