@@ -36,7 +36,8 @@ void DescriptorBufferTest::SetUpTestSuite()
 
 	{
 		VkDeviceExtensionManager& extensionManager = s_deviceManager->ExtensionManager();
-		extensionManager.AddExtension(DeviceExtension::VkExtDescriptorBuffer);
+		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
+		extensionManager.AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)

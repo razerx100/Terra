@@ -4,6 +4,7 @@ void RenderEngineDeviceExtension::SetDeviceExtensions(
 	VkDeviceExtensionManager& extensionManager
 ) noexcept {
 	extensionManager.AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
+	extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
 }
 
 RenderEngine::RenderEngine(

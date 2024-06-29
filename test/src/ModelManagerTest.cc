@@ -38,8 +38,9 @@ void ModelManagerTest::SetUpTestSuite()
 
 	{
 		VkDeviceExtensionManager& extensionManager = s_deviceManager->ExtensionManager();
-		extensionManager.AddExtensions(ModelBundleMS::GetRequiredExtensions());
+		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
 		extensionManager.AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
+		extensionManager.AddExtensions(ModelBundleMS::GetRequiredExtensions());
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)

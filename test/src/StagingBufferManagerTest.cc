@@ -34,6 +34,11 @@ void StagingBufferTest::SetUpTestSuite()
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
 
+	{
+		VkDeviceExtensionManager& extensionManager = s_deviceManager->ExtensionManager();
+		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
+	}
+
 	s_deviceManager->SetDeviceFeatures(coreVersion)
 		.SetPhysicalDeviceAutomatic(vkInstance)
 		.CreateLogicalDevice();
@@ -60,12 +65,6 @@ TEST_F(StagingBufferTest, StagingTest)
 		queueFamilyMan.GetIndex(QueueType::TransferQueue)
 	};
 	transferQueue.CreateCommandBuffers(1u);
-	VkGraphicsQueue graphicsQueue{
-		logicalDevice,
-		queueFamilyMan.GetQueue(QueueType::GraphicsQueue),
-		queueFamilyMan.GetIndex(QueueType::GraphicsQueue)
-	};
-	graphicsQueue.CreateCommandBuffers(2u);
 
 	ThreadPool threadPool{ 8u };
 
