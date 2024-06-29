@@ -52,7 +52,7 @@ void SwapchainTest::SetUpTestSuite()
 		VkInstanceExtensionManager& extensionManager = s_instanceManager->ExtensionManager();
 
 #ifdef TERRA_WIN32
-		extensionManager.AddExtensions(s_surfaceManager->GetRequiredExtensions());
+		SurfaceInstanceExtensionWin32{}.SetInstanceExtensions(extensionManager);
 #endif
 	}
 

@@ -2,6 +2,15 @@
 #include <CleanWin.hpp>
 #include <vulkan/vulkan_win32.h>
 
+void SurfaceInstanceExtensionWin32::SetInstanceExtensions(
+	VkInstanceExtensionManager& extensionManager
+) noexcept {
+	SurfaceInstanceExtension::SetInstanceExtensions(extensionManager);
+
+	extensionManager.AddExtension(InstanceExtension::VkKhrWin32Surface);
+}
+
+// Surface Manager Win32
 void SurfaceManagerWin32::Create(VkInstance instance, void* windowHandle, void* moduleHandle)
 {
 	m_instance = instance;

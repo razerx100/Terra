@@ -2,13 +2,16 @@
 #define SURFACE_MANAGER_WIN32_HPP_
 #include <SurfaceManager.hpp>
 
+class SurfaceInstanceExtensionWin32 : public SurfaceInstanceExtension
+{
+public:
+	virtual void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept override;
+};
+
 class SurfaceManagerWin32 final : public SurfaceManager
 {
 public:
-	SurfaceManagerWin32() : SurfaceManager{}
-	{
-		m_requiredExtensions.emplace_back(InstanceExtension::VkKhrWin32Surface);
-	}
+	SurfaceManagerWin32() : SurfaceManager{} {}
 
 	void Create(VkInstance instance, void* windowHandle, void* moduleHandle) override;
 

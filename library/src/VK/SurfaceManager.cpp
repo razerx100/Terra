@@ -1,5 +1,18 @@
 #include <SurfaceManager.hpp>
 
+
+void SurfaceInstanceExtension::SetInstanceExtensions(
+	VkInstanceExtensionManager& extensionManager
+) noexcept {
+	extensionManager.AddExtension(InstanceExtension::VkKhrSurface);
+}
+
+// Surface Manager
+SurfaceManager::~SurfaceManager() noexcept
+{
+	SelfDestruct();
+}
+
 void SurfaceManager::SelfDestruct() noexcept
 {
 	if (m_instance)

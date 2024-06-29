@@ -4,14 +4,19 @@
 #include <vector>
 #include <VkExtensionManager.hpp>
 
+class SurfaceInstanceExtension
+{
+public:
+	virtual ~SurfaceInstanceExtension() = default;
+
+	virtual void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
+};
+
 class SurfaceManager
 {
 public:
 	SurfaceManager() : m_surface{ VK_NULL_HANDLE }, m_instance{ VK_NULL_HANDLE } {}
-	virtual ~SurfaceManager() noexcept
-	{
-		SelfDestruct();
-	}
+	virtual ~SurfaceManager() noexcept;
 
 	virtual void Create(VkInstance instance, void* windowHandle, void* moduleHandle) = 0;
 
@@ -26,11 +31,6 @@ public:
 
 	[[nodiscard]]
 	VkSurfaceKHR Get() const noexcept { return m_surface; }
-	[[nodiscard]]
-	const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept
-	{
-		return m_requiredExtensions;
-	}
 
 private:
 	void SelfDestruct() noexcept;
@@ -38,9 +38,6 @@ private:
 protected:
 	VkSurfaceKHR m_surface;
 	VkInstance   m_instance;
-
-	std::vector<InstanceExtension> m_requiredExtensions
-	{ InstanceExtension::VkKhrSurface };
 
 public:
 	SurfaceManager(const SurfaceManager&) = delete;

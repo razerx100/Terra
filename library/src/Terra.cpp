@@ -86,7 +86,7 @@ Terra::Terra(
 		VkInstanceExtensionManager& extensionManager = Instance().ExtensionManager();
 
 		extensionManager.AddExtensions(Display().GetRequiredExtensions());
-		extensionManager.AddExtensions(Surface().GetRequiredExtensions());
+		//extensionManager.AddExtensions(Surface().GetRequiredExtensions());
 	}
 
 #ifdef _DEBUG
