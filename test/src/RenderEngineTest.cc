@@ -55,3 +55,25 @@ TEST_F(RenderEngineTest, RenderEngineVSIndividualTest)
 
 	RenderEngineVSIndividual renderEngine{ deviceManager, threadPool, Constants::frameCount };
 }
+
+TEST_F(RenderEngineTest, RenderEngineVSIndirectTest)
+{
+	VkDeviceManager deviceManager{};
+
+	{
+		VkDeviceExtensionManager& extensionManager = deviceManager.ExtensionManager();
+		RenderEngineVSIndirectDeviceExtension{}.SetDeviceExtensions(extensionManager);
+	}
+
+	{
+		VkInstance vkInstance = s_instanceManager->GetVKInstance();
+
+		deviceManager.SetDeviceFeatures(Constants::coreVersion)
+			.SetPhysicalDeviceAutomatic(vkInstance)
+			.CreateLogicalDevice();
+	}
+
+	auto threadPool = std::make_shared<ThreadPool>(2u);
+
+	RenderEngineVSIndirect renderEngine{ deviceManager, threadPool, Constants::frameCount };
+}
