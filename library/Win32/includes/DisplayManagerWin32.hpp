@@ -1,20 +1,25 @@
 #ifndef DISPLAY_MANAGER_WIN32_HPP_
 #define DISPLAY_MANAGER_WIN32_HPP_
-#include <IDisplayManager.hpp>
+#include <DisplayManager.hpp>
 #include <CleanWin.hpp>
 #include <wrl/client.h>
 #include <dxgi1_6.h>
 
+class DisplayInstanceExtensionWin32 : public DisplayInstanceExtension
+{
+public:
+	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept override;
+};
+
 using Microsoft::WRL::ComPtr;
 
-class DisplayManagerWin32 final : public IDisplayManager {
+class DisplayManagerWin32 final : public DisplayManager
+{
 public:
 	DisplayManagerWin32();
 
 	[[nodiscard]]
-	Resolution GetDisplayResolution(
-		VkPhysicalDevice gpu, std::uint32_t displayIndex
-	) const override;
+	Resolution GetDisplayResolution(VkPhysicalDevice gpu, std::uint32_t displayIndex) const override;
 
 private:
 	[[nodiscard]]
@@ -26,16 +31,6 @@ private:
 
 private:
 	ComPtr<IDXGIFactory1> m_pFactory;
-
-	inline static const std::vector<InstanceExtension> s_requiredExtensions
-	{
-		InstanceExtension::VkKhrExternalMemoryCapabilities
-	};
-
-public:
-	[[nodiscard]]
-	const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept override
-	{ return s_requiredExtensions; }
 };
 
 #endif

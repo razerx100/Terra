@@ -8,7 +8,7 @@
 #include <VKInstanceManager.hpp>
 #include <SurfaceManager.hpp>
 #include <SwapchainManager.hpp>
-#include <IDisplayManager.hpp>
+#include <DisplayManager.hpp>
 #include <memory>
 #include <DeviceMemory.hpp>
 #include <ObjectManager.hpp>
@@ -42,7 +42,7 @@ public:
 		ThreadPool& threadPool,	RenderEngineType engineType
 	);
 
-	inline IDisplayManager& Display() noexcept { return *m_display; }
+	inline DisplayManager& Display() noexcept { return *m_display; }
 	inline VkInstanceManager& Instance() noexcept { return *m_vkInstance; }
 	inline SurfaceManager& Surface() noexcept { return *m_surface; }
 	inline VkDeviceManager& Device() noexcept { return *m_device; }
@@ -104,7 +104,7 @@ public:
 private:
 	std::string_view                         m_appName;
 	ObjectManager                            m_objectManager;
-	std::unique_ptr<IDisplayManager>         m_display;
+	std::unique_ptr<DisplayManager>          m_display;
 	std::unique_ptr<VkInstanceManager>       m_vkInstance;
 	std::unique_ptr<SurfaceManager>          m_surface;
 	std::unique_ptr<VkDeviceManager>         m_device;

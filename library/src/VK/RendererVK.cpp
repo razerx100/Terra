@@ -127,11 +127,11 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
 	Terra& terra = Terra::Get();
 
-	IDisplayManager::Resolution resolution = terra.Display().GetDisplayResolution(
+	DisplayManager::Resolution resolution = terra.Display().GetDisplayResolution(
 		terra.Device().GetPhysicalDevice(), 0u
 	);
 
-	return { resolution.first, resolution.second };
+	return { resolution.width, resolution.height };
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {

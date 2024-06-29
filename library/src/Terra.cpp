@@ -85,7 +85,7 @@ Terra::Terra(
 	{
 		VkInstanceExtensionManager& extensionManager = Instance().ExtensionManager();
 
-		extensionManager.AddExtensions(Display().GetRequiredExtensions());
+		//extensionManager.AddExtensions(Display().GetRequiredExtensions());
 		//extensionManager.AddExtensions(Surface().GetRequiredExtensions());
 	}
 
@@ -149,9 +149,9 @@ void Terra::Init(
 void Terra::InitDisplay()
 {
 #ifdef TERRA_WIN32
-		m_objectManager.CreateObject<IDisplayManager, DisplayManagerWin32>(m_display, 3u);
+		m_objectManager.CreateObject<DisplayManager, DisplayManagerWin32>(m_display, 3u);
 #else
-		m_objectManager.CreateObject<IDisplayManager, DisplayManagerVK>(m_display, 3u);
+		m_objectManager.CreateObject<DisplayManager, DisplayManagerVK>(m_display, 3u);
 #endif
 }
 

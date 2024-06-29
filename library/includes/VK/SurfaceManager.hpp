@@ -1,5 +1,5 @@
-#ifndef I_SURFACE_MANAGER_HPP_
-#define I_SURFACE_MANAGER_HPP_
+#ifndef SURFACE_MANAGER_HPP_
+#define SURFACE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <VkExtensionManager.hpp>

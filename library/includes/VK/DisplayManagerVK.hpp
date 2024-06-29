@@ -1,23 +1,17 @@
 #ifndef DISPLAY_MANAGER_VK_HPP_
 #define DISPLAY_MANAGER_VK_HPP_
-#include <IDisplayManager.hpp>
+#include <DisplayManager.hpp>
 
-class DisplayManagerVK final : public IDisplayManager {
+class DisplayInstanceExtensionVk : public DisplayInstanceExtension
+{
+public:
+	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept override;
+};
+
+class DisplayManagerVK final : public DisplayManager
+{
 public:
 	[[nodiscard]]
-	Resolution GetDisplayResolution(
-		VkPhysicalDevice gpu, std::uint32_t displayIndex
-	) const override;
-
-private:
-	inline static const std::vector<InstanceExtension> s_requiredExtensions
-	{
-		InstanceExtension::VkKhrDisplay
-	};
-
-public:
-	[[nodiscard]]
-	const std::vector<InstanceExtension>& GetRequiredExtensions() const noexcept override
-	{ return s_requiredExtensions; }
+	Resolution GetDisplayResolution(VkPhysicalDevice gpu, std::uint32_t displayIndex) const override;
 };
 #endif

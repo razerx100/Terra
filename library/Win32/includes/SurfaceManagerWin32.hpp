@@ -5,7 +5,7 @@
 class SurfaceInstanceExtensionWin32 : public SurfaceInstanceExtension
 {
 public:
-	virtual void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept override;
+	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept override;
 };
 
 class SurfaceManagerWin32 final : public SurfaceManager
