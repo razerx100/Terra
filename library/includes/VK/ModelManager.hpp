@@ -894,7 +894,9 @@ public:
 		QueueIndices3 queueIndices3, std::uint32_t frameCount
 	);
 
-	void ResetCounterBuffer(VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex) const noexcept;
+	void ResetCounterBuffer(
+		const VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
+	) const noexcept;
 
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
 
@@ -904,7 +906,7 @@ public:
 		return m_pipelineLayoutCS;
 	}
 
-	void CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept;
+	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) const noexcept;
 
 	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
 	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;

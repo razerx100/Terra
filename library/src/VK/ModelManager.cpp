@@ -810,7 +810,7 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 	}
 }
 
-void ModelManagerVSIndirect::CopyTempBuffers(VKCommandBuffer& transferBuffer) const noexcept
+void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) const noexcept
 {
 	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
 	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
@@ -823,7 +823,7 @@ void ModelManagerVSIndirect::CopyTempBuffers(VKCommandBuffer& transferBuffer) co
 }
 
 void ModelManagerVSIndirect::ResetCounterBuffer(
-	VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
+	const VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
 ) const noexcept {
 	transferBuffer.CopyWhole(m_counterResetBuffer, m_counterBuffers.at(frameIndex).GetBuffer());
 }
@@ -841,6 +841,8 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 		{
 			const size_t counterSize = sizeof(std::uint32_t);
 
+			// This should be the source buffer. And should only be accessed from a single type of
+			// queue.
 			m_counterResetBuffer.Create(counterBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {});
 
 			constexpr std::uint32_t value = 0u;

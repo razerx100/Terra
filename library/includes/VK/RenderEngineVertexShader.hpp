@@ -169,6 +169,11 @@ private:
 	static constexpr std::uint32_t s_samplerBindingSlot         = 4u;
 
 private:
+	VkCommandQueue                  m_computeQueue;
+	std::vector<VKSemaphore>        m_computeWait;
+	std::vector<VkDescriptorBuffer> m_computeDescriptorBuffers;
+
+private:
 	[[nodiscard]]
 	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
 	{ return s_combinedTextureBindingSlot; }
@@ -183,11 +188,17 @@ public:
 	RenderEngineVSIndirect& operator=(const RenderEngineVSIndirect&) = delete;
 
 	RenderEngineVSIndirect(RenderEngineVSIndirect&& other) noexcept
-		: RenderEngineVS{ std::move(other) }
+		: RenderEngineVS{ std::move(other) },
+		m_computeQueue{ std::move(other.m_computeQueue) },
+		m_computeWait{ std::move(other.m_computeWait) },
+		m_computeDescriptorBuffers{ std::move(other.m_computeDescriptorBuffers) }
 	{}
 	RenderEngineVSIndirect& operator=(RenderEngineVSIndirect&& other) noexcept
 	{
 		RenderEngineVS::operator=(std::move(other));
+		m_computeQueue             = std::move(other.m_computeQueue);
+		m_computeWait              = std::move(other.m_computeWait);
+		m_computeDescriptorBuffers = std::move(other.m_computeDescriptorBuffers);
 
 		return *this;
 	}

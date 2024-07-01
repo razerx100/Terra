@@ -109,7 +109,7 @@ void SharedBuffer::CreateBuffer(VkDeviceSize size)
 	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
 }
 
-void SharedBuffer::CopyOldBuffer(VKCommandBuffer& copyBuffer) const noexcept
+void SharedBuffer::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept
 {
 	copyBuffer.CopyWhole(m_tempBuffer, m_buffer);
 }

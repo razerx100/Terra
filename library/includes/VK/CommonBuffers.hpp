@@ -114,7 +114,7 @@ public:
 		RelinquishMemory(sharedData.offset, sharedData.size);
 	}
 
-	void CopyOldBuffer(VKCommandBuffer& copyBuffer) const noexcept;
+	void CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept;
 	void CleanupTempData() noexcept;
 
 	[[nodiscard]]
