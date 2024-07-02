@@ -68,27 +68,25 @@ public:
 	Resource& operator=(const Resource&) = delete;
 
 	Resource(Resource&& other) noexcept
-		: m_memoryManager{ other.m_memoryManager }, m_allocationInfo{ other.m_allocationInfo },
-		m_resourceType{ other.m_resourceType }, m_hasAllocation{ other.m_hasAllocation }
+		: m_memoryManager{ std::exchange(other.m_memoryManager, nullptr) },
+		m_allocationInfo{ other.m_allocationInfo },
+		m_resourceType{ other.m_resourceType },
+		m_hasAllocation{ std::exchange(other.m_hasAllocation, false) }
 	{
 		// Setting the allocation check to null, so the other object doesn't deallocate.
 		// Don't need to deallocate our previous data, as there was none.
-		other.m_memoryManager = nullptr;
-		other.m_hasAllocation = false;
 	}
 	Resource& operator=(Resource&& other) noexcept
 	{
 		// Deallocating the already existing memory.
 		SelfDestruct();
 
-		m_memoryManager       = other.m_memoryManager;
-		m_allocationInfo      = other.m_allocationInfo;
-		m_resourceType        = other.m_resourceType;
+		m_memoryManager  = std::exchange(other.m_memoryManager, nullptr);
+		m_allocationInfo = other.m_allocationInfo;
+		m_resourceType   = other.m_resourceType;
 		// Taking the allocation data from the other object.
-		m_hasAllocation       = other.m_hasAllocation;
+		m_hasAllocation  = std::exchange(other.m_hasAllocation, false);
 		// Setting the allocation check to null, so the other object doesn't deallocate.
-		other.m_memoryManager = nullptr;
-		other.m_hasAllocation = false;
 
 		return *this;
 	}
@@ -124,19 +122,17 @@ public:
 	Buffer& operator=(const Buffer&) = delete;
 
 	Buffer(Buffer&& other) noexcept
-		: Resource{ std::move(other) }, m_buffer{ other.m_buffer }, m_device{ other.m_device }
-	{
-		other.m_buffer = VK_NULL_HANDLE;
-	}
+		: Resource{ std::move(other) }, m_buffer{ std::exchange(other.m_buffer, VK_NULL_HANDLE) },
+		m_device{ other.m_device }
+	{}
 	Buffer& operator=(Buffer&& other) noexcept
 	{
 		Resource::operator=(std::move(other));
 
 		SelfDestruct();
 
-		m_buffer       = other.m_buffer;
-		m_device       = other.m_device;
-		other.m_buffer = VK_NULL_HANDLE;
+		m_buffer = std::exchange(other.m_buffer, VK_NULL_HANDLE);
+		m_device = other.m_device;
 
 		return *this;
 	}
@@ -187,22 +183,19 @@ public:
 	Texture& operator=(const Texture&) = delete;
 
 	Texture(Texture&& other) noexcept
-		: Resource{ std::move(other) }, m_image{ other.m_image }, m_device{ other.m_device },
-		m_format{ other.m_format }, m_imageExtent{ other.m_imageExtent }
-	{
-		other.m_image = VK_NULL_HANDLE;
-	}
+		: Resource{ std::move(other) }, m_image{ std::exchange(other.m_image, VK_NULL_HANDLE) },
+		m_device{ other.m_device }, m_format{ other.m_format }, m_imageExtent{ other.m_imageExtent }
+	{}
 	Texture& operator=(Texture&& other) noexcept
 	{
 		Resource::operator=(std::move(other));
 
 		SelfDestruct();
 
-		m_image       = other.m_image;
+		m_image       = std::exchange(other.m_image, VK_NULL_HANDLE);
 		m_device      = other.m_device;
 		m_format      = other.m_format;
 		m_imageExtent = other.m_imageExtent;
-		other.m_image = VK_NULL_HANDLE;
 
 		return *this;
 	}
