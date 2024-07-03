@@ -34,21 +34,19 @@ public:
 	PipelineLayout& operator=(const PipelineLayout&) = delete;
 
 	PipelineLayout(PipelineLayout&& other) noexcept
-		: m_device{ other.m_device }, m_pipelineLayout{ other.m_pipelineLayout },
+		: m_device{ other.m_device },
+		m_pipelineLayout{ std::exchange(other.m_pipelineLayout, VK_NULL_HANDLE) },
 		m_pushConstantOffset{ other.m_pushConstantOffset },
 		m_pushRanges{ std::move(other.m_pushRanges) }
-	{
-		other.m_pipelineLayout = VK_NULL_HANDLE;
-	}
+	{}
 	PipelineLayout& operator=(PipelineLayout&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device               = other.m_device;
-		m_pipelineLayout       = other.m_pipelineLayout;
-		m_pushConstantOffset   = other.m_pushConstantOffset;
-		m_pushRanges           = std::move(other.m_pushRanges);
-		other.m_pipelineLayout = VK_NULL_HANDLE;
+		m_device             = other.m_device;
+		m_pipelineLayout     = std::exchange(other.m_pipelineLayout, VK_NULL_HANDLE);
+		m_pushConstantOffset = other.m_pushConstantOffset;
+		m_pushRanges         = std::move(other.m_pushRanges);
 
 		return *this;
 	}

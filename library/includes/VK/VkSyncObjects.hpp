@@ -2,6 +2,7 @@
 #define VK_SYNC_OBJECTS_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <utility>
 
 template<typename ObjType>
 class VkSyncObj
@@ -24,17 +25,15 @@ public:
 	VkSyncObj(const VkSyncObj&) = delete;
 	VkSyncObj& operator=(const VkSyncObj&) = delete;
 
-	VkSyncObj(VkSyncObj&& other) noexcept : m_device{ other.m_device }, m_syncObj{ other.m_syncObj }
-	{
-		other.m_syncObj = VK_NULL_HANDLE;
-	}
+	VkSyncObj(VkSyncObj&& other) noexcept
+		: m_device{ other.m_device }, m_syncObj{ std::exchange(other.m_syncObj, VK_NULL_HANDLE) }
+	{}
 	VkSyncObj& operator=(VkSyncObj&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device        = other.m_device;
-		m_syncObj       = other.m_syncObj;
-		other.m_syncObj = VK_NULL_HANDLE;
+		m_device  = other.m_device;
+		m_syncObj = std::exchange(other.m_syncObj, VK_NULL_HANDLE);
 
 		return *this;
 	}

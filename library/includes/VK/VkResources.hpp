@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <queue>
 #include <type_traits>
+#include <utility>
 #include <VkAllocator.hpp>
 
 class Resource

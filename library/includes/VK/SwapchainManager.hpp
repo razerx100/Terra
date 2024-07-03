@@ -58,27 +58,24 @@ public:
 	VkSwapchain& operator=(const VkSwapchain&) = delete;
 
 	VkSwapchain(VkSwapchain&& other) noexcept
-		: m_device{ other.m_device }, m_swapchain{ other.m_swapchain },
+		: m_device{ other.m_device }, m_swapchain{ std::exchange(other.m_swapchain, VK_NULL_HANDLE) },
 		m_swapImageViewFormat{ other.m_swapImageViewFormat },
 		m_swapchainExtent{ other.m_swapchainExtent },
 		m_swapchainImages{ std::move(other.m_swapchainImages) },
 		m_swapchainImageViews{ std::move(other.m_swapchainImageViews) },
 		m_frameBuffers{ std::move(other.m_frameBuffers) }
-	{
-		other.m_swapchain = VK_NULL_HANDLE;
-	}
+	{}
 	VkSwapchain& operator=(VkSwapchain&& other) noexcept
 	{
 		SelfDestruct();
 
 		m_device              = other.m_device;
-		m_swapchain           = other.m_swapchain;
+		m_swapchain           = std::exchange(other.m_swapchain, VK_NULL_HANDLE);
 		m_swapImageViewFormat = other.m_swapImageViewFormat;
 		m_swapchainExtent     = other.m_swapchainExtent;
 		m_swapchainImages     = std::move(other.m_swapchainImages);
 		m_swapchainImageViews = std::move(other.m_swapchainImageViews);
 		m_frameBuffers        = std::move(other.m_frameBuffers);
-		other.m_swapchain     = VK_NULL_HANDLE;
 
 		return *this;
 	}

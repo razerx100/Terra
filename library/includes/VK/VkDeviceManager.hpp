@@ -109,23 +109,21 @@ public:
 	VkDeviceManager& operator=(const VkDeviceManager&) = delete;
 
 	VkDeviceManager(VkDeviceManager&& other) noexcept
-		: m_physicalDevice{ other.m_physicalDevice }, m_logicalDevice{ other.m_logicalDevice },
+		: m_physicalDevice{ other.m_physicalDevice },
+		m_logicalDevice{ std::exchange(other.m_logicalDevice, VK_NULL_HANDLE) },
 		m_queueFamilyManager{ other.m_queueFamilyManager },
 		m_extensionManager{ std::move(other.m_extensionManager) },
 		m_featureManager{ std::move(other.m_featureManager) }
-	{
-		other.m_logicalDevice = VK_NULL_HANDLE;
-	}
+	{}
 	VkDeviceManager& operator=(VkDeviceManager&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_physicalDevice      = other.m_physicalDevice;
-		m_logicalDevice       = other.m_logicalDevice;
-		m_queueFamilyManager  = other.m_queueFamilyManager;
-		m_extensionManager    = std::move(other.m_extensionManager);
-		m_featureManager      = std::move(other.m_featureManager);
-		other.m_logicalDevice = VK_NULL_HANDLE;
+		m_physicalDevice     = other.m_physicalDevice;
+		m_logicalDevice      = std::exchange(other.m_logicalDevice, VK_NULL_HANDLE);
+		m_queueFamilyManager = other.m_queueFamilyManager;
+		m_extensionManager   = std::move(other.m_extensionManager);
+		m_featureManager     = std::move(other.m_featureManager);
 
 		return *this;
 	}

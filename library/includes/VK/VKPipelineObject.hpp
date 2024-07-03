@@ -2,6 +2,7 @@
 #define VK_PIPELINE_OBJECT_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <utility>
 #include <VertexLayout.hpp>
 
 class PipelineBuilderBase
@@ -370,17 +371,14 @@ public:
 	VkPipelineObject& operator=(const VkPipelineObject&) = delete;
 
 	VkPipelineObject(VkPipelineObject&& other) noexcept
-		: m_device{ other.m_device }, m_pipeline{ other.m_pipeline }
-	{
-		other.m_pipeline = VK_NULL_HANDLE;
-	}
+		: m_device{ other.m_device }, m_pipeline{ std::exchange(other.m_pipeline, VK_NULL_HANDLE) }
+	{}
 	VkPipelineObject& operator=(VkPipelineObject&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device         = other.m_device;
-		m_pipeline       = other.m_pipeline;
-		other.m_pipeline = VK_NULL_HANDLE;
+		m_device   = other.m_device;
+		m_pipeline = std::exchange(other.m_pipeline, VK_NULL_HANDLE);
 
 		return *this;
 	}

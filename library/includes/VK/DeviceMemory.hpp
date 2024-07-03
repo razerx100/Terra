@@ -1,6 +1,7 @@
 #ifndef DEVICE_MEMORY_HPP_
 #define DEVICE_MEMORY_HPP_
 #include <vulkan/vulkan.hpp>
+#include <utility>
 
 class DeviceMemory
 {
@@ -39,12 +40,10 @@ public:
 	DeviceMemory& operator=(const DeviceMemory&) = delete;
 
 	DeviceMemory(DeviceMemory&& other) noexcept
-		: m_device{ other.m_device }, m_memory{ other.m_memory }, m_size{ other.m_size },
-		m_mappedCPUMemory{ other.m_mappedCPUMemory }, m_memoryTypeIndex{ other.m_memoryTypeIndex },
-		m_memoryType{ other.m_memoryType }
-	{
-		other.m_memory = VK_NULL_HANDLE; // Otherwise the dtor will destroy it.
-	}
+		: m_device{ other.m_device }, m_memory{ std::exchange(other.m_memory, VK_NULL_HANDLE) },
+		m_size{ other.m_size }, m_mappedCPUMemory{ other.m_mappedCPUMemory },
+		m_memoryTypeIndex{ other.m_memoryTypeIndex }, m_memoryType{ other.m_memoryType }
+	{}
 
 	DeviceMemory& operator=(DeviceMemory&& other) noexcept
 	{
@@ -52,13 +51,11 @@ public:
 		SelfDestruct();
 
 		m_device          = other.m_device;
-		m_memory          = other.m_memory;
+		m_memory          = std::exchange(other.m_memory, VK_NULL_HANDLE);
 		m_size            = other.m_size;
 		m_mappedCPUMemory = other.m_mappedCPUMemory;
 		m_memoryTypeIndex = other.m_memoryTypeIndex;
 		m_memoryType      = other.m_memoryType;
-
-		other.m_memory    = VK_NULL_HANDLE; // Otherwise the dtor will destroy it.
 
 		return *this;
 	}

@@ -2,6 +2,7 @@
 #define DESCRIPTOR_SET_LAYOUT_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <utility>
 
 class DescriptorSetLayout
 {
@@ -40,23 +41,19 @@ public:
 	DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
 
 	DescriptorSetLayout(DescriptorSetLayout&& other) noexcept
-		: m_device{ other.m_device }, m_layout{ other.m_layout },
+		: m_device{ other.m_device }, m_layout{ std::exchange(other.m_layout, VK_NULL_HANDLE) },
 		m_layoutBindings{ std::move(other.m_layoutBindings) },
 		m_layoutBindingFlags{ std::move(other.m_layoutBindingFlags) }
-	{
-		other.m_layout = VK_NULL_HANDLE;
-	}
+	{}
 
 	DescriptorSetLayout& operator=(DescriptorSetLayout&& other) noexcept
 	{
 		SelfDestruct();
 
 		m_device             = other.m_device;
-		m_layout             = other.m_layout;
+		m_layout             = std::exchange(other.m_layout, VK_NULL_HANDLE);
 		m_layoutBindings     = std::move(other.m_layoutBindings);
 		m_layoutBindingFlags = std::move(other.m_layoutBindingFlags);
-
-		other.m_layout = VK_NULL_HANDLE;
 
 		return *this;
 	}

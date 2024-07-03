@@ -1,6 +1,7 @@
 #ifndef VK_TEXTURE_VIEW_HPP_
 #define VK_TEXTURE_VIEW_HPP_
 #include <VkResources.hpp>
+#include <utility>
 
 // This is a wrapper around the Vulkan handle for VkImageView.
 class VKImageView
@@ -43,22 +44,19 @@ public:
 	VKImageView& operator=(const VKImageView&) = delete;
 
 	VKImageView(VKImageView&& other) noexcept
-		: m_device{ other.m_device }, m_imageView{ other.m_imageView },
+		: m_device{ other.m_device }, m_imageView{ std::exchange(other.m_imageView, VK_NULL_HANDLE) },
 		m_imageAspect{ other.m_imageAspect }, m_mipBaseLevel{ other.m_mipBaseLevel },
 		m_mipLevelCount{ other.m_mipLevelCount }
-	{
-		other.m_imageView = VK_NULL_HANDLE;
-	}
+	{}
 	VKImageView& operator=(VKImageView&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device          = other.m_device;
-		m_imageView       = other.m_imageView;
-		m_imageAspect     = other.m_imageAspect;
-		m_mipBaseLevel    = other.m_mipBaseLevel;
-		m_mipLevelCount   = other.m_mipLevelCount;
-		other.m_imageView = VK_NULL_HANDLE;
+		m_device        = other.m_device;
+		m_imageView     = std::exchange(other.m_imageView, VK_NULL_HANDLE);
+		m_imageAspect   = other.m_imageAspect;
+		m_mipBaseLevel  = other.m_mipBaseLevel;
+		m_mipLevelCount = other.m_mipLevelCount;
 
 		return *this;
 	}
@@ -250,17 +248,15 @@ public:
 	VKSampler(const VKSampler&) = delete;
 	VKSampler& operator=(const VKSampler&) = delete;
 
-	VKSampler(VKSampler&& other) noexcept : m_device{ other.m_device }, m_sampler{ other.m_sampler }
-	{
-		other.m_sampler = VK_NULL_HANDLE;
-	}
+	VKSampler(VKSampler&& other) noexcept
+		: m_device{ other.m_device }, m_sampler{ std::exchange(other.m_sampler, VK_NULL_HANDLE) }
+	{}
 	VKSampler& operator=(VKSampler&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device        = other.m_device;
-		m_sampler       = other.m_sampler;
-		other.m_sampler = VK_NULL_HANDLE;
+		m_device  = other.m_device;
+		m_sampler = std::exchange(other.m_sampler, VK_NULL_HANDLE);
 
 		return *this;
 	}

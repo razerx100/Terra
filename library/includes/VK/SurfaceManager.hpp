@@ -2,6 +2,7 @@
 #define SURFACE_MANAGER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <utility>
 #include <VkExtensionManager.hpp>
 
 class SurfaceInstanceExtension
@@ -44,17 +45,14 @@ public:
 	SurfaceManager& operator=(const SurfaceManager&) = delete;
 
 	SurfaceManager(SurfaceManager&& other) noexcept
-		: m_surface{ other.m_surface }, m_instance{ other.m_instance }
-	{
-		other.m_surface = VK_NULL_HANDLE;
-	}
+		: m_surface{ std::exchange(other.m_surface, VK_NULL_HANDLE) }, m_instance{ other.m_instance }
+	{}
 	SurfaceManager& operator=(SurfaceManager&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_surface       = other.m_surface;
-		m_instance      = other.m_instance;
-		other.m_surface = VK_NULL_HANDLE;
+		m_surface  = std::exchange(other.m_surface, VK_NULL_HANDLE);
+		m_instance = other.m_instance;
 
 		return *this;
 	}

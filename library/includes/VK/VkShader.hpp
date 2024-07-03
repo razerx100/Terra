@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <vector>
+#include <utility>
 #include <fstream>
 
 class VkShader
@@ -35,17 +36,15 @@ public:
 	VkShader& operator=(const VkShader&) = delete;
 
 	VkShader(VkShader&& other) noexcept
-		: m_device{ other.m_device }, m_shaderBinary{ other.m_shaderBinary }
-	{
-		other.m_shaderBinary = VK_NULL_HANDLE;
-	}
+		: m_device{ other.m_device },
+		m_shaderBinary{ std::exchange(other.m_shaderBinary, VK_NULL_HANDLE) }
+	{}
 	VkShader& operator=(VkShader&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device             = other.m_device;
-		m_shaderBinary       = other.m_shaderBinary;
-		other.m_shaderBinary = VK_NULL_HANDLE;
+		m_device       = other.m_device;
+		m_shaderBinary = std::exchange(other.m_shaderBinary, VK_NULL_HANDLE);
 
 		return *this;
 	}

@@ -6,6 +6,7 @@
 #include <VkResourceBarriers2.hpp>
 #include <VkSyncObjects.hpp>
 #include <array>
+#include <utility>
 #include <cassert>
 
 class BufferToBufferCopyBuilder
@@ -243,14 +244,11 @@ public:
 	VKCommandBuffer& operator=(const VKCommandBuffer&) = delete;
 
 	VKCommandBuffer(VKCommandBuffer&& other) noexcept
-		: m_commandBuffer{ other.m_commandBuffer }
-	{
-		other.m_commandBuffer = VK_NULL_HANDLE;
-	}
+		: m_commandBuffer{ std::exchange(other.m_commandBuffer, VK_NULL_HANDLE) }
+	{}
 	VKCommandBuffer& operator=(VKCommandBuffer&& other) noexcept
 	{
-		m_commandBuffer       = other.m_commandBuffer;
-		other.m_commandBuffer = VK_NULL_HANDLE;
+		m_commandBuffer = std::exchange(other.m_commandBuffer, VK_NULL_HANDLE);
 
 		return *this;
 	}
@@ -488,21 +486,18 @@ public:
 
 	VkCommandQueue(VkCommandQueue&& other) noexcept
 		: m_commandQueue{ other.m_commandQueue }, m_device{ other.m_device },
-		m_commandPool{ other.m_commandPool }, m_queueIndex{ other.m_queueIndex },
-		m_commandBuffers{ std::move(other.m_commandBuffers) }
-	{
-		other.m_commandPool = VK_NULL_HANDLE;
-	}
+		m_commandPool{ std::exchange(other.m_commandPool, VK_NULL_HANDLE) },
+		m_queueIndex{ other.m_queueIndex }, m_commandBuffers{ std::move(other.m_commandBuffers) }
+	{}
 	VkCommandQueue& operator=(VkCommandQueue&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_commandQueue      = other.m_commandQueue;
-		m_device            = other.m_device;
-		m_commandPool       = other.m_commandPool;
-		m_queueIndex        = other.m_queueIndex;
-		m_commandBuffers    = std::move(other.m_commandBuffers);
-		other.m_commandPool = VK_NULL_HANDLE;
+		m_commandQueue   = other.m_commandQueue;
+		m_device         = other.m_device;
+		m_commandPool    = std::exchange(other.m_commandPool, VK_NULL_HANDLE);
+		m_queueIndex     = other.m_queueIndex;
+		m_commandBuffers = std::move(other.m_commandBuffers);
 
 		return *this;
 	}

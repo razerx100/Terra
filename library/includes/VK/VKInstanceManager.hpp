@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <optional>
+#include <utility>
 #include <VkFeatureManager.hpp>
 #include <DebugLayerManager.hpp>
 
@@ -49,24 +50,21 @@ public:
 	VkInstanceManager& operator=(const VkInstanceManager&) = delete;
 
 	VkInstanceManager(VkInstanceManager&& other) noexcept
-		: m_vkInstance{ other.m_vkInstance }, m_appName{ std::move(other.m_appName) },
+		: m_vkInstance{ std::exchange(other.m_vkInstance, VK_NULL_HANDLE) },
+		m_appName{ std::move(other.m_appName) },
 		m_coreVersion{ other.m_coreVersion }, m_extensionManager{ std::move(other.m_extensionManager) },
 		m_debugLayer{ std::move(other.m_debugLayer) }
-	{
-		other.m_vkInstance = VK_NULL_HANDLE;
-	}
+	{}
 
 	VkInstanceManager& operator=(VkInstanceManager&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_vkInstance       = other.m_vkInstance;
+		m_vkInstance       = std::exchange(other.m_vkInstance, VK_NULL_HANDLE);
 		m_appName          = std::move(other.m_appName);
 		m_coreVersion      = other.m_coreVersion;
 		m_extensionManager = std::move(other.m_extensionManager);
 		m_debugLayer       = std::move(other.m_debugLayer);
-
-		other.m_vkInstance = VK_NULL_HANDLE;
 
 		return *this;
 	}

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <span>
+#include <utility>
 
 class RenderPassBuilder
 {
@@ -129,17 +130,14 @@ public:
 	VKRenderPass& operator=(const VKRenderPass&) = delete;
 
 	VKRenderPass(VKRenderPass&& other) noexcept
-		: m_device{ other.m_device }, m_renderPass{ other.m_renderPass }
-	{
-		other.m_renderPass = VK_NULL_HANDLE;
-	}
+		: m_device{ other.m_device }, m_renderPass{ std::exchange(other.m_renderPass, VK_NULL_HANDLE) }
+	{}
 	VKRenderPass& operator=(VKRenderPass&& other) noexcept
 	{
 		SelfDestruct();
 
-		m_device           = other.m_device;
-		m_renderPass       = other.m_renderPass;
-		other.m_renderPass = VK_NULL_HANDLE;
+		m_device     = other.m_device;
+		m_renderPass = std::exchange(other.m_renderPass, VK_NULL_HANDLE);
 
 		return *this;
 	}
