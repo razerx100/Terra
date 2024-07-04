@@ -77,10 +77,7 @@ void RenderEngineVSIndividual::Render(
 
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 
-		// This should clean the temp vulkan buffers on when a new buffer is added to
-		// the staging manager.
-		m_stagingManager.SetCopyRecorded();
-		// This should clean the Mesh related temp data when a new model/mesh is added.
+		// This should clean the Mesh related temp data when a new model/mesh is added next.
 		m_modelManager.SetCopyRecorded();
 	}
 
@@ -250,15 +247,7 @@ void RenderEngineVSIndirect::Render(
 
 		m_modelManager.CopyTempBuffers(transferCmdBufferScope);
 
-		m_modelManager.SetCopyRecorded();
-
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
-
-		// This should clean the temp vulkan buffers on when a new buffer is added to
-		// the staging manager.
-		m_stagingManager.SetCopyRecorded();
-		// This should clean the Mesh and model related temp data when a new model/mesh is added.
-		m_modelManager.SetCopyRecorded();
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);

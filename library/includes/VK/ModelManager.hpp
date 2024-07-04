@@ -932,7 +932,7 @@ public:
 		return m_pipelineLayoutCS;
 	}
 
-	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) const noexcept;
+	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
 	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
 	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;

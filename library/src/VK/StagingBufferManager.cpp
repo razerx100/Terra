@@ -208,6 +208,10 @@ void StagingBufferManager::Copy(const VKCommandBuffer& transferCmdBuffer)
 	{
 		CopyCPU();
 		CopyGPU(transferCmdBuffer);
+
+		// This should clean the temp vulkan buffers when a new buffer is added to
+		// the staging manager next.
+		SetCopyRecorded();
 	}
 }
 

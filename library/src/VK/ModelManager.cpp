@@ -810,7 +810,7 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 	}
 }
 
-void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) const noexcept
+void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
 	if (!m_copyRecorded)
 	{
@@ -822,6 +822,9 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 			m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
 			m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
 		}
+
+		// This should clean the Mesh and model related temp data when a new model/mesh is added next.
+		SetCopyRecorded();
 	}
 }
 
