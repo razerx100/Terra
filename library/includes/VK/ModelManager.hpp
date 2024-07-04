@@ -478,7 +478,7 @@ public:
 		m_meshBundles{}, m_meshBoundsBuffer{
 			device, memoryManager,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		}, m_meshBundleTempData{}, m_modelBundles{}
+		}, m_meshBundleTempData{}, m_modelBundles{}, m_copyRecorded{ false }
 	{}
 
 	// The layout should be the same across the multiple descriptors for each frame.
@@ -511,6 +511,13 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModel(std::shared_ptr<ModelType>&& model, const std::wstring& fragmentShader)
 	{
+		if (m_copyRecorded)
+		{
+			CleanUpTempData();
+
+			m_copyRecorded = false;
+		}
+
 		// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 		// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
 		std::shared_ptr<ModelType> tempModel = model;
@@ -540,6 +547,13 @@ public:
 	std::uint32_t AddModelBundle(
 		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const std::wstring& fragmentShader
 	) {
+		if (m_copyRecorded)
+		{
+			CleanUpTempData();
+
+			m_copyRecorded = false;
+		}
+
 		const size_t modelCount = std::size(modelBundle);
 
 		if (modelCount)
@@ -620,6 +634,13 @@ public:
 	std::uint32_t AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
 	) {
+		if (m_copyRecorded)
+		{
+			CleanUpTempData();
+
+			m_copyRecorded = false;
+		}
+
 		MeshManager meshManager{};
 
 		static_cast<Derived*>(this)->ConfigureMeshBundle(
@@ -647,6 +668,8 @@ public:
 		if constexpr (TempData)
 			static_cast<Derived*>(this)->_cleanUpTempData();
 	}
+
+	void SetCopyRecorded() noexcept { m_copyRecorded = true; }
 
 protected:
 	[[nodiscard]]
@@ -758,6 +781,7 @@ protected:
 	SharedBuffer                 m_meshBoundsBuffer;
 	std::deque<MeshTempData>     m_meshBundleTempData;
 	std::vector<ModelBundleType> m_modelBundles;
+	bool                         m_copyRecorded;
 
 	// Need to update this when I update the shaders.
 	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
@@ -777,7 +801,8 @@ public:
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
 		m_meshBundleTempData{ std::move(other.m_meshBundleTempData) },
-		m_modelBundles{ std::move(other.m_modelBundles) }
+		m_modelBundles{ std::move(other.m_modelBundles) },
+		m_copyRecorded{ other.m_copyRecorded }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
@@ -792,6 +817,7 @@ public:
 		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
 		m_meshBundleTempData     = std::move(other.m_meshBundleTempData);
 		m_modelBundles           = std::move(other.m_modelBundles);
+		m_copyRecorded           = other.m_copyRecorded;
 
 		return *this;
 	}

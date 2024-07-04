@@ -76,6 +76,12 @@ void RenderEngineVSIndividual::Render(
 		m_stagingManager.Copy(transferCmdBufferScope);
 
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+
+		// This should clean the temp vulkan buffers on when a new buffer is added to
+		// the staging manager.
+		m_stagingManager.SetCopyRecorded();
+		// This should clean the Mesh related temp data when a new model/mesh is added.
+		m_modelManager.SetCopyRecorded();
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
@@ -242,12 +248,17 @@ void RenderEngineVSIndirect::Render(
 			transferCmdBufferScope, static_cast<VkDeviceSize>(frameIndex)
 		);
 
-		// Currently this copy will be done every frame. But it isn't needed. Need to change
-		// that.
-		// Also I am not clearing the TempData.
 		m_modelManager.CopyTempBuffers(transferCmdBufferScope);
 
+		m_modelManager.SetCopyRecorded();
+
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+
+		// This should clean the temp vulkan buffers on when a new buffer is added to
+		// the staging manager.
+		m_stagingManager.SetCopyRecorded();
+		// This should clean the Mesh and model related temp data when a new model/mesh is added.
+		m_modelManager.SetCopyRecorded();
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);

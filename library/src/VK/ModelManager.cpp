@@ -812,13 +812,16 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 
 void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) const noexcept
 {
-	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
-	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
-
-	for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
+	if (!m_copyRecorded)
 	{
-		m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
-		m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
+		m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
+		m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
+
+		for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
+		{
+			m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
+			m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
+		}
 	}
 }
 
