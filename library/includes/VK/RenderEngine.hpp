@@ -195,4 +195,71 @@ public:
 		return *this;
 	}
 };
+
+template<typename ModelManager_t, typename Derived>
+class RenderEngineCommon : public RenderEngine
+{
+public:
+	RenderEngineCommon(
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
+		m_modelManager{
+			Derived::GetModelManager(
+				deviceManager, &m_memoryManager, &m_stagingManager,
+				static_cast<std::uint32_t>(frameCount)
+			)
+		}
+	{}
+
+	void SetShaderPath(const std::wstring& shaderPath) noexcept override
+	{
+		m_modelManager.SetShaderPath(shaderPath);
+	}
+	void AddFragmentShader(const std::wstring& fragmentShader) override
+	{
+		m_modelManager.AddPSO(fragmentShader);
+	}
+	void ChangeFragmentShader(
+		std::uint32_t modelBundleID, const std::wstring& fragmentShader
+	) override {
+		m_modelManager.ChangePSO(modelBundleID, fragmentShader);
+	}
+
+	void RemoveModelBundle(std::uint32_t bundleID) noexcept override
+	{
+		m_modelManager.RemoveModelBundle(bundleID);
+	}
+
+	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
+	{
+		m_modelManager.RemoveMeshBundle(bundleIndex);
+	}
+
+protected:
+	void Update(VkDeviceSize frameIndex) const noexcept override
+	{
+		RenderEngine::Update(frameIndex);
+
+		m_modelManager.UpdatePerFrame(frameIndex);
+	}
+
+protected:
+	ModelManager_t m_modelManager;
+
+public:
+	RenderEngineCommon(const RenderEngineCommon&) = delete;
+	RenderEngineCommon& operator=(const RenderEngineCommon&) = delete;
+
+	RenderEngineCommon(RenderEngineCommon&& other) noexcept
+		: RenderEngine{ std::move(other) },
+		m_modelManager{ std::move(other.m_modelManager) }
+	{}
+	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
+	{
+		RenderEngine::operator=(std::move(other));
+		m_modelManager = std::move(other.m_modelManager);
+
+		return *this;
+	}
+};
 #endif

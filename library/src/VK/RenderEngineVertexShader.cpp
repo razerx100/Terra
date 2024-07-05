@@ -3,7 +3,7 @@
 // VS Individual
 RenderEngineVSIndividual::RenderEngineVSIndividual(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
-) : RenderEngineVS{ deviceManager, std::move(threadPool), frameCount }
+) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
 	// The layout shouldn't change throughout the runtime.
 	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers);
@@ -135,7 +135,7 @@ void RenderEngineVSIndividual::Render(
 // VS Indirect
 RenderEngineVSIndirect::RenderEngineVSIndirect(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
-) : RenderEngineVS{ deviceManager, std::move(threadPool), frameCount },
+) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount },
 	m_computeQueue{
 		deviceManager.GetLogicalDevice(),
 		deviceManager.GetQueueFamilyManager().GetQueue(QueueType::ComputeQueue),
