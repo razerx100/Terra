@@ -10,6 +10,9 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
+
+	if (!std::empty(m_graphicsDescriptorBuffers))
+		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
 }
 
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
@@ -120,7 +123,7 @@ void RenderEngineVSIndividual::Render(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			// The graphics queue should wait for the transfer queue finish and then start the
+			// The graphics queue should wait for the transfer queue to finish and then start the
 			// Input Assembler Stage.
 			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
@@ -149,6 +152,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
+	if (!std::empty(m_graphicsDescriptorBuffers))
+		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+
 	// Compute stuffs.
 	VkDevice device = deviceManager.GetLogicalDevice();
 
@@ -168,6 +174,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 
 	for (auto& descriptorBuffer : m_computeDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
+
+	if (!std::empty(m_computeDescriptorBuffers))
+		m_modelManager.CreatePipelineCS(m_computeDescriptorBuffers.front());
 }
 
 ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
@@ -265,6 +274,15 @@ void RenderEngineVSIndirect::Render(
 	{
 		const CommandBufferScope computeCmdBufferScope{ computeCmdBuffer };
 
+		m_stagingManager.AcquireOwnership(
+			computeCmdBufferScope, m_computeQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+		);
+
+		VkDescriptorBuffer::BindDescriptorBuffer(
+			m_computeDescriptorBuffers.at(frameIndex), computeCmdBufferScope,
+			VK_PIPELINE_BIND_POINT_COMPUTE, m_modelManager.GetComputePipelineLayout()
+		);
+
 		m_modelManager.Dispatch(computeCmdBufferScope);
 	}
 
@@ -308,7 +326,7 @@ void RenderEngineVSIndirect::Render(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			// The graphics queue should wait for the compute queue finish and then start the
+			// The graphics queue should wait for the compute queue to finish and then start the
 			// Input Assembler Stage.
 			.WaitSemaphore(computeWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
