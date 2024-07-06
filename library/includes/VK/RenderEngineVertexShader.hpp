@@ -8,6 +8,8 @@ class RenderEngineVSIndividualDeviceExtension : public RenderEngineDeviceExtensi
 class RenderEngineVSIndividual
 	: public RenderEngineCommon<ModelManagerVSIndividual, RenderEngineVSIndividual>
 {
+	friend class RenderEngineCommon<ModelManagerVSIndividual, RenderEngineVSIndividual>;
+
 public:
 	RenderEngineVSIndividual(
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
@@ -27,6 +29,7 @@ public:
 
 	void Render(size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea) override;
 
+private:
 	[[nodiscard]]
 	static ModelManagerVSIndividual GetModelManager(
 		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
@@ -70,6 +73,8 @@ class RenderEngineVSIndirectDeviceExtension : public RenderEngineDeviceExtension
 class RenderEngineVSIndirect
 	: public RenderEngineCommon<ModelManagerVSIndirect, RenderEngineVSIndirect>
 {
+	friend class RenderEngineCommon<ModelManagerVSIndirect, RenderEngineVSIndirect>;
+
 public:
 	RenderEngineVSIndirect(
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
@@ -89,6 +94,7 @@ public:
 
 	void Render(size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea) override;
 
+private:
 	[[nodiscard]]
 	static ModelManagerVSIndirect GetModelManager(
 		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,

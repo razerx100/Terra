@@ -4,6 +4,7 @@
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
 #include <RenderEngineVertexShader.hpp>
+#include <RenderEngineMeshShader.hpp>
 
 namespace Constants
 {
@@ -76,4 +77,26 @@ TEST_F(RenderEngineTest, RenderEngineVSIndirectTest)
 	auto threadPool = std::make_shared<ThreadPool>(2u);
 
 	RenderEngineVSIndirect renderEngine{ deviceManager, threadPool, Constants::frameCount };
+}
+
+TEST_F(RenderEngineTest, RenderEngineMSTest)
+{
+	VkDeviceManager deviceManager{};
+
+	{
+		VkDeviceExtensionManager& extensionManager = deviceManager.ExtensionManager();
+		RenderEngineMSDeviceExtension{}.SetDeviceExtensions(extensionManager);
+	}
+
+	{
+		VkInstance vkInstance = s_instanceManager->GetVKInstance();
+
+		deviceManager.SetDeviceFeatures(Constants::coreVersion)
+			.SetPhysicalDeviceAutomatic(vkInstance)
+			.CreateLogicalDevice();
+	}
+
+	auto threadPool = std::make_shared<ThreadPool>(2u);
+
+	RenderEngineMS renderEngine{ deviceManager, threadPool, Constants::frameCount };
 }

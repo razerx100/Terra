@@ -1,143 +1,52 @@
 #include <RenderEngineMeshShader.hpp>
 
-/*
-RenderEngineMeshShader::RenderEngineMeshShader(
-	VkDevice device, std::uint32_t bufferCount, QueueIndicesTG queueIndices
-//) : m_vertexManager{ device, bufferCount, queueIndices }, m_meshletBuffer{ device },
-) : m_queueIndicesTG{ queueIndices }, m_bufferCount{ bufferCount } {}
-
-std::unique_ptr<PipelineLayout> RenderEngineMeshShader::CreateGraphicsPipelineLayout(
-	VkDevice device, std::uint32_t layoutCount, VkDescriptorSetLayout const* setLayouts
-) const noexcept {
-	auto pipelineLayout = std::make_unique<PipelineLayout>(device);
-
-	// Push constants needs to be serialised according to the shader stages
-	static constexpr std::uint32_t pushConstantSize =
-			static_cast<std::uint32_t>(sizeof(std::uint32_t) * 2u);
-
-	pipelineLayout->AddPushConstantRange(VK_SHADER_STAGE_MESH_BIT_EXT, pushConstantSize);
-	pipelineLayout->Create(setLayouts, layoutCount);
-
-	return pipelineLayout;
-}
-
-void RenderEngineMeshShader::AddMeshletModelSet(
-	std::vector<MeshletModel>& meshletModels, const std::wstring& fragmentShader
+void RenderEngineMSDeviceExtension::SetDeviceExtensions(
+	VkDeviceExtensionManager& extensionManager
 ) noexcept {
-	auto graphicsPipeline = std::make_unique<GraphicsPipelineMeshShader>();
+	RenderEngineDeviceExtension::SetDeviceExtensions(extensionManager);
 
-	//graphicsPipeline->ConfigureGraphicsPipeline(fragmentShader);
-
-	static std::uint32_t modelCount = 0u;
-
-	for (size_t index = 0u; index < std::size(meshletModels); ++index) {
-		std::vector<Meshlet>&& meshlets = std::move(meshletModels[index].meshlets);
-
-		graphicsPipeline->AddModelDetails(
-			static_cast<std::uint32_t>(std::size(meshlets)),
-			static_cast<std::uint32_t>(std::size(m_meshlets)), modelCount
-		);
-
-		++modelCount;
-
-		std::ranges::move(meshlets, std::back_inserter(m_meshlets));
-	}
-
-	if (!m_graphicsPipeline0)
-		m_graphicsPipeline0 = std::move(graphicsPipeline);
-	else
-		m_graphicsPipelines.emplace_back(std::move(graphicsPipeline));
+	extensionManager.AddExtensions(ModelBundleMS::GetRequiredExtensions());
 }
 
-void RenderEngineMeshShader::AddGVerticesAndPrimIndices(
-	VkDevice device, std::vector<Vertex>&& gVertices,
-	std::vector<std::uint32_t>&& gVerticesIndices, std::vector<std::uint32_t>&& gPrimIndices
-) noexcept {
-	m_vertexManager.AddGVerticesAndPrimIndices(
-		device, std::move(gVertices), std::move(gVerticesIndices), std::move(gPrimIndices)
-	);
+RenderEngineMS::RenderEngineMS(
+	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
+{
+	// The layout shouldn't change throughout the runtime.
+	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers);
+
+	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+		descriptorBuffer.CreateBuffer();
 }
 
-void RenderEngineMeshShader::ConstructPipelines() {
-	VkDevice device = Terra::Get().Device().GetLogicalDevice();
-
-	ConstructGraphicsPipelineLayout(device);
-	CreateGraphicsPipelines(device, m_graphicsPipeline0, m_graphicsPipelines);
-}
-
-void RenderEngineMeshShader::UpdateModelBuffers(VkDeviceSize frameIndex) const noexcept {
-	//Terra::Get().Buffers().Update<true>(frameIndex);
-}
-
-void RenderEngineMeshShader::RecordDrawCommands(
-	VkCommandBuffer graphicsCmdBuffer, size_t frameIndex
+std::uint32_t RenderEngineMS::AddModel(
+	std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader
 ) {
-	// One Pipeline needs to be bound before Descriptors can be bound.
-	//m_graphicsPipeline0->Bind(graphicsCmdBuffer);
-	BindGraphicsDescriptorSets(graphicsCmdBuffer, frameIndex);
-
-	//m_graphicsPipeline0->DrawModels(graphicsCmdBuffer);
-
-	for (auto& graphicsPipeline : m_graphicsPipelines) {
-		//graphicsPipeline->Bind(graphicsCmdBuffer);
-		//graphicsPipeline->DrawModels(graphicsCmdBuffer);
-	}
+	return 0u;
 }
 
-void RenderEngineMeshShader::BindResourcesToMemory(VkDevice device) {
-	//m_vertexManager.BindResourceToMemory(device);
-	//m_meshletBuffer.BindResourceToMemory(device);
+std::uint32_t RenderEngineMS::AddModelBundle(
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
+) {
+	return 0u;
 }
 
-void RenderEngineMeshShader::RecordCopy(VkCommandBuffer transferBuffer) noexcept {
-	//m_vertexManager.RecordCopy(transferBuffer);
-	//m_meshletBuffer.RecordCopy(transferBuffer);
+std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
+{
+	return 0u;
 }
 
-void RenderEngineMeshShader::ReleaseUploadResources() noexcept {
-	//m_vertexManager.ReleaseUploadResources();
-	//m_meshletBuffer.CleanUpUploadResource();
+void RenderEngineMS::Render(
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+) {
+
 }
 
-void RenderEngineMeshShader::AcquireOwnerShipGraphics(
-	VkCommandBuffer graphicsCmdBuffer
-) noexcept {
-	//m_vertexManager.AcquireOwnerShips(graphicsCmdBuffer);
-	m_meshletBuffer.AcquireOwnership(
-		graphicsCmdBuffer, m_queueIndicesTG.transfer, m_queueIndicesTG.graphics,
-		VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT
-	);
-}
-
-void RenderEngineMeshShader::ReleaseOwnership(VkCommandBuffer transferCmdBuffer) noexcept {
-	//m_vertexManager.ReleaseOwnerships(transferCmdBuffer);
-	m_meshletBuffer.ReleaseOwnerShip(
-		transferCmdBuffer, m_queueIndicesTG.transfer, m_queueIndicesTG.graphics
-	);
-}
-
-void RenderEngineMeshShader::CreateBuffers(VkDevice device) noexcept {
-	const auto meshletBufferSize =
-		static_cast<VkDeviceSize>(sizeof(Meshlet) * std::size(m_meshlets));
-
-	m_meshletBuffer.CreateResource(
-		device, meshletBufferSize, 1u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-	);
-	m_meshletBuffer.SetMemoryOffsetAndType(device);
-
-	Terra::Get().Res().UploadCont().AddMemory(
-		std::data(m_meshlets), meshletBufferSize, m_meshletBuffer.GetFirstUploadMemoryOffset()
-	);
-
-	DescriptorInfo meshletDescInfo{
-		.bindingSlot = 9u,
-		.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+ModelManagerMS RenderEngineMS::GetModelManager(
+	const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
+	StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
+) {
+	return ModelManagerMS{
+		deviceManager.GetLogicalDevice(), memoryManager, stagingBufferMan, frameCount
 	};
-
-	auto meshletBufferInfos = m_meshletBuffer.GetDescBufferInfoSpread(m_bufferCount);
-
-	Terra::Get().GraphicsDesc().AddBuffersSplit(
-		meshletDescInfo, std::move(meshletBufferInfos), VK_SHADER_STAGE_MESH_BIT_EXT
-	);
 }
-*/
