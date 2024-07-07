@@ -136,9 +136,11 @@ void SwapchainManager::Present(
 }
 
 void SwapchainManager::CreateSwapchain(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
+	const VkDeviceManager& deviceManager, const SurfaceManager& surface
 ) {
-	const VkFormat oldFormat = m_swapchain.GetFormat();
+	const VkFormat oldFormat        = m_swapchain.GetFormat();
+	VkDevice logicalDevice          = deviceManager.GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = deviceManager.GetPhysicalDevice();
 
 	m_swapchain.Create(logicalDevice, physicalDevice, surface);
 

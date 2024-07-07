@@ -9,6 +9,7 @@
 #include <DepthBuffer.hpp>
 #include <VkFramebuffer.hpp>
 #include <VkSyncObjects.hpp>
+#include <VkDeviceManager.hpp>
 
 class VkSwapchain
 {
@@ -87,9 +88,7 @@ public:
 	SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount);
 
 	void Present(std::uint32_t imageIndex, const VKSemaphore& waitSemaphore) const noexcept;
-	void CreateSwapchain(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
-	);
+	void CreateSwapchain(const VkDeviceManager& deviceManager, const SurfaceManager& surface);
 	// Should be created after the swapchain and the renderpass.
 	void CreateFramebuffers(
 		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer

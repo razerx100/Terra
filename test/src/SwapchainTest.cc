@@ -122,7 +122,7 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 		Constants::bufferCount
 	};
 
-	swapchain.CreateSwapchain(logicalDevice, physicalDevice, *s_surfaceManager);
+	swapchain.CreateSwapchain(*s_deviceManager, *s_surfaceManager);
 
 	{
 		depthBuffer.Create(Constants::width, Constants::height);
@@ -141,7 +141,7 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 
 	s_window->SetWindowResolution(2560u, 1440u);
 
-	swapchain.CreateSwapchain(logicalDevice, physicalDevice, *s_surfaceManager);
+	swapchain.CreateSwapchain(*s_deviceManager, *s_surfaceManager);
 
 	{
 		depthBuffer.Create(2560u, 1440u);

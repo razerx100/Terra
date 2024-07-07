@@ -123,6 +123,11 @@ public:
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
 
+	[[nodiscard]]
+	const VKRenderPass& GetRenderPass() const noexcept { return m_renderPass; }
+	[[nodiscard]]
+	const DepthBuffer& GetDepthBuffer() const noexcept { return m_depthBuffer; }
+
 protected:
 	[[nodiscard]]
 	virtual std::uint32_t GetCombinedTextureBindingSlot() const noexcept = 0;
