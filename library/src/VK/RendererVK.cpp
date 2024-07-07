@@ -15,14 +15,15 @@ RendererVK::RendererVK(
 	assert(bufferCount >= 1u && "BufferCount must not be zero.");
 	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
 
+	/*
 	Terra::Init(
 		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool,
 		engineType
 	);
 	Terra& terra = Terra::Get();
 
-	//terra.Engine().ResizeViewportAndScissor(width, height);
-
+	terra.Engine().ResizeViewportAndScissor(width, height);
+	*/
 }
 
 void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
@@ -71,21 +72,21 @@ void RendererVK::AddModelInputs(
 
 void RendererVK::Update()
 {
-	Terra& terra = Terra::Get();
+	//Terra& terra = Terra::Get();
 
 	/*terra.Swapchain().QueryNextImageIndex(
 		terra.Device().GetLogicalDevice(),
 		terra.Graphics().SyncObj().GetFrontSemaphore()
 	);*/
-	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
+	//const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
 
 	//terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
 }
 
 void RendererVK::Render() {
-	Terra& terra = Terra::Get();
+	//Terra& terra = Terra::Get();
 
-	const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
+	//const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
 	/*const VkCommandBuffer graphicsCommandBuffer = terra.Graphics().CmdBuffer().GetCommandBuffer(
 		imageIndex
 	);
@@ -103,11 +104,11 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 		m_width = width;
 		m_height = height;
 
-		Terra& terra = Terra::Get();
+		//Terra& terra = Terra::Get();
 
-		VkDeviceManager& device = terra.Device();
+		//VkDeviceManager& device = terra.Device();
 
-		vkDeviceWaitIdle(device.GetLogicalDevice());
+		//vkDeviceWaitIdle(device.GetLogicalDevice());
 
 		/*
 		RenderEngine& engine = terra.Engine();
@@ -125,13 +126,14 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
 }
 
 Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
-	Terra& terra = Terra::Get();
+	/*Terra& terra = Terra::Get();
 
 	DisplayManager::Resolution resolution = terra.Display().GetDisplayResolution(
 		terra.Device().GetPhysicalDevice(), 0u
 	);
+	*/
 
-	return { resolution.width, resolution.height };
+	return { 0u, 0u };
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
@@ -140,9 +142,9 @@ void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
 
 void RendererVK::ProcessData()
 {
-	Terra& terra = Terra::Get();
+	//Terra& terra = Terra::Get();
 
-	const VkDevice logicalDevice = terra.Device().GetLogicalDevice();
+	//const VkDevice logicalDevice = terra.Device().GetLogicalDevice();
 
 	//BufferManager& buffers = terra.Buffers();
 	//RenderEngine& engine = terra.Engine();
@@ -258,7 +260,7 @@ void RendererVK::ProcessData()
 size_t RendererVK::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
-	Terra& terra = Terra::Get();
+	//Terra& terra = Terra::Get();
 
 	return 0u;
 	/*
@@ -269,7 +271,7 @@ size_t RendererVK::AddTexture(
 }
 
 void RendererVK::WaitForAsyncTasks() {
-	vkDeviceWaitIdle(Terra::Get().Device().GetLogicalDevice());
+	//vkDeviceWaitIdle(Terra::Get().Device().GetLogicalDevice());
 }
 
 void RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader)
