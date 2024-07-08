@@ -20,6 +20,10 @@ public:
 	void Resize(std::uint32_t width, std::uint32_t height);
 	void Render();
 
+	// Instead of creating useless wrapper functions, let's just return a reference to the RenderEngine.
+	[[nodiscard]]
+	RenderEngine& GetRenderEngine() noexcept { return *m_renderEngine; }
+
 private:
 	void CreateInstance();
 	void CreateSurface(void* windowHandle, void* moduleHandle);
