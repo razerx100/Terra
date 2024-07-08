@@ -18,7 +18,8 @@ public:
 	~VkSwapchain() noexcept;
 
 	void Create(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
+		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
+		std::uint32_t width, std::uint32_t height
 	);
 	void CreateFramebuffers(
 		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
@@ -85,7 +86,10 @@ public:
 	SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount);
 
 	void Present(std::uint32_t imageIndex, const VKSemaphore& waitSemaphore) const noexcept;
-	void CreateSwapchain(const VkDeviceManager& deviceManager, const SurfaceManager& surface);
+	void CreateSwapchain(
+		const VkDeviceManager& deviceManager, const SurfaceManager& surface,
+		std::uint32_t width, std::uint32_t height
+	);
 	// Should be created after the swapchain and the renderpass.
 	void CreateFramebuffers(
 		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer

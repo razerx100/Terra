@@ -122,10 +122,14 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 		Constants::bufferCount
 	};
 
-	swapchain.CreateSwapchain(*s_deviceManager, *s_surfaceManager);
+	swapchain.CreateSwapchain(
+		*s_deviceManager, *s_surfaceManager, Constants::width, Constants::height
+	);
 
 	{
-		depthBuffer.Create(Constants::width, Constants::height);
+		const VkExtent2D newExtent = swapchain.GetCurrentSwapchainExtent();
+
+		depthBuffer.Create(newExtent.width, newExtent.height);
 
 		renderPass.Create(
 			RenderPassBuilder{}
@@ -141,10 +145,12 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 
 	s_window->SetWindowResolution(2560u, 1440u);
 
-	swapchain.CreateSwapchain(*s_deviceManager, *s_surfaceManager);
+	swapchain.CreateSwapchain(*s_deviceManager, *s_surfaceManager, 2560u, 1440u);
 
 	{
-		depthBuffer.Create(2560u, 1440u);
+		const VkExtent2D newExtent = swapchain.GetCurrentSwapchainExtent();
+
+		depthBuffer.Create(newExtent.width, newExtent.height);
 
 		renderPass.Create(
 			RenderPassBuilder{}

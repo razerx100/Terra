@@ -37,6 +37,8 @@ private:
 	std::unique_ptr<DisplayManager>   m_displayManager;
 	std::unique_ptr<SwapchainManager> m_swapchain;
 	std::unique_ptr<RenderEngine>     m_renderEngine;
+	std::uint32_t                     m_windowWidth;
+	std::uint32_t                     m_windowHeight;
 
 	static constexpr CoreVersion s_coreVersion = CoreVersion::V1_3;
 
@@ -50,7 +52,9 @@ public:
 		m_deviceManager{ std::move(other.m_deviceManager) },
 		m_displayManager{ std::move(other.m_displayManager) },
 		m_swapchain{ std::move(other.m_swapchain) },
-		m_renderEngine{ std::move(other.m_renderEngine) }
+		m_renderEngine{ std::move(other.m_renderEngine) },
+		m_windowWidth{ other.m_windowWidth },
+		m_windowHeight{ other.m_windowHeight }
 	{}
 	Terra& operator=(Terra&& other) noexcept
 	{
@@ -60,6 +64,8 @@ public:
 		m_displayManager  = std::move(other.m_displayManager);
 		m_swapchain       = std::move(other.m_swapchain);
 		m_renderEngine    = std::move(other.m_renderEngine);
+		m_windowWidth     = other.m_windowWidth;
+		m_windowHeight    = other.m_windowHeight;
 
 		return *this;
 	}

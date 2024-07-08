@@ -14,7 +14,9 @@ Terra::Terra(
 	void* windowHandle, void* moduleHandle, std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount, std::shared_ptr<ThreadPool> threadPool, RenderEngineType engineType
 ) : m_instanceManager{ std::move(appName) }, m_surfaceManager{ nullptr },
-m_deviceManager{}, m_displayManager{ nullptr }, m_swapchain { nullptr }, m_renderEngine{ nullptr }
+	m_deviceManager{}, m_displayManager{ nullptr }, m_swapchain { nullptr }, m_renderEngine{ nullptr },
+	// The width and height are zero initialised, as they will be set with the call to Resize.
+	m_windowWidth{ 0u }, m_windowHeight{ 0u }
 {
 	CreateInstance();
 
@@ -28,6 +30,7 @@ m_deviceManager{}, m_displayManager{ nullptr }, m_swapchain { nullptr }, m_rende
 
 	CreateRenderEngine(engineType, std::move(threadPool), bufferCount);
 
+	// Need to create the swapchain and frame buffers and stuffs.
 	Resize(width, height);
 }
 
@@ -92,8 +95,6 @@ void Terra::CreateSwapchain(std::uint32_t frameCount)
 	m_swapchain = std::make_unique<SwapchainManager>(
 		device, m_deviceManager.GetQueueFamilyManager().GetQueue(QueueType::GraphicsQueue), frameCount
 	);
-
-	m_swapchain->CreateSwapchain(m_deviceManager, *m_surfaceManager);
 }
 
 void Terra::CreateRenderEngine(
@@ -115,15 +116,32 @@ void Terra::CreateRenderEngine(
 
 void Terra::Resize(std::uint32_t width, std::uint32_t height)
 {
-	m_renderEngine->Resize(
-		width, height,
-		m_swapchain->HasSwapchainFormatChanged(), m_swapchain->GetSwapchainFormat()
-	);
+	// Only recreate these if the new resolution is different.
+	if (m_windowWidth != width || m_windowHeight != height)
+	{
+		// Must recreate the swapchain first.
+		m_swapchain->CreateSwapchain(m_deviceManager, *m_surfaceManager, width, height);
 
-	m_swapchain->CreateFramebuffers(
-		m_deviceManager.GetLogicalDevice(), m_renderEngine->GetRenderPass(),
-		m_renderEngine->GetDepthBuffer()
-	);
+		const VkExtent2D newExtent = m_swapchain->GetCurrentSwapchainExtent();
+
+		// Then recreate the RenderPass and Depth buffer.
+		// Using the new extent, as it might be slightly different than the values we got.
+		// For example, the title area of a window can't be drawn upon.
+		// So, the actual rendering area would be a bit smaller.
+		m_renderEngine->Resize(
+			newExtent.width, newExtent.height,
+			m_swapchain->HasSwapchainFormatChanged(), m_swapchain->GetSwapchainFormat()
+		);
+
+		// Lastly the frame buffers.
+		m_swapchain->CreateFramebuffers(
+			m_deviceManager.GetLogicalDevice(), m_renderEngine->GetRenderPass(),
+			m_renderEngine->GetDepthBuffer()
+		);
+
+		m_windowWidth  = width;
+		m_windowHeight = height;
+	}
 }
 
 void Terra::Render()

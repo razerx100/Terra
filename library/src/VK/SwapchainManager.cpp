@@ -13,7 +13,8 @@ VkSwapchain::VkSwapchain(VkDevice device, std::uint32_t bufferCount)
 }
 
 void VkSwapchain::Create(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface
+	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
+	std::uint32_t width, std::uint32_t height
 ) {
 	// Create the swapchain.
 	const VkPresentModeKHR swapPresentMode = surface.GetPresentMode(physicalDevice);
@@ -26,7 +27,22 @@ void VkSwapchain::Create(
 		const std::uint32_t imageCount = std::max(
 			surfaceCapabilities.maxImageCount, static_cast<std::uint32_t>(std::size(m_swapchainImages))
 		);
-		const VkExtent2D swapExtent = surfaceCapabilities.currentExtent;
+
+		const VkExtent2D desiredSwapExtent{ .width = width, .height = height };
+
+		// The desired extent and the allowed extent might be different.
+		// For example, the title area of a window can't be drawn upon.
+		// So, the actual rendering area would be a bit smaller. So, select the
+		// smaller extent.
+
+		const VkExtent2D swapExtent = []
+			(VkExtent2D desiredSwapExtent, VkExtent2D allowedSwapExtent) -> VkExtent2D
+			{
+				const bool widthCheck  = desiredSwapExtent.width <= allowedSwapExtent.width;
+				const bool heightCheck = desiredSwapExtent.height <= allowedSwapExtent.height;
+
+				return widthCheck && heightCheck ? desiredSwapExtent : allowedSwapExtent;
+			}(desiredSwapExtent, surfaceCapabilities.currentExtent);
 
 		VkSwapchainCreateInfoKHR createInfo{
 			.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -136,13 +152,14 @@ void SwapchainManager::Present(
 }
 
 void SwapchainManager::CreateSwapchain(
-	const VkDeviceManager& deviceManager, const SurfaceManager& surface
+	const VkDeviceManager& deviceManager, const SurfaceManager& surface,
+	std::uint32_t width, std::uint32_t height
 ) {
 	const VkFormat oldFormat        = m_swapchain.GetFormat();
 	VkDevice logicalDevice          = deviceManager.GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = deviceManager.GetPhysicalDevice();
 
-	m_swapchain.Create(logicalDevice, physicalDevice, surface);
+	m_swapchain.Create(logicalDevice, physicalDevice, surface, width, height);
 
 	const VkFormat newFormat = m_swapchain.GetFormat();
 
