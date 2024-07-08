@@ -125,3 +125,34 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 		m_renderEngine->GetDepthBuffer()
 	);
 }
+
+void Terra::Render()
+{
+	static size_t nextPotentialImageIndex = 0u;
+
+	{
+		VkDevice device = m_deviceManager.GetLogicalDevice();
+
+		const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
+
+		// This is kinda dumb. You need to know the index of the next semaphore to query the next image
+		// index. Which might be different. So, can't use that index anywhere else. And have to use
+		// the index which is queried from the swapchain.
+		m_swapchain->QueryNextImageIndex(device, waitSemaphore);
+	}
+
+	const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();
+	const size_t nextImageIndex           = nextImageIndexU32;
+
+	m_renderEngine->Render(
+		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
+		m_swapchain->GetCurrentSwapchainExtent()
+	);
+
+	const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextImageIndex);
+
+	m_swapchain->Present(nextImageIndexU32, waitSemaphore);
+
+	const size_t frameCount = m_swapchain->GetSwapchain().GetImageCount();
+	nextPotentialImageIndex = (nextPotentialImageIndex + 1u) % frameCount;
+}

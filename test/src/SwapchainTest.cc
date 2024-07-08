@@ -137,7 +137,7 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 
 	swapchain.CreateFramebuffers(logicalDevice, renderPass, depthBuffer);
 
-	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
+	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
 
 	s_window->SetWindowResolution(2560u, 1440u);
 
@@ -156,5 +156,5 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 
 	swapchain.CreateFramebuffers(logicalDevice, renderPass, depthBuffer);
 
-	EXPECT_NE(swapchain.GetSwapchain(), VK_NULL_HANDLE) << "Swapchain re-creation failed.";
+	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain re-creation failed.";
 }

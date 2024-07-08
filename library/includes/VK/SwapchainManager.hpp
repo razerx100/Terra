@@ -26,10 +26,7 @@ public:
 	);
 
 	[[nodiscard]]
-	std::uint32_t GetImageCount() const noexcept
-	{
-		return static_cast<std::uint32_t>(std::size(m_swapchainImages));
-	}
+	size_t GetImageCount() const noexcept { return std::size(m_swapchainImages); }
 	[[nodiscard]]
 	VkSwapchainKHR Get() const noexcept { return m_swapchain; }
 	[[nodiscard]]
@@ -93,7 +90,7 @@ public:
 	void CreateFramebuffers(
 		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
 	);
-	void QueryNextImageIndex(VkDevice device, VkSemaphore waitForImageSemaphore);
+	void QueryNextImageIndex(VkDevice device, const VKSemaphore& waitSemaphore);
 
 	[[nodiscard]]
 	VkExtent2D GetCurrentSwapchainExtent() const noexcept { return m_swapchain.GetExtent(); }
@@ -105,7 +102,9 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetNextImageIndex() const noexcept { return m_nextImageIndex; };
 	[[nodiscard]]
-	VkSwapchainKHR GetSwapchain() const noexcept { return m_swapchain.Get(); }
+	VkSwapchainKHR GetVkSwapchain() const noexcept { return m_swapchain.Get(); }
+	[[nodiscard]]
+	const VkSwapchain& GetSwapchain() const noexcept { return m_swapchain; }
 	[[nodiscard]]
 	const VKFramebuffer& GetFramebuffer(size_t imageIndex) const noexcept
 	{
