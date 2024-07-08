@@ -4,6 +4,7 @@
 #include <SurfaceManager.hpp>
 #include <VkDeviceManager.hpp>
 #include <SwapchainManager.hpp>
+#include <DisplayManager.hpp>
 #include <RendererTypes.hpp>
 #include <RenderEngine.hpp>
 
@@ -22,6 +23,7 @@ private:
 	void CreateInstance();
 	void CreateSurface(void* windowHandle, void* moduleHandle);
 	void CreateDevice(RenderEngineType engineType);
+	void CreateDisplayManager();
 	void CreateSwapchain(std::uint32_t frameCount);
 	void CreateRenderEngine(
 		RenderEngineType engineType, std::shared_ptr<ThreadPool>&& threadPool, std::uint32_t frameCount
@@ -31,6 +33,7 @@ private:
 	VkInstanceManager                 m_instanceManager;
 	std::unique_ptr<SurfaceManager>   m_surfaceManager;
 	VkDeviceManager                   m_deviceManager;
+	std::unique_ptr<DisplayManager>   m_displayManager;
 	std::unique_ptr<SwapchainManager> m_swapchain;
 	std::unique_ptr<RenderEngine>     m_renderEngine;
 
@@ -44,6 +47,7 @@ public:
 		: m_instanceManager{ std::move(other.m_instanceManager) },
 		m_surfaceManager{ std::move(other.m_surfaceManager) },
 		m_deviceManager{ std::move(other.m_deviceManager) },
+		m_displayManager{ std::move(other.m_displayManager) },
 		m_swapchain{ std::move(other.m_swapchain) },
 		m_renderEngine{ std::move(other.m_renderEngine) }
 	{}
@@ -52,6 +56,7 @@ public:
 		m_instanceManager = std::move(other.m_instanceManager);
 		m_surfaceManager  = std::move(other.m_surfaceManager);
 		m_deviceManager   = std::move(other.m_deviceManager);
+		m_displayManager  = std::move(other.m_displayManager);
 		m_swapchain       = std::move(other.m_swapchain);
 		m_renderEngine    = std::move(other.m_renderEngine);
 

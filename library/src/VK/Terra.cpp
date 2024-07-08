@@ -14,13 +14,15 @@ Terra::Terra(
 	void* windowHandle, void* moduleHandle, std::uint32_t width, std::uint32_t height,
 	std::uint32_t bufferCount, std::shared_ptr<ThreadPool> threadPool, RenderEngineType engineType
 ) : m_instanceManager{ std::move(appName) }, m_surfaceManager{ nullptr },
-	m_deviceManager{}, m_swapchain{ nullptr }, m_renderEngine{ nullptr }
+m_deviceManager{}, m_displayManager{ nullptr }, m_swapchain { nullptr }, m_renderEngine{ nullptr }
 {
 	CreateInstance();
 
 	CreateSurface(windowHandle, moduleHandle);
 
 	CreateDevice(engineType);
+
+	CreateDisplayManager();
 
 	CreateSwapchain(bufferCount);
 
@@ -40,6 +42,7 @@ void Terra::CreateInstance()
 
 #ifdef TERRA_WIN32
 		SurfaceInstanceExtensionWin32{}.SetInstanceExtensions(extensionManager);
+		DisplayInstanceExtensionWin32{}.SetInstanceExtensions(extensionManager);
 #endif
 	}
 
@@ -73,6 +76,13 @@ void Terra::CreateDevice(RenderEngineType engineType)
 	m_deviceManager.SetDeviceFeatures(s_coreVersion)
 		.SetPhysicalDeviceAutomatic(m_instanceManager.GetVKInstance(), *m_surfaceManager)
 		.CreateLogicalDevice();
+}
+
+void Terra::CreateDisplayManager()
+{
+#ifdef TERRA_WIN32
+	m_displayManager = std::make_unique<DisplayManagerWin32>();
+#endif
 }
 
 void Terra::CreateSwapchain(std::uint32_t frameCount)
