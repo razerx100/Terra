@@ -174,3 +174,8 @@ void Terra::Render()
 	const size_t frameCount = m_swapchain->GetSwapchain().GetImageCount();
 	nextPotentialImageIndex = (nextPotentialImageIndex + 1u) % frameCount;
 }
+
+DisplayManager::Resolution Terra::GetFirstDisplayCoordinates() const
+{
+	return m_displayManager->GetDisplayResolution(m_deviceManager.GetPhysicalDevice(), 0u);
+}

@@ -1,7 +1,6 @@
 #include <array>
 
 #include <RendererVK.hpp>
-#include <Terra.hpp>
 
 RendererVK::RendererVK(
 	const char* appName,
@@ -10,24 +9,17 @@ RendererVK::RendererVK(
 	std::uint32_t bufferCount,
 	std::shared_ptr<ThreadPool>&& threadPool,
 	RenderEngineType engineType
-) : m_width{ width }, m_height{ height } {
-
-	assert(bufferCount >= 1u && "BufferCount must not be zero.");
-	assert(windowHandle && moduleHandle && "Invalid Window or WindowModule Handle.");
-
-	/*
-	Terra::Init(
-		appName, windowHandle, moduleHandle, bufferCount, width, height, threadPool,
+// The terra object is quite big but a renderer object would always be a heap allocated
+// object, so it should be fine.
+) : m_terra{
+		appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool),
 		engineType
-	);
-	Terra& terra = Terra::Get();
+	}
+{}
 
-	terra.Engine().ResizeViewportAndScissor(width, height);
-	*/
-}
-
-void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept {
-	//Terra::Get().Engine().SetBackgroundColour(colourVector);
+void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept
+{
+	m_terra.GetRenderEngine().SetBackgroundColour(colourVector);
 }
 
 /*void RendererVK::AddModelSet(
@@ -83,61 +75,26 @@ void RendererVK::Update()
 	//terra.Engine().UpdateModelBuffers(static_cast<VkDeviceSize>(imageIndex));
 }
 
-void RendererVK::Render() {
-	//Terra& terra = Terra::Get();
-
-	//const size_t imageIndex = terra.Swapchain().GetNextImageIndex();
-	/*const VkCommandBuffer graphicsCommandBuffer = terra.Graphics().CmdBuffer().GetCommandBuffer(
-		imageIndex
-	);
-
-
-	engine.ExecutePreRenderStage(graphicsCommandBuffer, imageIndex);
-	engine.RecordDrawCommands(graphicsCommandBuffer, imageIndex);
-	engine.Present(graphicsCommandBuffer, imageIndex);
-	RenderEngine& engine = terra.Engine();
-	engine.ExecutePostRenderStage();*/
+void RendererVK::Render()
+{
+	m_terra.Render();
 }
 
-void RendererVK::Resize(std::uint32_t width, std::uint32_t height) {
-	if (width != m_width || height != m_height) {
-		m_width = width;
-		m_height = height;
-
-		//Terra& terra = Terra::Get();
-
-		//VkDeviceManager& device = terra.Device();
-
-		//vkDeviceWaitIdle(device.GetLogicalDevice());
-
-		/*
-		RenderEngine& engine = terra.Engine();
-
-		SwapchainManager& swapchain = terra.Swapchain();
-
-		swapchain.CreateSwapchain(
-			device.GetLogicalDevice(), device.GetPhysicalDevice(),
-			memoryManager, terra.Surface()
-		);
-
-		engine.ResizeViewportAndScissor(width, height);
-		*/
-	}
+void RendererVK::Resize(std::uint32_t width, std::uint32_t height)
+{
+	m_terra.Resize(width, height);
 }
 
-Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const {
-	/*Terra& terra = Terra::Get();
+Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const
+{
+	DisplayManager::Resolution resolution = m_terra.GetFirstDisplayCoordinates();
 
-	DisplayManager::Resolution resolution = terra.Display().GetDisplayResolution(
-		terra.Device().GetPhysicalDevice(), 0u
-	);
-	*/
-
-	return { 0u, 0u };
+	return Renderer::Resolution{ .width = resolution.width, .height = resolution.height };
 }
 
-void RendererVK::SetShaderPath(const wchar_t* path) noexcept {
-	//Terra::Get().Engine().SetShaderPath(path);
+void RendererVK::SetShaderPath(const wchar_t* path) noexcept
+{
+	m_terra.GetRenderEngine().SetShaderPath(path);
 }
 
 void RendererVK::ProcessData()
@@ -260,14 +217,7 @@ void RendererVK::ProcessData()
 size_t RendererVK::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
-	//Terra& terra = Terra::Get();
-
-	return 0u;
-	/*
-	return terra.Texture().AddTexture(
-		terra.Device().GetLogicalDevice(), std::move(textureData), width, height
-	);
-	*/
+	return m_terra.GetRenderEngine().AddTextureAsCombined(std::move(textureData), width, height);
 }
 
 void RendererVK::WaitForAsyncTasks() {
@@ -275,30 +225,51 @@ void RendererVK::WaitForAsyncTasks() {
 }
 
 void RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader)
-{}
+{
+	m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader);
+}
 
 void RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader)
-{}
+{
+	m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader);
+}
 
 void RendererVK::AddModelBundle(
 	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
-) {}
+) {
+	m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
+}
 
 void RendererVK::AddModelBundle(
 	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
-) {}
+) {
+	m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
+}
 
 void RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
-{}
+{
+	m_terra.GetRenderEngine().AddMeshBundle(std::move(meshBundle));
+}
 
 void RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
-{}
+{
+	m_terra.GetRenderEngine().AddMeshBundle(std::move(meshBundle));
+}
 
 void RendererVK::AddMaterial(std::shared_ptr<Material> material)
-{}
+{
+	m_terra.GetRenderEngine().AddMaterial(std::move(material));
+}
 
 void RendererVK::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
-{}
+{
+	m_terra.GetRenderEngine().AddMaterials(std::move(materials));
+}
 
 void RendererVK::SetCamera(std::shared_ptr<Camera>&& camera)
-{}
+{
+	RenderEngine& renderEngine = m_terra.GetRenderEngine();
+
+	const std::uint32_t cameraIndex = renderEngine.AddCamera(std::move(camera));
+	renderEngine.SetCamera(cameraIndex);
+}

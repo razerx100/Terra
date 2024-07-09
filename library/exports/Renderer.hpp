@@ -14,7 +14,8 @@
 class Renderer
 {
 public:
-	struct Resolution {
+	struct Resolution
+	{
 		std::uint64_t width;
 		std::uint64_t height;
 	};

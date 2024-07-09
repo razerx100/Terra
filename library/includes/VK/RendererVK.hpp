@@ -5,6 +5,7 @@
 #include <ThreadPool.hpp>
 
 #include <Renderer.hpp>
+#include <Terra.hpp>
 
 class RendererVK final : public Renderer
 {
@@ -52,7 +53,20 @@ public:
 	void ProcessData() override;
 
 private:
-	std::uint32_t m_width;
-	std::uint32_t m_height;
+	Terra m_terra;
+
+public:
+	RendererVK(const RendererVK&) = delete;
+	RendererVK& operator=(const RendererVK&) = delete;
+
+	RendererVK(RendererVK&& other) noexcept
+		: m_terra{ std::move(other.m_terra) }
+	{}
+	RendererVK& operator=(RendererVK&& other) noexcept
+	{
+		m_terra = std::move(other.m_terra);
+
+		return *this;
+	}
 };
 #endif

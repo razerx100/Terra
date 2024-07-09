@@ -24,6 +24,9 @@ public:
 	[[nodiscard]]
 	RenderEngine& GetRenderEngine() noexcept { return *m_renderEngine; }
 
+	[[nodiscard]]
+	DisplayManager::Resolution GetFirstDisplayCoordinates() const;
+
 private:
 	void CreateInstance();
 	void CreateSurface(void* windowHandle, void* moduleHandle);
