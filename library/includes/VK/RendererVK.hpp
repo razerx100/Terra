@@ -72,6 +72,7 @@ public:
 	void RemoveCamera(std::uint32_t index) noexcept override;
 
 	void Render() override;
+	void WaitForGPUToFinish() override;
 
 private:
 	Terra m_terra;

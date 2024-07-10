@@ -175,6 +175,11 @@ void Terra::Render()
 	nextPotentialImageIndex = (nextPotentialImageIndex + 1u) % frameCount;
 }
 
+void Terra::WaitForGPUToFinish()
+{
+	vkDeviceWaitIdle(m_deviceManager.GetLogicalDevice());
+}
+
 DisplayManager::Resolution Terra::GetFirstDisplayCoordinates() const
 {
 	return m_displayManager->GetDisplayResolution(m_deviceManager.GetPhysicalDevice(), 0u);

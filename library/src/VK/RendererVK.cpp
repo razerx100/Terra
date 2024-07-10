@@ -27,6 +27,11 @@ void RendererVK::Render()
 	m_terra.Render();
 }
 
+void RendererVK::WaitForGPUToFinish()
+{
+	m_terra.WaitForGPUToFinish();
+}
+
 void RendererVK::Resize(std::uint32_t width, std::uint32_t height)
 {
 	m_terra.Resize(width, height);

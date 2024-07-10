@@ -19,6 +19,7 @@ public:
 
 	void Resize(std::uint32_t width, std::uint32_t height);
 	void Render();
+	void WaitForGPUToFinish();
 
 	// Instead of creating useless wrapper functions, let's just return a reference to the RenderEngine.
 	[[nodiscard]]
