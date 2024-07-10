@@ -23,6 +23,8 @@ public:
 	// Instead of creating useless wrapper functions, let's just return a reference to the RenderEngine.
 	[[nodiscard]]
 	RenderEngine& GetRenderEngine() noexcept { return *m_renderEngine; }
+	[[nodiscard]]
+	const RenderEngine& GetRenderEngine() const noexcept { return *m_renderEngine; }
 
 	[[nodiscard]]
 	DisplayManager::Resolution GetFirstDisplayCoordinates() const;
