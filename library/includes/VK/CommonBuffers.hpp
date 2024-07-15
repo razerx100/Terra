@@ -19,8 +19,11 @@ public:
 		m_device{ device }, m_memoryManager{ memoryManager }
 	{}
 
+	void SetDescriptorBufferLayout(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot
+	) const noexcept;
 	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot
 	) const;
 
 	// Shouldn't be called on every frame. Only updates the index specified.

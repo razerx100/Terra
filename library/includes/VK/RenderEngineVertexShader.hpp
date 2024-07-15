@@ -39,19 +39,11 @@ private:
 private:
 	// These might not work. As a binding slot with variable descriptor count must be at the end.
 	// But lets see.
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 1u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 2u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 3u;
-
-private:
-	[[nodiscard]]
-	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
-	{ return s_combinedTextureBindingSlot; }
-	[[nodiscard]]
-	std::uint32_t GetSampledTextureBindingSlot() const noexcept override
-	{ return s_sampledTextureBindingSlot; }
-	[[nodiscard]]
-	std::uint32_t GetSamplerBindingSlot() const noexcept override { return s_samplerBindingSlot; }
+	static constexpr std::uint32_t s_cameraBindingSlot          = 1u;
+	static constexpr std::uint32_t s_materialBindingSlot        = 2u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 3u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 4u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 5u;
 
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
@@ -104,24 +96,20 @@ private:
 private:
 	// These might not work. As a binding slot with variable descriptor count must be at the end.
 	// But lets see.
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 2u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 3u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 4u;
+	// Graphics
+	static constexpr std::uint32_t s_cameraBindingSlot          = 2u;
+	static constexpr std::uint32_t s_materialBindingSlot        = 3u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 4u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 5u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 6u;
+
+	// Compute
+	static constexpr std::uint32_t s_cameraComputeBindingSlot   = 9u;
 
 private:
 	VkCommandQueue                  m_computeQueue;
 	std::vector<VKSemaphore>        m_computeWait;
 	std::vector<VkDescriptorBuffer> m_computeDescriptorBuffers;
-
-private:
-	[[nodiscard]]
-	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
-	{ return s_combinedTextureBindingSlot; }
-	[[nodiscard]]
-	std::uint32_t GetSampledTextureBindingSlot() const noexcept override
-	{ return s_sampledTextureBindingSlot; }
-	[[nodiscard]]
-	std::uint32_t GetSamplerBindingSlot() const noexcept override { return s_samplerBindingSlot; }
 
 public:
 	RenderEngineVSIndirect(const RenderEngineVSIndirect&) = delete;

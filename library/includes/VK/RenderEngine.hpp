@@ -130,11 +130,17 @@ public:
 
 protected:
 	[[nodiscard]]
+	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
+	[[nodiscard]]
+	virtual std::uint32_t GetMaterialBindingSlot() const noexcept = 0;
+	[[nodiscard]]
 	virtual std::uint32_t GetCombinedTextureBindingSlot() const noexcept = 0;
 	[[nodiscard]]
 	virtual std::uint32_t GetSampledTextureBindingSlot() const noexcept = 0;
 	[[nodiscard]]
 	virtual std::uint32_t GetSamplerBindingSlot() const noexcept = 0;
+
+	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlagBits cameraShaderStage) noexcept;
 
 	virtual void Update(VkDeviceSize frameIndex) const noexcept;
 
@@ -238,6 +244,32 @@ public:
 	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
 	{
 		m_modelManager.RemoveMeshBundle(bundleIndex);
+	}
+
+	[[nodiscard]]
+	std::uint32_t GetCameraBindingSlot() const noexcept override
+	{
+		return Derived::s_cameraBindingSlot;
+	}
+	[[nodiscard]]
+	std::uint32_t GetMaterialBindingSlot() const noexcept override
+	{
+		return Derived::s_materialBindingSlot;
+	}
+	[[nodiscard]]
+	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
+	{
+		return Derived::s_combinedTextureBindingSlot;
+	}
+	[[nodiscard]]
+	std::uint32_t GetSampledTextureBindingSlot() const noexcept override
+	{
+		return Derived::s_sampledTextureBindingSlot;
+	}
+	[[nodiscard]]
+	std::uint32_t GetSamplerBindingSlot() const noexcept override
+	{
+		return Derived::s_samplerBindingSlot;
 	}
 
 protected:

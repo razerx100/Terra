@@ -65,18 +65,28 @@ RenderEngine::RenderEngine(
 
 size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
 {
+	// Should wait for the current frames to be rendered before modifying the data.
+	m_graphicsQueue.WaitForQueueToFinish();
+
 	const size_t index = m_materialBuffers.Add(std::move(material));
 
 	m_materialBuffers.Update(index);
+
+	m_materialBuffers.SetDescriptorBuffer(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
 
 	return index;
 }
 
 std::vector<size_t> RenderEngine::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
 {
+	// Should wait for the current frames to be rendered before modifying the data.
+	m_graphicsQueue.WaitForQueueToFinish();
+
 	std::vector<size_t> indices = m_materialBuffers.AddMultiple(std::move(materials));
 
 	m_materialBuffers.Update(indices);
+
+	m_materialBuffers.SetDescriptorBuffer(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
 
 	return indices;
 }
@@ -254,6 +264,15 @@ void RenderEngine::BeginRenderPass(
 void RenderEngine::Update(VkDeviceSize frameIndex) const noexcept
 {
 	m_cameraManager.Update(frameIndex);
+}
+
+void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
+	VkShaderStageFlagBits cameraShaderStage
+) noexcept {
+	m_cameraManager.SetDescriptorBufferLayoutGraphics(
+		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), cameraShaderStage
+	);
+	m_materialBuffers.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
 }
 
 std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)

@@ -7,12 +7,17 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 {
 	// The layout shouldn't change throughout the runtime.
 	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers);
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
 	if (!std::empty(m_graphicsDescriptorBuffers))
 		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+
+	// This descriptor shouldn't change, so it should be fine to set it here.
+	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
+	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
 }
 
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
@@ -148,12 +153,20 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	// Graphics Descriptors.
 	// The layout shouldn't change throughout the runtime.
 	m_modelManager.SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers);
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
 	if (!std::empty(m_graphicsDescriptorBuffers))
 		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+
+	m_cameraManager.CreateBuffer(
+		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices(),
+		static_cast<std::uint32_t>(frameCount)
+	);
+	// This descriptor shouldn't change, so it should be fine to set it here.
+	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
 
 	// Compute stuffs.
 	VkDevice device = deviceManager.GetLogicalDevice();
@@ -171,12 +184,18 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 
 	// Compute Descriptors.
 	m_modelManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers);
+	m_cameraManager.SetDescriptorBufferLayoutCompute(
+		m_computeDescriptorBuffers, s_cameraComputeBindingSlot
+	);
 
 	for (auto& descriptorBuffer : m_computeDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
 	if (!std::empty(m_computeDescriptorBuffers))
 		m_modelManager.CreatePipelineCS(m_computeDescriptorBuffers.front());
+
+	// This descriptor shouldn't change, so it should be fine to set it here.
+	m_cameraManager.SetDescriptorBufferCompute(m_computeDescriptorBuffers, s_cameraComputeBindingSlot);
 }
 
 ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(

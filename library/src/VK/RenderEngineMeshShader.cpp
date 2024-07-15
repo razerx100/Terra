@@ -14,12 +14,16 @@ RenderEngineMS::RenderEngineMS(
 {
 	// The layout shouldn't change throughout the runtime.
 	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers);
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_MESH_BIT_EXT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
 	if (!std::empty(m_graphicsDescriptorBuffers))
 		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+
+	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
+	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
 }
 
 std::uint32_t RenderEngineMS::AddModel(

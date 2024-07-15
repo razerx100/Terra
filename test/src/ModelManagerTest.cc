@@ -93,9 +93,14 @@ public:
 
 class ModelDummyMS : public ModelMS
 {
-	MeshDetailsMS m_details = { { Meshlet{}, Meshlet{} } };
+	MeshDetailsMS m_details = {};
 
 public:
+	ModelDummyMS() : m_details{}
+	{
+		m_details.meshlets = { Meshlet{}, Meshlet{} };
+	}
+
 	[[nodiscard]]
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
 	[[nodiscard]]

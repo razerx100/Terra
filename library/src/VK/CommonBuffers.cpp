@@ -4,10 +4,20 @@
 #include <CommonBuffers.hpp>
 
 // Material Buffers
+void MaterialBuffers::SetDescriptorBufferLayout(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot
+) const noexcept {
+	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
+		descriptorBuffer.AddBinding(
+			bindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+}
+
 void MaterialBuffers::SetDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot
 ) const {
-	descriptorBuffer.SetStorageBufferDescriptor(m_buffers, bindingSlot, 0u);
+	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
+		descriptorBuffer.SetStorageBufferDescriptor(m_buffers, bindingSlot, 0u);
 }
 
 void MaterialBuffers::CreateBuffer(size_t materialCount)

@@ -42,19 +42,11 @@ private:
 private:
 	// These might not work. As a binding slot with variable descriptor count must be at the end.
 	// But lets see.
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 5u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 6u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 7u;
-
-private:
-	[[nodiscard]]
-	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
-	{ return s_combinedTextureBindingSlot; }
-	[[nodiscard]]
-	std::uint32_t GetSampledTextureBindingSlot() const noexcept override
-	{ return s_sampledTextureBindingSlot; }
-	[[nodiscard]]
-	std::uint32_t GetSamplerBindingSlot() const noexcept override { return s_samplerBindingSlot; }
+	static constexpr std::uint32_t s_cameraBindingSlot          = 5u;
+	static constexpr std::uint32_t s_materialBindingSlot        = 6u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 7u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 8u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 9u;
 
 public:
 	RenderEngineMS(const RenderEngineMS&) = delete;
