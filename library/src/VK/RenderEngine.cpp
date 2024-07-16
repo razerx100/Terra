@@ -231,23 +231,6 @@ void RenderEngine::RemoveTexture(size_t index)
 	m_textureStorage.RemoveTexture(index);
 }
 
-void RenderEngine::Resize(
-	std::uint32_t width, std::uint32_t height,
-	bool hasSwapchainFormatChanged, VkFormat swapchainFormat
-) {
-	m_depthBuffer.Create(width, height);
-
-	if (hasSwapchainFormatChanged)
-		m_renderPass.Create(
-			RenderPassBuilder{}
-			.AddColourAttachment(swapchainFormat)
-			.AddDepthAttachment(m_depthBuffer.GetFormat())
-			.Build()
-		);
-
-	m_viewportAndScissors.Resize(width, height);
-}
-
 void RenderEngine::BeginRenderPass(
 	const VKCommandBuffer& graphicsCmdBuffer, const VKFramebuffer& frameBuffer,
 	VkExtent2D renderArea

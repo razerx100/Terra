@@ -95,7 +95,7 @@ public:
 	virtual void Resize(
 		std::uint32_t width, std::uint32_t height,
 		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
-	);
+	) = 0;
 
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
@@ -244,6 +244,31 @@ public:
 	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
 	{
 		m_modelManager.RemoveMeshBundle(bundleIndex);
+	}
+
+	void Resize(
+		std::uint32_t width, std::uint32_t height,
+		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
+	) override {
+		m_depthBuffer.Create(width, height);
+
+		if (hasSwapchainFormatChanged)
+		{
+			m_renderPass.Create(
+				RenderPassBuilder{}
+				.AddColourAttachment(swapchainFormat)
+				.AddDepthAttachment(m_depthBuffer.GetFormat())
+				.Build()
+			);
+
+			// The model manager uses the render pass to create PSOs. So, if the renderPass is
+			// changed, I will have to recreate all the PSOs as well. But the swapchain format
+			// doesn't usually change, so it is not a major issue. But I should do it at some
+			// point.
+			m_modelManager.SetRenderPass(&m_renderPass);
+		}
+
+		m_viewportAndScissors.Resize(width, height);
 	}
 
 	[[nodiscard]]
