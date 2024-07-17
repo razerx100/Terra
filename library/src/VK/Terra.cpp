@@ -37,7 +37,7 @@ Terra::Terra(
 void Terra::CreateInstance()
 {
 #if _DEBUG
-	m_instanceManager.DebugLayers().AddDebugCallback(DebugCallbackType::standardError);
+	m_instanceManager.DebugLayers().AddDebugCallback(DebugCallbackType::FileOut);
 #endif
 
 	{
