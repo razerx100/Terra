@@ -35,7 +35,11 @@ public:
 	}
 	void ReserveNewElements(size_t newCount) noexcept
 	{
-		m_elements.resize(newCount);
+		// Can't use resize for the elements container, as it creates empty items. For example,
+		// if we add a single model shared_ptr and the allocationCount is 4. 4 empty shared_ptrs
+		// would be added and only a single one will be populated. But we will be able to access
+		// the three empty ones as well, and the program can crash trying to access those.
+		m_elements.reserve(newCount);
 		m_availableIndices.resize(newCount, true);
 	}
 
@@ -51,14 +55,26 @@ public:
 			elementIndex = oElementIndex.value();
 		else
 		{
+			// This part should only be executed when both the availableIndices and elements
+			// containers have the same size. So, getting the size should be fine.
 			elementIndex                 = GetCount();
 
-			const size_t newElementCount = elementIndex + extraAllocCount;
+			// ElementIndex is the previous size, we have the new item, and then the extraAllocations.
+			const size_t newElementCount = elementIndex + 1u + extraAllocCount;
 
 			ReserveNewElements(newElementCount);
 		}
 
-		UpdateElement(elementIndex, std::forward<U>(element));
+		// The boolean available indices container represents the possible allocation count. But the
+		// actual element container's size could be less than the index. So, add a new item if the
+		// size is less. But available indices' size will always be bigger.
+		if (std::size(m_elements) <= elementIndex)
+		{
+			m_elements.emplace_back(std::move(element));
+			m_availableIndices.at(elementIndex) = false;
+		}
+		else
+			UpdateElement(elementIndex, std::forward<U>(element));
 
 		return elementIndex;
 	}
@@ -66,26 +82,8 @@ public:
 	template<typename U>
 	size_t Add(U&& element) noexcept
 	{
-		size_t elementIndex = std::numeric_limits<size_t>::max();
-
-		auto oElementIndex = GetFirstAvailableIndex();
-
-		if (oElementIndex)
-		{
-			elementIndex = oElementIndex.value();
-
-			UpdateElement(elementIndex, std::forward<U>(element));
-		}
-		else
-		{
-			elementIndex = GetCount();
-
-			AddNewElement(std::forward<U>(element));
-		}
-
-		return elementIndex;
+		return Add(std::move(element), 0u);
 	}
-
 
 	void RemoveElement(size_t index) noexcept
 	{
@@ -126,6 +124,11 @@ public:
 	T* GetPtr() noexcept { return std::data(m_elements); }
 	[[nodiscard]]
 	size_t GetCount() const noexcept { return std::size(m_elements); }
+	[[nodiscard]]
+	// I cannot be sure that the initial capacity of the elements vector will be 0, it should though.
+	// Lets just use the size of the availableIndices just in case. The capacity of elements and
+	// size of availableIndices should be the same.
+	size_t GetCapacityCount() const noexcept { return std::size(m_availableIndices); }
 
 private:
 	std::vector<T>    m_elements;
