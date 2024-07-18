@@ -122,6 +122,8 @@ void RenderEngineMS::Render(
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
 		m_modelManager.Draw(graphicsCmdBufferScope);
+
+		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}
 
 	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);

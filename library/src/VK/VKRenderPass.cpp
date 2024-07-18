@@ -119,3 +119,8 @@ void VKRenderPass::BeginPass(
 
 	vkCmdBeginRenderPass(graphicsCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
+
+void VKRenderPass::EndPass(VkCommandBuffer graphicsCmdBuffer)
+{
+	vkCmdEndRenderPass(graphicsCmdBuffer);
+}

@@ -115,6 +115,9 @@ public:
 		std::span<VkClearValue> clearValues
 	);
 
+	// This doesn't really need to be here, but for completion's sake, there should be an end.
+	static void EndPass(VkCommandBuffer graphicsCmdBuffer);
+
 	[[nodiscard]]
 	VkRenderPass Get() const noexcept { return m_renderPass; }
 
