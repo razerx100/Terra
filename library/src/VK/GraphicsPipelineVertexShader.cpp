@@ -35,11 +35,11 @@ void GraphicsPipelineVertexShader::Create(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader
 ) {
-	m_graphicsPipeline = _createGraphicsPipeline(
-		device, graphicsLayout, renderPass, shaderPath, fragmentShader
-	);
+	ManageFragmentShaderExtension(fragmentShader);
 
-	m_fragmentShader = fragmentShader;
+	m_graphicsPipeline = _createGraphicsPipeline(
+		device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
+	);
 }
 
 // Indirect Draw

@@ -5,18 +5,18 @@ void GraphicsPipelineMeshShader::Create(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const std::wstring& fragmentShader
 ) {
+	ManageFragmentShaderExtension(fragmentShader);
+
 	if (m_useTaskShader)
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
-			device, graphicsLayout, renderPass, shaderPath, fragmentShader,
+			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
 			L"MeshShader.spv", L"TaskShader.spv"
 		);
 	else
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
-			device, graphicsLayout, renderPass, shaderPath, fragmentShader,
+			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
 			L"MeshShader.spv"
 		);
-
-	m_fragmentShader = fragmentShader;
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipelineMS(

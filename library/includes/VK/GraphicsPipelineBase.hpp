@@ -31,6 +31,9 @@ public:
 	std::wstring GetFragmentShader() const noexcept { return m_fragmentShader; }
 
 protected:
+	void ManageFragmentShaderExtension(const std::wstring& fragmentShader) noexcept;
+
+protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
 	std::wstring                      m_fragmentShader;
 
