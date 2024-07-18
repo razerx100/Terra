@@ -24,7 +24,9 @@ void VkSwapchain::Create(
 	);
 
 	{
-		const std::uint32_t imageCount = std::max(
+		// If the max image count is less than the amount of images we want, select the maxImageCount.
+		// Otherwise, choose the number of images we want.
+		const std::uint32_t imageCount = std::min(
 			surfaceCapabilities.maxImageCount, static_cast<std::uint32_t>(std::size(m_swapchainImages))
 		);
 
