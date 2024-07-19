@@ -192,6 +192,7 @@ public:
 			.maxDepthBounds        = 1.f
 		}, m_pipelineCreateInfo{
 			.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			.flags               = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
 			.pViewportState      = &m_viewportInfo,
 			.pRasterizationState = &m_rasterizationInfo,
 			.pMultisampleState   = &m_multisampleInfo,
@@ -329,10 +330,11 @@ class ComputePipelineBuilder : private PipelineBuilderBase
 public:
 	ComputePipelineBuilder(VkPipelineLayout computeLayout)
 		: m_pipelineCreateInfo{
-			.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-			.layout = computeLayout,
+			.sType              = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+			.flags              = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
+			.layout             = computeLayout,
 			.basePipelineHandle = VK_NULL_HANDLE,
-			.basePipelineIndex = -1
+			.basePipelineIndex  = -1
 		}
 	{}
 
