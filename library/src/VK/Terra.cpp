@@ -151,12 +151,10 @@ void Terra::Render()
 	{
 		VkDevice device = m_deviceManager.GetLogicalDevice();
 
-		const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
+		const VKSemaphore& signalSemaphore = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
 
-		// This is kinda dumb. You need to know the index of the next semaphore to query the next image
-		// index. Which might be different. So, can't use that index anywhere else. And have to use
-		// the index which is queried from the swapchain.
-		m_swapchain->QueryNextImageIndex(device, waitSemaphore);
+		// This semaphore will be signaled when the image becomes available.
+		m_swapchain->QueryNextImageIndex(device, signalSemaphore);
 	}
 
 	const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();

@@ -94,7 +94,8 @@ public:
 	void CreateFramebuffers(
 		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
 	);
-	void QueryNextImageIndex(VkDevice device, const VKSemaphore& waitSemaphore);
+	// The semaphore will be signaled when the image becomes available.
+	void QueryNextImageIndex(VkDevice device, const VKSemaphore& signalSemaphore);
 
 	[[nodiscard]]
 	VkExtent2D GetCurrentSwapchainExtent() const noexcept { return m_swapchain.GetExtent(); }

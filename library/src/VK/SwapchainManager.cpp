@@ -178,10 +178,10 @@ void SwapchainManager::CreateFramebuffers(
 	);
 }
 
-void SwapchainManager::QueryNextImageIndex(VkDevice device, const VKSemaphore& waitSemaphore)
+void SwapchainManager::QueryNextImageIndex(VkDevice device, const VKSemaphore& signalSemaphore)
 {
 	vkAcquireNextImageKHR(
-		device, m_swapchain.Get(), UINT64_MAX, waitSemaphore.Get(), VK_NULL_HANDLE,
+		device, m_swapchain.Get(), UINT64_MAX, signalSemaphore.Get(), VK_NULL_HANDLE,
 		&m_nextImageIndex
 	);
 }
