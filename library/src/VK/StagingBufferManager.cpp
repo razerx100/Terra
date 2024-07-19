@@ -269,7 +269,16 @@ void StagingBufferManager::AcquireOwnership(
 	{
 		const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(bufferData.dstQueueType);
 
-		if (ownerQueueFamilyIndex != dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
+		// Only remove the data if the dstFamilyIndex and the requested owner family index is the same.
+		// And if the dstFamilyIndex isn't the transfer queue. Since, the transfer queue will do the
+		// copy and transfer the ownership to either the Compute or the Graphics queue.
+		// The bufferData container will have buffer which both graphics and compute might want to
+		// own. So, we would only want to give the ownership of the data where the dstFamilyIndex
+		// match the ComputeQueue to the ComputeQueue and the same to the Graphics queue.
+		// Now the Family index of the Compute and Graphics queue might be the same. In that case
+		// transferring the ownership to either of them will work.
+		// Forgetting to call Acquire after Release will cause validation errors.
+		if (ownerQueueFamilyIndex == dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
 		{
 			ownerQueueCmdBuffer.AcquireOwnership(
 				*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
