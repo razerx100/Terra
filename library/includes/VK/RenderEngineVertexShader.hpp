@@ -17,11 +17,11 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
 	[[nodiscard]]
@@ -74,11 +74,11 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
 	[[nodiscard]]

@@ -11,7 +11,7 @@ public:
 
 	void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) final;
 
 	using GraphicsPipelineBase::Create;
@@ -20,8 +20,8 @@ private:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineMS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader,
-		const std::wstring& meshShader, const std::wstring& taskShader = {}
+		const std::wstring& shaderPath, const ShaderName& fragmentShader,
+		const ShaderName& meshShader, const ShaderName& taskShader = {}
 	);
 
 private:

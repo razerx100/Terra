@@ -20,6 +20,7 @@
 #include <MeshManagerMeshShader.hpp>
 #include <CommonBuffers.hpp>
 #include <Model.hpp>
+#include <Shader.hpp>
 
 class ModelBundle
 {
@@ -507,7 +508,7 @@ public:
 	}
 
 	[[nodiscard]]
-	std::uint32_t AddModel(std::shared_ptr<ModelType>&& model, const std::wstring& fragmentShader)
+	std::uint32_t AddModel(std::shared_ptr<ModelType>&& model, const ShaderName& fragmentShader)
 	{
 		if (m_copyRecorded)
 		{
@@ -543,7 +544,7 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const ShaderName& fragmentShader
 	) {
 		if (m_copyRecorded)
 		{
@@ -605,12 +606,12 @@ public:
 		}
 	}
 
-	void AddPSO(const std::wstring& fragmentShader)
+	void AddPSO(const ShaderName& fragmentShader)
 	{
 		GetPSOIndex(fragmentShader);
 	}
 
-	void ChangePSO(std::uint32_t bundleID, const std::wstring& fragmentShader)
+	void ChangePSO(std::uint32_t bundleID, const ShaderName& fragmentShader)
 	{
 		auto modelBundle = GetModelBundle(bundleID);
 
@@ -671,7 +672,7 @@ public:
 
 protected:
 	[[nodiscard]]
-	std::optional<std::uint32_t> TryToGetPSOIndex(const std::wstring& fragmentShader) const noexcept
+	std::optional<std::uint32_t> TryToGetPSOIndex(const ShaderName& fragmentShader) const noexcept
 	{
 		auto result = std::ranges::find_if(m_graphicsPipelines,
 			[&fragmentShader](const Pipeline& pipeline)
@@ -686,7 +687,7 @@ protected:
 	}
 
 	// Adds a new PSO, if one can't be found.
-	std::uint32_t GetPSOIndex(const std::wstring& fragmentShader)
+	std::uint32_t GetPSOIndex(const ShaderName& fragmentShader)
 	{
 		std::uint32_t psoIndex = 0u;
 

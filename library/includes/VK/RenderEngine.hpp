@@ -13,6 +13,7 @@
 #include <ViewportAndScissorManager.hpp>
 #include <Model.hpp>
 #include <VkFramebuffer.hpp>
+#include <Shader.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
 // first. And these extensions must be added before the device is created. Each implemention may
@@ -80,9 +81,9 @@ public:
 	const VKSemaphore& GetGraphicsWait(size_t index) const noexcept { return m_graphicsWait.at(index); }
 
 	virtual void SetShaderPath(const std::wstring& shaderPath) noexcept = 0;
-	virtual void AddFragmentShader(const std::wstring& fragmentShader) = 0;
+	virtual void AddFragmentShader(const ShaderName& fragmentShader) = 0;
 	virtual void ChangeFragmentShader(
-		std::uint32_t modelBundleID, const std::wstring& fragmentShader
+		std::uint32_t modelBundleID, const ShaderName& fragmentShader
 	) = 0;
 
 	void BeginRenderPass(
@@ -99,19 +100,19 @@ public:
 
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader
+		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 	);
 
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
@@ -226,12 +227,12 @@ public:
 	{
 		m_modelManager.SetShaderPath(shaderPath);
 	}
-	void AddFragmentShader(const std::wstring& fragmentShader) override
+	void AddFragmentShader(const ShaderName& fragmentShader) override
 	{
 		m_modelManager.AddPSO(fragmentShader);
 	}
 	void ChangeFragmentShader(
-		std::uint32_t modelBundleID, const std::wstring& fragmentShader
+		std::uint32_t modelBundleID, const ShaderName& fragmentShader
 	) override {
 		m_modelManager.ChangePSO(modelBundleID, fragmentShader);
 	}

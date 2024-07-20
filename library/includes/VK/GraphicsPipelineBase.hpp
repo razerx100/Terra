@@ -7,6 +7,7 @@
 #include <VkCommandQueue.hpp>
 #include <VKRenderPass.hpp>
 #include <PipelineLayout.hpp>
+#include <Shader.hpp>
 
 class GraphicsPipelineBase
 {
@@ -15,12 +16,12 @@ public:
 
 	virtual void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) = 0;
 
 	void Create(
 		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) {
 		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath, fragmentShader);
 	}
@@ -28,14 +29,13 @@ public:
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
 
 	[[nodiscard]]
-	std::wstring GetFragmentShader() const noexcept { return m_fragmentShader; }
-
-protected:
-	void ManageFragmentShaderExtension(const std::wstring& fragmentShader) noexcept;
+	ShaderName GetFragmentShader() const noexcept { return m_fragmentShader; }
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
-	std::wstring                      m_fragmentShader;
+	ShaderName                        m_fragmentShader;
+
+	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
 
 public:
 	GraphicsPipelineBase(const GraphicsPipelineBase&) = delete;

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <RendererTypes.hpp>
+#include <Shader.hpp>
 
 #include <Model.hpp>
 #include <Material.hpp>
@@ -30,8 +31,8 @@ public:
 
 	virtual void SetBackgroundColour(const std::array<float, 4>& colour) noexcept = 0;
 	virtual void SetShaderPath(const wchar_t* path) noexcept = 0;
-	virtual void AddPixelShader(const std::wstring& pixelShader) = 0;
-	virtual void ChangePixelShader(std::uint32_t modelBundleID, const std::wstring& pixelShader) = 0;
+	virtual void AddPixelShader(const ShaderName& pixelShader) = 0;
+	virtual void ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& pixelShader) = 0;
 
 	[[nodiscard]]
 	virtual size_t AddTexture(
@@ -43,17 +44,17 @@ public:
 
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const std::wstring& pixelShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& pixelShader
 	) = 0;
 	[[nodiscard]]
-	virtual std::uint32_t AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& pixelShader) = 0;
+	virtual std::uint32_t AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& pixelShader) = 0;
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& pixelShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& pixelShader
 	) = 0;
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& pixelShader
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& pixelShader
 	) = 0;
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 

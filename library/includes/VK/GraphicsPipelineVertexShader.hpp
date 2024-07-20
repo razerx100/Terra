@@ -9,7 +9,7 @@ public:
 
 	void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) final;
 
 	using GraphicsPipelineBase::Create;
@@ -18,13 +18,13 @@ protected:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader,
-		const std::wstring& vertexShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader,
+		const ShaderName& vertexShader
 	);
 	[[nodiscard]]
 	virtual std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) const = 0;
 
 public:
@@ -51,7 +51,7 @@ private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) const final;
 
 public:
@@ -78,7 +78,7 @@ private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const std::wstring& fragmentShader
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) const final;
 
 public:

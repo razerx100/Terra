@@ -24,8 +24,8 @@ public:
 
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept override;
 	void SetShaderPath(const wchar_t* path) noexcept override;
-	void AddPixelShader(const std::wstring& fragmentShader) override;
-	void ChangePixelShader(std::uint32_t modelBundleID, const std::wstring& fragmentShader) override;
+	void AddPixelShader(const ShaderName& fragmentShader) override;
+	void ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader) override;
 
 	[[nodiscard]]
 	size_t AddTexture(
@@ -37,19 +37,19 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModel(
-		std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader
+		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 	void RemoveModelBundle(std::uint32_t bundleID) noexcept override;
 

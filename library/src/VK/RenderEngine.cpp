@@ -270,28 +270,28 @@ std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshB
 
 std::uint32_t RenderEngine::AddModel(
 	[[maybe_unused]] std::shared_ptr<ModelVS>&& model,
-	[[maybe_unused]] const std::wstring& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
 	[[maybe_unused]] std::vector<std::shared_ptr<ModelVS>>&& modelBundle,
-	[[maybe_unused]] const std::wstring& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModel(
 	[[maybe_unused]] std::shared_ptr<ModelMS>&& model,
-	[[maybe_unused]] const std::wstring& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
 	[[maybe_unused]] std::vector<std::shared_ptr<ModelMS>>&& modelBundle,
-	[[maybe_unused]] const std::wstring& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }

@@ -29,7 +29,7 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModel(
-	std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
@@ -44,7 +44,7 @@ std::uint32_t RenderEngineVSIndividual::AddModel(
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
@@ -223,7 +223,7 @@ ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
 }
 
 std::uint32_t RenderEngineVSIndirect::AddModel(
-	std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader
+	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
@@ -239,7 +239,7 @@ std::uint32_t RenderEngineVSIndirect::AddModel(
 }
 
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();

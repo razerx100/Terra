@@ -27,7 +27,7 @@ RenderEngineMS::RenderEngineMS(
 }
 
 std::uint32_t RenderEngineMS::AddModel(
-	std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader
+	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
@@ -42,7 +42,7 @@ std::uint32_t RenderEngineMS::AddModel(
 }
 
 std::uint32_t RenderEngineMS::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();

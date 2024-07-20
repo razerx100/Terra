@@ -49,12 +49,12 @@ void RendererVK::SetShaderPath(const wchar_t* path) noexcept
 	m_terra.GetRenderEngine().SetShaderPath(path);
 }
 
-void RendererVK::AddPixelShader(const std::wstring& fragmentShader)
+void RendererVK::AddPixelShader(const ShaderName& fragmentShader)
 {
 	m_terra.GetRenderEngine().AddFragmentShader(fragmentShader);
 }
 
-void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const std::wstring& fragmentShader)
+void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader)
 {
 	m_terra.GetRenderEngine().ChangeFragmentShader(modelBundleID, fragmentShader);
 }
@@ -80,24 +80,24 @@ void RendererVK::RemoveTexture(size_t index)
 	m_terra.GetRenderEngine().RemoveTexture(index);
 }
 
-std::uint32_t RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const std::wstring& fragmentShader)
+std::uint32_t RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader)
 {
 	return m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader);
 }
 
-std::uint32_t RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const std::wstring& fragmentShader)
+std::uint32_t RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader)
 {
 	return m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const std::wstring& fragmentShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const std::wstring& fragmentShader
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
 }

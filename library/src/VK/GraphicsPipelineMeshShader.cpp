@@ -3,32 +3,36 @@
 
 void GraphicsPipelineMeshShader::Create(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
+	const std::wstring& shaderPath, const ShaderName& fragmentShader
 ) {
-	ManageFragmentShaderExtension(fragmentShader);
+	m_fragmentShader = fragmentShader;
 
 	if (m_useTaskShader)
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
 			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
-			L"MeshShader.spv", L"TaskShader.spv"
+			L"MeshShader", L"TaskShader"
 		);
 	else
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
 			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
-			L"MeshShader.spv"
+			L"MeshShader"
 		);
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipelineMS(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader,
-	const std::wstring& meshShader, const std::wstring& taskShader /* = {} */
+	const std::wstring& shaderPath, const ShaderName& fragmentShader,
+	const ShaderName& meshShader, const ShaderName& taskShader /* = {} */
 ) {
 	auto ms              = std::make_unique<VkShader>(device);
-	const bool msSuccess = ms->Create(shaderPath + meshShader);
+	const bool msSuccess = ms->Create(
+		shaderPath + meshShader.GetNameWithExtension(s_shaderBytecodeType)
+	);
 
 	auto fs              = std::make_unique<VkShader>(device);
-	const bool fsSuccess = fs->Create(shaderPath + fragmentShader);
+	const bool fsSuccess = fs->Create(
+		shaderPath + fragmentShader.GetNameWithExtension(s_shaderBytecodeType)
+	);
 
 	GraphicsPipelineBuilder builder{ graphicsLayout, renderPass };
 
@@ -37,7 +41,9 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	if (!std::empty(taskShader))
 	{
 		auto ts   = std::make_unique<VkShader>(device);
-		tsSuccess = ts->Create(shaderPath + taskShader);
+		tsSuccess = ts->Create(
+			shaderPath + taskShader.GetNameWithExtension(s_shaderBytecodeType)
+		);
 
 		builder.SetTaskStage(ts->Get());
 	}

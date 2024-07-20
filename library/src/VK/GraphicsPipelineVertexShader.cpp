@@ -4,14 +4,18 @@
 // Vertex Shader
 std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPipelineVS(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader,
-	const std::wstring& vertexShader
+	const std::wstring& shaderPath, const ShaderName& fragmentShader,
+	const ShaderName& vertexShader
 ) {
 	auto vs              = std::make_unique<VkShader>(device);
-	const bool vsSuccess = vs->Create(shaderPath + vertexShader);
+	const bool vsSuccess = vs->Create(
+		shaderPath + vertexShader.GetNameWithExtension(s_shaderBytecodeType)
+	);
 
 	auto fs              = std::make_unique<VkShader>(device);
-	const bool fsSuccess = fs->Create(shaderPath + fragmentShader);
+	const bool fsSuccess = fs->Create(
+		shaderPath + fragmentShader.GetNameWithExtension(s_shaderBytecodeType)
+	);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
 
@@ -33,9 +37,9 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVertexShader::CreateGraphicsPi
 
 void GraphicsPipelineVertexShader::Create(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
+	const std::wstring& shaderPath, const ShaderName& fragmentShader
 ) {
-	ManageFragmentShaderExtension(fragmentShader);
+	m_fragmentShader = fragmentShader;
 
 	m_graphicsPipeline = _createGraphicsPipeline(
 		device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
@@ -45,21 +49,21 @@ void GraphicsPipelineVertexShader::Create(
 // Indirect Draw
 std::unique_ptr<VkPipelineObject> GraphicsPipelineIndirectDraw::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
+	const std::wstring& shaderPath, const ShaderName& fragmentShader
 ) const {
 	return CreateGraphicsPipelineVS(
 		device, graphicsLayout, renderPass, shaderPath, fragmentShader,
-		L"VertexShaderIndirect.spv"
+		L"VertexShaderIndirect"
 	);
 }
 
 // Individual Draw
 std::unique_ptr<VkPipelineObject> GraphicsPipelineIndividualDraw::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const std::wstring& fragmentShader
+	const std::wstring& shaderPath, const ShaderName& fragmentShader
 ) const {
 	return CreateGraphicsPipelineVS(
 		device, graphicsLayout, renderPass, shaderPath, fragmentShader,
-		L"VertexShaderIndividual.spv"
+		L"VertexShaderIndividual"
 	);
 }
