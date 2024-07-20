@@ -249,7 +249,9 @@ void StagingBufferManager::ReleaseOwnership(
 				if (dstFamilyIndex != transferFamilyIndex)
 				{
 					if constexpr (std::is_same_v<BufferData, T>)
-						// If it is a buffer, then also pass the bufferSize.
+						// If it is a buffer, then also pass the bufferSize. Because it could be a
+						// SharedBuffer, which might have the allocation size bigger than the
+						// actual buffer size.
 						transferCmdBuffer.ReleaseOwnership(
 							*bufferDatum.dst, bufferDatum.bufferSize, transferFamilyIndex,
 							dstFamilyIndex
@@ -290,7 +292,9 @@ void StagingBufferManager::AcquireOwnership(
 		if (ownerQueueFamilyIndex == dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
 		{
 			if constexpr (std::is_same_v<BufferData, T>)
-				// If it is a buffer, then also pass the bufferSize.
+				// If it is a buffer, then also pass the bufferSize. Because it could be a
+				// SharedBuffer, which might have the allocation size bigger than the
+				// actual buffer size.
 				ownerQueueCmdBuffer.AcquireOwnership(
 					*bufferData.dst, bufferData.bufferSize, transferFamilyIndex, dstFamilyIndex,
 					bufferData.dstAccess, bufferData.dstStage
