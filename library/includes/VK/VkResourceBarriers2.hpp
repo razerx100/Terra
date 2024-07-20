@@ -56,9 +56,10 @@ public:
 		return *this;
 	}
 
-	BufferBarrierBuilder& Buffer(const ::Buffer& buffer, VkDeviceSize offset = 0u) noexcept
-	{
-		return Buffer(buffer.Get(), buffer.Size(), offset);
+	BufferBarrierBuilder& Buffer(
+		const ::Buffer& buffer, VkDeviceSize bufferSize, VkDeviceSize offset = 0u
+	) noexcept {
+		return Buffer(buffer.Get(), bufferSize, offset);
 	}
 
 	BufferBarrierBuilder& QueueIndices(std::uint32_t srcIndex, std::uint32_t dstIndex) noexcept
