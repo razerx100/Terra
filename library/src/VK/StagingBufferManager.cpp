@@ -247,9 +247,18 @@ void StagingBufferManager::ReleaseOwnership(
 				);
 
 				if (dstFamilyIndex != transferFamilyIndex)
-					transferCmdBuffer.ReleaseOwnership(
-						*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
-					);
+				{
+					if constexpr (std::is_same_v<BufferData, T>)
+						// If it is a buffer, then also pass the bufferSize.
+						transferCmdBuffer.ReleaseOwnership(
+							*bufferDatum.dst, bufferDatum.bufferSize, transferFamilyIndex,
+							dstFamilyIndex
+						);
+					else
+						transferCmdBuffer.ReleaseOwnership(
+							*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
+						);
+				}
 			}
 	};
 
@@ -280,10 +289,17 @@ void StagingBufferManager::AcquireOwnership(
 		// Forgetting to call Acquire after Release will cause validation errors.
 		if (ownerQueueFamilyIndex == dstFamilyIndex && dstFamilyIndex != transferFamilyIndex)
 		{
-			ownerQueueCmdBuffer.AcquireOwnership(
-				*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
-				bufferData.dstAccess, bufferData.dstStage
-			);
+			if constexpr (std::is_same_v<BufferData, T>)
+				// If it is a buffer, then also pass the bufferSize.
+				ownerQueueCmdBuffer.AcquireOwnership(
+					*bufferData.dst, bufferData.bufferSize, transferFamilyIndex, dstFamilyIndex,
+					bufferData.dstAccess, bufferData.dstStage
+				);
+			else
+				ownerQueueCmdBuffer.AcquireOwnership(
+					*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
+					bufferData.dstAccess, bufferData.dstStage
+				);
 
 			return true;
 		}
