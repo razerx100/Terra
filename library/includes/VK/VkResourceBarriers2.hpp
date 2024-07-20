@@ -164,7 +164,8 @@ public:
 		return *this;
 	}
 
-	ImageBarrierBuilder& Image(const VkTextureView& textureView) noexcept {
+	ImageBarrierBuilder& Image(const VkTextureView& textureView) noexcept
+	{
 		return Image(
 			textureView.GetTexture().Get(), textureView.GetAspect(), textureView.GetMipBaseLevel(),
 			textureView.GetMipLevelCount()
