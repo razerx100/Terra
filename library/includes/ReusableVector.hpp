@@ -65,16 +65,18 @@ public:
 			ReserveNewElements(newElementCount);
 		}
 
-		// The boolean available indices container represents the possible allocation count. But the
-		// actual element container's size could be less than the index. So, add a new item if the
-		// size is less. But available indices' size will always be bigger.
-		if (std::size(m_elements) <= elementIndex)
-		{
-			m_elements.emplace_back(std::move(element));
-			m_availableIndices.at(elementIndex) = false;
-		}
-		else
-			UpdateElement(elementIndex, std::forward<U>(element));
+		// The boolean available indices container represents the possible allocation count. The
+		// element count should always be less than or equal to the index. Or it would mean that
+		// there are non-removed null elements. Which should have probably caused a crash by now.
+		// But lets still do an assertion.
+		// And the available indices' size will always be bigger.
+		assert(
+			std::size(m_elements) <= elementIndex &&
+			"The index is less than the element count. Meaning there are null elements"
+		);
+
+		m_elements.emplace_back(std::move(element));
+		m_availableIndices.at(elementIndex) = false;
 
 		return elementIndex;
 	}
@@ -87,16 +89,10 @@ public:
 
 	void RemoveElement(size_t index) noexcept
 	{
-		// If there is no clear function, then there is no need to update the freed index.
-		// We can just add the new item when needed.
-		m_availableIndices.at(index) = true;
-	}
-	void RemoveElement(size_t index, void(T::*clearFunction)()) noexcept
-	{
-		if constexpr (std::is_pointer_v<T>)
-			(m_elements.at(index)->*clearFunction)();
-		else
-			(m_elements.at(index).*clearFunction)();
+		// We want to avoid reallocation of the vector as much as possible. But erase shouldn't
+		// change the capacity. And also we don't want a null object lingering around which can
+		// be accessed.
+		m_elements.erase(std::next(std::begin(m_elements), index));
 		m_availableIndices.at(index) = true;
 	}
 

@@ -38,11 +38,6 @@ void MaterialBuffers::CreateBuffer(size_t materialCount)
 	m_buffers = std::move(newBuffer);
 }
 
-void MaterialBuffers::_remove(size_t index) noexcept
-{
-	m_elements.RemoveElement(index, &std::shared_ptr<Material>::reset);
-}
-
 void MaterialBuffers::Update(size_t index) const noexcept
 {
 	std::uint8_t* bufferOffset  = m_buffers.CPUHandle();

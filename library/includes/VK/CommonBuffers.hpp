@@ -53,7 +53,6 @@ private:
 	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
 
 	void CreateBuffer(size_t materialCount);
-	void _remove(size_t index) noexcept;
 
 private:
 	VkDevice       m_device;

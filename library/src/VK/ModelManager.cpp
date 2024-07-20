@@ -268,11 +268,6 @@ void ModelBuffers::SetDescriptorBuffer(
 	);
 }
 
-void ModelBuffers::_remove(size_t index) noexcept
-{
-	m_elements.RemoveElement(index, &std::shared_ptr<Model>::reset);
-}
-
 void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 {
 	std::uint8_t* bufferOffset  = m_buffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;

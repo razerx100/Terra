@@ -430,8 +430,6 @@ private:
 
 	void CreateBuffer(size_t modelCount);
 
-	void _remove(size_t index) noexcept;
-
 private:
 	VkDeviceSize  m_modelBuffersInstanceSize;
 	std::uint32_t m_bufferInstanceCount;

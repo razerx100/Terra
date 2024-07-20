@@ -77,10 +77,7 @@ public:
 		return freeIndices;
 	}
 
-	void Remove(size_t index) noexcept
-	{
-		static_cast<Derived*>(this)->_remove(index);
-	}
+	void Remove(size_t index) noexcept { m_elements.RemoveElement(index); }
 
 protected:
 	[[nodiscard]]
