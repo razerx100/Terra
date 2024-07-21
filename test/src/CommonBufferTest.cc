@@ -59,11 +59,47 @@ TEST_F(CommonBufferTest, SharedBufferTest)
 	SharedBuffer sharedBuffer{ logicalDevice, &memoryManager, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, {} };
 
 	{
-		VkDeviceSize offset = sharedBuffer.AllocateMemory(20_KB);
+		VkDeviceSize offset = sharedBuffer.AllocateMemory(12u);
 		VkDeviceSize size   = sharedBuffer.Size();
 
 		EXPECT_EQ(offset, 0u) << "Offset isn't 0.";
-		EXPECT_EQ(size, 20_KB) << "Size isn't 20KB.";
+		EXPECT_EQ(size, 12u) << "Size isn't 12Bytes.";
+	}
+
+	{
+		VkDeviceSize offset = sharedBuffer.AllocateMemory(12u);
+		VkDeviceSize size   = sharedBuffer.Size();
+
+		EXPECT_EQ(offset, 12u) << "Offset isn't 12.";
+		EXPECT_EQ(size, 24u) << "Size isn't 24Bytes.";
+	}
+
+	sharedBuffer.RelinquishMemory(12u, 12u);
+
+	{
+		VkDeviceSize offset = sharedBuffer.AllocateMemory(12u);
+		VkDeviceSize size   = sharedBuffer.Size();
+
+		EXPECT_EQ(offset, 12u) << "Offset isn't 12.";
+		EXPECT_EQ(size, 24u) << "Size isn't 24Bytes.";
+	}
+
+	{
+		VkDeviceSize offset = sharedBuffer.AllocateMemory(12u);
+		VkDeviceSize size   = sharedBuffer.Size();
+
+		EXPECT_EQ(offset, 24u) << "Offset isn't 12.";
+		EXPECT_EQ(size, 36u) << "Size isn't 36Bytes.";
+	}
+
+	const size_t midOffset = 36u;
+
+	{
+		VkDeviceSize offset = sharedBuffer.AllocateMemory(20_KB);
+		VkDeviceSize size   = sharedBuffer.Size();
+
+		EXPECT_EQ(offset, 0u + midOffset) << "Offset isn't 0.";
+		EXPECT_EQ(size, 20_KB + midOffset) << "Size isn't 20KB.";
 	}
 
 	// Need to do a GPU copy inbetween.
@@ -73,33 +109,33 @@ TEST_F(CommonBufferTest, SharedBufferTest)
 		VkDeviceSize offset = sharedBuffer.AllocateMemory(30_KB);
 		VkDeviceSize size   = sharedBuffer.Size();
 
-		EXPECT_EQ(offset, 20_KB) << "Offset isn't 20KB.";
-		EXPECT_EQ(size, 20_KB + 30_KB) << "Size isn't 50KB.";
+		EXPECT_EQ(offset, 20_KB + midOffset) << "Offset isn't 20KB.";
+		EXPECT_EQ(size, 20_KB + 30_KB + midOffset) << "Size isn't 50KB.";
 	}
 
 	{
 		VkDeviceSize offset = sharedBuffer.AllocateMemory(50_KB);
 		VkDeviceSize size   = sharedBuffer.Size();
 
-		EXPECT_EQ(offset, 50_KB) << "Offset isn't 50KB.";
-		EXPECT_EQ(size, 100_KB) << "Size isn't 100KB.";
+		EXPECT_EQ(offset, 50_KB + midOffset) << "Offset isn't 50KB.";
+		EXPECT_EQ(size, 100_KB + midOffset) << "Size isn't 100KB.";
 	}
 
-	sharedBuffer.RelinquishMemory(20_KB, 30_KB);
+	sharedBuffer.RelinquishMemory(20_KB + midOffset, 30_KB);
 
 	{
 		VkDeviceSize offset = sharedBuffer.AllocateMemory(20_KB);
 		VkDeviceSize size   = sharedBuffer.Size();
 
-		EXPECT_EQ(offset, 20_KB) << "Offset isn't 20KB.";
-		EXPECT_EQ(size, 100_KB) << "Size isn't 100KB.";
+		EXPECT_EQ(offset, 20_KB + midOffset) << "Offset isn't 20KB.";
+		EXPECT_EQ(size, 100_KB + midOffset) << "Size isn't 100KB.";
 	}
 
 	{
 		VkDeviceSize offset = sharedBuffer.AllocateMemory(10_KB);
 		VkDeviceSize size   = sharedBuffer.Size();
 
-		EXPECT_EQ(offset, 40_KB) << "Offset isn't 40KB.";
-		EXPECT_EQ(size, 100_KB) << "Size isn't 100KB.";
+		EXPECT_EQ(offset, 40_KB + midOffset) << "Offset isn't 40KB.";
+		EXPECT_EQ(size, 100_KB + midOffset) << "Size isn't 100KB.";
 	}
 }

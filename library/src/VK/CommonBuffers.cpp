@@ -130,7 +130,12 @@ VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
 		const AllocInfo& allocInfo = *result;
 		offset = allocInfo.offset;
 
-		AddAllocInfo(offset + size, allocInfo.size - size);
+		const VkDeviceSize freeMemory = allocInfo.size - size;
+
+		m_availableMemory.erase(result);
+
+		if (freeMemory)
+			AddAllocInfo(offset + size, freeMemory);
 	}
 
 	return offset;
