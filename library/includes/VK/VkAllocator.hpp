@@ -75,6 +75,7 @@ public:
 		VkDeviceSize  size;
 		VkDeviceSize  alignment;
 		std::uint16_t memoryID;
+		bool          isValid = false;
 	};
 
 public:

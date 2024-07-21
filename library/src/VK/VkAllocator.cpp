@@ -221,11 +221,12 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 					= isCPUAccessible ? allocator.GetCPUStart() + offset : nullptr;
 
 				MemoryAllocation allocation{
-					.gpuOffset   = offset,
-					.cpuOffset   = cpuOffset,
-					.size        = bufferSize,
-					.alignment   = memoryReq.alignment,
-					.memoryID    = allocator.GetID()
+					.gpuOffset = offset,
+					.cpuOffset = cpuOffset,
+					.size      = bufferSize,
+					.alignment = memoryReq.alignment,
+					.memoryID  = allocator.GetID(),
+					.isValid   = true
 				};
 
 				return allocation;
@@ -269,11 +270,12 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 				= isCPUAccessible ? allocator.GetCPUStart() + offset : nullptr;
 
 			MemoryAllocation allocation{
-				.gpuOffset   = offset,
-				.cpuOffset   = cpuOffset,
-				.size        = bufferSize,
-				.alignment   = memoryReq.alignment,
-				.memoryID    = allocator.GetID()
+				.gpuOffset = offset,
+				.cpuOffset = cpuOffset,
+				.size      = bufferSize,
+				.alignment = memoryReq.alignment,
+				.memoryID  = allocator.GetID(),
+				.isValid   = true
 			};
 
 			allocators.emplace_back(std::move(allocator));

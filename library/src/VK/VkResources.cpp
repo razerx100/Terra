@@ -9,9 +9,10 @@ Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memory
 		.cpuOffset = nullptr,
 		.size      = 0u,
 		.alignment = 0u,
-		.memoryID  = 0u
+		.memoryID  = 0u,
+		.isValid   = false
 	},
-	m_resourceType{ memoryType }, m_hasAllocation{ false }
+	m_resourceType{ memoryType }
 {}
 
 Resource::~Resource() noexcept
@@ -21,11 +22,11 @@ Resource::~Resource() noexcept
 
 void Resource::Deallocate() noexcept
 {
-	if (m_memoryManager && m_hasAllocation)
+	if (m_memoryManager && m_allocationInfo.isValid)
 	{
 		m_memoryManager->Deallocate(m_allocationInfo, m_resourceType);
 
-		m_hasAllocation = false;
+		m_allocationInfo.isValid = false;
 	}
 }
 

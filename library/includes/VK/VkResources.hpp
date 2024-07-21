@@ -31,8 +31,6 @@ protected:
 				m_allocationInfo = m_memoryManager->AllocateImage(resource, m_resourceType);
 			else if constexpr (std::is_same_v<ResourceType, VkBuffer>)
 				m_allocationInfo = m_memoryManager->AllocateBuffer(resource, m_resourceType);
-
-			m_hasAllocation = true;
 		}
 		else
 			ThrowMemoryManagerException();
@@ -62,7 +60,6 @@ private:
 	MemoryManager*                  m_memoryManager;
 	MemoryManager::MemoryAllocation m_allocationInfo;
 	VkMemoryPropertyFlagBits        m_resourceType;
-	bool                            m_hasAllocation;
 
 public:
 	Resource(const Resource&) = delete;
@@ -71,11 +68,11 @@ public:
 	Resource(Resource&& other) noexcept
 		: m_memoryManager{ std::exchange(other.m_memoryManager, nullptr) },
 		m_allocationInfo{ other.m_allocationInfo },
-		m_resourceType{ other.m_resourceType },
-		m_hasAllocation{ std::exchange(other.m_hasAllocation, false) }
+		m_resourceType{ other.m_resourceType }
 	{
-		// Setting the allocation check to null, so the other object doesn't deallocate.
+		// Setting the allocation validity to false, so the other object doesn't deallocate.
 		// Don't need to deallocate our previous data, as there was none.
+		other.m_allocationInfo.isValid = false;
 	}
 	Resource& operator=(Resource&& other) noexcept
 	{
@@ -86,8 +83,8 @@ public:
 		m_allocationInfo = other.m_allocationInfo;
 		m_resourceType   = other.m_resourceType;
 		// Taking the allocation data from the other object.
-		m_hasAllocation  = std::exchange(other.m_hasAllocation, false);
-		// Setting the allocation check to null, so the other object doesn't deallocate.
+		other.m_allocationInfo.isValid = false;
+		// So, setting the allocation validity to false, so the other object doesn't deallocate.
 
 		return *this;
 	}
