@@ -49,18 +49,7 @@ void MaterialBuffers::Update(size_t index) const noexcept
 	const std::shared_ptr<Material>& material = materials.at(index);
 	const MaterialData materialData           = material->Get();
 
-	const MaterialBufferData bufferData{
-		.ambient           = materialData.ambient,
-		.diffuse           = materialData.diffuse,
-		.specular          = materialData.specular,
-		.diffuseTexUVInfo  = material->GetDiffuseUVInfo(),
-		.specularTexUVInfo = material->GetSpecularUVInfo(),
-		.diffuseTexIndex   = material->GetDiffuseIndex(),
-		.specularTexIndex  = material->GetSpecularIndex(),
-		.shininess         = materialData.shininess
-	};
-
-	memcpy(bufferOffset + materialOffset, &bufferData, strideSize);
+	memcpy(bufferOffset + materialOffset, &materialData, strideSize);
 }
 
 void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
@@ -75,19 +64,8 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 		const std::shared_ptr<Material>& material = materials.at(index);
 		const MaterialData materialData           = material->Get();
 
-		const MaterialBufferData bufferData{
-			.ambient           = materialData.ambient,
-			.diffuse           = materialData.diffuse,
-			.specular          = materialData.specular,
-			.diffuseTexUVInfo  = material->GetDiffuseUVInfo(),
-			.specularTexUVInfo = material->GetSpecularUVInfo(),
-			.diffuseTexIndex   = material->GetDiffuseIndex(),
-			.specularTexIndex  = material->GetSpecularIndex(),
-			.shininess         = materialData.shininess
-		};
-
 		const size_t materialOffset = index * strideSize;
-		memcpy(bufferOffset + materialOffset, &bufferData, strideSize);
+		memcpy(bufferOffset + materialOffset, &materialData, strideSize);
 	}
 }
 

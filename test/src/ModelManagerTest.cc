@@ -67,6 +67,14 @@ public:
 	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	std::uint32_t GetDiffuseIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	UVInfo GetDiffuseUVInfo() const noexcept override { return UVInfo{}; }
+	[[nodiscard]]
+	std::uint32_t GetSpecularIndex() const noexcept { return 0u; }
+	[[nodiscard]]
+	UVInfo GetSpecularUVInfo() const noexcept { return UVInfo{}; }
 };
 
 class ModelDummyVS : public ModelVS
@@ -89,6 +97,14 @@ public:
 	{
 		return m_details;
 	}
+	[[nodiscard]]
+	std::uint32_t GetDiffuseIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	UVInfo GetDiffuseUVInfo() const noexcept override { return UVInfo{}; }
+	[[nodiscard]]
+	std::uint32_t GetSpecularIndex() const noexcept { return 0u; }
+	[[nodiscard]]
+	UVInfo GetSpecularUVInfo() const noexcept { return UVInfo{}; }
 };
 
 class ModelDummyMS : public ModelMS
@@ -116,6 +132,14 @@ public:
 	{
 		return m_details;
 	}
+	[[nodiscard]]
+	std::uint32_t GetDiffuseIndex() const noexcept override { return 0u; }
+	[[nodiscard]]
+	UVInfo GetDiffuseUVInfo() const noexcept override { return UVInfo{}; }
+	[[nodiscard]]
+	std::uint32_t GetSpecularIndex() const noexcept { return 0u; }
+	[[nodiscard]]
+	UVInfo GetSpecularUVInfo() const noexcept { return UVInfo{}; }
 };
 
 class MeshDummyVS : public MeshBundleVS

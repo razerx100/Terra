@@ -31,6 +31,7 @@ public:
 	// Shouldn't be called on every frame. Only updates the indices specified.
 	void Update(const std::vector<size_t>& indices) const noexcept;
 
+	/*
 private:
 	struct MaterialBufferData
 	{
@@ -44,10 +45,11 @@ private:
 		float             shininess;
 		float             padding;
 	};
+*/
 
 private:
 	[[nodiscard]]
-	static consteval size_t GetStride() noexcept { return sizeof(MaterialBufferData); }
+	static consteval size_t GetStride() noexcept { return sizeof(MaterialData); }
 	[[nodiscard]]
 	// Chose 4 for not particular reason.
 	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
