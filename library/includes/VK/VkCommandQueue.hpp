@@ -147,6 +147,7 @@ public:
 	void Create(VkDevice device, VkCommandPool commandPool);
 
 	void Reset() const noexcept;
+	void Begin() const noexcept;
 	void Close() const noexcept;
 
 	void Copy(
@@ -288,6 +289,7 @@ struct CommandBufferScope
 	CommandBufferScope(const VKCommandBuffer& commandBuffer) : m_commandBuffer{ commandBuffer }
 	{
 		m_commandBuffer.Reset();
+		m_commandBuffer.Begin();
 	}
 
 	~CommandBufferScope() noexcept { m_commandBuffer.Close(); }

@@ -77,6 +77,7 @@ TEST_F(CommandQueueTest, BasicCommandQueueTest)
 	fence.Create(false);
 
 	queue.GetCommandBuffer(0u).Reset();
+	queue.GetCommandBuffer(0u).Begin();
 	queue.GetCommandBuffer(0u).Close();
 
 	queue.SubmitCommandBuffer(0u, fence);
@@ -124,12 +125,10 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 
 	{
 		VKCommandBuffer& cmdBuffer = queue.GetCommandBuffer(0u);
-		cmdBuffer.Reset();
+		CommandBufferScope testScope{ cmdBuffer };
 
 		cmdBuffer.CopyWhole(testBuffer1, testBuffer2);
 		cmdBuffer.CopyWhole(testBuffer3, testTextureView);
-
-		cmdBuffer.Close();
 	}
 
 	VKFence fence{ logicalDevice };
@@ -151,10 +150,7 @@ TEST_F(CommandQueueTest, TimelineSemaphoreTest)
 	queue.CreateCommandBuffers(1u);
 
 	{
-		VKCommandBuffer& cmdBuffer = queue.GetCommandBuffer(0u);
-		cmdBuffer.Reset();
-
-		cmdBuffer.Close();
+		CommandBufferScope testCmdScope{ queue.GetCommandBuffer(0u) };
 	}
 
 	VKFence fence{ logicalDevice };

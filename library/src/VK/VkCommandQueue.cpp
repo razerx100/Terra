@@ -20,7 +20,8 @@ void VKCommandBuffer::Create(VkDevice device, VkCommandPool commandPool)
 	vkAllocateCommandBuffers(device, &allocateInfo, &m_commandBuffer);
 }
 
-void VKCommandBuffer::Reset() const noexcept
+
+void VKCommandBuffer::Begin() const noexcept
 {
 	VkCommandBufferBeginInfo beginInfo{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -28,6 +29,11 @@ void VKCommandBuffer::Reset() const noexcept
 	};
 
 	vkBeginCommandBuffer(m_commandBuffer, &beginInfo);
+}
+
+void VKCommandBuffer::Reset() const noexcept
+{
+	vkResetCommandBuffer(m_commandBuffer, 0u);
 }
 
 void VKCommandBuffer::Close() const noexcept
