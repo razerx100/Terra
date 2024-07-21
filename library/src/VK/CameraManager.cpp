@@ -40,13 +40,18 @@ void CameraManager::Update(VkDeviceSize index) const noexcept
 
 	constexpr size_t matrixSize = sizeof(DirectX::XMMATRIX);
 
-	const std::shared_ptr<Camera>& activeCamera = m_cameras.at(m_activeCameraIndex);
+	// Although I am not a big of useless checks. This would potentially allow us
+	// to run the renderer without having any cameras.
+	if (m_activeCameraIndex < std::size(m_cameras)) [[likely]]
+	{
+		const std::shared_ptr<Camera>& activeCamera = m_cameras.at(m_activeCameraIndex);
 
-	const DirectX::XMMATRIX view = activeCamera->GetViewMatrix();
+		const DirectX::XMMATRIX view = activeCamera->GetViewMatrix();
 
-	memcpy(bufferAddress, &view, matrixSize);
+		memcpy(bufferAddress, &view, matrixSize);
 
-	activeCamera->GetProjectionMatrix(bufferAddress + matrixSize);
+		activeCamera->GetProjectionMatrix(bufferAddress + matrixSize);
+	}
 }
 
 void CameraManager::SetDescriptorBufferLayoutGraphics(
