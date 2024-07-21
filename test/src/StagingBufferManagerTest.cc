@@ -87,11 +87,13 @@ TEST_F(StagingBufferTest, StagingTest)
 
 	std::unique_ptr<std::uint8_t> bufferData  = std::unique_ptr<std::uint8_t>{ new std::uint8_t[2_KB] };
 	std::unique_ptr<std::uint8_t> textureData =
-		std::unique_ptr<std::uint8_t>{ new std::uint8_t[testTextureView.GetTexture().Size()] };
+		std::unique_ptr<std::uint8_t>{
+			new std::uint8_t[testTextureView.GetTexture().AllocationSize()]
+		};
 
 	stagingBufferMan.AddBuffer(bufferData.get(), 2_KB, &testStorage, 0u);
 	stagingBufferMan.AddTextureView(
-		textureData.get(), testTextureView.GetTexture().Size(), &testTextureView, {}
+		textureData.get(), testTextureView.GetTexture().AllocationSize(), &testTextureView, {}
 	);
 
 	{

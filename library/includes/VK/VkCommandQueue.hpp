@@ -177,35 +177,20 @@ public:
 	) const noexcept { CopyWhole(src, dst, builder); }
 
 	void AcquireOwnership(
-		const Buffer& buffer, VkDeviceSize bufferSize,
-		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
-		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
-	) const noexcept;
-	void AcquireOwnership(
 		const Buffer& buffer,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
-	) const noexcept {
-		AcquireOwnership(
-			buffer, buffer.Size(), srcQueueFamilyIndex, dstQueueFamilyIndex, dstAccess, dstStage
-		);
-	}
+	) const noexcept;
 	void AcquireOwnership(
 		const VkTextureView& textureView,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage,
 		VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
-	) const noexcept;
-	void ReleaseOwnership(
-		const Buffer& buffer, VkDeviceSize bufferSize,
-		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex
 	) const noexcept;
 	void ReleaseOwnership(
 		const Buffer& buffer, std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex
-	) const noexcept {
-		ReleaseOwnership(buffer, buffer.Size(), srcQueueFamilyIndex, dstQueueFamilyIndex);
-	}
+	) const noexcept;
 	void ReleaseOwnership(
 		const VkTextureView& textureView,
 		std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
@@ -213,17 +198,10 @@ public:
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	) const noexcept;
 	void AcquireOwnership(
-		const Buffer& buffer, VkDeviceSize bufferSize,
-		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
-		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
-	) const noexcept;
-	void AcquireOwnership(
 		const Buffer& buffer,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
 		VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
-	) const noexcept {
-		AcquireOwnership(buffer, buffer.Size(), srcQueue, dstQueue, dstAccess, dstStage);
-	}
+	) const noexcept;
 	void AcquireOwnership(
 		const VkTextureView& textureView,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
@@ -232,14 +210,8 @@ public:
 		VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED
 	) const noexcept;
 	void ReleaseOwnership(
-		const Buffer& buffer, VkDeviceSize bufferSize,
-		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
-	) const noexcept;
-	void ReleaseOwnership(
 		const Buffer& buffer, const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
-	) const noexcept {
-		ReleaseOwnership(buffer, buffer.Size(), srcQueue, dstQueue);
-	}
+	) const noexcept;
 	void ReleaseOwnership(
 		const VkTextureView& textureView,
 		const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,

@@ -253,8 +253,7 @@ void StagingBufferManager::ReleaseOwnership(
 						// SharedBuffer, which might have the allocation size bigger than the
 						// actual buffer size.
 						transferCmdBuffer.ReleaseOwnership(
-							*bufferDatum.dst, bufferDatum.bufferSize, transferFamilyIndex,
-							dstFamilyIndex
+							*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
 						);
 					else
 						transferCmdBuffer.ReleaseOwnership(
@@ -296,7 +295,7 @@ void StagingBufferManager::AcquireOwnership(
 				// SharedBuffer, which might have the allocation size bigger than the
 				// actual buffer size.
 				ownerQueueCmdBuffer.AcquireOwnership(
-					*bufferData.dst, bufferData.bufferSize, transferFamilyIndex, dstFamilyIndex,
+					*bufferData.dst, transferFamilyIndex, dstFamilyIndex,
 					bufferData.dstAccess, bufferData.dstStage
 				);
 			else

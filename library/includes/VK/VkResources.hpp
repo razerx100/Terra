@@ -13,7 +13,7 @@ public:
 	~Resource() noexcept;
 
 	[[nodiscard]]
-	VkDeviceSize Size() const noexcept { return m_allocationInfo.size; }
+	VkDeviceSize AllocationSize() const noexcept { return m_allocationInfo.size; }
 	[[nodiscard]]
 	VkDeviceSize GpuRelativeOffset() const noexcept { return m_allocationInfo.gpuOffset; }
 	[[nodiscard]]
@@ -61,14 +61,15 @@ private:
 	MemoryManager::MemoryAllocation m_allocationInfo;
 	VkMemoryPropertyFlagBits        m_resourceType;
 
+protected:
+
 public:
 	Resource(const Resource&) = delete;
 	Resource& operator=(const Resource&) = delete;
 
 	Resource(Resource&& other) noexcept
 		: m_memoryManager{ std::exchange(other.m_memoryManager, nullptr) },
-		m_allocationInfo{ other.m_allocationInfo },
-		m_resourceType{ other.m_resourceType }
+		m_allocationInfo{ other.m_allocationInfo }, m_resourceType{ other.m_resourceType }
 	{
 		// Setting the allocation validity to false, so the other object doesn't deallocate.
 		// Don't need to deallocate our previous data, as there was none.
@@ -107,13 +108,16 @@ public:
 	VkBuffer Get() const noexcept { return m_buffer; }
 	[[nodiscard]]
 	VkDeviceAddress GpuPhysicalAddress() const noexcept;
+	[[nodiscard]]
+	VkDeviceSize BufferSize() const noexcept { return m_bufferSize; }
 
 private:
 	void SelfDestruct() noexcept;
 
 private:
-	VkBuffer m_buffer;
-	VkDevice m_device;
+	VkBuffer     m_buffer;
+	VkDevice     m_device;
+	VkDeviceSize m_bufferSize;
 
 public:
 	Buffer(const Buffer&) = delete;
@@ -121,7 +125,7 @@ public:
 
 	Buffer(Buffer&& other) noexcept
 		: Resource{ std::move(other) }, m_buffer{ std::exchange(other.m_buffer, VK_NULL_HANDLE) },
-		m_device{ other.m_device }
+		m_device{ other.m_device }, m_bufferSize{ other.m_bufferSize }
 	{}
 	Buffer& operator=(Buffer&& other) noexcept
 	{
@@ -129,8 +133,9 @@ public:
 
 		SelfDestruct();
 
-		m_buffer = std::exchange(other.m_buffer, VK_NULL_HANDLE);
-		m_device = other.m_device;
+		m_buffer     = std::exchange(other.m_buffer, VK_NULL_HANDLE);
+		m_device     = other.m_device;
+		m_bufferSize = other.m_bufferSize;
 
 		return *this;
 	}

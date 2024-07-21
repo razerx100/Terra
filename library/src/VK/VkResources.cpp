@@ -42,7 +42,9 @@ void Resource::ThrowMemoryManagerException()
 
 // Buffer
 Buffer::Buffer(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
-	: Resource{ memoryManager, memoryType }, m_buffer{ VK_NULL_HANDLE }, m_device{ device } {}
+	: Resource{ memoryManager, memoryType }, m_buffer{ VK_NULL_HANDLE }, m_device{ device },
+	m_bufferSize{ 0u }
+{}
 
 Buffer::~Buffer() noexcept
 {
@@ -80,6 +82,8 @@ void Buffer::Create(
 		Destroy();
 
 	vkCreateBuffer(m_device, &createInfo, nullptr, &m_buffer);
+
+	m_bufferSize = bufferSize;
 
 	Allocate(m_buffer);
 }

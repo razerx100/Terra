@@ -836,7 +836,7 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 		const SharedBuffer& counterBuffer    = m_counterBuffers.front();
 
 		const VkDeviceSize counterBufferSize = counterBuffer.Size();
-		const VkDeviceSize oldCounterSize    = m_counterResetBuffer.Size();
+		const VkDeviceSize oldCounterSize    = m_counterResetBuffer.BufferSize();
 
 		if (counterBufferSize > oldCounterSize)
 		{

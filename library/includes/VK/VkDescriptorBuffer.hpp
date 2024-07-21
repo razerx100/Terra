@@ -226,7 +226,7 @@ public:
 		VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) const {
 		const VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress() + bufferOffset;
-		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.Size();
+		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.BufferSize();
 
 		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
 			bufferAddress, actualBufferSize, VK_FORMAT_UNDEFINED
@@ -241,7 +241,7 @@ public:
 		std::uint32_t descriptorIndex, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
 	) const {
 		const VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress() + bufferOffset;
-		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.Size();
+		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.BufferSize();
 
 		const VkDescriptorAddressInfoEXT bufferDescAddressInfo = GetBufferDescAddressInfo(
 			bufferAddress, actualBufferSize, texelBufferFormat

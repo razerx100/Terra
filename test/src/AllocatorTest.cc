@@ -61,6 +61,6 @@ TEST_F(AllocatorTest, VkAllocatorTest)
 
 		EXPECT_NE(buffer.Get(), VK_NULL_HANDLE) << "Buffer wasn't initialised";
 		EXPECT_EQ(buffer.CPUHandle(), nullptr) << "CPU Pointer isn't null.";
-		EXPECT_EQ(buffer.Size(), 1_KB) << "BufferSize doesn't match.";
+		EXPECT_EQ(buffer.BufferSize(), 1_KB) << "BufferSize doesn't match.";
 	}
 }

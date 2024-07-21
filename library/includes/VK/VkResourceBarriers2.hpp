@@ -62,6 +62,11 @@ public:
 		return Buffer(buffer.Get(), bufferSize, offset);
 	}
 
+	BufferBarrierBuilder& Buffer(const ::Buffer& buffer) noexcept
+	{
+		return Buffer(buffer.Get(), buffer.BufferSize(), 0u);
+	}
+
 	BufferBarrierBuilder& QueueIndices(std::uint32_t srcIndex, std::uint32_t dstIndex) noexcept
 	{
 		_queueIndices(srcIndex, dstIndex);

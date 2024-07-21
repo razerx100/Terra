@@ -29,10 +29,10 @@ void MaterialBuffers::CreateBuffer(size_t materialCount)
 	newBuffer.Create(materialBuffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 
 	// All of the old materials will be only copied if the new buffer is larger.
-	const VkDeviceSize oldBufferSize = m_buffers.Size();
-	if (oldBufferSize && newBuffer.Size() > oldBufferSize)
+	const VkDeviceSize oldBufferSize = m_buffers.BufferSize();
+	if (oldBufferSize && newBuffer.BufferSize() > oldBufferSize)
 	{
-		memcpy(newBuffer.CPUHandle(), m_buffers.CPUHandle(), m_buffers.Size());
+		memcpy(newBuffer.CPUHandle(), m_buffers.CPUHandle(), m_buffers.BufferSize());
 	}
 
 	m_buffers = std::move(newBuffer);
@@ -114,19 +114,16 @@ VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
 	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
 	if (result == std::end(m_availableMemory))
 	{
-		offset = m_occupyingSize;
-
-		const VkDeviceSize actualSize   = m_buffer.Size();
-		const VkDeviceSize requiredSize = m_occupyingSize + size;
-
-		m_occupyingSize = requiredSize;
+		const VkDeviceSize oldSize = m_buffer.BufferSize();
+		offset                     = oldSize;
+		const VkDeviceSize newSize = oldSize + size;
 
 		// If the alignment is 16bytes, at least 16bytes will be allocated. If the requested size
 		// is bigger, then there shouldn't be any issues. But if the requested size is smaller,
 		// the offset would be correct, but the buffer would be unnecessarily recreated, even though
 		// it is not necessary. So, putting a check here.
-		if (requiredSize > actualSize)
-			CreateBuffer(requiredSize);
+		if (newSize > oldSize)
+			CreateBuffer(newSize);
 	}
 	else
 	{

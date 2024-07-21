@@ -121,16 +121,16 @@ private:
 		Buffer newBuffer = GetCPUResource<Buffer>(m_device, m_memoryManager);
 		newBuffer.Create(buffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 
-		const VkDeviceSize oldBufferSize = m_buffer.Size();
+		const VkDeviceSize oldBufferSize = m_buffer.BufferSize();
 		if (oldBufferSize)
-			memcpy(newBuffer.CPUHandle(), m_buffer.CPUHandle(), m_buffer.Size());
+			memcpy(newBuffer.CPUHandle(), m_buffer.CPUHandle(), m_buffer.BufferSize());
 
 		m_buffer = std::move(newBuffer);
 	}
 
 	void CreateBufferIfNecessary(size_t index)
 	{
-		const VkDeviceSize currentSize = m_buffer.Size();
+		const VkDeviceSize currentSize = m_buffer.BufferSize();
 		constexpr size_t strideSize    = GetStride();
 
 		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(index * strideSize + strideSize);

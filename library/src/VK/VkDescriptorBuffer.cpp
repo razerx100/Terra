@@ -50,10 +50,10 @@ void VkDescriptorBuffer::RecreateBuffer(const std::vector<std::uint32_t>& queueF
 	newBuffer.Create(layoutSizeInBytes, GetFlags(), queueFamilyIndices);
 
 	// All of the old descriptors will be only copied if the new buffer is larger.
-	const VkDeviceSize oldBufferSize = m_descriptorBuffer.Size();
-	if (oldBufferSize && newBuffer.Size() > oldBufferSize)
+	const VkDeviceSize oldBufferSize = m_descriptorBuffer.BufferSize();
+	if (oldBufferSize && newBuffer.BufferSize() > oldBufferSize)
 	{
-		memcpy(newBuffer.CPUHandle(), m_descriptorBuffer.CPUHandle(), m_descriptorBuffer.Size());
+		memcpy(newBuffer.CPUHandle(), m_descriptorBuffer.CPUHandle(), m_descriptorBuffer.BufferSize());
 	}
 
 	m_descriptorBuffer = std::move(newBuffer);

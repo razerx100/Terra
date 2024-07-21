@@ -50,7 +50,7 @@ void VKCommandBuffer::Copy(
 void VKCommandBuffer::CopyWhole(
 	const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder& builder
 ) const noexcept {
-	Copy(src, dst, builder.Size(src.Size()));
+	Copy(src, dst, builder.Size(src.BufferSize()));
 }
 
 void VKCommandBuffer::CopyWhole(
@@ -79,13 +79,13 @@ void VKCommandBuffer::Copy(
 }
 
 void VKCommandBuffer::AcquireOwnership(
-	const Buffer& buffer, VkDeviceSize bufferSize,
+	const Buffer& buffer,
 	std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex,
 	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
 ) const noexcept {
 	VkBufferBarrier2{}.AddMemoryBarrier(
 		BufferBarrierBuilder{}
-		.Buffer(buffer, bufferSize)
+		.Buffer(buffer)
 		.QueueIndices(srcQueueFamilyIndex, dstQueueFamilyIndex)
 		.AccessMasks(VK_ACCESS_NONE, dstAccess)
 		.StageMasks(VK_PIPELINE_STAGE_NONE, dstStage)
@@ -110,12 +110,12 @@ void VKCommandBuffer::AcquireOwnership(
 }
 
 void VKCommandBuffer::ReleaseOwnership(
-	const Buffer& buffer, VkDeviceSize bufferSize,
+	const Buffer& buffer,
 	std::uint32_t srcQueueFamilyIndex, std::uint32_t dstQueueFamilyIndex
 ) const noexcept {
 	VkBufferBarrier2{}.AddMemoryBarrier(
 		BufferBarrierBuilder{}
-		.Buffer(buffer, bufferSize)
+		.Buffer(buffer)
 		.QueueIndices(srcQueueFamilyIndex, dstQueueFamilyIndex)
 		.AccessMasks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_NONE)
 		.StageMasks(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE)
@@ -139,13 +139,11 @@ void VKCommandBuffer::ReleaseOwnership(
 }
 
 void VKCommandBuffer::AcquireOwnership(
-	const Buffer& buffer, VkDeviceSize bufferSize,
+	const Buffer& buffer,
 	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue,
 	VkAccessFlags2 dstAccess, VkPipelineStageFlags2 dstStage
 ) const noexcept {
-	AcquireOwnership(
-		buffer, bufferSize, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex(), dstAccess, dstStage
-	);
+	AcquireOwnership(buffer, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex(), dstAccess, dstStage);
 }
 
 void VKCommandBuffer::AcquireOwnership(
@@ -162,10 +160,10 @@ void VKCommandBuffer::AcquireOwnership(
 }
 
 void VKCommandBuffer::ReleaseOwnership(
-	const Buffer& buffer, VkDeviceSize bufferSize,
+	const Buffer& buffer,
 	const VkCommandQueue& srcQueue, const VkCommandQueue& dstQueue
 ) const noexcept {
-	ReleaseOwnership(buffer, bufferSize, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex());
+	ReleaseOwnership(buffer, srcQueue.GetFamilyIndex(), dstQueue.GetFamilyIndex());
 }
 
 void VKCommandBuffer::ReleaseOwnership(
