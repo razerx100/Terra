@@ -398,13 +398,19 @@ public:
 class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>
 {
 	friend class ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>;
+
 public:
 	ModelBuffers(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-		m_modelBuffersInstanceSize{ 0u }, m_bufferInstanceCount{ frameCount }
+		m_fragmentModelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		m_modelBuffersInstanceSize{ 0u }, m_modelBuffersFragmentInstanceSize{ 0u },
+		m_bufferInstanceCount{ frameCount }
 	{}
 
 	void SetDescriptorBuffer(
+		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+	) const;
+	void SetFragmentDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
 	) const;
 
@@ -414,7 +420,7 @@ public:
 	std::uint32_t GetInstanceCount() const noexcept { return m_bufferInstanceCount; }
 
 private:
-	struct ModelData
+	struct ModelVertexData
 	{
 		DirectX::XMMATRIX modelMatrix;
 		DirectX::XMFLOAT3 modelOffset;
@@ -422,9 +428,20 @@ private:
 		std::uint32_t     materialIndex;
 	};
 
+	struct ModelFragmentData
+	{
+		UVInfo        diffuseTexUVInfo;
+		UVInfo        specularTexUVInfo;
+		std::uint32_t diffuseTexIndex;
+		std::uint32_t specularTexIndex;
+		float         padding[2]; // Needs to be 16bytes aligned.
+	};
+
 private:
 	[[nodiscard]]
-	static consteval size_t GetStride() noexcept { return sizeof(ModelData); }
+	static consteval size_t GetVertexStride() noexcept { return sizeof(ModelVertexData); }
+	[[nodiscard]]
+	static consteval size_t GetFragmentStride() noexcept { return sizeof(ModelFragmentData); }
 	[[nodiscard]]
 	// Chose 4 for not particular reason.
 	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
@@ -432,7 +449,9 @@ private:
 	void CreateBuffer(size_t modelCount);
 
 private:
+	Buffer        m_fragmentModelBuffers;
 	VkDeviceSize  m_modelBuffersInstanceSize;
+	VkDeviceSize  m_modelBuffersFragmentInstanceSize;
 	std::uint32_t m_bufferInstanceCount;
 
 public:
@@ -441,14 +460,18 @@ public:
 
 	ModelBuffers(ModelBuffers&& other) noexcept
 		: ReusableVkBuffer{ std::move(other) },
+		m_fragmentModelBuffers{ std::move(other.m_fragmentModelBuffers) },
 		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
+		m_modelBuffersFragmentInstanceSize{ other.m_modelBuffersFragmentInstanceSize },
 		m_bufferInstanceCount{ other.m_bufferInstanceCount }
 	{}
 	ModelBuffers& operator=(ModelBuffers&& other) noexcept
 	{
 		ReusableVkBuffer::operator=(std::move(other));
-		m_modelBuffersInstanceSize = other.m_modelBuffersInstanceSize;
-		m_bufferInstanceCount      = other.m_bufferInstanceCount;
+		m_fragmentModelBuffers             = std::move(other.m_fragmentModelBuffers);
+		m_modelBuffersInstanceSize         = other.m_modelBuffersInstanceSize;
+		m_modelBuffersFragmentInstanceSize = other.m_modelBuffersFragmentInstanceSize;
+		m_bufferInstanceCount              = other.m_bufferInstanceCount;
 
 		return *this;
 	}

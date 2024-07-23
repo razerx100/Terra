@@ -250,12 +250,26 @@ void ModelBundleCSIndirect::CreateBuffers(
 // Model Buffers
 void ModelBuffers::CreateBuffer(size_t modelCount)
 {
-	constexpr size_t strideSize = GetStride();
+	// Vertex Data
+	{
+		constexpr size_t strideSize = GetVertexStride();
 
-	m_modelBuffersInstanceSize              = static_cast<VkDeviceSize>(strideSize * modelCount);
-	const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * m_bufferInstanceCount;
+		m_modelBuffersInstanceSize = static_cast<VkDeviceSize>(strideSize * modelCount);
+		const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * m_bufferInstanceCount;
 
-	m_buffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+		m_buffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+	}
+
+	// Fragment Data
+	{
+		constexpr size_t strideSize = GetFragmentStride();
+
+		m_modelBuffersFragmentInstanceSize = static_cast<VkDeviceSize>(strideSize * modelCount);
+		const VkDeviceSize modelBufferTotalSize
+			= m_modelBuffersFragmentInstanceSize * m_bufferInstanceCount;
+
+		m_fragmentModelBuffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+	}
 }
 
 void ModelBuffers::SetDescriptorBuffer(
@@ -268,24 +282,58 @@ void ModelBuffers::SetDescriptorBuffer(
 	);
 }
 
+void ModelBuffers::SetFragmentDescriptorBuffer(
+	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+) const {
+	const auto bufferOffset
+		= static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersFragmentInstanceSize);
+
+	descriptorBuffer.SetStorageBufferDescriptor(
+		m_fragmentModelBuffers, bindingSlot, 0u, bufferOffset, m_modelBuffersFragmentInstanceSize
+	);
+}
+
 void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 {
-	std::uint8_t* bufferOffset  = m_buffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;
-	constexpr size_t strideSize = GetStride();
-	size_t modelOffset          = 0u;
+	// Vertex Data
+	std::uint8_t* vertexBufferOffset  = m_buffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;
+	constexpr size_t vertexStrideSize = GetVertexStride();
+	size_t vertexModelOffset          = 0u;
+
+	// Fragment Data
+	std::uint8_t* fragmentBufferOffset
+		= m_fragmentModelBuffers.CPUHandle() + bufferIndex * m_modelBuffersFragmentInstanceSize;
+	constexpr size_t fragmentStrideSize = GetFragmentStride();
+	size_t fragmentModelOffset          = 0u;
 
 	auto& models = m_elements.Get();
 
 	for (auto& model : models)
 	{
-		const ModelData modelData{
-			.modelMatrix   = model->GetModelMatrix(),
-			.modelOffset   = model->GetModelOffset(),
-			.materialIndex = model->GetMaterialIndex()
-		};
+		// Vertex Data
+		{
+			const ModelVertexData modelVertexData{
+				.modelMatrix = model->GetModelMatrix(),
+				.modelOffset = model->GetModelOffset(),
+				.materialIndex = model->GetMaterialIndex()
+			};
 
-		memcpy(bufferOffset + modelOffset, &modelData, strideSize);
-		modelOffset += strideSize;
+			memcpy(vertexBufferOffset + vertexModelOffset, &modelVertexData, vertexStrideSize);
+			vertexModelOffset += vertexStrideSize;
+		}
+
+		// Fragment Data
+		{
+			const ModelFragmentData modelFragmentData{
+				.diffuseTexUVInfo  = model->GetDiffuseUVInfo(),
+				.specularTexUVInfo = model->GetSpecularUVInfo(),
+				.diffuseTexIndex   = model->GetDiffuseIndex(),
+				.specularTexIndex  = model->GetSpecularIndex()
+			};
+
+			memcpy(fragmentBufferOffset + fragmentModelOffset, &modelFragmentData, fragmentStrideSize);
+			fragmentModelOffset += fragmentStrideSize;
+		}
 	}
 }
 
