@@ -217,7 +217,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Single Model Once.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffersVertex modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
 
 		std::vector<std::shared_ptr<Model>> models{};
 		for (size_t index = 0u; index < 6u; ++index)
@@ -233,7 +233,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Single Model with delete.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffersVertex modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
 
 		std::vector<std::shared_ptr<Model>> models{};
 		for (size_t index = 0u; index < 6u; ++index)
@@ -255,7 +255,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Multiple Model Once.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffersVertex modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
 
 		{
 			std::vector<std::shared_ptr<Model>> models{};
@@ -289,7 +289,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Multiple Model with delete.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffersVertex modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
 
 		{
 			std::vector<std::shared_ptr<Model>> models{};

@@ -248,27 +248,7 @@ void ModelBundleCSIndirect::CreateBuffers(
 }
 
 // Model Buffers
-void ModelBuffers::CreateBuffer(size_t modelCount)
-{
-	constexpr size_t strideSize = GetStride();
-
-	m_modelBuffersInstanceSize              = static_cast<VkDeviceSize>(strideSize * modelCount);
-	const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * m_bufferInstanceCount;
-
-	m_buffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
-}
-
-void ModelBuffers::SetDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
-) const {
-	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
-
-	descriptorBuffer.SetStorageBufferDescriptor(
-		m_buffers, bindingSlot, 0u, bufferOffset, m_modelBuffersInstanceSize
-	);
-}
-
-void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
+void ModelBuffersVertex::Update(VkDeviceSize bufferIndex) const noexcept
 {
 	std::uint8_t* bufferOffset  = m_buffers.CPUHandle() + bufferIndex * m_modelBuffersInstanceSize;
 	constexpr size_t strideSize = GetStride();
@@ -278,7 +258,7 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 
 	for (auto& model : models)
 	{
-		const ModelData modelData{
+		const ModelVertexData modelData{
 			.modelMatrix   = model->GetModelMatrix(),
 			.modelOffset   = model->GetModelOffset(),
 			.materialIndex = model->GetMaterialIndex()
@@ -340,7 +320,7 @@ void ModelManagerVSIndividual::ConfigureModelRemove(size_t bundleIndex) noexcept
 	const auto& modelDetails = modelBundle.GetDetails();
 
 	for (const auto& modelDetail : modelDetails)
-		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+		m_modelVertexBuffers.Remove(modelDetail.modelBufferIndex);
 }
 
 void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
@@ -391,7 +371,7 @@ void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffe
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelVertexBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
 		);
 	}
@@ -574,7 +554,7 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 	const auto& modelIndices = modelBundle.GetModelIndices();
 
 	for (const auto& modelIndex : modelIndices)
-		m_modelBuffers.Remove(modelIndex);
+		m_modelVertexBuffers.Remove(modelIndex);
 
 	m_argumentCount -= static_cast<std::uint32_t>(std::size(modelIndices));
 
@@ -682,7 +662,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelVertexBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
@@ -745,7 +725,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 		const auto frameIndex = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelVertexBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot
 		);
 
@@ -909,7 +889,7 @@ void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
 	const auto& modelDetails = modelBundle.GetDetails();
 
 	for (const auto& modelDetail : modelDetails)
-		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+		m_modelVertexBuffers.Remove(modelDetail.modelBufferIndex);
 
 	{
 		const SharedBufferData& meshletSharedData = modelBundle.GetMeshletSharedData();
@@ -1003,7 +983,7 @@ void ModelManagerMS::SetDescriptorBufferOfModels(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 		const auto frameIndex = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelVertexBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
 		);
 
