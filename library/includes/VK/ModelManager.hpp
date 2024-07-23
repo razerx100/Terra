@@ -395,49 +395,43 @@ public:
 	}
 };
 
-template<typename T>
-class ModelBuffers : public ReusableVkBuffer<ModelBuffers<T>, std::shared_ptr<Model>>
+class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>
 {
-	friend class ReusableVkBuffer<ModelBuffers<T>, std::shared_ptr<Model>>;
-
+	friend class ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>;
 public:
 	ModelBuffers(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ReusableVkBuffer<ModelBuffers<T>, std::shared_ptr<Model>>{
-			device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-		}, m_modelBuffersInstanceSize{ 0u }, m_bufferInstanceCount{ frameCount }
+		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+		m_modelBuffersInstanceSize{ 0u }, m_bufferInstanceCount{ frameCount }
 	{}
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
-	) const {
-		const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
+	) const;
 
-		descriptorBuffer.SetStorageBufferDescriptor(
-			this->m_buffers, bindingSlot, 0u, bufferOffset, m_modelBuffersInstanceSize
-		);
-	}
+	void Update(VkDeviceSize bufferIndex) const noexcept;
 
 	[[nodiscard]]
 	std::uint32_t GetInstanceCount() const noexcept { return m_bufferInstanceCount; }
 
-protected:
+private:
+	struct ModelData
+	{
+		DirectX::XMMATRIX modelMatrix;
+		DirectX::XMFLOAT3 modelOffset;
+		// GLSL vec3 is actually vec4, so the materialIndex must be grabbed from the z component.
+		std::uint32_t     materialIndex;
+	};
+
+private:
 	[[nodiscard]]
-	static consteval size_t GetStride() noexcept { return sizeof(T); }
+	static consteval size_t GetStride() noexcept { return sizeof(ModelData); }
 	[[nodiscard]]
 	// Chose 4 for not particular reason.
 	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
 
-	void CreateBuffer(size_t modelCount)
-	{
-		constexpr size_t strideSize = GetStride();
+	void CreateBuffer(size_t modelCount);
 
-		m_modelBuffersInstanceSize              = static_cast<VkDeviceSize>(strideSize * modelCount);
-		const VkDeviceSize modelBufferTotalSize = m_modelBuffersInstanceSize * m_bufferInstanceCount;
-
-		this->m_buffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
-	}
-
-protected:
+private:
 	VkDeviceSize  m_modelBuffersInstanceSize;
 	std::uint32_t m_bufferInstanceCount;
 
@@ -446,46 +440,15 @@ public:
 	ModelBuffers& operator=(const ModelBuffers&) = delete;
 
 	ModelBuffers(ModelBuffers&& other) noexcept
-		: ReusableVkBuffer<ModelBuffers<T>, std::shared_ptr<Model>>{ std::move(other) },
+		: ReusableVkBuffer{ std::move(other) },
 		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
 		m_bufferInstanceCount{ other.m_bufferInstanceCount }
 	{}
 	ModelBuffers& operator=(ModelBuffers&& other) noexcept
 	{
-		ReusableVkBuffer<ModelBuffers<T>, std::shared_ptr<Model>>::operator=(std::move(other));
+		ReusableVkBuffer::operator=(std::move(other));
 		m_modelBuffersInstanceSize = other.m_modelBuffersInstanceSize;
 		m_bufferInstanceCount      = other.m_bufferInstanceCount;
-
-		return *this;
-	}
-};
-
-struct ModelVertexData
-{
-	DirectX::XMMATRIX modelMatrix;
-	DirectX::XMFLOAT3 modelOffset;
-	// GLSL vec3 is actually vec4, so the materialIndex must be grabbed from the z component.
-	std::uint32_t     materialIndex;
-};
-
-class ModelBuffersVertex : public ModelBuffers<ModelVertexData>
-{
-public:
-	ModelBuffersVertex(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ModelBuffers{ device, memoryManager, frameCount }
-	{}
-
-	void Update(VkDeviceSize bufferIndex) const noexcept;
-
-	ModelBuffersVertex(const ModelBuffersVertex&) = delete;
-	ModelBuffersVertex& operator=(const ModelBuffersVertex&) = delete;
-
-	ModelBuffersVertex(ModelBuffersVertex&& other) noexcept
-		: ModelBuffers{ std::move(other) }
-	{}
-	ModelBuffersVertex& operator=(ModelBuffersVertex&& other) noexcept
-	{
-		ModelBuffers::operator=(std::move(other));
 
 		return *this;
 	}
@@ -510,7 +473,7 @@ public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_graphicsPipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
-		m_modelVertexBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
+		m_modelBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
 		m_meshBundles{}, m_meshBoundsBuffer{
 			device, memoryManager,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
@@ -531,7 +494,7 @@ public:
 
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
-		m_modelVertexBuffers.Update(frameIndex);
+		m_modelBuffers.Update(frameIndex);
 	}
 
 	void SetRenderPass(VKRenderPass* renderPass) noexcept
@@ -559,7 +522,7 @@ public:
 		std::shared_ptr<ModelType> tempModel = model;
 		const std::uint32_t meshIndex        = model->GetMeshIndex();
 
-		const size_t modelIndex = m_modelVertexBuffers.Add(std::move(model));
+		const size_t modelIndex = m_modelBuffers.Add(std::move(model));
 
 		auto dvThis = static_cast<Derived*>(this);
 
@@ -603,7 +566,7 @@ public:
 				tempModelBundle.at(index) = std::static_pointer_cast<Model>(modelBundle.at(index));
 
 			const std::vector<size_t> modelIndices
-				= m_modelVertexBuffers.AddMultiple(std::move(tempModelBundle));
+				= m_modelBuffers.AddMultiple(std::move(tempModelBundle));
 
 			auto dvThis = static_cast<Derived*>(this);
 
@@ -810,7 +773,7 @@ protected:
 	PipelineLayout               m_graphicsPipelineLayout;
 	VKRenderPass*                m_renderPass;
 	std::wstring                 m_shaderPath;
-	ModelBuffersVertex           m_modelVertexBuffers;
+	ModelBuffers                 m_modelBuffers;
 	std::vector<Pipeline>        m_graphicsPipelines;
 	ReusableVector<MeshManager>  m_meshBundles;
 	// Configure this buffer in the child class, if desired.
@@ -832,7 +795,7 @@ public:
 		m_graphicsPipelineLayout{ std::move(other.m_graphicsPipelineLayout) },
 		m_renderPass{ other.m_renderPass },
 		m_shaderPath{ std::move(other.m_shaderPath) },
-		m_modelVertexBuffers{ std::move(other.m_modelVertexBuffers) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
@@ -847,7 +810,7 @@ public:
 		m_graphicsPipelineLayout = std::move(other.m_graphicsPipelineLayout);
 		m_renderPass             = other.m_renderPass;
 		m_shaderPath             = std::move(other.m_shaderPath);
-		m_modelVertexBuffers     = std::move(other.m_modelVertexBuffers);
+		m_modelBuffers           = std::move(other.m_modelBuffers);
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_meshBundles            = std::move(other.m_meshBundles);
 		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
