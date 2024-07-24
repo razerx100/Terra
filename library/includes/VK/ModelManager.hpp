@@ -807,6 +807,7 @@ protected:
 
 	// Need to update this when I update the shaders.
 	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
+	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 1u;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -1014,7 +1015,7 @@ private:
 
 	// Need to update these when I update the shaders.
 	// Vertex Shader ones
-	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
+	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 2u;
 
 	// Compute Shader ones
 	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
@@ -1145,10 +1146,10 @@ private:
 	SharedBuffer                 m_primIndicesBuffer;
 	std::deque<MSBundleTempData> m_modelBundleTempData;
 
-	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 1u;
-	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 2u;
-	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 3u;
-	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 4u;
+	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 2u;
+	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 3u;
+	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 4u;
+	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 5u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;

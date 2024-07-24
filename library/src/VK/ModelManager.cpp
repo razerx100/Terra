@@ -427,6 +427,10 @@ void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
+		descriptorBuffer.AddBinding(
+			s_modelBuffersFragmentBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_FRAGMENT_BIT
+		);
 	}
 }
 
@@ -441,6 +445,9 @@ void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffe
 
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+		);
+		m_modelBuffers.SetFragmentDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot
 		);
 	}
 }
@@ -714,6 +721,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
 		descriptorBuffer.AddBinding(
+			s_modelBuffersFragmentBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+		descriptorBuffer.AddBinding(
 			s_modelIndicesVSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
@@ -732,6 +743,9 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+		);
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesVSBindingSlot, 0u
@@ -1023,6 +1037,10 @@ void ModelManagerMS::SetDescriptorBufferLayout(
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
+			s_modelBuffersFragmentBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+		descriptorBuffer.AddBinding(
 			s_meshletBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
@@ -1054,7 +1072,9 @@ void ModelManagerMS::SetDescriptorBufferOfModels(
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
 		);
-
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot
+		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, 0u
 		);

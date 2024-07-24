@@ -39,11 +39,11 @@ private:
 private:
 	// These might not work. As a binding slot with variable descriptor count must be at the end.
 	// But lets see.
-	static constexpr std::uint32_t s_cameraBindingSlot          = 1u;
-	static constexpr std::uint32_t s_materialBindingSlot        = 2u;
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 3u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 4u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 5u;
+	static constexpr std::uint32_t s_cameraBindingSlot          = 2u;
+	static constexpr std::uint32_t s_materialBindingSlot        = 3u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 4u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 5u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 6u;
 
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
@@ -97,11 +97,11 @@ private:
 	// These might not work. As a binding slot with variable descriptor count must be at the end.
 	// But lets see.
 	// Graphics
-	static constexpr std::uint32_t s_cameraBindingSlot          = 2u;
-	static constexpr std::uint32_t s_materialBindingSlot        = 3u;
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 4u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 5u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 6u;
+	static constexpr std::uint32_t s_cameraBindingSlot          = 3u;
+	static constexpr std::uint32_t s_materialBindingSlot        = 4u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 5u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 6u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 7u;
 
 	// Compute
 	static constexpr std::uint32_t s_cameraComputeBindingSlot   = 9u;

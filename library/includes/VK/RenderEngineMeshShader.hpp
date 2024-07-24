@@ -42,11 +42,11 @@ private:
 private:
 	// These might not work. As a binding slot with variable descriptor count must be at the end.
 	// But lets see.
-	static constexpr std::uint32_t s_cameraBindingSlot          = 5u;
-	static constexpr std::uint32_t s_materialBindingSlot        = 6u;
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 7u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 8u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 9u;
+	static constexpr std::uint32_t s_cameraBindingSlot          = 6u;
+	static constexpr std::uint32_t s_materialBindingSlot        = 7u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 8u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 9u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 10u;
 
 public:
 	RenderEngineMS(const RenderEngineMS&) = delete;

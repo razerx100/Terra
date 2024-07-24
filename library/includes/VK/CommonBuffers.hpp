@@ -31,22 +31,6 @@ public:
 	// Shouldn't be called on every frame. Only updates the indices specified.
 	void Update(const std::vector<size_t>& indices) const noexcept;
 
-	/*
-private:
-	struct MaterialBufferData
-	{
-		DirectX::XMFLOAT4 ambient;
-		DirectX::XMFLOAT4 diffuse;
-		DirectX::XMFLOAT4 specular;
-		UVInfo            diffuseTexUVInfo;
-		UVInfo            specularTexUVInfo;
-		std::uint32_t     diffuseTexIndex;
-		std::uint32_t     specularTexIndex;
-		float             shininess;
-		float             padding;
-	};
-*/
-
 private:
 	[[nodiscard]]
 	static consteval size_t GetStride() noexcept { return sizeof(MaterialData); }
