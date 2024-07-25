@@ -162,8 +162,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	{
 		descriptorBuffer.AddBinding(
 			combinedTexturesBindingSlot, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 	}
 
@@ -175,8 +174,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	{
 		descriptorBuffer.AddBinding(
 			sampledTexturesBindingSlot, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 	}
 
@@ -188,8 +186,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	{
 		descriptorBuffer.AddBinding(
 			samplersBindingSlot, VK_DESCRIPTOR_TYPE_SAMPLER,
-			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 	}
 }
