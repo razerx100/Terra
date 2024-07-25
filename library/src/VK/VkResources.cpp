@@ -1,5 +1,6 @@
 #include <VkResources.hpp>
 #include <Exception.hpp>
+#include <unordered_map>
 
 // Resource
 Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
@@ -176,4 +177,38 @@ void Texture::Create(
 	vkCreateImage(m_device, &createInfo, nullptr, &m_image);
 
 	Allocate(m_image);
+}
+
+VkDeviceSize Texture::GetBufferSize() const noexcept
+{
+	// For example: R8G8B8A8 has 4 components, 8bits at each component. So, 4bytes.
+	const static std::unordered_map<VkFormat, std::uint32_t> formatSizeMap
+	{
+		{ VK_FORMAT_R8G8B8A8_UNORM, 4u },
+		{ VK_FORMAT_R8G8B8A8_SNORM, 4u },
+		{ VK_FORMAT_R8G8B8A8_UINT,  4u },
+		{ VK_FORMAT_R8G8B8A8_SINT,  4u },
+		{ VK_FORMAT_R8G8B8A8_SRGB,  4u },
+		{ VK_FORMAT_B8G8R8A8_UNORM, 4u },
+		{ VK_FORMAT_B8G8R8A8_SNORM, 4u },
+		{ VK_FORMAT_B8G8R8A8_UINT,  4u },
+		{ VK_FORMAT_B8G8R8A8_SINT,  4u },
+		{ VK_FORMAT_B8G8R8A8_SRGB,  4u }
+	};
+
+	const VkFormat textureFormat = Format();
+
+	auto formatSize = formatSizeMap.find(textureFormat);
+
+	if (formatSize != std::end(formatSizeMap))
+	{
+		const VkDeviceSize sizePerPixel = formatSize->second;
+
+		return static_cast<VkDeviceSize>(m_imageExtent.width)
+			* m_imageExtent.height * m_imageExtent.depth * sizePerPixel;
+	}
+
+	// Not bothering with adding the size of every single colour format. If an format size isn't
+	// defined here, then 0 will be returned.
+	return 0u;
 }

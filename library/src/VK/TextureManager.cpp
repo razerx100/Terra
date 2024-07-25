@@ -52,9 +52,8 @@ size_t TextureStorage::AddTexture(
 	std::unique_ptr<std::uint8_t>& cTextureData = m_textureData.emplace_back(std::move(textureData));
 
 	stagingBufferManager.AddTextureView(
-		cTextureData.get(), textureViewPtr->GetTexture().AllocationSize(), textureViewPtr, {},
-		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+		cTextureData.get(), textureViewPtr, {}, QueueType::GraphicsQueue,
+		VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 	);
 
 	m_transitionQueue.push(textureViewPtr);

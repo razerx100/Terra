@@ -20,8 +20,7 @@ public:
 	{}
 
 	StagingBufferManager& AddTextureView(
-		void const* cpuHandle, VkDeviceSize bufferSize,
-		VkTextureView const* dst, const VkOffset3D& offset,
+		void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 		std::uint32_t mipLevelIndex = 0u
 	);
@@ -30,11 +29,11 @@ public:
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
 	);
 	StagingBufferManager& AddTextureView(
-		void const* cpuHandle, VkDeviceSize bufferSize,
+		void const* cpuHandle,
 		VkTextureView const* dst, const VkOffset3D& offset, std::uint32_t mipLevelIndex = 0u
 	) {
 		return AddTextureView(
-			cpuHandle, bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
+			cpuHandle, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
 			VK_PIPELINE_STAGE_2_NONE, mipLevelIndex
 		);
 	}

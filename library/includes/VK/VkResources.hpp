@@ -165,6 +165,10 @@ public:
 	VkFormat Format() const noexcept { return m_format; }
 	[[nodiscard]]
 	VkExtent3D GetExtent() const noexcept { return m_imageExtent; }
+	[[nodiscard]]
+	// The allocation size will be different. This will return the Size of the Texture
+	// if it were to fit in a Buffer without any extra paddings.
+	VkDeviceSize GetBufferSize() const noexcept;
 
 private:
 	void SelfDestruct() noexcept;

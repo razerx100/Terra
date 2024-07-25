@@ -119,7 +119,7 @@ TEST_F(CommandQueueTest, CommandQueueCopyTest)
 
 	Buffer testBuffer3{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
 	testBuffer3.Create(
-		testTextureView.GetTexture().AllocationSize(),
+		testTextureView.GetTexture().GetBufferSize(),
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {}
 	);
 

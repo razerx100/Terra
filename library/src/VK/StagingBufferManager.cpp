@@ -3,8 +3,7 @@
 #include <algorithm>
 
 StagingBufferManager& StagingBufferManager::AddTextureView(
-	void const* cpuHandle, VkDeviceSize bufferSize,
-	VkTextureView const* dst, const VkOffset3D& offset,
+	void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 	std::uint32_t mipLevelIndex/* = 0u */
 ) {
@@ -18,6 +17,8 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 
 		m_copyRecorded = false;
 	}
+
+	const VkDeviceSize bufferSize = dst->GetTexture().GetBufferSize();
 
 	m_textureData.emplace_back(
 		TextureData{
