@@ -221,7 +221,13 @@ public:
 				static_cast<std::uint32_t>(frameCount)
 			)
 		}
-	{}
+	{
+		for(auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+			m_textureManager.SetDescriptorBufferLayout(
+				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
+				GetSamplerBindingSlot()
+		);
+	}
 
 	void SetShaderPath(const std::wstring& shaderPath) noexcept override
 	{
