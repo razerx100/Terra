@@ -110,6 +110,9 @@ size_t RenderEngine::AddTextureAsCombined(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
 	size_t samplerIndex
 ) {
+	// Should wait for the current frames to be rendered before modifying the data.
+	m_graphicsQueue.WaitForQueueToFinish();
+
 	const size_t textureIndex = m_textureStorage.AddTexture(
 		std::move(textureData), width, height, m_stagingManager
 	);
@@ -126,6 +129,8 @@ void RenderEngine::UnbindCombinedTexture(size_t index)
 
 void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 {
+	// This function shouldn't need to wait for the GPU to finish, as it isn't doing
+	// anything on the GPU side.
 	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 	const std::uint32_t globalDescIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
@@ -155,6 +160,9 @@ void RenderEngine::BindCombinedTexture(size_t index)
 
 void RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 {
+	// Should wait for the current frames to be rendered before modifying the data.
+	m_graphicsQueue.WaitForQueueToFinish();
+
 	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 	VkTextureView const* textureView = m_textureStorage.GetPtr(textureIndex);
@@ -214,6 +222,9 @@ void RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 
 void RenderEngine::RemoveTexture(size_t index)
 {
+	// Should wait for the current frames to be rendered before modifying the data.
+	m_graphicsQueue.WaitForQueueToFinish();
+
 	// Could be either an only texture descriptor or multiple combined ones. Unbind all.
 	const auto u32Index = static_cast<std::uint32_t>(index);
 
