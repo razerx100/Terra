@@ -85,9 +85,6 @@ void RenderEngineVSIndividual::Render(
 		m_stagingManager.Copy(transferCmdBufferScope);
 
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
-
-		// This should clean the Mesh related temp data when a new model/mesh is added next.
-		m_modelManager.SetCopyRecorded();
 	}
 
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
@@ -99,6 +96,17 @@ void RenderEngineVSIndividual::Render(
 			.CommandBuffer(transferCmdBuffer);
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
+
+		// This should clean the Mesh related temp data when a new model/mesh is added next.
+		m_threadPool->SubmitWork(
+			std::function{[&modelManager = m_modelManager, &transferWaitSemaphore, frameNumber]
+			{
+				transferWaitSemaphore.Wait(frameNumber);
+
+				// Should add the other cleanup functions here as well.
+				modelManager.CleanUpTempData();
+			}}
+		);
 	}
 
 	// Compute Phase (Not using atm)
@@ -304,6 +312,17 @@ void RenderEngineVSIndirect::Render(
 			.CommandBuffer(transferCmdBuffer);
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
+
+		// This should clean the Mesh related temp data when a new model/mesh is added next.
+		m_threadPool->SubmitWork(
+			std::function{[&modelManager = m_modelManager, &transferWaitSemaphore, frameNumber]
+			{
+				transferWaitSemaphore.Wait(frameNumber);
+
+				// Should add the other cleanup functions here as well.
+				modelManager.CleanUpTempData();
+			}}
+		);
 	}
 
 	// Compute Phase

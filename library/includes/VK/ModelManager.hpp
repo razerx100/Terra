@@ -11,6 +11,7 @@
 #include <ranges>
 #include <algorithm>
 #include <deque>
+#include <mutex>
 #include <ReusableVkBuffer.hpp>
 #include <GraphicsPipelineVertexShader.hpp>
 #include <GraphicsPipelineMeshShader.hpp>
@@ -500,7 +501,7 @@ public:
 		m_meshBundles{}, m_meshBoundsBuffer{
 			device, memoryManager,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		}, m_meshBundleTempData{}, m_modelBundles{}, m_copyRecorded{ false }
+		}, m_meshBundleTempData{}, m_modelBundles{}, m_tempDataMutex{}
 	{}
 
 	// The layout should be the same across the multiple descriptors for each frame.
@@ -533,13 +534,6 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModel(std::shared_ptr<ModelType>&& model, const ShaderName& fragmentShader)
 	{
-		if (m_copyRecorded)
-		{
-			CleanUpTempData();
-
-			m_copyRecorded = false;
-		}
-
 		// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 		// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
 		std::shared_ptr<ModelType> tempModel = model;
@@ -569,13 +563,6 @@ public:
 	std::uint32_t AddModelBundle(
 		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const ShaderName& fragmentShader
 	) {
-		if (m_copyRecorded)
-		{
-			CleanUpTempData();
-
-			m_copyRecorded = false;
-		}
-
 		const size_t modelCount = std::size(modelBundle);
 
 		if (modelCount)
@@ -656,18 +643,15 @@ public:
 	std::uint32_t AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan
 	) {
-		if (m_copyRecorded)
-		{
-			CleanUpTempData();
-
-			m_copyRecorded = false;
-		}
-
 		MeshManager meshManager{};
 
-		static_cast<Derived*>(this)->ConfigureMeshBundle(
-			std::move(meshBundle), stagingBufferMan, meshManager
-		);
+		{
+			std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
+
+			static_cast<Derived*>(this)->ConfigureMeshBundle(
+				std::move(meshBundle), stagingBufferMan, meshManager
+			);
+		}
 
 		auto meshIndex = m_meshBundles.Add(std::move(meshManager));
 
@@ -685,13 +669,13 @@ public:
 
 	void CleanUpTempData() noexcept
 	{
+		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
+
 		m_meshBundleTempData = std::deque<MeshTempData>{};
 
 		if constexpr (TempData)
 			static_cast<Derived*>(this)->_cleanUpTempData();
 	}
-
-	void SetCopyRecorded() noexcept { m_copyRecorded = true; }
 
 protected:
 	[[nodiscard]]
@@ -790,6 +774,12 @@ private:
 		m_modelBundles.insert(result, std::move(modelBundle));
 	}
 
+	void MoveTempData(ModelManager& other) noexcept
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ other.m_tempDataMutex };
+		m_meshBundleTempData = std::move(other.m_meshBundleTempData);
+	}
+
 protected:
 	VkDevice                     m_device;
 	MemoryManager*               m_memoryManager;
@@ -803,7 +793,7 @@ protected:
 	SharedBuffer                 m_meshBoundsBuffer;
 	std::deque<MeshTempData>     m_meshBundleTempData;
 	std::vector<ModelBundleType> m_modelBundles;
-	bool                         m_copyRecorded;
+	std::mutex                   m_tempDataMutex;
 
 	// Need to update this when I update the shaders.
 	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
@@ -823,10 +813,14 @@ public:
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
-		m_meshBundleTempData{ std::move(other.m_meshBundleTempData) },
+		// Can't move the data here, as this resource will be used from multiple threads.
+		m_meshBundleTempData{},
 		m_modelBundles{ std::move(other.m_modelBundles) },
-		m_copyRecorded{ other.m_copyRecorded }
-	{}
+		// We can't move mutices, so create a new one.
+		m_tempDataMutex{}
+	{
+		MoveTempData(other);
+	}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
 		m_device                 = other.m_device;
@@ -838,9 +832,9 @@ public:
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_meshBundles            = std::move(other.m_meshBundles);
 		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
-		m_meshBundleTempData     = std::move(other.m_meshBundleTempData);
 		m_modelBundles           = std::move(other.m_modelBundles);
-		m_copyRecorded           = other.m_copyRecorded;
+
+		MoveTempData(other);
 
 		return *this;
 	}
@@ -991,6 +985,12 @@ private:
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
 
+	void MoveTempCSData(ModelManagerVSIndirect& other) noexcept
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ other.m_tempDataMutex };
+		m_modelBundleCSTempData = std::move(other.m_modelBundleCSTempData);
+	}
+
 private:
 	StagingBufferManager*              m_stagingBufferMan;
 	SharedBuffer                       m_argumentInputBuffer;
@@ -1008,6 +1008,7 @@ private:
 	QueueIndices3                      m_queueIndices3;
 	std::uint32_t                      m_dispatchXCount;
 	std::uint32_t                      m_argumentCount;
+	bool                               m_tempGPUDataCopied;
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
@@ -1053,9 +1054,13 @@ public:
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
+		m_tempGPUDataCopied{ other.m_tempGPUDataCopied },
 		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) },
-		m_modelBundleCSTempData{ std::move(other.m_modelBundleCSTempData) }
-	{}
+		// Can't move the data here, as this resource will be used from multiple threads.
+		m_modelBundleCSTempData{}
+	{
+		MoveTempCSData(other);
+	}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
@@ -1075,8 +1080,10 @@ public:
 		m_queueIndices3          = other.m_queueIndices3;
 		m_dispatchXCount         = other.m_dispatchXCount;
 		m_argumentCount          = other.m_argumentCount;
+		m_tempGPUDataCopied      = other.m_tempGPUDataCopied;
 		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
-		m_modelBundleCSTempData  = std::move(other.m_modelBundleCSTempData);
+
+		MoveTempCSData(other);
 
 		return *this;
 	}
@@ -1138,6 +1145,12 @@ private:
 
 	void _cleanUpTempData() noexcept;
 
+	void MoveTempMSData(ModelManagerMS& other) noexcept
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ other.m_tempDataMutex };
+		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
+	}
+
 private:
 	StagingBufferManager*        m_stagingBufferMan;
 	SharedBuffer                 m_meshletBuffer;
@@ -1162,8 +1175,11 @@ public:
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
 		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
-		m_modelBundleTempData{ std::move(other.m_modelBundleTempData) }
-	{}
+		// Can't move the data here, as this resource will be used from multiple threads.
+		m_modelBundleTempData{}
+	{
+		MoveTempMSData(other);
+	}
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
@@ -1172,7 +1188,8 @@ public:
 		m_vertexBuffer        = std::move(other.m_vertexBuffer);
 		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
 		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
-		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
+
+		MoveTempMSData(other);
 
 		return *this;
 	}

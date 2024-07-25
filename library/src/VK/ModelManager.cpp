@@ -498,7 +498,8 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager,
 		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
-	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}, m_modelBundleCSTempData{}
+	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_tempGPUDataCopied{ false },
+	m_modelBundlesCS{}, m_modelBundleCSTempData{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
@@ -547,10 +548,14 @@ void ModelManagerVSIndirect::ConfigureModel(
 	ModelBundleCSIndirect modelBundleCS{};
 	modelBundleCS.AddModelDetails(model);
 
-	modelBundleCS.CreateBuffers(
-		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-		m_modelBundleCSTempData
-	);
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
+
+		modelBundleCS.CreateBuffers(
+			*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
+			m_modelBundleCSTempData
+		);
+	}
 
 	const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
 
@@ -602,10 +607,14 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	UpdateCounterResetValues();
 
-	modelBundleCS.CreateBuffers(
-		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-		m_modelBundleCSTempData
-	);
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
+
+		modelBundleCS.CreateBuffers(
+			*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
+			m_modelBundleCSTempData
+		);
+	}
 
 	if(modelCount)
 	{
@@ -869,7 +878,7 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 
 void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
-	if (!m_copyRecorded)
+	if (!m_tempGPUDataCopied)
 	{
 		m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
 		m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
@@ -880,8 +889,7 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 			m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
 		}
 
-		// This should clean the Mesh and model related temp data when a new model/mesh is added next.
-		SetCopyRecorded();
+		m_tempGPUDataCopied = true;
 	}
 }
 
@@ -944,7 +952,11 @@ void ModelManagerMS::ConfigureModel(
 	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
 ) {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
-	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
+
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
+		modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
+	}
 }
 
 void ModelManagerMS::ConfigureModelBundle(
@@ -961,7 +973,10 @@ void ModelManagerMS::ConfigureModelBundle(
 		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
 
-	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
+	{
+		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
+		modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
+	}
 }
 
 void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
