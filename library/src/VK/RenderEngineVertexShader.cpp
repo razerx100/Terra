@@ -121,6 +121,8 @@ void RenderEngineVSIndividual::Render(
 			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
 		);
 
+		m_textureStorage.TransitionQueuedTextures(graphicsCmdBufferScope);
+
 		m_viewportAndScissors.BindViewportAndScissor(graphicsCmdBufferScope);
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
@@ -351,6 +353,8 @@ void RenderEngineVSIndirect::Render(
 		m_stagingManager.AcquireOwnership(
 			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
 		);
+
+		m_textureStorage.TransitionQueuedTextures(graphicsCmdBufferScope);
 
 		m_viewportAndScissors.BindViewportAndScissor(graphicsCmdBufferScope);
 

@@ -98,7 +98,7 @@ void TextureStorage::CleanupTempData() noexcept
 	m_textureData = std::vector<std::unique_ptr<std::uint8_t>>{};
 }
 
-void TextureStorage::TransitionQueuedTextures(VKCommandBuffer& graphicsCmdBuffer)
+void TextureStorage::TransitionQueuedTextures(const VKCommandBuffer& graphicsCmdBuffer)
 {
 	while (!std::empty(m_transitionQueue))
 	{

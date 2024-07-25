@@ -98,7 +98,13 @@ public:
 	}
 
 	void CleanupTempData() noexcept;
-	void TransitionQueuedTextures(VKCommandBuffer& graphicsCmdBuffer);
+
+	// I could have used the AcquireOwnership function to do the layout transition. But there are
+	// two reasons, well one in this case to make this extra transition. If the resource has shared
+	// ownership, the AcquireOwnership function wouldn't be called. In this class all of the textures
+	// have exclusive ownership. But if the transfer and graphics queues have the same family, then
+	// the ownership transfer wouldn't be necessary.
+	void TransitionQueuedTextures(const VKCommandBuffer& graphicsCmdBuffer);
 
 private:
 	[[nodiscard]]
