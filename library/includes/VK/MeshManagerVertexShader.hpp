@@ -35,17 +35,20 @@ public:
 public:
 	MeshManagerVertexShader();
 
+	// Without bound data.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
 		std::deque<TempData>& tempDataContainer
 	);
+	// With bound data when the bound data has exclusive ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
 		SharedBuffer& boundsSharedBuffer, std::deque<TempDataBounds>& tempDataContainer,
 		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 	);
+	// With bound data when the bound data has shared ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,

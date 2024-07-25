@@ -19,6 +19,8 @@ public:
 		m_copyRecorded{ false }
 	{}
 
+	// The destination info is required, when an ownership transfer is desired. Which
+	// is needed when a resource has exclusive ownership.
 	StagingBufferManager& AddTextureView(
 		void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
@@ -28,6 +30,7 @@ public:
 		void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
 	);
+	// If a resource has shared ownership, there is no need for ownership transfer.
 	StagingBufferManager& AddTextureView(
 		void const* cpuHandle,
 		VkTextureView const* dst, const VkOffset3D& offset, std::uint32_t mipLevelIndex = 0u

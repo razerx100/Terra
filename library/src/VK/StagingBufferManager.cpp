@@ -197,6 +197,16 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 		// be only a single texture in a texture buffer.
 		transferCmdBuffer.CopyWhole(tempBuffer, *textureData.dst, bufferBuilder);
 	}
+
+	// Any bufferData with QueueType::None would mean that resource has shared access. And doesn't
+	// require any ownership transfer. So, let's remove those.
+	constexpr auto eraseFunction = [] <typename T> (const T & bufferData) noexcept
+	{
+		return bufferData.dstQueueType == QueueType::None;
+	};
+
+	std::erase_if(m_bufferData, eraseFunction);
+	std::erase_if(m_textureData, eraseFunction);
 }
 
 void StagingBufferManager::Copy(const VKCommandBuffer& transferCmdBuffer)
@@ -236,32 +246,32 @@ void StagingBufferManager::ReleaseOwnership(
 	// and needs an ownership transfer. The reason I have two separate functions is because
 	// the acquire and release commands need to be executed on different queues, which won't
 	// happen at the same time.
+	// Any bufferData with its dstQueue as None should have been removed by now.
 
 	auto ReleaseFunction = [&transferCmdBuffer, transferFamilyIndex,
 		queueFamilyManager = m_queueFamilyManager] <typename T> (const std::vector<T>& bufferData)
 	{
 		for (const auto& bufferDatum : bufferData)
-			if (bufferDatum.dstQueueType != QueueType::None)
-			{
-				const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
-					bufferDatum.dstQueueType
-				);
+		{
+			const std::uint32_t dstFamilyIndex = queueFamilyManager->GetIndex(
+				bufferDatum.dstQueueType
+			);
 
-				if (dstFamilyIndex != transferFamilyIndex)
-				{
-					if constexpr (std::is_same_v<BufferData, T>)
-						// If it is a buffer, then also pass the bufferSize. Because it could be a
-						// SharedBuffer, which might have the allocation size bigger than the
-						// actual buffer size.
-						transferCmdBuffer.ReleaseOwnership(
-							*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
-						);
-					else
-						transferCmdBuffer.ReleaseOwnership(
-							*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
-						);
-				}
+			if (dstFamilyIndex != transferFamilyIndex)
+			{
+				if constexpr (std::is_same_v<BufferData, T>)
+					// If it is a buffer, then also pass the bufferSize. Because it could be a
+					// SharedBuffer, which might have the allocation size bigger than the
+					// actual buffer size.
+					transferCmdBuffer.ReleaseOwnership(
+						*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
+					);
+				else
+					transferCmdBuffer.ReleaseOwnership(
+						*bufferDatum.dst, transferFamilyIndex, dstFamilyIndex
+					);
 			}
+		}
 	};
 
 	ReleaseFunction(m_bufferData);
