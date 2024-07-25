@@ -92,7 +92,7 @@ public:
 	);
 	virtual void Render(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t frameNumber
+		std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
 	) = 0;
 	virtual void Resize(
 		std::uint32_t width, std::uint32_t height,

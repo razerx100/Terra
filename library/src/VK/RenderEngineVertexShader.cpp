@@ -69,7 +69,7 @@ std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundle
 
 void RenderEngineVSIndividual::Render(
 	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-	std::uint64_t frameNumber
+	std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
 ) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
@@ -78,14 +78,6 @@ void RenderEngineVSIndividual::Render(
 
 	// Transfer Phase
 	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
-
-	// This graphics semaphore will be used to acquire the next image from the swapchain. And
-	// should be waited upon before we start out rendering. It would probably have been
-	// fine to wait on it on the graphics queue, as the frameBuffer isn't used by the transfer
-	// queue but then I would need a new set of semaphores just for the acquire image call.
-	// So, lets just wait on the transfer queue. So we can reuse the graphics semaphores for
-	// acquire image. The performance impact shouldn't be noticeable.
-	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);
 
 	{
 		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
@@ -101,10 +93,9 @@ void RenderEngineVSIndividual::Render(
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
 
 	{
-		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
+		QueueSubmitBuilder<0u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
 			.SignalSemaphore(transferWaitSemaphore, frameNumber)
-			.WaitSemaphore(graphicsWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
@@ -138,16 +129,22 @@ void RenderEngineVSIndividual::Render(
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}
 
+	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);
+
 	{
-		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
+		QueueSubmitBuilder<2u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
-			// Hopefully the wait semaphore has be waited by another queue by now. Otherwise,
-			// it will cause an error as it would be signaled by the vkAcquireNextImage function
-			// and the graphics queue would try to signal it again.
 			.SignalSemaphore(graphicsWaitSemaphore)
 			// The graphics queue should wait for the transfer queue to finish and then start the
 			// Input Assembler Stage.
 			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, frameNumber)
+			// The image wait semaphore will most likely be a graphicsWaitSemaphore. But it should
+			// be fine to wait on it on the COLOUR_ATTACHMENT_OUTPUT_BIT as that's when we will draw
+			// on the frameBuffer. And we don't really need the frameBuffer before that. And the
+			// graphics queue will signal once it is finished.
+			// And since the swapchain doesn't support timeline semaphores, it won't be a
+			// timeline semaphore.
+			.WaitSemaphore(imageWaitSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
@@ -158,7 +155,8 @@ void RenderEngineVSIndividual::Render(
 }
 
 // VS Indirect
-RenderEngineVSIndirect::RenderEngineVSIndirect(
+RenderEngineVSIndirect::RenderEngineVSIndirect(			// And since the swapchain doesn't support timeline semaphores, it won't be a
+			// timeline semaphore.
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount },
 	m_computeQueue{
@@ -273,7 +271,7 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS
 
 void RenderEngineVSIndirect::Render(
 	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-	std::uint64_t frameNumber
+	std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
 ) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
@@ -282,14 +280,6 @@ void RenderEngineVSIndirect::Render(
 
 	// Transfer Phase
 	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
-
-	// This graphics semaphore will be used to acquire the next image from the swapchain. And
-	// should be waited upon before we start out rendering. It would probably have been
-	// fine to wait on it on the graphics queue, as the frameBuffer isn't used by the transfer
-	// queue but then I would need a new set of semaphores just for the acquire image call.
-	// So, lets just wait on the transfer queue. So we can reuse the graphics semaphores for
-	// acquire image. The performance impact shouldn't be noticeable.
-	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);
 
 	{
 		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
@@ -308,10 +298,9 @@ void RenderEngineVSIndirect::Render(
 	const VKSemaphore& transferWaitSemaphore = m_transferWait.at(frameIndex);
 
 	{
-		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
+		QueueSubmitBuilder<0u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
 			.SignalSemaphore(transferWaitSemaphore, frameNumber)
-			.WaitSemaphore(graphicsWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
@@ -373,16 +362,22 @@ void RenderEngineVSIndirect::Render(
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}
 
+	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait.at(frameIndex);
+
 	{
-		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
+		QueueSubmitBuilder<2u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
-			// Hopefully the wait semaphore has be waited by another queue by now. Otherwise,
-			// it will cause an error as it would be signaled by the vkAcquireNextImage function
-			// and the graphics queue would try to signal it again.
 			.SignalSemaphore(graphicsWaitSemaphore)
 			// The graphics queue should wait for the compute queue to finish and then start the
 			// Input Assembler Stage.
 			.WaitSemaphore(computeWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, frameNumber)
+			// The image wait semaphore will most likely be a graphicsWaitSemaphore. But it should
+			// be fine to wait on it on the COLOUR_ATTACHMENT_OUTPUT_BIT as that's when we will draw
+			// on the frameBuffer. And we don't really need the frameBuffer before that. And the
+			// graphics queue will signal once it is finished.
+			// And since the swapchain doesn't support timeline semaphores, it won't be a
+			// timeline semaphore.
+			.WaitSemaphore(imageWaitSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);

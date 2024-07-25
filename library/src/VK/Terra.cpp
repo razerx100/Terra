@@ -153,21 +153,23 @@ void Terra::Render()
 	static std::uint64_t frameNumber = 0u;
 	++frameNumber;
 
-	{
 		VkDevice device = m_deviceManager.GetLogicalDevice();
 
-		const VKSemaphore& signalSemaphore = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
+	// If we have 3 frames, and the nextPotentialImageIndex is 2, it might be possible that
+	// the 2nd image has become usable by now and the nextIndex is 1. That should mean that the
+	// 3rd frame should have also finished rendering, so it should be fine to use that frame's
+	// semaphore.
+	const VKSemaphore& imageWaitSemaphore = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
 
-		// This semaphore will be signaled when the image becomes available.
-		m_swapchain->QueryNextImageIndex(device, signalSemaphore);
-	}
+	// This semaphore will be signaled when the image becomes available.
+	m_swapchain->QueryNextImageIndex(device, imageWaitSemaphore);
 
 	const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();
 	const size_t nextImageIndex           = nextImageIndexU32;
 
 	m_renderEngine->Render(
 		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
-		m_swapchain->GetCurrentSwapchainExtent(), frameNumber
+		m_swapchain->GetCurrentSwapchainExtent(), frameNumber, imageWaitSemaphore
 	);
 
 	const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextImageIndex);
