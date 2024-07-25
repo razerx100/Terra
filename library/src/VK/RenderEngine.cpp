@@ -51,10 +51,9 @@ RenderEngine::RenderEngine(
 		// The graphics Wait semaphores will be used by the Swapchain, which doesn't support
 		// timeline semaphores.
 		m_graphicsWait.emplace_back(logicalDevice).Create(false);
-		// Setting the Transfer ones to non-timeline as well, as I don't plan on signalling from
-		// the cpu and otherwise, we would need to track the current value to know which value to
-		// wait on.
-		m_transferWait.emplace_back(logicalDevice).Create(false);
+		// Setting the Transfer ones to timeline, as we would want to clean the tempData
+		// on a different thread when the transfer queue is finished.
+		m_transferWait.emplace_back(logicalDevice).Create(true);
 	}
 
 	const auto frameCountU32 = static_cast<std::uint32_t>(frameCount);

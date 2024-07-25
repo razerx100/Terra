@@ -68,7 +68,8 @@ std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundle
 }
 
 void RenderEngineVSIndividual::Render(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	std::uint64_t frameNumber
 ) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
@@ -102,7 +103,7 @@ void RenderEngineVSIndividual::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
-			.SignalSemaphore(transferWaitSemaphore)
+			.SignalSemaphore(transferWaitSemaphore, frameNumber)
 			.WaitSemaphore(graphicsWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
@@ -146,7 +147,7 @@ void RenderEngineVSIndividual::Render(
 			.SignalSemaphore(graphicsWaitSemaphore)
 			// The graphics queue should wait for the transfer queue to finish and then start the
 			// Input Assembler Stage.
-			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
+			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, frameNumber)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
@@ -191,7 +192,8 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	{
 		m_computeDescriptorBuffers.emplace_back(device, &m_memoryManager);
 
-		m_computeWait.emplace_back(device).Create(false);
+		// Let's make all of the non graphics semaphores, timeline semaphores.
+		m_computeWait.emplace_back(device).Create(true);
 	}
 
 	const auto frameCountU32 = static_cast<std::uint32_t>(frameCount);
@@ -270,7 +272,8 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS
 }
 
 void RenderEngineVSIndirect::Render(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	std::uint64_t frameNumber
 ) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
@@ -307,7 +310,7 @@ void RenderEngineVSIndirect::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
-			.SignalSemaphore(transferWaitSemaphore)
+			.SignalSemaphore(transferWaitSemaphore, frameNumber)
 			.WaitSemaphore(graphicsWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
@@ -337,8 +340,8 @@ void RenderEngineVSIndirect::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> computeSubmitBuilder{};
 		computeSubmitBuilder
-			.SignalSemaphore(computeWaitSemaphore)
-			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+			.SignalSemaphore(computeWaitSemaphore, frameNumber)
+			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, frameNumber)
 			.CommandBuffer(computeCmdBuffer);
 
 		m_computeQueue.SubmitCommandBuffer(computeSubmitBuilder);
@@ -379,7 +382,7 @@ void RenderEngineVSIndirect::Render(
 			.SignalSemaphore(graphicsWaitSemaphore)
 			// The graphics queue should wait for the compute queue to finish and then start the
 			// Input Assembler Stage.
-			.WaitSemaphore(computeWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
+			.WaitSemaphore(computeWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, frameNumber)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);

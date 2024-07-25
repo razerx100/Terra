@@ -70,7 +70,8 @@ std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBu
 }
 
 void RenderEngineMS::Render(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	std::uint64_t frameNumber
 ) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
@@ -104,7 +105,7 @@ void RenderEngineMS::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
-			.SignalSemaphore(transferWaitSemaphore)
+			.SignalSemaphore(transferWaitSemaphore, frameNumber)
 			.WaitSemaphore(graphicsWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
@@ -148,7 +149,7 @@ void RenderEngineMS::Render(
 			.SignalSemaphore(graphicsWaitSemaphore)
 			// The graphics queue should wait for the transfer queue to finish and then start the
 			// Input Assembler Stage.
-			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT)
+			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT, frameNumber)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);

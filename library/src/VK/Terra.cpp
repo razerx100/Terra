@@ -148,6 +148,11 @@ void Terra::Render()
 {
 	static size_t nextPotentialImageIndex = 0u;
 
+	// I guess I can use this single value to signal multiple semaphores?
+	// As long as it is signaled once a frame.
+	static std::uint64_t frameNumber = 0u;
+	++frameNumber;
+
 	{
 		VkDevice device = m_deviceManager.GetLogicalDevice();
 
@@ -162,7 +167,7 @@ void Terra::Render()
 
 	m_renderEngine->Render(
 		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
-		m_swapchain->GetCurrentSwapchainExtent()
+		m_swapchain->GetCurrentSwapchainExtent(), frameNumber
 	);
 
 	const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextImageIndex);

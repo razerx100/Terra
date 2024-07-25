@@ -30,7 +30,10 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle) override;
 
-	void Render(size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea) override;
+	void Render(
+		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		std::uint64_t frameNumber
+	) override;
 
 private:
 	[[nodiscard]]
