@@ -576,11 +576,6 @@ void ModelManagerVSIndirect::ConfigureModel(
 		);
 	}
 
-	const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
-
-	// This will need to be updated later, as I will probably update the Mesh Index setting logic.
-	m_meshIndexBuffer.Add(modelBundleIndexInBuffer, model->GetMeshIndex());
-
 	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
 
 	modelBundleCS.SetID(index32_t);
@@ -598,6 +593,20 @@ void ModelManagerVSIndirect::ConfigureModel(
 	++m_argumentCount;
 
 	UpdateDispatchX();
+}
+
+void ModelManagerVSIndirect::_setMeshIndex(
+	size_t modelBundelVSIndex, std::uint32_t meshBundleID
+) {
+	// Both should have the same index.
+	ModelBundleCSIndirect& modelBundleCS = m_modelBundlesCS.at(modelBundelVSIndex);
+
+	if (m_modelBundles.at(modelBundelVSIndex).GetModelCount())
+	{
+		const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
+
+		m_meshIndexBuffer.Add(modelBundleIndexInBuffer, meshBundleID);
+	}
 }
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
@@ -633,14 +642,6 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 			*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
 			m_modelBundleCSTempData
 		);
-	}
-
-	if(modelCount)
-	{
-		const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
-
-		// This will need to be updated later, as I will probably update the Mesh Index setting logic.
-		m_meshIndexBuffer.Add(modelBundleIndexInBuffer, modelBundle.front()->GetMeshIndex());
 	}
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));

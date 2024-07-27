@@ -62,10 +62,6 @@ public:
 	[[nodiscard]]
 	DirectX::XMFLOAT3 GetModelOffset() const noexcept override { return {}; }
 	[[nodiscard]]
-	bool IsLightSource() const noexcept override { return false; }
-	[[nodiscard]]
-	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
-	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
 	std::uint32_t GetDiffuseIndex() const noexcept override { return 0u; }
@@ -86,10 +82,6 @@ public:
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
 	[[nodiscard]]
 	DirectX::XMFLOAT3 GetModelOffset() const noexcept override { return {}; }
-	[[nodiscard]]
-	bool IsLightSource() const noexcept override { return false; }
-	[[nodiscard]]
-	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
@@ -121,10 +113,6 @@ public:
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
 	[[nodiscard]]
 	DirectX::XMFLOAT3 GetModelOffset() const noexcept override { return {}; }
-	[[nodiscard]]
-	bool IsLightSource() const noexcept override { return false; }
-	[[nodiscard]]
-	std::uint32_t GetMeshIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
 	[[nodiscard]]

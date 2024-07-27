@@ -485,7 +485,8 @@ template<
 	class MeshType,
 	class ModelBundleType,
 	class ModelType,
-	bool  TempData, bool meshBounds
+	bool  TempData, bool meshBounds,
+	bool OverloadSetMesh
 >
 class ModelManager
 {
@@ -537,7 +538,6 @@ public:
 		// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 		// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
 		std::shared_ptr<ModelType> tempModel = model;
-		const std::uint32_t meshIndex        = model->GetMeshIndex();
 
 		const size_t modelIndex = m_modelBuffers.Add(std::move(model));
 
@@ -545,8 +545,6 @@ public:
 
 		ModelBundleType modelBundle{};
 		dvThis->ConfigureModel(modelBundle, modelIndex, tempModel);
-
-		modelBundle.SetMeshIndex(meshIndex);
 
 		const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
@@ -567,9 +565,6 @@ public:
 
 		if (modelCount)
 		{
-			// All of the models in a bundle should have the same mesh.
-			const std::uint32_t meshIndex = modelBundle.front()->GetMeshIndex();
-
 			std::vector<std::shared_ptr<Model>> tempModelBundle{ modelCount, nullptr };
 
 			for (size_t index = 0u; index < modelCount; ++index)
@@ -583,8 +578,6 @@ public:
 			ModelBundleType modelBundleObj{};
 
 			dvThis->ConfigureModelBundle(modelBundleObj, modelIndices, modelBundle);
-
-			modelBundleObj.SetMeshIndex(meshIndex);
 
 			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
@@ -636,6 +629,21 @@ public:
 			m_modelBundles.erase(modelBundle);
 
 			AddModelBundle(std::move(modelBundleObj));
+		}
+	}
+
+	void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID)
+	{
+		auto modelBundle = GetModelBundle(modelBundleID);
+
+		if (modelBundle != std::end(m_modelBundles))
+		{
+			modelBundle->SetMeshIndex(meshBundleID);
+
+			if constexpr (OverloadSetMesh)
+				static_cast<Derived*>(this)->_setMeshIndex(
+					std::distance(std::begin(m_modelBundles), modelBundle), meshBundleID
+				);
 		}
 	}
 
@@ -850,7 +858,7 @@ class ModelManagerVSIndividual : public
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndividual, ModelVS,
-		true, false
+		true, false, false
 	>
 {
 	friend class ModelManager
@@ -859,7 +867,7 @@ class ModelManagerVSIndividual : public
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndividual, ModelVS,
-			true, false
+			true, false, false
 		>;
 	friend class ModelManagerVSIndividualTest;
 public:
@@ -925,7 +933,7 @@ class ModelManagerVSIndirect : public
 		GraphicsPipelineIndirectDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndirect, ModelVS,
-		true, true
+		true, true, true
 	>
 {
 	friend class ModelManager
@@ -934,7 +942,7 @@ class ModelManagerVSIndirect : public
 			GraphicsPipelineIndirectDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndirect, ModelVS,
-			true, true
+			true, true, true
 		>;
 	friend class ModelManagerVSIndirectTest;
 
@@ -989,6 +997,7 @@ private:
 	);
 
 	void _cleanUpTempData() noexcept;
+	void _setMeshIndex(size_t modelBundelVSIndex, std::uint32_t meshBundleID);
 
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
@@ -1104,7 +1113,7 @@ class ModelManagerMS : public
 		GraphicsPipelineMeshShader,
 		MeshManagerMeshShader, MeshBundleMS,
 		ModelBundleMS, ModelMS,
-		true, false
+		true, false, false
 	>
 {
 	friend class ModelManager
@@ -1113,7 +1122,7 @@ class ModelManagerMS : public
 			GraphicsPipelineMeshShader,
 			MeshManagerMeshShader, MeshBundleMS,
 			ModelBundleMS, ModelMS,
-			true, false
+			true, false, false
 		>;
 	friend class ModelManagerMSTest;
 

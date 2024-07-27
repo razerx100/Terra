@@ -59,6 +59,11 @@ void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName
 	m_terra.GetRenderEngine().ChangeFragmentShader(modelBundleID, fragmentShader);
 }
 
+void RendererVK::SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID)
+{
+	m_terra.GetRenderEngine().SetMeshIndex(modelBundleID, meshBundleID);
+}
+
 size_t RendererVK::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {

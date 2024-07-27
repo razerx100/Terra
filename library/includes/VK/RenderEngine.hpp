@@ -98,6 +98,7 @@ public:
 		std::uint32_t width, std::uint32_t height,
 		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
 	) = 0;
+	virtual void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) = 0;
 
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
@@ -252,6 +253,11 @@ public:
 	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
 	{
 		m_modelManager.RemoveMeshBundle(bundleIndex);
+	}
+
+	void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) override
+	{
+		m_modelManager.SetMeshIndex(modelBundleID, meshBundleID);
 	}
 
 	void Resize(
