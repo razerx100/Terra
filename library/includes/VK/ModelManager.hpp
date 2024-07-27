@@ -64,16 +64,9 @@ public:
 class ModelBundleVSIndividual : public ModelBundle
 {
 public:
-	struct ModelDetails
-	{
-		std::uint32_t                modelBufferIndex;
-		VkDrawIndexedIndirectCommand indexedArguments;
-	};
+	ModelBundleVSIndividual() : ModelBundle{}, m_modelBufferIndices{} {}
 
-public:
-	ModelBundleVSIndividual() : ModelBundle{}, m_modelDetails{} {}
-
-	void AddModelDetails(const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex) noexcept;
+	void AddModelDetails(std::shared_ptr<ModelVS> model, std::uint32_t modelBufferIndex) noexcept;
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
@@ -88,7 +81,7 @@ public:
 	}
 
 	[[nodiscard]]
-	const std::vector<ModelDetails>& GetDetails() const noexcept { return m_modelDetails; }
+	const std::vector<std::uint32_t>& GetIndices() const noexcept { return m_modelBufferIndices; }
 
 	[[nodiscard]]
 	std::uint64_t GetID() const noexcept
@@ -97,26 +90,30 @@ public:
 		// so return uint64_t::max as the invalid index. Then, the model indices should be unique
 		// so, just returning the first one should be enough to identify the bundle, as no other bundles
 		// should have it.
-		if (!std::empty(m_modelDetails))
-			return m_modelDetails.front().modelBufferIndex;
+		if (!std::empty(m_modelBufferIndices))
+			return m_modelBufferIndices.front();
 		else
 			return std::numeric_limits<std::uint64_t>::max();
 	}
 
 private:
-	std::vector<ModelDetails> m_modelDetails;
+	std::vector<std::uint32_t>            m_modelBufferIndices;
+	std::vector<std::shared_ptr<ModelVS>> m_models;
 
 public:
 	ModelBundleVSIndividual(const ModelBundleVSIndividual&) = delete;
 	ModelBundleVSIndividual& operator=(const ModelBundleVSIndividual&) = delete;
 
 	ModelBundleVSIndividual(ModelBundleVSIndividual&& other) noexcept
-		: ModelBundle{ std::move(other) }, m_modelDetails{ std::move(other.m_modelDetails) }
+		: ModelBundle{ std::move(other) },
+		m_modelBufferIndices{ std::move(other.m_modelBufferIndices) },
+		m_models{ std::move(other.m_models) }
 	{}
 	ModelBundleVSIndividual& operator=(ModelBundleVSIndividual&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
-		m_modelDetails       = std::move(other.m_modelDetails);
+		m_modelBufferIndices = std::move(other.m_modelBufferIndices);
+		m_models             = std::move(other.m_models);
 
 		return *this;
 	}
@@ -544,7 +541,7 @@ public:
 		auto dvThis = static_cast<Derived*>(this);
 
 		ModelBundleType modelBundle{};
-		dvThis->ConfigureModel(modelBundle, modelIndex, tempModel);
+		dvThis->ConfigureModel(modelBundle, modelIndex, std::move(tempModel));
 
 		const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
@@ -577,7 +574,7 @@ public:
 
 			ModelBundleType modelBundleObj{};
 
-			dvThis->ConfigureModelBundle(modelBundleObj, modelIndices, modelBundle);
+			dvThis->ConfigureModelBundle(modelBundleObj, modelIndices, std::move(modelBundle));
 
 			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
@@ -885,12 +882,12 @@ private:
 
 	void ConfigureModel(
 		ModelBundleVSIndividual& modelBundleObj,
-		size_t modelIndex, const std::shared_ptr<ModelVS>& model
+		size_t modelIndex, std::shared_ptr<ModelVS> model
 	) const noexcept;
 	void ConfigureModelBundle(
 		ModelBundleVSIndividual& modelBundleObj,
 		const std::vector<size_t>& modelIndices,
-		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle
 	) const noexcept;
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
@@ -982,11 +979,11 @@ private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 
 	void ConfigureModel(
-		ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
+		ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model
 	);
 	void ConfigureModelBundle(
 		ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
-		const std::vector<std::shared_ptr<ModelVS>>& modelBundle
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle
 	);
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
@@ -1146,11 +1143,11 @@ public:
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 	void ConfigureModel(
-		ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
+		ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS> model
 	);
 	void ConfigureModelBundle(
 		ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
-		std::vector<std::shared_ptr<ModelMS>>& modelBundle
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle
 	);
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;

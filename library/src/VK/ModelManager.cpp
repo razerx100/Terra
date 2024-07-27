@@ -19,14 +19,10 @@ VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
 
 // Model Bundle VS Individual
 void ModelBundleVSIndividual::AddModelDetails(
-	const std::shared_ptr<ModelVS>& model, std::uint32_t modelBufferIndex
+	std::shared_ptr<ModelVS> model, std::uint32_t modelBufferIndex
 ) noexcept {
-	m_modelDetails.emplace_back(
-		ModelDetails{
-			.modelBufferIndex = modelBufferIndex,
-			.indexedArguments = GetDrawIndexedIndirectCommand(model)
-		}
-	);
+	m_modelBufferIndices.emplace_back(modelBufferIndex);
+	m_models.emplace_back(std::move(model));
 }
 
 void ModelBundleVSIndividual::Draw(
@@ -34,16 +30,16 @@ void ModelBundleVSIndividual::Draw(
 ) const noexcept {
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
-	for (const auto& modelDetail : m_modelDetails)
+	for(size_t index = 0; index < std::size(m_models); ++index)
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
-			pushConstantSize, &modelDetail.modelBufferIndex
+			pushConstantSize, &m_modelBufferIndices.at(index)
 		);
 
-		const VkDrawIndexedIndirectCommand& meshArgs = modelDetail.indexedArguments;
+		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(m_models.at(index));
 		vkCmdDrawIndexed(
 			cmdBuffer, meshArgs.indexCount, meshArgs.instanceCount,
 			meshArgs.firstIndex, meshArgs.vertexOffset, meshArgs.firstInstance
@@ -358,24 +354,24 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 }
 
 void ModelManagerVSIndividual::ConfigureModel(
-	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
+	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model
 ) const noexcept {
-	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
+	modelBundleObj.AddModelDetails(std::move(model), static_cast<std::uint32_t>(modelIndex));
 }
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
 	ModelBundleVSIndividual& modelBundleObj,
 	const std::vector<size_t>& modelIndices,
-	const std::vector<std::shared_ptr<ModelVS>>& modelBundle
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle
 ) const noexcept {
 	const size_t modelCount = std::size(modelBundle);
 
 	for (size_t index = 0u; index < modelCount; ++index)
 	{
-		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
-		const size_t modelIndex               = modelIndices.at(index);
+		std::shared_ptr<ModelVS>& model = modelBundle.at(index);
+		const size_t modelIndex         = modelIndices.at(index);
 
-		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
+		modelBundleObj.AddModelDetails(std::move(model), static_cast<std::uint32_t>(modelIndex));
 	}
 }
 
@@ -383,10 +379,10 @@ void ModelManagerVSIndividual::ConfigureModelRemove(size_t bundleIndex) noexcept
 {
 	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
 
-	const auto& modelDetails = modelBundle.GetDetails();
+	const auto& modelIndices = modelBundle.GetIndices();
 
-	for (const auto& modelDetail : modelDetails)
-		m_modelBuffers.Remove(modelDetail.modelBufferIndex);
+	for (const auto& modelIndex : modelIndices)
+		m_modelBuffers.Remove(modelIndex);
 }
 
 void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
@@ -562,10 +558,10 @@ void ModelManagerVSIndirect::UpdateDispatchX() noexcept
 }
 
 void ModelManagerVSIndirect::ConfigureModel(
-	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, const std::shared_ptr<ModelVS>& model
+	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model
 ) {
 	ModelBundleCSIndirect modelBundleCS{};
-	modelBundleCS.AddModelDetails(model);
+	modelBundleCS.AddModelDetails(std::move(model));
 
 	{
 		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
@@ -611,7 +607,7 @@ void ModelManagerVSIndirect::_setMeshIndex(
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
 	ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
-	const std::vector<std::shared_ptr<ModelVS>>& modelBundle
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -619,10 +615,10 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	for (size_t index = 0u; index < modelCount; ++index)
 	{
-		const std::shared_ptr<ModelVS>& model = modelBundle.at(index);
-		const size_t modelIndex               = modelIndices.at(index);
+		std::shared_ptr<ModelVS>& model = modelBundle.at(index);
+		const size_t modelIndex         = modelIndices.at(index);
 
-		modelBundleCS.AddModelDetails(model);
+		modelBundleCS.AddModelDetails(std::move(model));
 
 		modelBundleObj.AddModelDetails(static_cast<std::uint32_t>(modelIndex));
 	}
@@ -965,7 +961,7 @@ ModelManagerMS::ModelManagerMS(
 {}
 
 void ModelManagerMS::ConfigureModel(
-	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS>& model
+	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS> model
 ) {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 
@@ -977,7 +973,7 @@ void ModelManagerMS::ConfigureModel(
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelMS>>& modelBundle
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
