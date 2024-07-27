@@ -408,10 +408,37 @@ void ModelManagerVSIndividual::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerVertexShader& meshManager
 ) {
+	// The vertex and index buffer should be guarded with the tempData mutex, but
+	// I am not doing it here, because the ConfigureMeshBundle function call is already
+	// being guarded by the tempData mutex.
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
 		m_meshBundleTempData
 	);
+}
+
+void ModelManagerVSIndividual::CopyTempData(const VKCommandBuffer& transferCmdBuffer) const noexcept
+{
+	if (m_indexBuffer.DoesTempDataExist())
+	{
+		m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
+	}
+	if (m_vertexBuffer.DoesTempDataExist())
+	{
+		m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
+	}
+}
+
+void ModelManagerVSIndividual::_cleanUpTempData() noexcept
+{
+	if (m_indexBuffer.DoesTempDataExist())
+	{
+		m_indexBuffer.CleanupTempData();
+	}
+	if (m_vertexBuffer.DoesTempDataExist())
+	{
+		m_vertexBuffer.CleanupTempData();
+	}
 }
 
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(

@@ -105,6 +105,11 @@ public:
 	void CleanupTempData() noexcept;
 
 	[[nodiscard]]
+	bool DoesTempDataExist() const noexcept
+	{
+		return m_tempBuffer.Get() != VK_NULL_HANDLE;
+	}
+	[[nodiscard]]
 	VkDeviceSize Size() const noexcept
 	{
 		return m_buffer.BufferSize();

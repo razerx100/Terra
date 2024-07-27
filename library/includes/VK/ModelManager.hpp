@@ -646,6 +646,9 @@ public:
 		MeshManager meshManager{};
 
 		{
+			// Since the mesh bundle temp data will be cleaned from a different thread.
+			// And there is also a good chance that the ConfugureMeshBundle will also
+			// have the possiblity to create tempData from some SharedBuffer.
 			std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
 
 			static_cast<Derived*>(this)->ConfigureMeshBundle(
@@ -847,7 +850,7 @@ class ModelManagerVSIndividual : public
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndividual, ModelVS,
-		false, false
+		true, false
 	>
 {
 	friend class ModelManager
@@ -856,7 +859,7 @@ class ModelManagerVSIndividual : public
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndividual, ModelVS,
-			false, false
+			true, false
 		>;
 	friend class ModelManagerVSIndividualTest;
 public:
@@ -866,6 +869,8 @@ public:
 	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+
+	void CopyTempData(const VKCommandBuffer& transferCmdBuffer) const noexcept;
 
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
@@ -886,6 +891,9 @@ private:
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerVertexShader& meshManager
 	);
+
+private:
+	void _cleanUpTempData() noexcept;
 
 private:
 	SharedBuffer m_vertexBuffer;
