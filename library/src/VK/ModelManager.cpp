@@ -342,11 +342,9 @@ ModelManagerVSIndividual::ModelManagerVSIndividual(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount
 ) : ModelManager{ device, memoryManager, frameCount },
 	m_vertexBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, {}
 	}, m_indexBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, {}
 	}
 {}
 
@@ -502,28 +500,22 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	QueueIndices3 queueIndices3, std::uint32_t frameCount
 ) : ModelManager{ device, memoryManager, frameCount }, m_stagingBufferMan{ stagingBufferMan },
 	m_argumentInputBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_argumentOutputBuffers{},
 	m_cullingDataBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_meshIndexBuffer{ device, memoryManager },
 	m_modelIndicesBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
 	}, m_vertexBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, {}
 	}, m_indexBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, {}
 	}, m_modelBundleIndexBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_tempGPUDataCopied{ false },
 	m_modelBundlesCS{}, m_modelBundleCSTempData{}
@@ -961,17 +953,13 @@ ModelManagerMS::ModelManagerMS(
 ) : ModelManager{ device, memoryManager, frameCount },
 	m_stagingBufferMan{ stagingBufferMan },
 	m_meshletBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_vertexBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_vertexIndicesBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_primIndicesBuffer{
-		device, memoryManager,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_modelBundleTempData {}
 {}
 

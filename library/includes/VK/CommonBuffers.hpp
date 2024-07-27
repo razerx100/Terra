@@ -78,7 +78,12 @@ public:
 	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_buffer{ GetGPUResource<Buffer>(device, memoryManager) },
 		m_tempBuffer{ GetGPUResource<Buffer>(device, memoryManager) },
-		m_usageFlags{ usageFlags }, m_queueFamilyIndices{ queueIndices }, m_availableMemory{}
+		// When a new bigger buffer is created to fit new data, a copy will be required. The old
+		// one will be copied to the new bigger one. So, they will require both TRANSFER_DST and SRC
+		// bits. Cus the same buffer would be the dst when it is created anew and then later be the src
+		// when a bigger one is created.
+		m_usageFlags{ usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
+		m_queueFamilyIndices{ queueIndices }, m_availableMemory{}
 	{}
 
 	[[nodiscard]]
