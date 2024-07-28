@@ -58,14 +58,15 @@ public:
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, std::deque<TempData>& tempDataContainer
+		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer,
+		std::deque<TempData>& tempDataContainer
 	);
 	// With bound data when the bound data has exclusive ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-		std::deque<TempDataBounds>& tempDataContainer,
+		TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer,
 		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 	);
 	// With bound data when the bound data has shared ownership.
@@ -73,7 +74,7 @@ public:
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-		std::deque<TempDataBounds>& tempDataContainer
+		TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer
 	);
 
 	[[nodiscard]]
@@ -107,7 +108,8 @@ private:
 	void SetMeshBundle(
 		StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, TempData& tempData
+		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer,
+		TempData& tempData
 	);
 
 	[[nodiscard]]

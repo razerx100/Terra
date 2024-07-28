@@ -269,40 +269,48 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 	m_materialBuffers.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
 }
 
-std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)
-{
+std::uint32_t RenderEngine::AddMeshBundle(
+	[[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle,
+	[[maybe_unused]] size_t previousFrameIndex
+) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
-std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleMS> meshBundle)
-{
+std::uint32_t RenderEngine::AddMeshBundle(
+	[[maybe_unused]] std::unique_ptr<MeshBundleMS> meshBundle,
+	[[maybe_unused]] size_t previousFrameIndex
+) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModel(
 	[[maybe_unused]] std::shared_ptr<ModelVS>&& model,
-	[[maybe_unused]] const ShaderName& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader,
+	[[maybe_unused]] size_t previousFrameIndex
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
 	[[maybe_unused]] std::vector<std::shared_ptr<ModelVS>>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader,
+	[[maybe_unused]] size_t previousFrameIndex
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModel(
 	[[maybe_unused]] std::shared_ptr<ModelMS>&& model,
-	[[maybe_unused]] const ShaderName& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader,
+	[[maybe_unused]] size_t previousFrameIndex
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
 	[[maybe_unused]] std::vector<std::shared_ptr<ModelMS>>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader
+	[[maybe_unused]] const ShaderName& fragmentShader,
+	[[maybe_unused]] size_t previousFrameIndex
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }

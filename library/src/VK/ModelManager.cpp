@@ -98,11 +98,11 @@ void ModelBundleMS::Draw(
 
 void ModelBundleMS::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
-	std::deque<TempData>& tempDataContainer
+	TemporaryDataBuffer& tempBuffer, std::deque<TempData>& tempDataContainer
 ) {
 	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
 
-	m_meshletSharedData = meshletSharedBuffer.AllocateAndGetSharedData(meshletBufferSize);
+	m_meshletSharedData = meshletSharedBuffer.AllocateAndGetSharedData(meshletBufferSize, tempBuffer);
 
 	TempData& tempData = tempDataContainer.emplace_back(TempData{ std::move(m_meshlets) });
 
@@ -129,7 +129,8 @@ void ModelBundleVSIndirect::AddModelDetails(std::uint32_t modelBufferIndex) noex
 void ModelBundleVSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBuffer>& argumentOutputSharedBuffers,
-	std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer
+	std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
+	TemporaryDataBuffer& tempBuffer
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	constexpr size_t indexStrideSize    = sizeof(std::uint32_t);
@@ -141,13 +142,13 @@ void ModelBundleVSIndirect::CreateBuffers(
 	// it should be fine.
 	for (auto& argumentOutputSharedBuffer : argumentOutputSharedBuffers)
 		m_argumentOutputSharedData = argumentOutputSharedBuffer.AllocateAndGetSharedData(
-			argumentOutputBufferSize
+			argumentOutputBufferSize, tempBuffer
 		);
 
 	for (auto& counterSharedBuffer : counterSharedBuffers)
-		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(s_counterBufferSize);
+		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(s_counterBufferSize, tempBuffer);
 
-	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize);
+	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize, tempBuffer);
 
 	stagingBufferMan.AddBuffer(
 		std::data(m_modelIndices), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u
@@ -193,7 +194,7 @@ void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& mode
 void ModelBundleCSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedBuffer,
 	SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
-	std::deque<TempData>& tempDataContainer
+	TemporaryDataBuffer& tempBuffer, std::deque<TempData>& tempDataContainer
 ) {
 	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
@@ -203,10 +204,12 @@ void ModelBundleCSIndirect::CreateBuffers(
 	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
 	const auto modelIndexDataSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t) * argumentCount);
 
-	m_argumentInputSharedData    = argumentSharedBuffer.AllocateAndGetSharedData(argumentBufferSize);
-	m_cullingSharedData          = cullingSharedBuffer.AllocateAndGetSharedData(cullingDataSize);
+	m_argumentInputSharedData    = argumentSharedBuffer.AllocateAndGetSharedData(
+		argumentBufferSize, tempBuffer
+	);
+	m_cullingSharedData          = cullingSharedBuffer.AllocateAndGetSharedData(cullingDataSize, tempBuffer);
 	m_modelBundleIndexSharedData = modelBundleIndexSharedBuffer.AllocateAndGetSharedData(
-		modelIndexDataSize
+		modelIndexDataSize, tempBuffer
 	);
 
 	const auto modelBundleIndex = GetModelBundleIndex();
@@ -354,15 +357,15 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 }
 
 void ModelManagerVSIndividual::ConfigureModel(
-	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model
+	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model,
+	TemporaryDataBuffer& // Not needed in this system.
 ) const noexcept {
 	modelBundleObj.AddModelDetails(std::move(model), static_cast<std::uint32_t>(modelIndex));
 }
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
-	ModelBundleVSIndividual& modelBundleObj,
-	const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle
+	ModelBundleVSIndividual& modelBundleObj, const std::vector<size_t>& modelIndices,
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBuffer&// Not needed in this system.
 ) const noexcept {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -400,39 +403,21 @@ void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndividual::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerVertexShader& meshManager
+	MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
 ) {
 	// The vertex and index buffer should be guarded with the tempData mutex, but
 	// I am not doing it here, because the ConfigureMeshBundle function call is already
 	// being guarded by the tempData mutex.
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
-		m_meshBundleTempData
+		tempBuffer, m_meshBundleTempData
 	);
 }
 
 void ModelManagerVSIndividual::CopyTempData(const VKCommandBuffer& transferCmdBuffer) const noexcept
 {
-	if (m_indexBuffer.DoesTempDataExist())
-	{
-		m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
-	}
-	if (m_vertexBuffer.DoesTempDataExist())
-	{
-		m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
-	}
-}
-
-void ModelManagerVSIndividual::_cleanUpTempData() noexcept
-{
-	if (m_indexBuffer.DoesTempDataExist())
-	{
-		m_indexBuffer.CleanupTempData();
-	}
-	if (m_vertexBuffer.DoesTempDataExist())
-	{
-		m_vertexBuffer.CleanupTempData();
-	}
+	m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
+	m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
 }
 
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(
@@ -558,14 +543,15 @@ void ModelManagerVSIndirect::UpdateDispatchX() noexcept
 }
 
 void ModelManagerVSIndirect::ConfigureModel(
-	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model
+	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model,
+	TemporaryDataBuffer& tempBuffer
 ) {
 	ModelBundleCSIndirect modelBundleCS{};
 	modelBundleCS.AddModelDetails(std::move(model));
 
 	modelBundleCS.CreateBuffers(
 		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-		m_modelBundleCSTempData
+		tempBuffer, m_modelBundleCSTempData
 	);
 
 	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
@@ -577,7 +563,8 @@ void ModelManagerVSIndirect::ConfigureModel(
 	modelBundleObj.AddModelDetails(index32_t);
 
 	modelBundleObj.CreateBuffers(
-		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer,
+		tempBuffer
 	);
 
 	UpdateCounterResetValues();
@@ -603,7 +590,7 @@ void ModelManagerVSIndirect::_setMeshIndex(
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
 	ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBuffer& tempBuffer
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -622,14 +609,15 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	modelBundleCS.SetID(static_cast<std::uint32_t>(modelBundleObj.GetID()));
 
 	modelBundleObj.CreateBuffers(
-		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer,
+		tempBuffer
 	);
 
 	UpdateCounterResetValues();
 
 	modelBundleCS.CreateBuffers(
 		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-		m_modelBundleCSTempData
+		tempBuffer, m_modelBundleCSTempData
 	);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
@@ -710,11 +698,11 @@ void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndirect::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerVertexShader& meshManager
+	MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_meshBoundsBuffer,
-		m_meshBundleTempData,
+		tempBuffer, m_meshBundleTempData,
 		QueueType::ComputeQueue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	);
 }
@@ -953,16 +941,17 @@ ModelManagerMS::ModelManagerMS(
 {}
 
 void ModelManagerMS::ConfigureModel(
-	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS> model
+	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS> model,
+	TemporaryDataBuffer& tempBuffer
 ) {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 
-	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
+	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, tempBuffer, m_modelBundleTempData);
 }
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, TemporaryDataBuffer& tempBuffer
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -974,7 +963,7 @@ void ModelManagerMS::ConfigureModelBundle(
 		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
 
-	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
+	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, tempBuffer, m_modelBundleTempData);
 }
 
 void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
@@ -1011,11 +1000,11 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 void ModelManagerMS::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerMeshShader& meshManager
+	MeshManagerMeshShader& meshManager, TemporaryDataBuffer& tempBuffer
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
-		m_primIndicesBuffer, m_meshBundleTempData
+		m_primIndicesBuffer, tempBuffer, m_meshBundleTempData
 	);
 }
 

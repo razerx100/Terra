@@ -6,6 +6,7 @@
 #include <ReusableVkBuffer.hpp>
 #include <VkCommandQueue.hpp>
 #include <queue>
+#include <TemporaryDataBuffer.hpp>
 
 #include <Material.hpp>
 #include <MeshBundle.hpp>
@@ -76,8 +77,7 @@ public:
 		VkDevice device, MemoryManager* memoryManager, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueIndices
 	) : m_device{ device }, m_memoryManager{ memoryManager },
-		m_buffer{ GetGPUResource<Buffer>(device, memoryManager) },
-		m_tempBuffer{ GetGPUResource<Buffer>(device, memoryManager) },
+		m_buffer{ GetGPUResource<Buffer>(device, memoryManager) }, m_tempBuffer{},
 		// When a new bigger buffer is created to fit new data, a copy will be required. The old
 		// one will be copied to the new bigger one. So, they will require both TRANSFER_DST and SRC
 		// bits. Cus the same buffer would be the dst when it is created anew and then later be the src
@@ -88,14 +88,14 @@ public:
 
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	VkDeviceSize AllocateMemory(VkDeviceSize size);
+	VkDeviceSize AllocateMemory(VkDeviceSize size, TemporaryDataBuffer& tempBuffer);
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size)
+	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size, TemporaryDataBuffer& tempBuffer)
 	{
 		return SharedBufferData{
 			.bufferData = &m_buffer,
-			.offset     = AllocateMemory(size),
+			.offset     = AllocateMemory(size, tempBuffer),
 			.size       = size
 		};
 	}
@@ -107,13 +107,7 @@ public:
 	}
 
 	void CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept;
-	void CleanupTempData() noexcept;
 
-	[[nodiscard]]
-	bool DoesTempDataExist() const noexcept
-	{
-		return m_tempBuffer.Get() != VK_NULL_HANDLE;
-	}
 	[[nodiscard]]
 	VkDeviceSize Size() const noexcept
 	{
@@ -145,7 +139,7 @@ private:
 	};
 
 private:
-	void CreateBuffer(VkDeviceSize size);
+	void CreateBuffer(VkDeviceSize size, TemporaryDataBuffer& tempBuffer);
 
 	void AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept;
 
@@ -153,7 +147,7 @@ private:
 	VkDevice                   m_device;
 	MemoryManager*             m_memoryManager;
 	Buffer                     m_buffer;
-	Buffer                     m_tempBuffer;
+	std::shared_ptr<Buffer>    m_tempBuffer;
 	VkBufferUsageFlags         m_usageFlags;
 	std::vector<std::uint32_t> m_queueFamilyIndices;
 	std::vector<AllocInfo>     m_availableMemory;

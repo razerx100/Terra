@@ -153,7 +153,7 @@ void Terra::Render()
 	static std::uint64_t frameNumber = 0u;
 	++frameNumber;
 
-		VkDevice device = m_deviceManager.GetLogicalDevice();
+	VkDevice device = m_deviceManager.GetLogicalDevice();
 
 	// If we have 3 frames, and the nextPotentialImageIndex is 2, it might be possible that
 	// the 2nd image has become usable by now and the nextIndex is 1. That should mean that the

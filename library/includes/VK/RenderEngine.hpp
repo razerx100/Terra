@@ -103,27 +103,35 @@ public:
 
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader
+		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	);
 
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 
 	[[nodiscard]]
-	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle);
+	virtual std::uint32_t AddMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, size_t previousFrameIndex
+	);
 	[[nodiscard]]
-	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle);
+	virtual std::uint32_t AddMeshBundle(
+		std::unique_ptr<MeshBundleMS> meshBundle, size_t previousFrameIndex
+	);
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
 

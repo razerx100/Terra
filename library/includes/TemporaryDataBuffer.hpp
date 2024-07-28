@@ -6,29 +6,40 @@
 class TemporaryDataBuffer
 {
 public:
-	TemporaryDataBuffer() = default;
+	TemporaryDataBuffer() : m_tempBuffer{}, m_isUsed{ false } {};
 
-	template<typename T>
-	void Add(std::shared_ptr<T> tempData) noexcept
+	void Add(std::shared_ptr<void> tempData) noexcept
 	{
 		m_tempBuffer.emplace_back(std::move(tempData));
 	}
 
-	void Clear() noexcept { m_tempBuffer.clear(); }
+	void SetUsed() noexcept { m_isUsed = true; }
+
+	void Clear() noexcept
+	{
+		if (m_isUsed)
+		{
+			m_tempBuffer.clear();
+			m_isUsed = false;
+		}
+	}
 
 private:
 	std::vector<std::shared_ptr<void>> m_tempBuffer;
+	bool                               m_isUsed;
 
 public:
 	TemporaryDataBuffer(const TemporaryDataBuffer&) = delete;
 	TemporaryDataBuffer& operator=(const TemporaryDataBuffer&) = delete;
 
 	TemporaryDataBuffer(TemporaryDataBuffer&& other) noexcept
-		: m_tempBuffer{ std::move(other.m_tempBuffer) }
+		: m_tempBuffer{ std::move(other.m_tempBuffer) },
+		m_isUsed{ other.m_isUsed }
 	{}
 	TemporaryDataBuffer& operator=(TemporaryDataBuffer&& other) noexcept
 	{
 		m_tempBuffer = std::move(other.m_tempBuffer);
+		m_isUsed     = other.m_isUsed;
 
 		return *this;
 	}

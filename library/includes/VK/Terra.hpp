@@ -30,6 +30,49 @@ public:
 	[[nodiscard]]
 	DisplayManager::Resolution GetFirstDisplayCoordinates() const;
 
+	[[nodiscard]]
+	std::uint32_t AddModel(
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
+	) {
+		return m_renderEngine->AddModel(
+			std::move(model), fragmentShader, m_swapchain->GetNextImageIndex()
+		);
+	}
+	[[nodiscard]]
+	std::uint32_t AddModel(
+		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader
+	) {
+		return m_renderEngine->AddModel(
+			std::move(model), fragmentShader, m_swapchain->GetNextImageIndex()
+		);
+	}
+	[[nodiscard]]
+	std::uint32_t AddModelBundle(
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+	) {
+		return m_renderEngine->AddModelBundle(
+			std::move(modelBundle), fragmentShader, m_swapchain->GetNextImageIndex()
+		);
+	}
+	[[nodiscard]]
+	std::uint32_t AddModelBundle(
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
+	) {
+		return m_renderEngine->AddModelBundle(
+			std::move(modelBundle), fragmentShader, m_swapchain->GetNextImageIndex()
+		);
+	}
+	[[nodiscard]]
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
+	{
+		return m_renderEngine->AddMeshBundle(std::move(meshBundle), m_swapchain->GetNextImageIndex());
+	}
+	[[nodiscard]]
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
+	{
+		return m_renderEngine->AddMeshBundle(std::move(meshBundle), m_swapchain->GetNextImageIndex());
+	}
+
 private:
 	void CreateInstance();
 	void CreateSurface(void* windowHandle, void* moduleHandle);

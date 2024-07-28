@@ -17,15 +17,19 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	) override;
 
 	[[nodiscard]]
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override;
+	std::uint32_t AddMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, size_t previousFrameIndex
+	) override;
 
 	void Render(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
@@ -77,15 +81,18 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, size_t previousFrameIndex
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
+		size_t previousFrameIndex
 	) override;
 
 	[[nodiscard]]
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override;
+	std::uint32_t AddMeshBundle(
+		std::unique_ptr<MeshBundleVS> meshBundle, size_t previousFrameIndex
+	) override;
 
 	void Render(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,

@@ -29,12 +29,14 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModel(
-	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
+	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, size_t previousFrameIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddModel(std::move(model), fragmentShader);
+	const std::uint32_t index = m_modelManager.AddModel(
+		std::move(model), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
@@ -44,12 +46,15 @@ std::uint32_t RenderEngineVSIndividual::AddModel(
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
+	size_t previousFrameIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(std::move(modelBundle), fragmentShader);
+	const std::uint32_t index = m_modelManager.AddModelBundle(
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
@@ -58,13 +63,16 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
-{
+std::uint32_t RenderEngineVSIndividual::AddMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, size_t previousFrameIndex
+) {
 	// Add a mesh Bundle will update the Vertex and Index buffers. So, must wait for the queue to
 	// finish.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	return m_modelManager.AddMeshBundle(std::move(meshBundle), m_stagingManager);
+	return m_modelManager.AddMeshBundle(
+		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 }
 
 void RenderEngineVSIndividual::Render(
@@ -101,16 +109,7 @@ void RenderEngineVSIndividual::Render(
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
 
-		// This should clean the Mesh related temp data when a new model/mesh is added next.
-		m_threadPool->SubmitWork(
-			std::function{[&modelManager = m_modelManager, &transferWaitSemaphore, frameNumber]
-			{
-				transferWaitSemaphore.Wait(frameNumber);
-
-				// Should add the other cleanup functions here as well.
-				modelManager.CleanUpTempData();
-			}}
-		);
+		m_temporaryDataBuffer.at(frameIndex).SetUsed();
 	}
 
 	// Compute Phase (Not using atm)
@@ -237,12 +236,14 @@ ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
 }
 
 std::uint32_t RenderEngineVSIndirect::AddModel(
-	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader
+	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, size_t previousFrameIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddModel(std::move(model), fragmentShader);
+	const std::uint32_t index = m_modelManager.AddModel(
+		std::move(model), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
@@ -253,12 +254,15 @@ std::uint32_t RenderEngineVSIndirect::AddModel(
 }
 
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
+	size_t previousFrameIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(std::move(modelBundle), fragmentShader);
+	const std::uint32_t index = m_modelManager.AddModelBundle(
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
@@ -268,13 +272,16 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
-{
+std::uint32_t RenderEngineVSIndirect::AddMeshBundle(
+	std::unique_ptr<MeshBundleVS> meshBundle, size_t previousFrameIndex
+) {
 	// Add a mesh Bundle will update the Vertex and Index buffers. So, must wait for the queue to
 	// finish.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddMeshBundle(std::move(meshBundle), m_stagingManager);
+	const std::uint32_t index = m_modelManager.AddMeshBundle(
+		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers);
 
@@ -320,16 +327,7 @@ void RenderEngineVSIndirect::Render(
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
 
-		// This should clean the Mesh related temp data when a new model/mesh is added next.
-		m_threadPool->SubmitWork(
-			std::function{[&modelManager = m_modelManager, &transferWaitSemaphore, frameNumber]
-			{
-				transferWaitSemaphore.Wait(frameNumber);
-
-				// Should add the other cleanup functions here as well.
-				modelManager.CleanUpTempData();
-			}}
-		);
+		m_temporaryDataBuffer.at(frameIndex).SetUsed();
 	}
 
 	// Compute Phase

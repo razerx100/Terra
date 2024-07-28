@@ -27,12 +27,14 @@ RenderEngineMS::RenderEngineMS(
 }
 
 std::uint32_t RenderEngineMS::AddModel(
-	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader
+	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, size_t previousFrameIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddModel(std::move(model), fragmentShader);
+	const std::uint32_t index = m_modelManager.AddModel(
+		std::move(model), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
@@ -42,12 +44,15 @@ std::uint32_t RenderEngineMS::AddModel(
 }
 
 std::uint32_t RenderEngineMS::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
+	size_t previousFrameIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(std::move(modelBundle), fragmentShader);
+	const std::uint32_t index = m_modelManager.AddModelBundle(
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
@@ -56,13 +61,16 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
-{
+std::uint32_t RenderEngineMS::AddMeshBundle(
+	std::unique_ptr<MeshBundleMS> meshBundle, size_t previousFrameIndex
+) {
 	// Add a mesh Bundle will update the Vertex, VertexIndices and PrimIndices buffers.
 	// So, must wait for the queue to finish.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	const std::uint32_t index = m_modelManager.AddMeshBundle(std::move(meshBundle), m_stagingManager);
+	const std::uint32_t index = m_modelManager.AddMeshBundle(
+		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer.at(previousFrameIndex)
+	);
 
 	m_modelManager.SetDescriptorBufferOfMeshes(m_graphicsDescriptorBuffers);
 
@@ -102,16 +110,7 @@ void RenderEngineMS::Render(
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
 
-		// This should clean the Mesh related temp data when a new model/mesh is added next.
-		m_threadPool->SubmitWork(
-			std::function{[&modelManager = m_modelManager, &transferWaitSemaphore, frameNumber]
-			{
-				transferWaitSemaphore.Wait(frameNumber);
-
-				// Should add the other cleanup functions here as well.
-				modelManager.CleanUpTempData();
-			}}
-		);
+		m_temporaryDataBuffer.at(frameIndex).SetUsed();
 	}
 
 	// Compute Phase (Not using atm)

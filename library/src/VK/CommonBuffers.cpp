@@ -70,7 +70,7 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 }
 
 // Shared Buffer
-void SharedBuffer::CreateBuffer(VkDeviceSize size)
+void SharedBuffer::CreateBuffer(VkDeviceSize size, TemporaryDataBuffer& tempBuffer)
 {
 	// Moving it into the temp, as we will want to copy it back to the new bigger buffer.
 
@@ -85,8 +85,11 @@ void SharedBuffer::CreateBuffer(VkDeviceSize size)
 	// So, we wouldn't need to copy it. And since the first old buffer will be stored in the temp
 	// buffer, it won't be null and so we wouldn't replace it and the data should be preserved and
 	// safely copied to the main buffer upon calling CopyOldBuffer next.
-	if (m_tempBuffer.Get() == VK_NULL_HANDLE)
-		m_tempBuffer = std::move(m_buffer);
+	if (m_tempBuffer == nullptr)
+	{
+		m_tempBuffer = std::make_shared<Buffer>(std::move(m_buffer));
+		tempBuffer.Add(m_tempBuffer);
+	}
 
 	m_buffer = GetGPUResource<Buffer>(m_device, m_memoryManager);
 	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
@@ -94,15 +97,14 @@ void SharedBuffer::CreateBuffer(VkDeviceSize size)
 
 void SharedBuffer::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept
 {
-	copyBuffer.CopyWhole(m_tempBuffer, m_buffer);
+	if (m_tempBuffer)
+	{
+		std::shared_ptr<Buffer> tempBuffer = std::move(m_tempBuffer);
+		copyBuffer.CopyWhole(*tempBuffer, m_buffer);
+	}
 }
 
-void SharedBuffer::CleanupTempData() noexcept
-{
-	m_tempBuffer.Destroy();
-}
-
-VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
+VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size, TemporaryDataBuffer& tempBuffer)
 {
 	auto result = std::ranges::lower_bound(
 		m_availableMemory, size, {},
@@ -123,7 +125,7 @@ VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size)
 		// the offset would be correct, but the buffer would be unnecessarily recreated, even though
 		// it is not necessary. So, putting a check here.
 		if (newSize > oldSize)
-			CreateBuffer(newSize);
+			CreateBuffer(newSize, tempBuffer);
 	}
 	else
 	{
