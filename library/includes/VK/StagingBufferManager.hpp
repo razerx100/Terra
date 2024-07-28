@@ -13,11 +13,11 @@ class StagingBufferManager
 public:
 	StagingBufferManager(
 		VkDevice device, MemoryManager* memoryManager, ThreadPool* threadPool,
-		VkQueueFamilyMananger const* queueFamilyManager
+		VkQueueFamilyMananger const* queueFamilyManager, size_t frameCount
 	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_threadPool{ threadPool }, m_queueFamilyManager{ queueFamilyManager },
-		m_bufferData{}, m_tempBufferToBuffer{}, m_textureData{}, m_tempBufferToTexture{},
-		m_copyRecorded{ false }
+		m_bufferInfo{}, m_tempBufferToBuffer{}, m_textureInfo{}, m_tempBufferToTexture{},
+		m_cpuTempBuffers{ frameCount }
 	{}
 
 	// The destination info is required, when an ownership transfer is desired. Which
@@ -53,7 +53,7 @@ public:
 		);
 	}
 
-	void Copy(const VKCommandBuffer& transferCmdBuffer);
+	void CopyAndClear(const VKCommandBuffer& transferCmdBuffer, size_t frameIndex);
 	// This function should be run after the Copy function. The ownership transfer is done via a
 	// barrier. So, I shouldn't need any extra syncing.
 	void ReleaseOwnership(
@@ -65,16 +65,17 @@ public:
 		const VKCommandBuffer& ownerQueueCmdBuffer, std::uint32_t ownerQueueFamilyIndex,
 		std::uint32_t transferFamilyIndex
 	);
-	void CleanUpTempData() noexcept;
+	void CleanUpTempData(size_t frameIndex) noexcept;
 
 private:
 	void CopyCPU();
 	void CopyGPU(const VKCommandBuffer& transferCmdBuffer);
 
 	void CleanUpTempBuffers() noexcept;
+	void CleanUpBufferInfo() noexcept;
 
 private:
-	struct BufferData
+	struct BufferInfo
 	{
 		void const*           cpuHandle;
 		VkDeviceSize          bufferSize;
@@ -85,7 +86,7 @@ private:
 		VkPipelineStageFlags2 dstStage;
 	};
 
-	struct TextureData
+	struct TextureInfo
 	{
 		void const*           cpuHandle;
 		VkDeviceSize          bufferSize;
@@ -102,11 +103,11 @@ private:
 	MemoryManager*                       m_memoryManager;
 	ThreadPool*                          m_threadPool;
 	VkQueueFamilyMananger const*         m_queueFamilyManager;
-	std::vector<BufferData>              m_bufferData;
+	std::vector<BufferInfo>              m_bufferInfo;
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToBuffer;
-	std::vector<TextureData>             m_textureData;
+	std::vector<TextureInfo>             m_textureInfo;
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToTexture;
-	bool                                 m_copyRecorded;
+	std::vector<TemporaryDataBuffer>     m_cpuTempBuffers;
 
 public:
 	StagingBufferManager(const StagingBufferManager&) = delete;
@@ -116,11 +117,11 @@ public:
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
 		m_threadPool{ other.m_threadPool },
 		m_queueFamilyManager{ other.m_queueFamilyManager },
-		m_bufferData{ std::move(other.m_bufferData) },
+		m_bufferInfo{ std::move(other.m_bufferInfo) },
 		m_tempBufferToBuffer{ std::move(other.m_tempBufferToBuffer) },
-		m_textureData{ std::move(other.m_textureData) },
+		m_textureInfo{ std::move(other.m_textureInfo) },
 		m_tempBufferToTexture{ std::move(other.m_tempBufferToTexture) },
-		m_copyRecorded{ other.m_copyRecorded }
+		m_cpuTempBuffers{ std::move(other.m_cpuTempBuffers) }
 	{}
 
 	StagingBufferManager& operator=(StagingBufferManager&& other) noexcept
@@ -129,11 +130,11 @@ public:
 		m_memoryManager       = other.m_memoryManager;
 		m_threadPool          = other.m_threadPool;
 		m_queueFamilyManager  = other.m_queueFamilyManager;
-		m_bufferData          = std::move(other.m_bufferData);
+		m_bufferInfo          = std::move(other.m_bufferInfo);
 		m_tempBufferToBuffer  = std::move(other.m_tempBufferToBuffer);
-		m_textureData         = std::move(other.m_textureData);
+		m_textureInfo         = std::move(other.m_textureInfo);
 		m_tempBufferToTexture = std::move(other.m_tempBufferToTexture);
-		m_copyRecorded        = other.m_copyRecorded;
+		m_cpuTempBuffers      = std::move(other.m_cpuTempBuffers);
 
 		return *this;
 	}

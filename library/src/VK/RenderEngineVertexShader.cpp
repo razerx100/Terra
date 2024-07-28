@@ -84,7 +84,7 @@ void RenderEngineVSIndividual::Render(
 	// It should be okay to clear the data now that the frame has finished
 	// its submission.
 	m_temporaryDataBuffer.at(frameIndex).Clear();
-	m_stagingManager.CleanUpTempData();
+	m_stagingManager.CleanUpTempData(frameIndex);
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
@@ -94,7 +94,7 @@ void RenderEngineVSIndividual::Render(
 	{
 		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-		m_stagingManager.Copy(transferCmdBufferScope);
+		m_stagingManager.CopyAndClear(transferCmdBufferScope, frameIndex);
 		m_modelManager.CopyTempData(transferCmdBufferScope);
 
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
@@ -298,7 +298,7 @@ void RenderEngineVSIndirect::Render(
 	// It should be okay to clear the data now that the frame has finished
 	// its submission.
 	m_temporaryDataBuffer.at(frameIndex).Clear();
-	m_stagingManager.CleanUpTempData();
+	m_stagingManager.CleanUpTempData(frameIndex);
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
@@ -308,7 +308,7 @@ void RenderEngineVSIndirect::Render(
 	{
 		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-		m_stagingManager.Copy(transferCmdBufferScope);
+		m_stagingManager.CopyAndClear(transferCmdBufferScope, frameIndex);
 
 		m_modelManager.ResetCounterBuffer(
 			transferCmdBufferScope, static_cast<VkDeviceSize>(frameIndex)

@@ -9,7 +9,8 @@
 
 namespace Constants
 {
-	constexpr const char* appName  = "TerraTest";
+	constexpr const char* appName      = "TerraTest";
+	constexpr std::uint32_t frameCount = 2u;
 }
 
 class StagingBufferTest : public ::testing::Test
@@ -69,7 +70,8 @@ TEST_F(StagingBufferTest, StagingTest)
 	ThreadPool threadPool{ 8u };
 
 	StagingBufferManager stagingBufferMan{
-		logicalDevice, &memoryManager, &threadPool, s_deviceManager->GetQueueFamilyManagerRef()
+		logicalDevice, &memoryManager, &threadPool, s_deviceManager->GetQueueFamilyManagerRef(),
+		Constants::frameCount
 	};
 
 	Buffer testStorage{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
@@ -100,9 +102,10 @@ TEST_F(StagingBufferTest, StagingTest)
 	stagingBufferMan.AddTextureView(textureData.get(), &testTextureView, {}, tempDataBuffer);
 
 	{
-		const CommandBufferScope cmdBufferScope{ transferQueue.GetCommandBuffer(0u) };
+		const size_t bufferIndex = 0u;
+		const CommandBufferScope cmdBufferScope{ transferQueue.GetCommandBuffer(bufferIndex) };
 
-		stagingBufferMan.Copy(cmdBufferScope);
+		stagingBufferMan.CopyAndClear(cmdBufferScope, bufferIndex);
 	}
 
 	VKFence waitFence{ logicalDevice };
