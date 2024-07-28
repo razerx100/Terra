@@ -40,7 +40,8 @@ RenderEngine::RenderEngine(
 	m_materialBuffers{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
 	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
-	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{}
+	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
+	m_temporaryDataBuffer{ frameCount }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
 

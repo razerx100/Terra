@@ -14,6 +14,7 @@
 #include <Model.hpp>
 #include <VkFramebuffer.hpp>
 #include <Shader.hpp>
+#include <TemporaryDataBuffer.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
 // first. And these extensions must be added before the device is created. Each implemention may
@@ -148,22 +149,23 @@ protected:
 	virtual void Update(VkDeviceSize frameIndex) const noexcept;
 
 protected:
-	std::shared_ptr<ThreadPool>     m_threadPool;
-	MemoryManager                   m_memoryManager;
-	VkGraphicsQueue                 m_graphicsQueue;
-	std::vector<VKSemaphore>        m_graphicsWait;
-	VkCommandQueue                  m_transferQueue;
-	std::vector<VKSemaphore>        m_transferWait;
-	StagingBufferManager            m_stagingManager;
-	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
-	TextureStorage                  m_textureStorage;
-	TextureManager                  m_textureManager;
-	MaterialBuffers                 m_materialBuffers;
-	CameraManager                   m_cameraManager;
-	DepthBuffer                     m_depthBuffer;
-	VKRenderPass                    m_renderPass;
-	VkClearColorValue               m_backgroundColour;
-	ViewportAndScissorManager       m_viewportAndScissors;
+	std::shared_ptr<ThreadPool>      m_threadPool;
+	MemoryManager                    m_memoryManager;
+	VkGraphicsQueue                  m_graphicsQueue;
+	std::vector<VKSemaphore>         m_graphicsWait;
+	VkCommandQueue                   m_transferQueue;
+	std::vector<VKSemaphore>         m_transferWait;
+	StagingBufferManager             m_stagingManager;
+	std::vector<VkDescriptorBuffer>  m_graphicsDescriptorBuffers;
+	TextureStorage                   m_textureStorage;
+	TextureManager                   m_textureManager;
+	MaterialBuffers                  m_materialBuffers;
+	CameraManager                    m_cameraManager;
+	DepthBuffer                      m_depthBuffer;
+	VKRenderPass                     m_renderPass;
+	VkClearColorValue                m_backgroundColour;
+	ViewportAndScissorManager        m_viewportAndScissors;
+	std::vector<TemporaryDataBuffer> m_temporaryDataBuffer;
 
 public:
 	RenderEngine(const RenderEngine&) = delete;
@@ -185,7 +187,8 @@ public:
 		m_depthBuffer{ std::move(other.m_depthBuffer) },
 		m_renderPass{ std::move(other.m_renderPass) },
 		m_backgroundColour{ other.m_backgroundColour },
-		m_viewportAndScissors{ other.m_viewportAndScissors }
+		m_viewportAndScissors{ other.m_viewportAndScissors },
+		m_temporaryDataBuffer{ std::move(other.m_temporaryDataBuffer) }
 	{}
 	RenderEngine& operator=(RenderEngine&& other) noexcept
 	{
@@ -205,6 +208,7 @@ public:
 		m_renderPass                = std::move(other.m_renderPass);
 		m_backgroundColour          = other.m_backgroundColour;
 		m_viewportAndScissors       = other.m_viewportAndScissors;
+		m_temporaryDataBuffer       = std::move(other.m_temporaryDataBuffer);
 
 		return *this;
 	}

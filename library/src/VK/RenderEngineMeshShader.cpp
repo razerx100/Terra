@@ -75,6 +75,9 @@ void RenderEngineMS::Render(
 ) {
 	// Wait for the previous Graphics command buffer to finish.
 	m_graphicsQueue.WaitForSubmission(frameIndex);
+	// It should be okay to clear the data now that the frame has finished
+	// its submission.
+	m_temporaryDataBuffer.at(frameIndex).Clear();
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
