@@ -563,14 +563,10 @@ void ModelManagerVSIndirect::ConfigureModel(
 	ModelBundleCSIndirect modelBundleCS{};
 	modelBundleCS.AddModelDetails(std::move(model));
 
-	{
-		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
-
-		modelBundleCS.CreateBuffers(
-			*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-			m_modelBundleCSTempData
-		);
-	}
+	modelBundleCS.CreateBuffers(
+		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
+		m_modelBundleCSTempData
+	);
 
 	const auto index32_t = static_cast<std::uint32_t>(modelIndex);
 
@@ -631,14 +627,10 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	UpdateCounterResetValues();
 
-	{
-		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
-
-		modelBundleCS.CreateBuffers(
-			*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-			m_modelBundleCSTempData
-		);
-	}
+	modelBundleCS.CreateBuffers(
+		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
+		m_modelBundleCSTempData
+	);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
@@ -965,10 +957,7 @@ void ModelManagerMS::ConfigureModel(
 ) {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 
-	{
-		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
-		modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
-	}
+	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
 }
 
 void ModelManagerMS::ConfigureModelBundle(
@@ -985,10 +974,7 @@ void ModelManagerMS::ConfigureModelBundle(
 		modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 	}
 
-	{
-		std::scoped_lock<std::mutex> tempDataLock{ m_tempDataMutex };
-		modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
-	}
+	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, m_modelBundleTempData);
 }
 
 void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
