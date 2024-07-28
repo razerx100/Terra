@@ -55,11 +55,14 @@ public:
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 
 	[[nodiscard]]
-	size_t AddTextureAsCombined(std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height);
+	size_t AddTextureAsCombined(
+		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
+		size_t previousFrameIndex
+	);
 	[[nodiscard]]
 	size_t AddTextureAsCombined(
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		size_t samplerIndex
+		size_t samplerIndex, size_t previousFrameIndex
 	);
 
 	void UnbindCombinedTexture(size_t index);

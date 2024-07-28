@@ -15,7 +15,7 @@ void TextureStorage::SetBindingIndex(
 
 size_t TextureStorage::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-	StagingBufferManager& stagingBufferManager
+	StagingBufferManager& stagingBufferManager, TemporaryDataBuffer& tempBuffer
 ) {
 	VkTextureView textureView{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 
@@ -53,7 +53,7 @@ size_t TextureStorage::AddTexture(
 
 	stagingBufferManager.AddTextureView(
 		cTextureData.get(), textureViewPtr, {}, QueueType::GraphicsQueue,
-		VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+		VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, tempBuffer
 	);
 
 	m_transitionQueue.push(textureViewPtr);

@@ -5,19 +5,8 @@
 StagingBufferManager& StagingBufferManager::AddTextureView(
 	void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-	std::uint32_t mipLevelIndex/* = 0u */
+	TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
 ) {
-	if (m_copyRecorded)
-	{
-		// If this boolean is set, that would mean the temp buffers have already been recorded
-		// and this function should only be called after the queues have finished. So, it should
-		// be okay to clean them up.
-		CleanUpTempBuffers();
-		CleanUpTempData();
-
-		m_copyRecorded = false;
-	}
-
 	const VkDeviceSize bufferSize = dst->GetTexture().GetBufferSize();
 
 	m_textureData.emplace_back(
@@ -26,37 +15,41 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 		}
 	);
 
-	Buffer& tempBuffer = m_tempBufferToTexture.emplace_back(
+	auto tempBuffer = std::make_shared<Buffer>(
 		m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 	);
-	tempBuffer.Create(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {});
+
+	m_tempBufferToTexture.emplace_back(tempBuffer);
+
+	tempBuffer->Create(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {});
+
+	tempDataBuffer.Add(std::move(tempBuffer));
+
+	m_copyRecorded = false;
 
 	return *this;
 }
 
 StagingBufferManager& StagingBufferManager::AddBuffer(
 	void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
-	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
+	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
+	TemporaryDataBuffer& tempDataBuffer
 ) {
-	if (m_copyRecorded)
-	{
-		// If this boolean is set, that would mean the temp buffers have already been recorded
-		// and this function should only be called after the queues have finished. So, it should
-		// be okay to clean them up.
-		CleanUpTempBuffers();
-		CleanUpTempData();
-
-		m_copyRecorded = false;
-	}
-
 	m_bufferData.emplace_back(
 		BufferData{ cpuHandle, bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
 	);
 
-	Buffer& tempBuffer = m_tempBufferToBuffer.emplace_back(
+	auto tempBuffer = std::make_shared<Buffer>(
 		m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 	);
-	tempBuffer.Create(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {});
+
+	m_tempBufferToBuffer.emplace_back(tempBuffer);
+
+	tempBuffer->Create(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, {});
+
+	tempDataBuffer.Add(std::move(tempBuffer));
+
+	m_copyRecorded = false;
 
 	return *this;
 }
@@ -86,7 +79,7 @@ void StagingBufferManager::CopyCPU()
 
 			tasks.emplace_back([&bufferData, &tempBuffer = m_tempBufferToBuffer.at(index)]
 				{
-					memcpy(tempBuffer.CPUHandle(), bufferData.cpuHandle, bufferData.bufferSize);
+					memcpy(tempBuffer->CPUHandle(), bufferData.cpuHandle, bufferData.bufferSize);
 				});
 
 			currentBatchSize += bufferData.bufferSize;
@@ -116,7 +109,7 @@ void StagingBufferManager::CopyCPU()
 
 			tasks.emplace_back([&textureData, &tempBuffer = m_tempBufferToTexture.at(index)]
 				{
-					memcpy(tempBuffer.CPUHandle(), textureData.cpuHandle, textureData.bufferSize);
+					memcpy(tempBuffer->CPUHandle(), textureData.cpuHandle, textureData.bufferSize);
 				});
 
 			currentBatchSize += textureData.bufferSize;
@@ -173,7 +166,7 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 	for(size_t index = 0u; index < std::size(m_bufferData); ++index)
 	{
 		const BufferData& bufferData = m_bufferData.at(index);
-		const Buffer& tempBuffer     = m_tempBufferToBuffer.at(index);
+		const Buffer& tempBuffer     = *m_tempBufferToBuffer.at(index);
 
 		BufferToBufferCopyBuilder bufferBuilder = BufferToBufferCopyBuilder{}
 		.Size(bufferData.bufferSize).DstOffset(bufferData.offset);
@@ -187,7 +180,7 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 	for(size_t index = 0u; index < std::size(m_textureData); ++index)
 	{
 		const TextureData& textureData = m_textureData.at(index);
-		const Buffer& tempBuffer       = m_tempBufferToTexture.at(index);
+		const Buffer& tempBuffer       = *m_tempBufferToTexture.at(index);
 
 		BufferToImageCopyBuilder bufferBuilder = BufferToImageCopyBuilder{}
 		.ImageOffset(textureData.offset).ImageMipLevel(textureData.mipLevelIndex);
@@ -198,7 +191,13 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 		transferCmdBuffer.CopyWhole(tempBuffer, *textureData.dst, bufferBuilder);
 	}
 
-	// Any bufferData with QueueType::None would mean that resource has shared access. And doesn't
+	// Any bufferData with QueueType::None would mean that resource has shared access. And doesn'tvoid StagingBufferManager::CleanUpTempBuffers()
+{
+	// These need to be cleared when the copy queue is finished.
+	m_tempBufferToBuffer.clear();
+	m_tempBufferToTexture.clear();
+}
+
 	// require any ownership transfer. So, let's remove those.
 	constexpr auto eraseFunction = [] <typename T> (const T & bufferData) noexcept
 	{
@@ -220,23 +219,31 @@ void StagingBufferManager::Copy(const VKCommandBuffer& transferCmdBuffer)
 		CopyCPU();
 		CopyGPU(transferCmdBuffer);
 
-		// This should clean the temp vulkan buffers when a new buffer is added to
-		// the staging manager next.
-		SetCopyRecorded();
+		// This should clean the temp Buffer data, on the next call to CleanUpTempData.
+		// Ownership transfer should be done after this and before the next call to
+		// CleanUpTempData.
+		m_copyRecorded = true;
+
+		// It's okay to clean the Temp buffers up here. As we have another instance in the
+		// global tempBuffer and that one should be deleted after the resources have been
+		// copied on the GPU.
+		CleanUpTempBuffers();
 	}
 }
 
-void StagingBufferManager::CleanUpTempBuffers()
+void StagingBufferManager::CleanUpTempBuffers() noexcept
 {
-	// These need to be cleared when the copy queue is finished.
 	m_tempBufferToBuffer.clear();
 	m_tempBufferToTexture.clear();
 }
 
-void StagingBufferManager::CleanUpTempData()
+void StagingBufferManager::CleanUpTempData() noexcept
 {
-	m_bufferData.clear();
-	m_textureData.clear();
+	if (m_copyRecorded)
+	{
+		m_bufferData.clear();
+		m_textureData.clear();
+	}
 }
 
 void StagingBufferManager::ReleaseOwnership(

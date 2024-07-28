@@ -109,7 +109,8 @@ void ModelBundleMS::CreateBuffers(
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.meshlets), meshletBufferSize, m_meshletSharedData.bufferData,
 		m_meshletSharedData.offset,
-		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT,
+		tempBuffer
 	);
 }
 
@@ -151,7 +152,8 @@ void ModelBundleVSIndirect::CreateBuffers(
 	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize, tempBuffer);
 
 	stagingBufferMan.AddBuffer(
-		std::data(m_modelIndices), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u
+		std::data(m_modelIndices), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u,
+		tempBuffer
 	);
 }
 
@@ -232,17 +234,20 @@ void ModelBundleCSIndirect::CreateBuffers(
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.indirectArguments), argumentBufferSize, m_argumentInputSharedData.bufferData,
 		m_argumentInputSharedData.offset,
-		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		tempBuffer
 	);
 	stagingBufferMan.AddBuffer(
 		tempData.cullingData.get(), cullingDataSize, m_cullingSharedData.bufferData,
 		m_cullingSharedData.offset,
-		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		tempBuffer
 	);
 	stagingBufferMan.AddBuffer(
 		std::data(tempData.modelBundleIndices), modelIndexDataSize,
 		m_modelBundleIndexSharedData.bufferData, m_modelBundleIndexSharedData.offset,
-		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+		tempBuffer
 	);
 }
 

@@ -6,6 +6,7 @@
 #include <VkQueueFamilyManager.hpp>
 #include <vector>
 #include <ThreadPool.hpp>
+#include <TemporaryDataBuffer.hpp>
 
 class StagingBufferManager
 {
@@ -24,28 +25,31 @@ public:
 	StagingBufferManager& AddTextureView(
 		void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-		std::uint32_t mipLevelIndex = 0u
+		TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	);
 	StagingBufferManager& AddBuffer(
 		void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
-		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage
+		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
+		TemporaryDataBuffer& tempDataBuffer
 	);
 	// If a resource has shared ownership, there is no need for ownership transfer.
 	StagingBufferManager& AddTextureView(
 		void const* cpuHandle,
-		VkTextureView const* dst, const VkOffset3D& offset, std::uint32_t mipLevelIndex = 0u
+		VkTextureView const* dst, const VkOffset3D& offset,
+		TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	) {
 		return AddTextureView(
 			cpuHandle, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
-			VK_PIPELINE_STAGE_2_NONE, mipLevelIndex
+			VK_PIPELINE_STAGE_2_NONE, tempDataBuffer, mipLevelIndex
 		);
 	}
 	StagingBufferManager& AddBuffer(
-		void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset
+		void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
+		TemporaryDataBuffer& tempDataBuffer
 	) {
 		return AddBuffer(
 			cpuHandle, bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
-			VK_PIPELINE_STAGE_2_NONE
+			VK_PIPELINE_STAGE_2_NONE, tempDataBuffer
 		);
 	}
 
@@ -61,14 +65,13 @@ public:
 		const VKCommandBuffer& ownerQueueCmdBuffer, std::uint32_t ownerQueueFamilyIndex,
 		std::uint32_t transferFamilyIndex
 	);
-	void CleanUpTempBuffers();
-	void CleanUpTempData();
-
-	void SetCopyRecorded() noexcept { m_copyRecorded = true; }
+	void CleanUpTempData() noexcept;
 
 private:
 	void CopyCPU();
 	void CopyGPU(const VKCommandBuffer& transferCmdBuffer);
+
+	void CleanUpTempBuffers() noexcept;
 
 private:
 	struct BufferData
@@ -95,15 +98,15 @@ private:
 	};
 
 private:
-	VkDevice                     m_device;
-	MemoryManager*               m_memoryManager;
-	ThreadPool*                  m_threadPool;
-	VkQueueFamilyMananger const* m_queueFamilyManager;
-	std::vector<BufferData>      m_bufferData;
-	std::vector<Buffer>          m_tempBufferToBuffer;
-	std::vector<TextureData>     m_textureData;
-	std::vector<Buffer>          m_tempBufferToTexture;
-	bool                         m_copyRecorded;
+	VkDevice                             m_device;
+	MemoryManager*                       m_memoryManager;
+	ThreadPool*                          m_threadPool;
+	VkQueueFamilyMananger const*         m_queueFamilyManager;
+	std::vector<BufferData>              m_bufferData;
+	std::vector<std::shared_ptr<Buffer>> m_tempBufferToBuffer;
+	std::vector<TextureData>             m_textureData;
+	std::vector<std::shared_ptr<Buffer>> m_tempBufferToTexture;
+	bool                                 m_copyRecorded;
 
 public:
 	StagingBufferManager(const StagingBufferManager&) = delete;

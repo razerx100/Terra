@@ -36,7 +36,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 		stagingBufferMan.AddBuffer(
 			std::data(elements), bufferSize, sharedData.bufferData, sharedData.offset,
 			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
+			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT, tempBuffer
 		);
 	};
 
@@ -104,7 +104,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 	stagingBufferMan.AddBuffer(
 		std::data(bounds), boundSize,
 		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset,
-		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage
+		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage, tempBuffer
 	);
 }
 
@@ -135,7 +135,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 
 	stagingBufferMan.AddBuffer(
 		std::data(bounds), boundSize,
-		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset
+		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset, tempBuffer
 	);
 }
 

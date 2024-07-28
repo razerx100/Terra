@@ -4,6 +4,7 @@
 #include <StagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <VkCommandQueue.hpp>
+#include <TemporaryDataBuffer.hpp>
 #include <ranges>
 #include <algorithm>
 #include <deque>
@@ -29,7 +30,7 @@ public:
 	[[nodiscard]]
 	size_t AddTexture(
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		StagingBufferManager& stagingBufferManager
+		StagingBufferManager& stagingBufferManager, TemporaryDataBuffer& tempBuffer
 	);
 	[[nodiscard]]
 	size_t AddSampler(const VkSamplerCreateInfoBuilder& builder);

@@ -94,8 +94,10 @@ TEST_F(StagingBufferTest, StagingTest)
 			new std::uint8_t[textureBufferSize]
 		};
 
-	stagingBufferMan.AddBuffer(bufferData.get(), 2_KB, &testStorage, 0u);
-	stagingBufferMan.AddTextureView(textureData.get(), &testTextureView, {});
+	TemporaryDataBuffer tempDataBuffer{};
+
+	stagingBufferMan.AddBuffer(bufferData.get(), 2_KB, &testStorage, 0u, tempDataBuffer);
+	stagingBufferMan.AddTextureView(textureData.get(), &testTextureView, {}, tempDataBuffer);
 
 	{
 		const CommandBufferScope cmdBufferScope{ transferQueue.GetCommandBuffer(0u) };
@@ -108,7 +110,5 @@ TEST_F(StagingBufferTest, StagingTest)
 
 	transferQueue.SubmitCommandBuffer(0u, waitFence);
 	waitFence.Wait();
-
-	stagingBufferMan.CleanUpTempBuffers();
 }
 

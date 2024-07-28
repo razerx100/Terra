@@ -72,6 +72,14 @@ public:
 	{
 		return m_renderEngine->AddMeshBundle(std::move(meshBundle), m_swapchain->GetNextImageIndex());
 	}
+	[[nodiscard]]
+	size_t AddTextureAsCombined(
+		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
+	) {
+		return m_renderEngine->AddTextureAsCombined(
+			std::move(textureData), width, height, m_swapchain->GetNextImageIndex()
+		);
+	}
 
 private:
 	void CreateInstance();

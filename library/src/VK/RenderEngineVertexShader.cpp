@@ -84,6 +84,7 @@ void RenderEngineVSIndividual::Render(
 	// It should be okay to clear the data now that the frame has finished
 	// its submission.
 	m_temporaryDataBuffer.at(frameIndex).Clear();
+	m_stagingManager.CleanUpTempData();
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
@@ -297,6 +298,7 @@ void RenderEngineVSIndirect::Render(
 	// It should be okay to clear the data now that the frame has finished
 	// its submission.
 	m_temporaryDataBuffer.at(frameIndex).Clear();
+	m_stagingManager.CleanUpTempData();
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
