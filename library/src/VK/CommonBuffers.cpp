@@ -85,7 +85,8 @@ void SharedBuffer::CreateBuffer(VkDeviceSize size, TemporaryDataBuffer& tempBuff
 	// So, we wouldn't need to copy it. And since the first old buffer will be stored in the temp
 	// buffer, it won't be null and so we wouldn't replace it and the data should be preserved and
 	// safely copied to the main buffer upon calling CopyOldBuffer next.
-	if (m_tempBuffer == nullptr)
+	// Also no need to copy if the main buffer doesn't exist.
+	if (m_buffer.Get() != VK_NULL_HANDLE && m_tempBuffer == nullptr)
 	{
 		m_tempBuffer = std::make_shared<Buffer>(std::move(m_buffer));
 		tempBuffer.Add(m_tempBuffer);
