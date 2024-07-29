@@ -322,9 +322,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	ThreadPool threadPool{ 2u };
 
-	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager, &threadPool, &queueManager, Constants::frameCount
-	};
+	StagingBufferManager stagingBufferManager{ logicalDevice, &memoryManager, &threadPool, &queueManager };
 
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
@@ -413,9 +411,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	ThreadPool threadPool{ 2u };
 
-	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager,  &threadPool, &queueManager, Constants::frameCount
-	};
+	StagingBufferManager stagingBufferManager{ logicalDevice, &memoryManager,  &threadPool, &queueManager };
 
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
@@ -521,9 +517,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	ThreadPool threadPool{ 2u };
 
-	StagingBufferManager stagingBufferManager{
-		logicalDevice, &memoryManager, &threadPool, &queueManager, Constants::frameCount
-	};
+	StagingBufferManager stagingBufferManager{ logicalDevice, &memoryManager, &threadPool, &queueManager };
 
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});

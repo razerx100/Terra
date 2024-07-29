@@ -86,7 +86,6 @@ void RenderEngineMS::Render(
 	// It should be okay to clear the data now that the frame has finished
 	// its submission.
 	m_temporaryDataBuffer.at(frameIndex).Clear();
-	m_stagingManager.CleanUpTempData(frameIndex);
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
@@ -96,7 +95,7 @@ void RenderEngineMS::Render(
 	{
 		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-		m_stagingManager.CopyAndClear(transferCmdBufferScope, frameIndex);
+		m_stagingManager.CopyAndClear(transferCmdBufferScope);
 
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 	}

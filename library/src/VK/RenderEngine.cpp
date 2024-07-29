@@ -33,7 +33,7 @@ RenderEngine::RenderEngine(
 		queueFamilyManager->GetQueue(QueueType::TransferQueue),
 		queueFamilyManager->GetIndex(QueueType::TransferQueue)
 	}, m_transferWait{},
-	m_stagingManager{ logicalDevice, &m_memoryManager, m_threadPool.get(), queueFamilyManager, frameCount },
+	m_stagingManager{ logicalDevice, &m_memoryManager, m_threadPool.get(), queueFamilyManager },
 	m_graphicsDescriptorBuffers{},
 	m_textureStorage{ logicalDevice, &m_memoryManager },
 	m_textureManager{ logicalDevice, &m_memoryManager },

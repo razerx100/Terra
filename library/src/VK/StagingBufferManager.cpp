@@ -188,7 +188,7 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 	}
 }
 
-void StagingBufferManager::CopyAndClear(const VKCommandBuffer& transferCmdBuffer, size_t frameIndex)
+void StagingBufferManager::CopyAndClear(const VKCommandBuffer& transferCmdBuffer)
 {
 	// Since these are first copied to temp buffers and those are
 	// copied on the GPU, we don't need any cpu synchronisation.
@@ -199,7 +199,8 @@ void StagingBufferManager::CopyAndClear(const VKCommandBuffer& transferCmdBuffer
 		CopyCPU();
 		CopyGPU(transferCmdBuffer);
 
-		m_cpuTempBuffers.at(frameIndex).SetUsed();
+		// Now that the cpu copying is done. We can clear the tempData.
+		m_cpuTempBuffer.Clear();
 
 		// It's okay to clean the Temp buffers up here. As we have another instance in the
 		// global tempBuffer and that one should be deleted after the resources have been
@@ -234,11 +235,6 @@ void StagingBufferManager::CleanUpBufferInfo() noexcept
 
 	std::erase_if(m_bufferInfo, eraseFunction);
 	std::erase_if(m_textureInfo, eraseFunction);
-}
-
-void StagingBufferManager::CleanUpTempData(size_t frameIndex) noexcept
-{
-	m_cpuTempBuffers.at(frameIndex).Clear();
 }
 
 void StagingBufferManager::ReleaseOwnership(

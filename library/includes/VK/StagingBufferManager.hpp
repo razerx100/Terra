@@ -13,11 +13,11 @@ class StagingBufferManager
 public:
 	StagingBufferManager(
 		VkDevice device, MemoryManager* memoryManager, ThreadPool* threadPool,
-		VkQueueFamilyMananger const* queueFamilyManager, size_t frameCount
+		VkQueueFamilyMananger const* queueFamilyManager
 	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_threadPool{ threadPool }, m_queueFamilyManager{ queueFamilyManager },
 		m_bufferInfo{}, m_tempBufferToBuffer{}, m_textureInfo{}, m_tempBufferToTexture{},
-		m_cpuTempBuffers{ frameCount }
+		m_cpuTempBuffer{}
 	{}
 
 	// The destination info is required, when an ownership transfer is desired. Which
@@ -53,7 +53,7 @@ public:
 		);
 	}
 
-	void CopyAndClear(const VKCommandBuffer& transferCmdBuffer, size_t frameIndex);
+	void CopyAndClear(const VKCommandBuffer& transferCmdBuffer);
 	// This function should be run after the Copy function. The ownership transfer is done via a
 	// barrier. So, I shouldn't need any extra syncing.
 	void ReleaseOwnership(
@@ -65,7 +65,6 @@ public:
 		const VKCommandBuffer& ownerQueueCmdBuffer, std::uint32_t ownerQueueFamilyIndex,
 		std::uint32_t transferFamilyIndex
 	);
-	void CleanUpTempData(size_t frameIndex) noexcept;
 
 private:
 	void CopyCPU();
@@ -107,7 +106,7 @@ private:
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToBuffer;
 	std::vector<TextureInfo>             m_textureInfo;
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToTexture;
-	std::vector<TemporaryDataBuffer>     m_cpuTempBuffers;
+	TemporaryDataBuffer                  m_cpuTempBuffer;
 
 public:
 	StagingBufferManager(const StagingBufferManager&) = delete;
@@ -121,7 +120,7 @@ public:
 		m_tempBufferToBuffer{ std::move(other.m_tempBufferToBuffer) },
 		m_textureInfo{ std::move(other.m_textureInfo) },
 		m_tempBufferToTexture{ std::move(other.m_tempBufferToTexture) },
-		m_cpuTempBuffers{ std::move(other.m_cpuTempBuffers) }
+		m_cpuTempBuffer{ std::move(other.m_cpuTempBuffer) }
 	{}
 
 	StagingBufferManager& operator=(StagingBufferManager&& other) noexcept
@@ -134,7 +133,7 @@ public:
 		m_tempBufferToBuffer  = std::move(other.m_tempBufferToBuffer);
 		m_textureInfo         = std::move(other.m_textureInfo);
 		m_tempBufferToTexture = std::move(other.m_tempBufferToTexture);
-		m_cpuTempBuffers      = std::move(other.m_cpuTempBuffers);
+		m_cpuTempBuffer       = std::move(other.m_cpuTempBuffer);
 
 		return *this;
 	}
