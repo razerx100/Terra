@@ -66,10 +66,10 @@ public:
 };
 
 template<typename T>
-class AllocatorSTL
+class AllocatorSharedVec
 {
     template<typename U>
-    friend class AllocatorSTL;
+    friend class AllocatorSharedVec;
 
 public:
     typedef T value_type;
@@ -81,26 +81,26 @@ public:
     typedef const T& const_reference;
 
     template<typename U>
-    struct rebind { typedef AllocatorSTL<U> other; };
+    struct rebind { typedef AllocatorSharedVec<U> other; };
 
-    AllocatorSTL() : m_allocator{} {}
+    AllocatorSharedVec() : m_allocator{} {}
 
-    AllocatorSTL(const AllocatorSTL& alloc) noexcept : m_allocator{ alloc.m_allocator } {}
-    AllocatorSTL(AllocatorSTL&& alloc) noexcept : m_allocator{ std::move(alloc.m_allocator) } {}
+    AllocatorSharedVec(const AllocatorSharedVec& alloc) noexcept : m_allocator{ alloc.m_allocator } {}
+    AllocatorSharedVec(AllocatorSharedVec&& alloc) noexcept : m_allocator{ std::move(alloc.m_allocator) } {}
 
     template<typename U>
-    AllocatorSTL(const AllocatorSTL<U>& alloc) noexcept : m_allocator{ alloc.m_allocator } {}
+    AllocatorSharedVec(const AllocatorSharedVec<U>& alloc) noexcept : m_allocator{ alloc.m_allocator } {}
     template<typename U>
-    AllocatorSTL(AllocatorSTL<U>&& alloc) noexcept : m_allocator{ std::move(alloc.m_allocator) } {}
+    AllocatorSharedVec(AllocatorSharedVec<U>&& alloc) noexcept : m_allocator{ std::move(alloc.m_allocator) } {}
 
-    AllocatorSTL& operator=(AllocatorSTL&& alloc) noexcept
+    AllocatorSharedVec& operator=(AllocatorSharedVec&& alloc) noexcept
     {
         m_allocator = std::move(alloc.m_allocator);
 
         return *this;
     }
 
-    AllocatorSTL& operator=(const AllocatorSTL& alloc) noexcept
+    AllocatorSharedVec& operator=(const AllocatorSharedVec& alloc) noexcept
     {
         m_allocator = alloc.m_allocator;
 
@@ -108,13 +108,13 @@ public:
     }
 
     template<typename U>
-    friend bool operator==(const AllocatorSTL<T>& lhs, const AllocatorSTL<U>& rhs) noexcept
+    friend bool operator==(const AllocatorSharedVec<T>& lhs, const AllocatorSharedVec<U>& rhs) noexcept
     {
         return lhs.m_allocator.Get() == rhs.m_allocator.Get();
     }
 
     template<typename U>
-    friend bool operator!=(const AllocatorSTL<T>& lhs, const AllocatorSTL<U>& rhs) noexcept
+    friend bool operator!=(const AllocatorSharedVec<T>& lhs, const AllocatorSharedVec<U>& rhs) noexcept
     {
         return lhs.m_allocator.Get() != rhs.m_allocator.Get();
     }
@@ -168,15 +168,15 @@ public:
     void Reset() noexcept
     {
         m_allocator.Reset();
-        m_vector = std::vector<T, AllocatorSTL<T>>{ m_allocator };
+        m_vector = std::vector<T, AllocatorSharedVec<T>>{ m_allocator };
     }
 
     [[nodiscard]]
     size_t size() const noexcept { return std::size(m_vector); }
 
 private:
-    AllocatorSTL<T>                 m_allocator;
-    std::vector<T, AllocatorSTL<T>> m_vector;
+    AllocatorSharedVec<T>                 m_allocator;
+    std::vector<T, AllocatorSharedVec<T>> m_vector;
 
 public:
     SharedPtrVector(const SharedPtrVector&) = delete;
