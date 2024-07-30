@@ -204,6 +204,7 @@ void StagingBufferManager::CopyAndClear(const VKCommandBuffer& transferCmdBuffer
 		CopyGPU(transferCmdBuffer);
 
 		// Now that the cpu copying is done. We can clear the tempData.
+		m_cpuTempBuffer.SetUsed();
 		m_cpuTempBuffer.Clear();
 
 		// It's okay to clean the Temp buffers up here. As we have another instance in the
