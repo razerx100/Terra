@@ -17,6 +17,7 @@
 #include <GraphicsPipelineMeshShader.hpp>
 #include <ComputePipeline.hpp>
 #include <TemporaryDataBuffer.hpp>
+#include <SharedPtrVector.hpp>
 
 #include <MeshManagerVertexShader.hpp>
 #include <MeshManagerMeshShader.hpp>
@@ -137,11 +138,6 @@ public:
 		std::uint32_t meshletOffset;
 	};
 
-	struct TempData
-	{
-		std::vector<Meshlet> meshlets;
-	};
-
 public:
 	ModelBundleMS()
 		: ModelBundle{}, m_modelDetails{}, m_meshletSharedData{ nullptr, 0u, 0u }, m_meshlets{}
@@ -151,7 +147,7 @@ public:
 	void AddModelDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, std::deque<TempData>& tempDataContainer
+		TemporaryDataBuffer& tempBuffer
 	);
 
 	void Draw(
@@ -186,7 +182,8 @@ public:
 private:
 	std::vector<ModelDetails> m_modelDetails;
 	SharedBufferData          m_meshletSharedData;
-	std::vector<Meshlet>      m_meshlets;
+	// Should replace this with a better alternative one day.
+	SharedPtrVector<Meshlet>  m_meshlets;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -230,13 +227,6 @@ public:
 		DirectX::XMFLOAT2 zBounds;
 	};
 
-	struct TempData
-	{
-		std::vector<VkDrawIndexedIndirectCommand> indirectArguments;
-		std::vector<std::uint32_t>                modelBundleIndices;
-		std::unique_ptr<CullingData>              cullingData;
-	};
-
 public:
 	ModelBundleCSIndirect();
 
@@ -244,7 +234,7 @@ public:
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
 		SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, std::deque<TempData>& tempDataContainer
+		TemporaryDataBuffer& tempBuffer
 	);
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
@@ -273,12 +263,13 @@ public:
 	}
 
 private:
-	SharedBufferData                          m_argumentInputSharedData;
-	SharedBufferData                          m_cullingSharedData;
-	SharedBufferData                          m_modelBundleIndexSharedData;
-	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
-	std::unique_ptr<CullingData>              m_cullingData;
-	std::uint32_t                             m_bundleID;
+	SharedBufferData                              m_argumentInputSharedData;
+	SharedBufferData                              m_cullingSharedData;
+	SharedBufferData                              m_modelBundleIndexSharedData;
+	// Should replace this with a better alternative one day.
+	SharedPtrVector<VkDrawIndexedIndirectCommand> m_indirectArguments;
+	std::unique_ptr<CullingData>                  m_cullingData;
+	std::uint32_t                                 m_bundleID;
 
 	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
 	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
@@ -366,6 +357,7 @@ private:
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
+	// Should replace this with a better alternative one day.
 	std::vector<std::uint32_t> m_modelIndices;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
@@ -484,15 +476,11 @@ template<
 	class MeshType,
 	class ModelBundleType,
 	class ModelType,
-	bool  TempData, bool meshBounds,
+	bool meshBounds,
 	bool OverloadSetMesh
 >
 class ModelManager
 {
-	using MeshTempData = std::conditional_t<
-		meshBounds ,typename MeshManager::TempDataBounds, typename MeshManager::TempData
-	>;
-
 public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
@@ -501,7 +489,7 @@ public:
 		m_meshBundles{}, m_meshBoundsBuffer{
 			device, memoryManager,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		}, m_meshBundleTempData{}, m_modelBundles{}
+		}, m_modelBundles{}
 	{}
 
 	// The layout should be the same across the multiple descriptors for each frame.
@@ -674,14 +662,6 @@ public:
 		m_meshBundles.RemoveElement(bundleIndex);
 	}
 
-	void CleanUpTempData() noexcept
-	{
-		m_meshBundleTempData = std::deque<MeshTempData>{};
-
-		if constexpr (TempData)
-			static_cast<Derived*>(this)->_cleanUpTempData();
-	}
-
 protected:
 	[[nodiscard]]
 	std::optional<std::uint32_t> TryToGetPSOIndex(const ShaderName& fragmentShader) const noexcept
@@ -790,7 +770,6 @@ protected:
 	ReusableVector<MeshManager>  m_meshBundles;
 	// Configure this buffer in the child class, if desired.
 	SharedBuffer                 m_meshBoundsBuffer;
-	std::deque<MeshTempData>     m_meshBundleTempData;
 	std::vector<ModelBundleType> m_modelBundles;
 
 	// Need to update this when I update the shaders.
@@ -811,7 +790,6 @@ public:
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
-		m_meshBundleTempData{ std::move(other.m_meshBundleTempData) },
 		m_modelBundles{ std::move(other.m_modelBundles) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
@@ -825,7 +803,6 @@ public:
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_meshBundles            = std::move(other.m_meshBundles);
 		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
-		m_meshBundleTempData     = std::move(other.m_meshBundleTempData);
 		m_modelBundles           = std::move(other.m_modelBundles);
 
 		return *this;
@@ -839,7 +816,7 @@ class ModelManagerVSIndividual : public
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndividual, ModelVS,
-		false, false, false
+		false, false
 	>
 {
 	friend class ModelManager
@@ -848,7 +825,7 @@ class ModelManagerVSIndividual : public
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndividual, ModelVS,
-			false, false, false
+			false, false
 		>;
 	friend class ModelManagerVSIndividualTest;
 
@@ -914,7 +891,7 @@ class ModelManagerVSIndirect : public
 		GraphicsPipelineIndirectDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndirect, ModelVS,
-		true, true, true
+		true, true
 	>
 {
 	friend class ModelManager
@@ -923,11 +900,10 @@ class ModelManagerVSIndirect : public
 			GraphicsPipelineIndirectDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndirect, ModelVS,
-			true, true, true
+			true, true
 		>;
 	friend class ModelManagerVSIndirectTest;
 
-	using CSIndirectTempData = ModelBundleCSIndirect::TempData;
 public:
 	ModelManagerVSIndirect(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
@@ -978,7 +954,6 @@ private:
 		MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
 	);
 
-	void _cleanUpTempData() noexcept;
 	void _setMeshIndex(size_t modelBundelVSIndex, std::uint32_t meshBundleID);
 
 	void UpdateDispatchX() noexcept;
@@ -1005,7 +980,6 @@ private:
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
-	std::deque<CSIndirectTempData>     m_modelBundleCSTempData;
 
 	// Need to update these when I update the shaders.
 	// Vertex Shader ones
@@ -1048,8 +1022,7 @@ public:
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
 		m_tempGPUDataCopied{ other.m_tempGPUDataCopied },
-		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) },
-		m_modelBundleCSTempData{ std::move(other.m_modelBundleCSTempData) }
+		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
@@ -1072,7 +1045,6 @@ public:
 		m_argumentCount          = other.m_argumentCount;
 		m_tempGPUDataCopied      = other.m_tempGPUDataCopied;
 		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
-		m_modelBundleCSTempData  = std::move(other.m_modelBundleCSTempData);
 
 		return *this;
 	}
@@ -1085,7 +1057,7 @@ class ModelManagerMS : public
 		GraphicsPipelineMeshShader,
 		MeshManagerMeshShader, MeshBundleMS,
 		ModelBundleMS, ModelMS,
-		true, false, false
+		false, false
 	>
 {
 	friend class ModelManager
@@ -1094,11 +1066,9 @@ class ModelManagerMS : public
 			GraphicsPipelineMeshShader,
 			MeshManagerMeshShader, MeshBundleMS,
 			ModelBundleMS, ModelMS,
-			true, false, false
+			false, false
 		>;
 	friend class ModelManagerMSTest;
-
-	using MSBundleTempData = ModelBundleMS::TempData;
 
 public:
 	ModelManagerMS(
@@ -1133,15 +1103,12 @@ private:
 		MeshManagerMeshShader& meshManager, TemporaryDataBuffer& tempBuffer
 	);
 
-	void _cleanUpTempData() noexcept;
-
 private:
 	StagingBufferManager*        m_stagingBufferMan;
 	SharedBuffer                 m_meshletBuffer;
 	SharedBuffer                 m_vertexBuffer;
 	SharedBuffer                 m_vertexIndicesBuffer;
 	SharedBuffer                 m_primIndicesBuffer;
-	std::deque<MSBundleTempData> m_modelBundleTempData;
 
 	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 2u;
 	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 3u;
@@ -1158,8 +1125,7 @@ public:
 		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
-		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) },
-		m_modelBundleTempData{ std::move(other.m_modelBundleTempData) }
+		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) }
 	{}
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
 	{
@@ -1169,7 +1135,6 @@ public:
 		m_vertexBuffer        = std::move(other.m_vertexBuffer);
 		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
 		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
-		m_modelBundleTempData = std::move(other.m_modelBundleTempData);
 
 		return *this;
 	}

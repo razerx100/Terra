@@ -39,18 +39,6 @@ public:
 		std::uint32_t count;
 	};
 
-	struct TempData
-	{
-		std::vector<GLSLVertex>       vertices;
-		std::unique_ptr<MeshBundleMS> meshBundle;
-	};
-
-	struct TempDataBounds
-	{
-		TempData               tempData;
-		std::vector<MeshBound> bounds;
-	};
-
 public:
 	MeshManagerMeshShader();
 
@@ -58,15 +46,14 @@ public:
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer,
-		std::deque<TempData>& tempDataContainer
+		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer
 	);
 	// With bound data when the bound data has exclusive ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer,
+		TemporaryDataBuffer& tempBuffer,
 		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 	);
 	// With bound data when the bound data has shared ownership.
@@ -74,7 +61,7 @@ public:
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer
+		TemporaryDataBuffer& tempBuffer
 	);
 
 	[[nodiscard]]
@@ -109,7 +96,7 @@ private:
 		StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer,
-		TempData& tempData
+		std::unique_ptr<MeshBundleMS> meshBundle
 	);
 
 	[[nodiscard]]

@@ -1,4 +1,5 @@
 #include <MeshManagerMeshShader.hpp>
+#include <SharedPtrVector.hpp>
 
 MeshManagerMeshShader::MeshManagerMeshShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
@@ -9,16 +10,12 @@ MeshManagerMeshShader::MeshManagerMeshShader()
 void MeshManagerMeshShader::SetMeshBundle(
 	StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer, TempData& tempData
+	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer,
+	std::unique_ptr<MeshBundleMS> meshBundle
 ) {
-	{
-		const std::vector<Vertex>& vertices = tempData.meshBundle->GetVertices();
+	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
 
-		tempData.vertices = TransformVertices(vertices);
-
-		// No need to keep two copies of the same data.
-		tempData.meshBundle->CleanUpVertices();
-	}
+	std::vector<GLSLVertex> glslVertices = TransformVertices(vertices);
 
 	auto ConfigureBuffer = []<typename T>
 		(
@@ -33,18 +30,20 @@ void MeshManagerMeshShader::SetMeshBundle(
 		sharedData   = sharedBuffer.AllocateAndGetSharedData(bufferSize, tempBuffer);
 		detailOffset = static_cast<std::uint32_t>(sharedData.offset / stride);
 
+		std::shared_ptr<std::uint8_t> tempDataBuffer = CopyVectorToSharedPtr(elements);
+
 		stagingBufferMan.AddBuffer(
-			std::data(elements), bufferSize, sharedData.bufferData, sharedData.offset,
+			std::move(tempDataBuffer), bufferSize, sharedData.bufferData, sharedData.offset,
 			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
 			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT, tempBuffer
 		);
 	};
 
-	const std::vector<std::uint32_t>& vertexIndices = tempData.meshBundle->GetVertexIndices();
-	const std::vector<std::uint32_t>& primIndices   = tempData.meshBundle->GetPrimIndices();
+	const std::vector<std::uint32_t>& vertexIndices = meshBundle->GetVertexIndices();
+	const std::vector<std::uint32_t>& primIndices   = meshBundle->GetPrimIndices();
 
 	ConfigureBuffer(
-		tempData.vertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
+		glslVertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
 		m_meshDetails.vertexOffset, tempBuffer
 	);
 	ConfigureBuffer(
@@ -60,18 +59,11 @@ void MeshManagerMeshShader::SetMeshBundle(
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-	SharedBuffer& primIndicesSharedBuffer,
-	TemporaryDataBuffer& tempBuffer, std::deque<TempData>& tempDataContainer
+	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer
 ) {
-	TempData& tempData = tempDataContainer.emplace_back(
-		TempData{
-			.meshBundle = std::move(meshBundle)
-		}
-	);
-
 	SetMeshBundle(
 		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer, tempData
+		tempBuffer, std::move(meshBundle)
 	);
 }
 
@@ -79,63 +71,52 @@ void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 	SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-	TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer,
-	QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
+	TemporaryDataBuffer& tempBuffer, QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 ) {
-	TempDataBounds& tempDataBounds = tempDataContainer.emplace_back(
-		TempDataBounds{
-			.tempData = TempData{ .meshBundle = std::move(meshBundle) }
-		}
-	);
-	TempData& tempData = tempDataBounds.tempData;
-
-	SetMeshBundle(
-		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer, tempData
-	);
-
-	const std::vector<MeshBound>& bounds = tempData.meshBundle->GetBounds();
+	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
 
 	constexpr auto boundStride = sizeof(MeshBound);
 	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
 
 	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize, tempBuffer);
 
+	std::shared_ptr<std::uint8_t> boundBufferData = CopyVectorToSharedPtr(bounds);
+
 	stagingBufferMan.AddBuffer(
-		std::data(bounds), boundSize,
+		std::move(boundBufferData), boundSize,
 		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset,
 		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage, tempBuffer
 	);
+
+	SetMeshBundle(
+		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
+		tempBuffer, std::move(meshBundle)
+	);
 }
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 	SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-	TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer
+	TemporaryDataBuffer& tempBuffer
 ) {
-	TempDataBounds& tempDataBounds = tempDataContainer.emplace_back(
-		TempDataBounds{
-			.tempData = TempData{ .meshBundle = std::move(meshBundle) }
-		}
-	);
-	TempData& tempData = tempDataBounds.tempData;
-
-	SetMeshBundle(
-		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer, tempData
-	);
-
-	const std::vector<MeshBound>& bounds = tempData.meshBundle->GetBounds();
+	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
 
 	constexpr auto boundStride = sizeof(MeshBound);
 	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
 
 	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize, tempBuffer);
 
+	std::shared_ptr<std::uint8_t> boundBufferData = CopyVectorToSharedPtr(bounds);
+
 	stagingBufferMan.AddBuffer(
-		std::data(bounds), boundSize,
+		std::move(boundBufferData), boundSize,
 		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset, tempBuffer
+	);
+
+	SetMeshBundle(
+		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
+		tempBuffer, std::move(meshBundle)
 	);
 }
 

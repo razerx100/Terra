@@ -21,17 +21,6 @@ public:
 		std::uint32_t count;
 	};
 
-	struct TempData
-	{
-		std::unique_ptr<MeshBundleVS> meshBundle;
-	};
-
-	struct TempDataBounds
-	{
-		TempData               tempData;
-		std::vector<MeshBound> bounds;
-	};
-
 public:
 	MeshManagerVertexShader();
 
@@ -39,22 +28,20 @@ public:
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, std::deque<TempData>& tempDataContainer
+		TemporaryDataBuffer& tempBuffer
 	);
 	// With bound data when the bound data has exclusive ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-		SharedBuffer& boundsSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, std::deque<TempDataBounds>& tempDataContainer,
+		SharedBuffer& boundsSharedBuffer, TemporaryDataBuffer& tempBuffer,
 		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 	);
 	// With bound data when the bound data has shared ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-		SharedBuffer& boundsSharedBuffer, TemporaryDataBuffer& tempBuffer,
-		std::deque<TempDataBounds>& tempDataContainer
+		SharedBuffer& boundsSharedBuffer, TemporaryDataBuffer& tempBuffer
 	);
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
@@ -73,7 +60,7 @@ private:
 	void SetMeshBundle(
 		StagingBufferManager& stagingBufferMan,
 		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-		TemporaryDataBuffer& tempBuffer, TempData& tempData
+		TemporaryDataBuffer& tempBuffer, std::unique_ptr<MeshBundleVS> meshBundle
 	);
 
 private:

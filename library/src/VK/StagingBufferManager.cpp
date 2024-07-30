@@ -3,7 +3,7 @@
 #include <algorithm>
 
 StagingBufferManager& StagingBufferManager::AddTextureView(
-	void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
+	std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 	TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
 ) {
@@ -11,9 +11,11 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 
 	m_textureInfo.emplace_back(
 		TextureInfo{
-			cpuHandle, bufferSize, dst, offset, mipLevelIndex, dstQueueType, dstAccess, dstStage
+			cpuData.get(), bufferSize, dst, offset, mipLevelIndex, dstQueueType, dstAccess, dstStage
 		}
 	);
+
+	m_cpuTempBuffer.Add(std::move(cpuData));
 
 	auto tempBuffer = std::make_shared<Buffer>(
 		m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -29,13 +31,15 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 }
 
 StagingBufferManager& StagingBufferManager::AddBuffer(
-	void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
+	std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 	TemporaryDataBuffer& tempDataBuffer
 ) {
 	m_bufferInfo.emplace_back(
-		BufferInfo{ cpuHandle, bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
+		BufferInfo{ cpuData.get(), bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
 	);
+
+	m_cpuTempBuffer.Add(std::move(cpuData));
 
 	auto tempBuffer = std::make_shared<Buffer>(
 		m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT

@@ -20,7 +20,7 @@ public:
 	TextureStorage(VkDevice device, MemoryManager* memoryManager)
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_textures{}, m_samplers{}, m_availableTextureIndices{},
-		m_availableSamplerIndices{}, m_transitionQueue{}, m_textureData{}, m_textureBindingIndices{},
+		m_availableSamplerIndices{}, m_transitionQueue{}, m_textureBindingIndices{},
 		m_samplerBindingIndices{}
 	{
 		VKSampler& defaultSampler = m_samplers.emplace_back(device);
@@ -98,8 +98,6 @@ public:
 		return &m_samplers.at(index);
 	}
 
-	void CleanupTempData() noexcept;
-
 	// I could have used the AcquireOwnership function to do the layout transition. But there are
 	// two reasons, well one in this case to make this extra transition. If the resource has shared
 	// ownership, the AcquireOwnership function wouldn't be called. In this class all of the textures
@@ -129,17 +127,16 @@ private:
 	) noexcept;
 
 private:
-	VkDevice                                   m_device;
-	MemoryManager*                             m_memoryManager;
+	VkDevice                         m_device;
+	MemoryManager*                   m_memoryManager;
 	// The TextureView objects need to have the same address until their data is copied.
-	std::deque<VkTextureView>                  m_textures;
-	std::deque<VKSampler>                      m_samplers;
-	std::vector<bool>                          m_availableTextureIndices;
-	std::vector<bool>                          m_availableSamplerIndices;
-	std::queue<VkTextureView const*>           m_transitionQueue;
-	std::vector<std::unique_ptr<std::uint8_t>> m_textureData;
-	std::vector<std::uint32_t>                 m_textureBindingIndices;
-	std::vector<std::uint32_t>                 m_samplerBindingIndices;
+	std::deque<VkTextureView>        m_textures;
+	std::deque<VKSampler>            m_samplers;
+	std::vector<bool>                m_availableTextureIndices;
+	std::vector<bool>                m_availableSamplerIndices;
+	std::queue<VkTextureView const*> m_transitionQueue;
+	std::vector<std::uint32_t>       m_textureBindingIndices;
+	std::vector<std::uint32_t>       m_samplerBindingIndices;
 
 	static constexpr VkFormat s_textureFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -154,7 +151,6 @@ public:
 		m_availableTextureIndices{ std::move(other.m_availableTextureIndices) },
 		m_availableSamplerIndices{ std::move(other.m_availableSamplerIndices) },
 		m_transitionQueue{ std::move(other.m_transitionQueue) },
-		m_textureData{ std::move(other.m_textureData) },
 		m_textureBindingIndices{ std::move(other.m_textureBindingIndices) },
 		m_samplerBindingIndices{ std::move(other.m_samplerBindingIndices) }
 	{}
@@ -167,7 +163,6 @@ public:
 		m_availableTextureIndices = std::move(other.m_availableTextureIndices);
 		m_availableSamplerIndices = std::move(other.m_availableSamplerIndices);
 		m_transitionQueue         = std::move(other.m_transitionQueue);
-		m_textureData             = std::move(other.m_textureData);
 		m_textureBindingIndices   = std::move(other.m_textureBindingIndices);
 		m_samplerBindingIndices   = std::move(other.m_samplerBindingIndices);
 

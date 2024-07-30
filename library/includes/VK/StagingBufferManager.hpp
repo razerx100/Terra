@@ -23,32 +23,32 @@ public:
 	// The destination info is required, when an ownership transfer is desired. Which
 	// is needed when a resource has exclusive ownership.
 	StagingBufferManager& AddTextureView(
-		void const* cpuHandle, VkTextureView const* dst, const VkOffset3D& offset,
+		std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 		TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	);
 	StagingBufferManager& AddBuffer(
-		void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
+		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 		TemporaryDataBuffer& tempDataBuffer
 	);
 	// If a resource has shared ownership, there is no need for ownership transfer.
 	StagingBufferManager& AddTextureView(
-		void const* cpuHandle,
+		std::shared_ptr<void> cpuData,
 		VkTextureView const* dst, const VkOffset3D& offset,
 		TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	) {
 		return AddTextureView(
-			cpuHandle, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
+			std::move(cpuData), dst, offset, QueueType::None, VK_ACCESS_2_NONE,
 			VK_PIPELINE_STAGE_2_NONE, tempDataBuffer, mipLevelIndex
 		);
 	}
 	StagingBufferManager& AddBuffer(
-		void const* cpuHandle, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
+		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 		TemporaryDataBuffer& tempDataBuffer
 	) {
 		return AddBuffer(
-			cpuHandle, bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
+			std::move(cpuData), bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
 			VK_PIPELINE_STAGE_2_NONE, tempDataBuffer
 		);
 	}

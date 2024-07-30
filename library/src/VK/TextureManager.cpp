@@ -49,10 +49,8 @@ size_t TextureStorage::AddTexture(
 		VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, {}
 	);
 
-	std::unique_ptr<std::uint8_t>& cTextureData = m_textureData.emplace_back(std::move(textureData));
-
 	stagingBufferManager.AddTextureView(
-		cTextureData.get(), textureViewPtr, {}, QueueType::GraphicsQueue,
+		std::move(textureData), textureViewPtr, {}, QueueType::GraphicsQueue,
 		VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, tempBuffer
 	);
 
@@ -91,11 +89,6 @@ size_t TextureStorage::AddSampler(const VkSamplerCreateInfoBuilder& builder)
 	samplerPtr->Create(builder);
 
 	return index;
-}
-
-void TextureStorage::CleanupTempData() noexcept
-{
-	m_textureData = std::vector<std::unique_ptr<std::uint8_t>>{};
 }
 
 void TextureStorage::TransitionQueuedTextures(const VKCommandBuffer& graphicsCmdBuffer)

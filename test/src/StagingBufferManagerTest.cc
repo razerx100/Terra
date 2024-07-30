@@ -97,8 +97,8 @@ TEST_F(StagingBufferTest, StagingTest)
 
 	TemporaryDataBuffer tempDataBuffer{};
 
-	stagingBufferMan.AddBuffer(bufferData.get(), 2_KB, &testStorage, 0u, tempDataBuffer);
-	stagingBufferMan.AddTextureView(textureData.get(), &testTextureView, {}, tempDataBuffer);
+	stagingBufferMan.AddBuffer(std::move(bufferData), 2_KB, &testStorage, 0u, tempDataBuffer);
+	stagingBufferMan.AddTextureView(std::move(textureData), &testTextureView, {}, tempDataBuffer);
 
 	{
 		const size_t bufferIndex = 0u;
