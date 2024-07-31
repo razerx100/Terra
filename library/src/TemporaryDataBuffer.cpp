@@ -3,7 +3,7 @@
 void TemporaryDataBufferGPU::SetUsed(size_t frameIndex) noexcept
 {
 	for (auto& tempBuffer : m_tempBuffers)
-		if (tempBuffer.ownerIndex != std::numeric_limits<size_t>::max())
+		if (tempBuffer.ownerIndex == std::numeric_limits<size_t>::max())
 			tempBuffer.ownerIndex = frameIndex;
 }
 
