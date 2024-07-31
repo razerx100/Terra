@@ -146,20 +146,20 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 
 void Terra::Render()
 {
-	static size_t nextPotentialImageIndex = 0u;
-
 	// I guess I can use this single value to signal multiple semaphores?
-	// As long as it is signaled once a frame.
+	// As long as it is signalled once a frame.
 	static std::uint64_t frameNumber = 0u;
 	++frameNumber;
 
 	VkDevice device = m_deviceManager.GetLogicalDevice();
 
-	// If we have 3 frames, and the nextPotentialImageIndex is 2, it might be possible that
-	// the 2nd image has become usable by now and the nextIndex is 1. That should mean that the
-	// 3rd frame should have also finished rendering, so it should be fine to use that frame's
-	// semaphore.
-	const VKSemaphore& imageWaitSemaphore = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
+	// It should be okay to even use the same semaphore present is waiting on.
+	// Because that will be signalled by the Graphics Queue when it is done. And
+	// Then the imageWait semaphore will be signalled when the swapchain is done
+	// presenting. So, even if it is the same semaphore, it shouldn't be used at
+	// the same time.
+	constexpr size_t nextPotentialImageIndex = 0u;
+	const VKSemaphore& imageWaitSemaphore    = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
 
 	// This semaphore will be signaled when the image becomes available.
 	m_swapchain->QueryNextImageIndex(device, imageWaitSemaphore);
@@ -175,9 +175,6 @@ void Terra::Render()
 	const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextImageIndex);
 
 	m_swapchain->Present(nextImageIndexU32, waitSemaphore);
-
-	const size_t frameCount = m_swapchain->GetSwapchain().GetImageCount();
-	nextPotentialImageIndex = (nextPotentialImageIndex + 1u) % frameCount;
 }
 
 void Terra::WaitForGPUToFinish()
