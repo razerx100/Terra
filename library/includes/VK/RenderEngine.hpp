@@ -56,13 +56,12 @@ public:
 
 	[[nodiscard]]
 	size_t AddTextureAsCombined(
-		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		size_t previousFrameIndex
+		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 	);
 	[[nodiscard]]
 	size_t AddTextureAsCombined(
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		size_t samplerIndex, size_t previousFrameIndex
+		size_t samplerIndex
 	);
 
 	void UnbindCombinedTexture(size_t index);
@@ -105,36 +104,24 @@ public:
 	virtual void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) = 0;
 
 	[[nodiscard]]
-	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader,
-		size_t previousFrameIndex
-	);
+	virtual std::uint32_t AddModel(std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
-		size_t previousFrameIndex
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 	);
 	[[nodiscard]]
-	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader,
-		size_t previousFrameIndex
-	);
+	virtual std::uint32_t AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
-		size_t previousFrameIndex
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 	);
 
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 
 	[[nodiscard]]
-	virtual std::uint32_t AddMeshBundle(
-		std::unique_ptr<MeshBundleVS> meshBundle, size_t previousFrameIndex
-	);
+	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle);
 	[[nodiscard]]
-	virtual std::uint32_t AddMeshBundle(
-		std::unique_ptr<MeshBundleMS> meshBundle, size_t previousFrameIndex
-	);
+	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle);
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
 
@@ -160,23 +147,23 @@ protected:
 	virtual void Update(VkDeviceSize frameIndex) const noexcept;
 
 protected:
-	std::shared_ptr<ThreadPool>      m_threadPool;
-	MemoryManager                    m_memoryManager;
-	VkGraphicsQueue                  m_graphicsQueue;
-	std::vector<VKSemaphore>         m_graphicsWait;
-	VkCommandQueue                   m_transferQueue;
-	std::vector<VKSemaphore>         m_transferWait;
-	StagingBufferManager             m_stagingManager;
-	std::vector<VkDescriptorBuffer>  m_graphicsDescriptorBuffers;
-	TextureStorage                   m_textureStorage;
-	TextureManager                   m_textureManager;
-	MaterialBuffers                  m_materialBuffers;
-	CameraManager                    m_cameraManager;
-	DepthBuffer                      m_depthBuffer;
-	VKRenderPass                     m_renderPass;
-	VkClearColorValue                m_backgroundColour;
-	ViewportAndScissorManager        m_viewportAndScissors;
-	std::vector<TemporaryDataBuffer> m_temporaryDataBuffer;
+	std::shared_ptr<ThreadPool>     m_threadPool;
+	MemoryManager                   m_memoryManager;
+	VkGraphicsQueue                 m_graphicsQueue;
+	std::vector<VKSemaphore>        m_graphicsWait;
+	VkCommandQueue                  m_transferQueue;
+	std::vector<VKSemaphore>        m_transferWait;
+	StagingBufferManager            m_stagingManager;
+	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
+	TextureStorage                  m_textureStorage;
+	TextureManager                  m_textureManager;
+	MaterialBuffers                 m_materialBuffers;
+	CameraManager                   m_cameraManager;
+	DepthBuffer                     m_depthBuffer;
+	VKRenderPass                    m_renderPass;
+	VkClearColorValue               m_backgroundColour;
+	ViewportAndScissorManager       m_viewportAndScissors;
+	TemporaryDataBufferGPU          m_temporaryDataBuffer;
 
 public:
 	RenderEngine(const RenderEngine&) = delete;

@@ -88,10 +88,10 @@ public:
 
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	VkDeviceSize AllocateMemory(VkDeviceSize size, TemporaryDataBuffer& tempBuffer);
+	VkDeviceSize AllocateMemory(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer);
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size, TemporaryDataBuffer& tempBuffer)
+	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
 	{
 		return SharedBufferData{
 			.bufferData = &m_buffer,
@@ -139,7 +139,7 @@ private:
 	};
 
 private:
-	void CreateBuffer(VkDeviceSize size, TemporaryDataBuffer& tempBuffer);
+	void CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer);
 
 	void AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept;
 

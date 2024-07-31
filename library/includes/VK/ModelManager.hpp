@@ -147,7 +147,7 @@ public:
 	void AddModelDetails(std::shared_ptr<ModelMS>& model, std::uint32_t modelBufferIndex) noexcept;
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void Draw(
@@ -234,7 +234,7 @@ public:
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
 		SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
@@ -311,7 +311,7 @@ public:
 		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBuffer>& argumentOutputSharedBuffers,
 		std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	);
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
@@ -522,7 +522,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModel(
 		std::shared_ptr<ModelType>&& model, const ShaderName& fragmentShader,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	) {
 		// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 		// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
@@ -549,7 +549,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
 		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const ShaderName& fragmentShader,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	) {
 		const size_t modelCount = std::size(modelBundle);
 
@@ -640,7 +640,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddMeshBundle(
 		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	) {
 		MeshManager meshManager{};
 
@@ -845,20 +845,20 @@ private:
 	void ConfigureModel(
 		ModelBundleVSIndividual& modelBundleObj,
 		size_t modelIndex, std::shared_ptr<ModelVS> model,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	) const noexcept;
 	void ConfigureModelBundle(
 		ModelBundleVSIndividual& modelBundleObj,
 		const std::vector<size_t>& modelIndices,
 		std::vector<std::shared_ptr<ModelVS>>&& modelBundle,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	) const noexcept;
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
+		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
 private:
@@ -940,18 +940,18 @@ private:
 
 	void ConfigureModel(
 		ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureModelBundle(
 		ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBuffer& tempBuffer
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
+		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void _setMeshIndex(size_t modelBundelVSIndex, std::uint32_t meshBundleID);
@@ -1089,18 +1089,18 @@ private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
 	void ConfigureModel(
 		ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS> model,
-		TemporaryDataBuffer& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureModelBundle(
 		ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, TemporaryDataBuffer& tempBuffer
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-		MeshManagerMeshShader& meshManager, TemporaryDataBuffer& tempBuffer
+		MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
 private:

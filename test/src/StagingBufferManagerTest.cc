@@ -95,7 +95,7 @@ TEST_F(StagingBufferTest, StagingTest)
 			new std::uint8_t[textureBufferSize]
 		};
 
-	TemporaryDataBuffer tempDataBuffer{};
+	TemporaryDataBufferGPU tempDataBuffer{};
 
 	stagingBufferMan.AddBuffer(std::move(bufferData), 2_KB, &testStorage, 0u, tempDataBuffer);
 	stagingBufferMan.AddTextureView(std::move(textureData), &testTextureView, {}, tempDataBuffer);

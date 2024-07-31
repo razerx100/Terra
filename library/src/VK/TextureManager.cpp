@@ -15,7 +15,7 @@ void TextureStorage::SetBindingIndex(
 
 size_t TextureStorage::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-	StagingBufferManager& stagingBufferManager, TemporaryDataBuffer& tempBuffer
+	StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	VkTextureView textureView{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 

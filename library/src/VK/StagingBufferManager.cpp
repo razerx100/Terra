@@ -5,7 +5,7 @@
 StagingBufferManager& StagingBufferManager::AddTextureView(
 	std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-	TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
+	TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
 ) {
 	const VkDeviceSize bufferSize = dst->GetTexture().GetBufferSize();
 
@@ -33,7 +33,7 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 StagingBufferManager& StagingBufferManager::AddBuffer(
 	std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-	TemporaryDataBuffer& tempDataBuffer
+	TemporaryDataBufferGPU& tempDataBuffer
 ) {
 	m_bufferInfo.emplace_back(
 		BufferInfo{ cpuData.get(), bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
@@ -204,7 +204,6 @@ void StagingBufferManager::CopyAndClear(const VKCommandBuffer& transferCmdBuffer
 		CopyGPU(transferCmdBuffer);
 
 		// Now that the cpu copying is done. We can clear the tempData.
-		m_cpuTempBuffer.SetUsed();
 		m_cpuTempBuffer.Clear();
 
 		// It's okay to clean the Temp buffers up here. As we have another instance in the

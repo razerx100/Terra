@@ -67,7 +67,7 @@ void RendererVK::SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBun
 size_t RendererVK::AddTexture(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
-	return m_terra.AddTextureAsCombined(std::move(textureData), width, height);
+	return m_terra.GetRenderEngine().AddTextureAsCombined(std::move(textureData), width, height);
 }
 
 void RendererVK::UnbindTexture(size_t index)
@@ -87,24 +87,24 @@ void RendererVK::RemoveTexture(size_t index)
 
 std::uint32_t RendererVK::AddModel(std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader)
 {
-	return m_terra.AddModel(std::move(model), fragmentShader);
+	return m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader)
 {
-	return m_terra.AddModel(std::move(model), fragmentShader);
+	return m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
 	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
+	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
 	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
+	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept
@@ -114,12 +114,12 @@ void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept
 
 std::uint32_t RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
 {
-	return m_terra.AddMeshBundle(std::move(meshBundle));
+	return m_terra.GetRenderEngine().AddMeshBundle(std::move(meshBundle));
 }
 
 std::uint32_t RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
 {
-	return m_terra.AddMeshBundle(std::move(meshBundle));
+	return m_terra.GetRenderEngine().AddMeshBundle(std::move(meshBundle));
 }
 
 void RendererVK::RemoveMeshBundle(std::uint32_t bundleIndex) noexcept

@@ -100,7 +100,7 @@ void ModelBundleMS::Draw(
 
 void ModelBundleMS::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
-	TemporaryDataBuffer& tempBuffer
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
 
@@ -134,7 +134,7 @@ void ModelBundleVSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBuffer>& argumentOutputSharedBuffers,
 	std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
-	TemporaryDataBuffer& tempBuffer
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	constexpr size_t indexStrideSize    = sizeof(std::uint32_t);
@@ -203,7 +203,7 @@ void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& mode
 void ModelBundleCSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedBuffer,
 	SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
-	TemporaryDataBuffer& tempBuffer
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
 	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_indirectArguments));
@@ -368,14 +368,14 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 
 void ModelManagerVSIndividual::ConfigureModel(
 	ModelBundleVSIndividual& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model,
-	TemporaryDataBuffer& // Not needed in this system.
+	TemporaryDataBufferGPU& // Not needed in this system.
 ) const noexcept {
 	modelBundleObj.AddModelDetails(std::move(model), static_cast<std::uint32_t>(modelIndex));
 }
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
 	ModelBundleVSIndividual& modelBundleObj, const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBuffer&// Not needed in this system.
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBufferGPU&// Not needed in this system.
 ) const noexcept {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -413,7 +413,7 @@ void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndividual::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
+	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	// The vertex and index buffer should be guarded with the tempData mutex, but
 	// I am not doing it here, because the ConfigureMeshBundle function call is already
@@ -554,7 +554,7 @@ void ModelManagerVSIndirect::UpdateDispatchX() noexcept
 
 void ModelManagerVSIndirect::ConfigureModel(
 	ModelBundleVSIndirect& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelVS> model,
-	TemporaryDataBuffer& tempBuffer
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	ModelBundleCSIndirect modelBundleCS{};
 	modelBundleCS.AddModelDetails(std::move(model));
@@ -600,7 +600,7 @@ void ModelManagerVSIndirect::_setMeshIndex(
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
 	ModelBundleVSIndirect& modelBundleObj, const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBuffer& tempBuffer
+	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -708,7 +708,7 @@ void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 void ModelManagerVSIndirect::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerVertexShader& meshManager, TemporaryDataBuffer& tempBuffer
+	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_meshBoundsBuffer,
@@ -946,7 +946,7 @@ ModelManagerMS::ModelManagerMS(
 
 void ModelManagerMS::ConfigureModel(
 	ModelBundleMS& modelBundleObj, size_t modelIndex, std::shared_ptr<ModelMS> model,
-	TemporaryDataBuffer& tempBuffer
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	modelBundleObj.AddModelDetails(model, static_cast<std::uint32_t>(modelIndex));
 
@@ -955,7 +955,7 @@ void ModelManagerMS::ConfigureModel(
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMS& modelBundleObj, const std::vector<size_t>& modelIndices,
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, TemporaryDataBuffer& tempBuffer
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
 	const size_t modelCount = std::size(modelBundle);
 
@@ -1004,7 +1004,7 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 void ModelManagerMS::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerMeshShader& meshManager, TemporaryDataBuffer& tempBuffer
+	MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,

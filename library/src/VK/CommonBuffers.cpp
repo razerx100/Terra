@@ -70,7 +70,7 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 }
 
 // Shared Buffer
-void SharedBuffer::CreateBuffer(VkDeviceSize size, TemporaryDataBuffer& tempBuffer)
+void SharedBuffer::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
 {
 	// Moving it into the temp, as we will want to copy it back to the new bigger buffer.
 
@@ -105,7 +105,7 @@ void SharedBuffer::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexce
 	}
 }
 
-VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size, TemporaryDataBuffer& tempBuffer)
+VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
 {
 	auto result = std::ranges::lower_bound(
 		m_availableMemory, size, {},

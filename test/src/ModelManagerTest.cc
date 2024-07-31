@@ -342,7 +342,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	vsIndividual.CreatePipelineLayout(descBuffers.front());
 
-	TemporaryDataBuffer tempDataBuffer{};
+	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
 		auto meshVS = std::make_unique<MeshDummyVS>();
@@ -434,7 +434,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	vsIndirect.CreatePipelineLayout(descBuffers.front());
 
-	TemporaryDataBuffer tempDataBuffer{};
+	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
 		auto meshVS = std::make_unique<MeshDummyVS>();
@@ -539,7 +539,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	managerMS.CreatePipelineLayout(descBuffers.front());
 
-	TemporaryDataBuffer tempDataBuffer{};
+	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
 		auto meshMS = std::make_unique<MeshDummyMS>();

@@ -30,7 +30,7 @@ public:
 	[[nodiscard]]
 	size_t AddTexture(
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		StagingBufferManager& stagingBufferManager, TemporaryDataBuffer& tempBuffer
+		StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
 	);
 	[[nodiscard]]
 	size_t AddSampler(const VkSamplerCreateInfoBuilder& builder);

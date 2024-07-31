@@ -10,7 +10,7 @@ MeshManagerMeshShader::MeshManagerMeshShader()
 void MeshManagerMeshShader::SetMeshBundle(
 	StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer,
+	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
 	std::unique_ptr<MeshBundleMS> meshBundle
 ) {
 	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
@@ -21,7 +21,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 		(
 			const std::vector<T>& elements, StagingBufferManager& stagingBufferMan,
 			SharedBuffer& sharedBuffer, SharedBufferData& sharedData,
-			std::uint32_t& detailOffset, TemporaryDataBuffer& tempBuffer
+			std::uint32_t& detailOffset, TemporaryDataBufferGPU& tempBuffer
 		)
 	{
 		constexpr auto stride = static_cast<VkDeviceSize>(sizeof(T));
@@ -59,7 +59,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBuffer& tempBuffer
+	SharedBuffer& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
 	SetMeshBundle(
 		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
@@ -71,7 +71,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 	SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-	TemporaryDataBuffer& tempBuffer, QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
+	TemporaryDataBufferGPU& tempBuffer, QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 ) {
 	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
 
@@ -98,7 +98,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
 	SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
-	TemporaryDataBuffer& tempBuffer
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
 

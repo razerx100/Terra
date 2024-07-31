@@ -58,7 +58,7 @@ TEST_F(CommonBufferTest, SharedBufferTest)
 
 	SharedBuffer sharedBuffer{ logicalDevice, &memoryManager, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, {} };
 
-	TemporaryDataBuffer tempDataBuffer{};
+	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
 		VkDeviceSize offset = sharedBuffer.AllocateMemory(12u, tempDataBuffer);

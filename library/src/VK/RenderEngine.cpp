@@ -41,7 +41,7 @@ RenderEngine::RenderEngine(
 	m_cameraManager{ logicalDevice, &m_memoryManager },
 	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
 	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
-	m_temporaryDataBuffer{ frameCount }
+	m_temporaryDataBuffer{}
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
 
@@ -99,24 +99,22 @@ void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector)
 }
 
 size_t RenderEngine::AddTextureAsCombined(
-	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height, size_t previousFrameIndex
+	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
 	return AddTextureAsCombined(
-		std::move(textureData), width, height, m_textureStorage.GetDefaultSamplerIndex(),
-		previousFrameIndex
+		std::move(textureData), width, height, m_textureStorage.GetDefaultSamplerIndex()
 	);
 }
 
 size_t RenderEngine::AddTextureAsCombined(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-	size_t samplerIndex, size_t previousFrameIndex
+	size_t samplerIndex
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const size_t textureIndex = m_textureStorage.AddTexture(
-		std::move(textureData), width, height, m_stagingManager,
-		m_temporaryDataBuffer.at(previousFrameIndex)
+		std::move(textureData), width, height, m_stagingManager, m_temporaryDataBuffer
 	);
 
 	BindCombinedTexture(textureIndex, samplerIndex);
@@ -271,48 +269,39 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 	m_materialBuffers.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
 }
 
-std::uint32_t RenderEngine::AddMeshBundle(
-	[[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle,
-	[[maybe_unused]] size_t previousFrameIndex
-) {
+std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)
+{
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
-std::uint32_t RenderEngine::AddMeshBundle(
-	[[maybe_unused]] std::unique_ptr<MeshBundleMS> meshBundle,
-	[[maybe_unused]] size_t previousFrameIndex
-) {
+std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleMS> meshBundle)
+{
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModel(
-	[[maybe_unused]] std::shared_ptr<ModelVS>&& model,
-	[[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] size_t previousFrameIndex
+	[[maybe_unused]] std::shared_ptr<ModelVS>&& model, [[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
 	[[maybe_unused]] std::vector<std::shared_ptr<ModelVS>>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] size_t previousFrameIndex
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModel(
 	[[maybe_unused]] std::shared_ptr<ModelMS>&& model,
-	[[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] size_t previousFrameIndex
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
 	[[maybe_unused]] std::vector<std::shared_ptr<ModelMS>>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] size_t previousFrameIndex
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }

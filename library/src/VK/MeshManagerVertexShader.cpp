@@ -9,7 +9,7 @@ MeshManagerVertexShader::MeshManagerVertexShader()
 void MeshManagerVertexShader::SetMeshBundle(
 	StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-	TemporaryDataBuffer& tempBuffer, std::unique_ptr<MeshBundleVS> meshBundle
+	TemporaryDataBufferGPU& tempBuffer, std::unique_ptr<MeshBundleVS> meshBundle
 ) {
 	// Vertex Buffer
 	{
@@ -49,7 +49,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 void MeshManagerVertexShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer, TemporaryDataBuffer& tempBuffer
+	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
 	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer, std::move(meshBundle));
 }
@@ -57,7 +57,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 void MeshManagerVertexShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-	SharedBuffer& boundsSharedBuffer, TemporaryDataBuffer& tempBuffer,
+	SharedBuffer& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
 	QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 ) {
 	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
@@ -81,7 +81,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 void MeshManagerVertexShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-	SharedBuffer& boundsSharedBuffer, TemporaryDataBuffer& tempBuffer
+	SharedBuffer& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
 

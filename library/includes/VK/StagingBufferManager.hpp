@@ -25,18 +25,18 @@ public:
 	StagingBufferManager& AddTextureView(
 		std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-		TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
+		TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	);
 	StagingBufferManager& AddBuffer(
 		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-		TemporaryDataBuffer& tempDataBuffer
+		TemporaryDataBufferGPU& tempDataBuffer
 	);
 	// If a resource has shared ownership, there is no need for ownership transfer.
 	StagingBufferManager& AddTextureView(
 		std::shared_ptr<void> cpuData,
 		VkTextureView const* dst, const VkOffset3D& offset,
-		TemporaryDataBuffer& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
+		TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	) {
 		return AddTextureView(
 			std::move(cpuData), dst, offset, QueueType::None, VK_ACCESS_2_NONE,
@@ -45,7 +45,7 @@ public:
 	}
 	StagingBufferManager& AddBuffer(
 		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
-		TemporaryDataBuffer& tempDataBuffer
+		TemporaryDataBufferGPU& tempDataBuffer
 	) {
 		return AddBuffer(
 			std::move(cpuData), bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
@@ -106,7 +106,7 @@ private:
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToBuffer;
 	std::vector<TextureInfo>             m_textureInfo;
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToTexture;
-	TemporaryDataBuffer                  m_cpuTempBuffer;
+	TemporaryDataBufferCPU               m_cpuTempBuffer;
 
 public:
 	StagingBufferManager(const StagingBufferManager&) = delete;

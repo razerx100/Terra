@@ -26,14 +26,13 @@ RenderEngineMS::RenderEngineMS(
 	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
 }
 
-std::uint32_t RenderEngineMS::AddModel(
-	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, size_t previousFrameIndex
-) {
+std::uint32_t RenderEngineMS::AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader)
+{
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModel(
-		std::move(model), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+		std::move(model), fragmentShader, m_temporaryDataBuffer
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
@@ -44,14 +43,13 @@ std::uint32_t RenderEngineMS::AddModel(
 }
 
 std::uint32_t RenderEngineMS::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
-	size_t previousFrameIndex
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer.at(previousFrameIndex)
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
@@ -61,15 +59,14 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineMS::AddMeshBundle(
-	std::unique_ptr<MeshBundleMS> meshBundle, size_t previousFrameIndex
-) {
+std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
+{
 	// Add a mesh Bundle will update the Vertex, VertexIndices and PrimIndices buffers.
 	// So, must wait for the queue to finish.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddMeshBundle(
-		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer.at(previousFrameIndex)
+		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
 	m_modelManager.SetDescriptorBufferOfMeshes(m_graphicsDescriptorBuffers);
@@ -85,7 +82,7 @@ void RenderEngineMS::Render(
 	m_graphicsQueue.WaitForSubmission(frameIndex);
 	// It should be okay to clear the data now that the frame has finished
 	// its submission.
-	m_temporaryDataBuffer.at(frameIndex).Clear();
+	m_temporaryDataBuffer.Clear(frameIndex);
 
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
@@ -110,7 +107,7 @@ void RenderEngineMS::Render(
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
 
-		m_temporaryDataBuffer.at(frameIndex).SetUsed();
+		m_temporaryDataBuffer.SetUsed(frameIndex);
 	}
 
 	// Compute Phase (Not using atm)
