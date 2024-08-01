@@ -368,7 +368,9 @@ public:
 		// recreate the buffer to be bigger.
 		auto localDescIndex = static_cast<std::uint32_t>(std::size(inactiveDescDetails));
 
-		if (localDescCount >= localDescIndex + 1u)
+		const std::uint32_t requiredCount = localDescIndex + 1u;
+
+		if (localDescCount < requiredCount)
 		{
 			localDescCount += s_localDescriptorCount;
 
