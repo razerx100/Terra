@@ -75,9 +75,9 @@ void RendererVK::UnbindTexture(size_t index)
 	m_terra.GetRenderEngine().UnbindCombinedTexture(index);
 }
 
-void RendererVK::BindTexture(size_t index)
+std::uint32_t RendererVK::BindTexture(size_t index)
 {
-	m_terra.GetRenderEngine().BindCombinedTexture(index);
+	return m_terra.GetRenderEngine().BindCombinedTexture(index);
 }
 
 void RendererVK::RemoveTexture(size_t index)

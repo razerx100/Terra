@@ -101,23 +101,12 @@ void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector)
 size_t RenderEngine::AddTextureAsCombined(
 	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 ) {
-	return AddTextureAsCombined(
-		std::move(textureData), width, height, m_textureStorage.GetDefaultSamplerIndex()
-	);
-}
-
-size_t RenderEngine::AddTextureAsCombined(
-	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-	size_t samplerIndex
-) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const size_t textureIndex = m_textureStorage.AddTexture(
 		std::move(textureData), width, height, m_stagingManager, m_temporaryDataBuffer
 	);
-
-	BindCombinedTexture(textureIndex, samplerIndex);
 
 	return textureIndex;
 }
@@ -153,12 +142,12 @@ void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerInde
 	}
 }
 
-void RenderEngine::BindCombinedTexture(size_t index)
+std::uint32_t RenderEngine::BindCombinedTexture(size_t index)
 {
-	BindCombinedTexture(index, m_textureStorage.GetDefaultSamplerIndex());
+	return BindCombinedTexture(index, m_textureStorage.GetDefaultSamplerIndex());
 }
 
-void RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
+std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
@@ -218,6 +207,8 @@ void RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 				*textureView, *defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 				GetCombinedTextureBindingSlot(), freeGlobalDescIndex
 			);
+
+	return freeGlobalDescIndex;
 }
 
 void RenderEngine::RemoveTexture(size_t index)

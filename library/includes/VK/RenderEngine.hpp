@@ -58,16 +58,14 @@ public:
 	size_t AddTextureAsCombined(
 		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
 	);
-	[[nodiscard]]
-	size_t AddTextureAsCombined(
-		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		size_t samplerIndex
-	);
 
 	void UnbindCombinedTexture(size_t index);
 	void UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex);
-	void BindCombinedTexture(size_t index);
-	void BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
+	[[nodiscard]]
+	std::uint32_t BindCombinedTexture(size_t index);
+	[[nodiscard]]
+	std::uint32_t BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
+
 	void RemoveTexture(size_t index);
 
 	[[nodiscard]]
