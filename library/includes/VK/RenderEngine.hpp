@@ -145,6 +145,15 @@ protected:
 	virtual void Update(VkDeviceSize frameIndex) const noexcept;
 
 protected:
+	// These descriptors are bound to the Fragment shader. So, they should be the same across
+	// all of the pipeline types.
+	// Binding 0 is for the ModelTextureData which is set from the ModelManager.
+	static constexpr std::uint32_t s_materialBindingSlot        = 1u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 2u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 3u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 4u;
+
+protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;
 	MemoryManager                   m_memoryManager;
 	VkGraphicsQueue                 m_graphicsQueue;

@@ -772,9 +772,11 @@ protected:
 	SharedBuffer                 m_meshBoundsBuffer;
 	std::vector<ModelBundleType> m_modelBundles;
 
-	// Need to update this when I update the shaders.
-	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
-	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 1u;
+	// The fragment binding slot should be 0. 1 to 4 are also reserved for
+	// the fragment shader on the RenderEngine class.
+	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
+	// And the vertex index should start from 5.
+	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 5u;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -981,9 +983,8 @@ private:
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
 
-	// Need to update these when I update the shaders.
 	// Vertex Shader ones
-	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 2u;
+	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 6u;
 
 	// Compute Shader ones
 	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
@@ -1110,10 +1111,10 @@ private:
 	SharedBuffer                 m_vertexIndicesBuffer;
 	SharedBuffer                 m_primIndicesBuffer;
 
-	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 2u;
-	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 3u;
-	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 4u;
-	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 5u;
+	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 6u;
+	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 7u;
+	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 8u;
+	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 9u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
