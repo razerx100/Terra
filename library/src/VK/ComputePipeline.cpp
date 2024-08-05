@@ -2,16 +2,18 @@
 #include <VkShader.hpp>
 
 void ComputePipeline::Create(
-	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
+	VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+	const std::wstring& shaderPath
 ) {
-	m_computePipeline = _createComputePipeline(device, computeLayout, shaderPath);
+	m_computePipeline = _createComputePipeline(device, computeLayout, computeShader, shaderPath);
 }
 
 std::unique_ptr<VkPipelineObject> ComputePipeline::_createComputePipeline(
-	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
+	VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+	const std::wstring& shaderPath
 ) const noexcept {
 	auto cs            = std::make_unique<VkShader>(device);
-	const bool success = cs->Create(shaderPath + L"ComputeShader.spv");
+	const bool success = cs->Create(shaderPath + computeShader.GetNameWithExtension(s_shaderBytecodeType));
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
 

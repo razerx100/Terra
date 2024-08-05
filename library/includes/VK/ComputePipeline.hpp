@@ -6,16 +6,22 @@
 #include <VKPipelineObject.hpp>
 #include <VkCommandQueue.hpp>
 #include <PipelineLayout.hpp>
+#include <Shader.hpp>
 
 class ComputePipeline
 {
 public:
 	ComputePipeline() : m_computePipeline{} {}
 
-	void Create(VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath);
-	void Create(VkDevice device, const PipelineLayout& computeLayout, const std::wstring& shaderPath)
-	{
-		Create(device, computeLayout.Get(), shaderPath);
+	void Create(
+		VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+		const std::wstring& shaderPath
+	);
+	void Create(
+		VkDevice device, const PipelineLayout& computeLayout, const ShaderName& computeShader,
+		const std::wstring& shaderPath
+	) {
+		Create(device, computeLayout.Get(), computeShader, shaderPath);
 	}
 
 	void Bind(const VKCommandBuffer& computeBuffer) const noexcept;
@@ -23,11 +29,14 @@ public:
 private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createComputePipeline(
-		VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
+		VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+		const std::wstring& shaderPath
 	) const noexcept;
 
 private:
 	std::unique_ptr<VkPipelineObject> m_computePipeline;
+
+	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
 
 public:
 	ComputePipeline(const ComputePipeline&) = delete;

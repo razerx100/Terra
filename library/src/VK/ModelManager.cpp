@@ -141,9 +141,6 @@ void ModelBundleVSIndirect::CreateBuffers(
 	const auto argumentOutputBufferSize = static_cast<VkDeviceSize>(m_modelCount * argStrideSize);
 	const auto modelIndiceBufferSize    = static_cast<VkDeviceSize>(m_modelCount * indexStrideSize);
 
-	// The shared data for every instance should be the same. So, we can use the last one for the
-	// other ones as well. And as we are not using the buffer object for the stagingBufferMan,
-	// it should be fine.
 	for (auto& argumentOutputSharedBuffer : argumentOutputSharedBuffers)
 		m_argumentOutputSharedData = argumentOutputSharedBuffer.AllocateAndGetSharedData(
 			argumentOutputBufferSize, tempBuffer
@@ -230,7 +227,7 @@ void ModelBundleCSIndirect::CreateBuffers(
 	m_indirectArguments.Reset();
 
 	// Each thread will process a single model independently. And since we are trying to
-	// cull all the models across all the bundles with a single call to dispatch, we can't
+	// cull all of the models across all of the bundles with a single call to dispatch, we can't
 	// set the index as constantData per bundle. So, we will be giving each model the index
 	// of its bundle so each thread can work independently.
 	auto modelIndices = std::vector<std::uint32_t>(argumentCount, modelBundleIndex);
@@ -540,7 +537,9 @@ void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descript
 {
 	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayout());
 
-	m_computePipeline.Create(m_device, m_pipelineLayoutCS, m_shaderPath);
+	m_computePipeline.Create(
+		m_device, m_pipelineLayoutCS, L"VertexShaderCSIndirect", m_shaderPath
+	);
 }
 
 void ModelManagerVSIndirect::UpdateDispatchX() noexcept
