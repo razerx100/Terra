@@ -978,7 +978,6 @@ private:
 	QueueIndices3                      m_queueIndices3;
 	std::uint32_t                      m_dispatchXCount;
 	std::uint32_t                      m_argumentCount;
-	bool                               m_tempGPUDataCopied;
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
@@ -1022,7 +1021,6 @@ public:
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
-		m_tempGPUDataCopied{ other.m_tempGPUDataCopied },
 		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
@@ -1044,7 +1042,6 @@ public:
 		m_queueIndices3          = other.m_queueIndices3;
 		m_dispatchXCount         = other.m_dispatchXCount;
 		m_argumentCount          = other.m_argumentCount;
-		m_tempGPUDataCopied      = other.m_tempGPUDataCopied;
 		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
 
 		return *this;
@@ -1084,6 +1081,8 @@ public:
 	// Should be called after a new Model has been added.
 	void SetDescriptorBufferOfModels(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
 
+	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
+
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 private:
@@ -1105,11 +1104,11 @@ private:
 	);
 
 private:
-	StagingBufferManager*        m_stagingBufferMan;
-	SharedBuffer                 m_meshletBuffer;
-	SharedBuffer                 m_vertexBuffer;
-	SharedBuffer                 m_vertexIndicesBuffer;
-	SharedBuffer                 m_primIndicesBuffer;
+	StagingBufferManager* m_stagingBufferMan;
+	SharedBuffer          m_meshletBuffer;
+	SharedBuffer          m_vertexBuffer;
+	SharedBuffer          m_vertexIndicesBuffer;
+	SharedBuffer          m_primIndicesBuffer;
 
 	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 6u;
 	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 7u;

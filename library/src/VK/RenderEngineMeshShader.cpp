@@ -93,6 +93,7 @@ void RenderEngineMS::Render(
 		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
 		m_stagingManager.CopyAndClear(transferCmdBufferScope);
+		m_modelManager.CopyTempBuffers(transferCmdBuffer);
 
 		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 	}

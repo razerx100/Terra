@@ -505,8 +505,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	}, m_modelBundleIndexBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
-	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_tempGPUDataCopied{ false },
-	m_modelBundlesCS{}
+	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
@@ -877,18 +876,13 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 
 void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
-	if (!m_tempGPUDataCopied)
+	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
+	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
+
+	for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
 	{
-		m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
-		m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
-
-		for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
-		{
-			m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
-			m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
-		}
-
-		m_tempGPUDataCopied = true;
+		m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
+		m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
 	}
 }
 
@@ -1021,6 +1015,14 @@ void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descript
 		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
 	);
 	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
+}
+
+void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
+{
+	m_meshletBuffer.CopyOldBuffer(transferBuffer);
+	m_vertexBuffer.CopyOldBuffer(transferBuffer);
+	m_vertexIndicesBuffer.CopyOldBuffer(transferBuffer);
+	m_primIndicesBuffer.CopyOldBuffer(transferBuffer);
 }
 
 void ModelManagerMS::SetDescriptorBufferLayout(
