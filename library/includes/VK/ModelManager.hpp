@@ -220,11 +220,8 @@ class ModelBundleCSIndirect
 public:
 	struct CullingData
 	{
-		std::uint32_t     commandCount;
-		std::uint32_t     commandOffset;// Next Vec2 starts at 8bytes offset
-		DirectX::XMFLOAT2 xBounds;
-		DirectX::XMFLOAT2 yBounds;
-		DirectX::XMFLOAT2 zBounds;
+		std::uint32_t commandCount;
+		std::uint32_t commandOffset;// Next Vec2 starts at 8bytes offset
 	};
 
 public:
@@ -270,10 +267,6 @@ private:
 	SharedPtrVector<VkDrawIndexedIndirectCommand> m_indirectArguments;
 	std::unique_ptr<CullingData>                  m_cullingData;
 	std::uint32_t                                 m_bundleID;
-
-	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
-	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
-	static constexpr DirectX::XMFLOAT2 ZBOUNDS = { 1.f, -1.f };
 
 public:
 	ModelBundleCSIndirect(const ModelBundleCSIndirect&) = delete;
@@ -906,6 +899,13 @@ class ModelManagerVSIndirect : public
 		>;
 	friend class ModelManagerVSIndirectTest;
 
+	struct ConstantData
+	{
+		DirectX::XMFLOAT2 maxXBounds;
+		DirectX::XMFLOAT2 maxYBounds;
+		DirectX::XMFLOAT2 maxZBounds;
+	};
+
 public:
 	ModelManagerVSIndirect(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
@@ -961,6 +961,12 @@ private:
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
 
+	[[nodiscard]]
+	static consteval std::uint32_t GetConstantBufferSize() noexcept
+	{
+		return static_cast<std::uint32_t>(sizeof(ConstantData));
+	}
+
 private:
 	StagingBufferManager*              m_stagingBufferMan;
 	SharedBuffer                       m_argumentInputBuffer;
@@ -998,6 +1004,11 @@ private:
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
+
+	// Maximum bounds.
+	static constexpr DirectX::XMFLOAT2 XBOUNDS = { 1.f, -1.f };
+	static constexpr DirectX::XMFLOAT2 YBOUNDS = { 1.f, -1.f };
+	static constexpr DirectX::XMFLOAT2 ZBOUNDS = { 1.f, -1.f };
 
 public:
 	ModelManagerVSIndirect(const ModelManagerVSIndirect&) = delete;

@@ -181,10 +181,7 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 		std::make_unique<CullingData>(
 			CullingData{
 				.commandCount  = 0u,
-				.commandOffset = 0u,
-				.xBounds       = XBOUNDS,
-				.yBounds       = YBOUNDS,
-				.zBounds       = ZBOUNDS
+				.commandOffset = 0u
 			}
 		)
 	}, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
@@ -534,6 +531,11 @@ void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& 
 
 void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer)
 {
+	// Push constants needs to be serialised according to the shader stages
+	constexpr auto pushConstantSize = GetConstantBufferSize();
+
+	m_pipelineLayoutCS.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
+
 	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayout());
 
 	m_computePipeline.Create(
@@ -853,6 +855,21 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfMeshes(
 void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
 {
 	VkCommandBuffer cmdBuffer = computeBuffer.Get();
+
+	{
+		constexpr auto pushConstantSize = GetConstantBufferSize();
+
+		constexpr ConstantData constantData{
+			.maxXBounds = XBOUNDS,
+			.maxYBounds = YBOUNDS,
+			.maxZBounds = ZBOUNDS
+		};
+
+		vkCmdPushConstants(
+			cmdBuffer, m_pipelineLayoutCS.Get(), VK_SHADER_STAGE_COMPUTE_BIT, 0u,
+			pushConstantSize, &constantData
+		);
+	}
 
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
