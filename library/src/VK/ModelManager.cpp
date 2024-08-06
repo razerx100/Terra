@@ -491,7 +491,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_meshIndexBuffer{ device, memoryManager },
+	m_meshDetailsBuffer{ device, memoryManager },
 	m_modelIndicesBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
@@ -594,7 +594,8 @@ void ModelManagerVSIndirect::_setMeshIndex(
 	{
 		const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
 
-		m_meshIndexBuffer.Add(modelBundleIndexInBuffer, meshBundleID);
+		BoundsDetails details = m_meshBundles.at(meshBundleID).GetBoundsDetails();
+		m_meshDetailsBuffer.Add(modelBundleIndexInBuffer, details);
 	}
 }
 
@@ -800,7 +801,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_meshIndicesBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_meshDetailsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 	}
@@ -839,7 +840,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
 		);
 
-		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndicesBindingSlot);
+		m_meshDetailsBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshDetailsBindingSlot);
 	}
 }
 
