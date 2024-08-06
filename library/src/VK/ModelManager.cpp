@@ -491,7 +491,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_meshDetailsBuffer{ device, memoryManager },
+	m_meshIndexBuffer{ device, memoryManager }, m_meshDetailsBuffer{ device, memoryManager },
 	m_modelIndicesBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
@@ -594,8 +594,7 @@ void ModelManagerVSIndirect::_setMeshIndex(
 	{
 		const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
 
-		BoundsDetails details = m_meshBundles.at(meshBundleID).GetBoundsDetails();
-		m_meshDetailsBuffer.Add(modelBundleIndexInBuffer, details);
+		m_meshIndexBuffer.Add(modelBundleIndexInBuffer, meshBundleID);
 	}
 }
 
@@ -715,6 +714,14 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_meshBoundsBuffer,
 		tempBuffer, QueueType::ComputeQueue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	);
+
+	// This function is also used by the the Add function. Calling it early
+	// here should make it so it won't be called again the in Add function.
+	// But the returned value should be the same.
+	const size_t meshIndex = m_meshBundles.GetNextFreeIndex();
+
+	BoundsDetails details = meshManager.GetBoundsDetails();
+	m_meshDetailsBuffer.Add(meshIndex, details);
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
@@ -801,6 +808,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
+			s_meshIndexBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
+		descriptorBuffer.AddBinding(
 			s_meshDetailsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
@@ -840,6 +851,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
 		);
 
+		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndexBindingSlot);
 		m_meshDetailsBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshDetailsBindingSlot);
 	}
 }

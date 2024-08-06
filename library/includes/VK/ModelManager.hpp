@@ -976,6 +976,7 @@ private:
 	SharedBuffer                       m_cullingDataBuffer;
 	std::vector<SharedBuffer>          m_counterBuffers;
 	Buffer                             m_counterResetBuffer;
+	ReusableCPUBuffer<std::uint32_t>   m_meshIndexBuffer;
 	ReusableCPUBuffer<BoundsDetails>   m_meshDetailsBuffer;
 	SharedBuffer                       m_modelIndicesBuffer;
 	SharedBuffer                       m_vertexBuffer;
@@ -1002,7 +1003,8 @@ private:
 	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
 	static constexpr std::uint32_t s_modelBundleIndexBindingSlot    = 6u;
 	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 7u;
-	static constexpr std::uint32_t s_meshDetailsBindingSlot         = 8u;
+	static constexpr std::uint32_t s_meshIndexBindingSlot           = 8u;
+	static constexpr std::uint32_t s_meshDetailsBindingSlot         = 9u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -1024,6 +1026,7 @@ public:
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
+		m_meshIndexBuffer{ std::move(other.m_meshIndexBuffer) },
 		m_meshDetailsBuffer{ std::move(other.m_meshDetailsBuffer) },
 		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
@@ -1045,6 +1048,7 @@ public:
 		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
+		m_meshIndexBuffer        = std::move(other.m_meshIndexBuffer);
 		m_meshDetailsBuffer      = std::move(other.m_meshDetailsBuffer);
 		m_modelIndicesBuffer     = std::move(other.m_modelIndicesBuffer);
 		m_vertexBuffer           = std::move(other.m_vertexBuffer);

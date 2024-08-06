@@ -43,13 +43,12 @@ public:
 		m_availableIndices.resize(newCount, true);
 	}
 
-	template<typename U>
-	// To use this, T must have a copy ctor for the reserving.
-	size_t Add(U&& element, size_t extraAllocCount) noexcept
+	[[nodiscard]]
+	size_t GetNextFreeIndex(size_t extraAllocCount = 0) noexcept
 	{
 		size_t elementIndex = std::numeric_limits<size_t>::max();
 
-		auto oElementIndex = GetFirstAvailableIndex();
+		auto oElementIndex  = GetFirstAvailableIndex();
 
 		if (oElementIndex)
 			elementIndex = oElementIndex.value();
@@ -64,6 +63,15 @@ public:
 
 			ReserveNewElements(newElementCount);
 		}
+
+		return elementIndex;
+	}
+
+	template<typename U>
+	// To use this, T must have a copy ctor for the reserving.
+	size_t Add(U&& element, size_t extraAllocCount) noexcept
+	{
+		size_t elementIndex = GetNextFreeIndex(extraAllocCount);
 
 		// The boolean available indices container represents the possible allocation count. The
 		// element count should always be less than or equal to the index. Or it would mean that

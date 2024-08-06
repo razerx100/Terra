@@ -94,7 +94,7 @@ private:
 	static constexpr std::uint32_t s_cameraBindingSlot        = 7u;
 
 	// Compute
-	static constexpr std::uint32_t s_cameraComputeBindingSlot = 9u;
+	static constexpr std::uint32_t s_cameraComputeBindingSlot = 10u;
 
 private:
 	VkCommandQueue                  m_computeQueue;
