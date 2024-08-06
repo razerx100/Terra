@@ -895,7 +895,15 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 {
 	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
 	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
+	m_modelIndicesBuffer.CopyOldBuffer(transferBuffer);
+	m_vertexBuffer.CopyOldBuffer(transferBuffer);
+	m_indexBuffer.CopyOldBuffer(transferBuffer);
+	m_modelBundleIndexBuffer.CopyOldBuffer(transferBuffer);
+	m_meshBoundsBuffer.CopyOldBuffer(transferBuffer);
 
+	// This should be okay, since when adding new stuffs to these, all of the command buffers
+	// should be finished before. And they will be copied in the same transfer buffer. So, it
+	// be okay to free it when that single transfer buffer has been finished executing.
 	for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
 	{
 		m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
