@@ -418,10 +418,15 @@ void ModelManagerVSIndividual::ConfigureMeshBundle(
 	);
 }
 
-void ModelManagerVSIndividual::CopyTempData(const VKCommandBuffer& transferCmdBuffer) const noexcept
+void ModelManagerVSIndividual::CopyTempData(const VKCommandBuffer& transferCmdBuffer) noexcept
 {
-	m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
-	m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
+	if (m_tempCopyNecessary)
+	{
+		m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
+		m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
+
+		m_tempCopyNecessary = false;
+	}
 }
 
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(
@@ -906,21 +911,26 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 
 void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
-	m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
-	m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
-	m_modelIndicesBuffer.CopyOldBuffer(transferBuffer);
-	m_vertexBuffer.CopyOldBuffer(transferBuffer);
-	m_indexBuffer.CopyOldBuffer(transferBuffer);
-	m_modelBundleIndexBuffer.CopyOldBuffer(transferBuffer);
-	m_meshBoundsBuffer.CopyOldBuffer(transferBuffer);
-
-	// This should be okay, since when adding new stuffs to these, all of the command buffers
-	// should be finished before. And they will be copied in the same transfer buffer. So, it
-	// be okay to free it when that single transfer buffer has been finished executing.
-	for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
+	if (m_tempCopyNecessary)
 	{
-		m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
-		m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
+		m_argumentInputBuffer.CopyOldBuffer(transferBuffer);
+		m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
+		m_modelIndicesBuffer.CopyOldBuffer(transferBuffer);
+		m_vertexBuffer.CopyOldBuffer(transferBuffer);
+		m_indexBuffer.CopyOldBuffer(transferBuffer);
+		m_modelBundleIndexBuffer.CopyOldBuffer(transferBuffer);
+		m_meshBoundsBuffer.CopyOldBuffer(transferBuffer);
+
+		// This should be okay, since when adding new stuffs to these, all of the command buffers
+		// should be finished before. And they will be copied in the same transfer buffer. So, it
+		// be okay to free it when that single transfer buffer has been finished executing.
+		for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
+		{
+			m_argumentOutputBuffers.at(index).CopyOldBuffer(transferBuffer);
+			m_counterBuffers.at(index).CopyOldBuffer(transferBuffer);
+		}
+
+		m_tempCopyNecessary = false;
 	}
 }
 
@@ -1057,10 +1067,15 @@ void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descript
 
 void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
-	m_meshletBuffer.CopyOldBuffer(transferBuffer);
-	m_vertexBuffer.CopyOldBuffer(transferBuffer);
-	m_vertexIndicesBuffer.CopyOldBuffer(transferBuffer);
-	m_primIndicesBuffer.CopyOldBuffer(transferBuffer);
+	if (m_tempCopyNecessary)
+	{
+		m_meshletBuffer.CopyOldBuffer(transferBuffer);
+		m_vertexBuffer.CopyOldBuffer(transferBuffer);
+		m_vertexIndicesBuffer.CopyOldBuffer(transferBuffer);
+		m_primIndicesBuffer.CopyOldBuffer(transferBuffer);
+
+		m_tempCopyNecessary = false;
+	}
 }
 
 void ModelManagerMS::SetDescriptorBufferLayout(

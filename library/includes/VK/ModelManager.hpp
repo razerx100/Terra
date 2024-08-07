@@ -479,10 +479,10 @@ public:
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_graphicsPipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
 		m_modelBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
-		m_meshBundles{}, m_meshBoundsBuffer{
+		m_meshBundles{}, m_modelBundles{}, m_tempCopyNecessary{ true }, m_meshBoundsBuffer{
 			device, memoryManager,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		}, m_modelBundles{}
+		}
 	{}
 
 	// The layout should be the same across the multiple descriptors for each frame.
@@ -536,6 +536,8 @@ public:
 
 		AddModelBundle(std::move(modelBundle));
 
+		m_tempCopyNecessary = true;
+
 		return bundleID;
 	}
 
@@ -569,6 +571,8 @@ public:
 			const auto bundleID = static_cast<std::uint32_t>(modelBundleObj.GetID());
 
 			AddModelBundle(std::move(modelBundleObj));
+
+			m_tempCopyNecessary = true;
 
 			return bundleID;
 		}
@@ -642,6 +646,8 @@ public:
 		);
 
 		auto meshIndex = m_meshBundles.Add(std::move(meshManager));
+
+		m_tempCopyNecessary = true;
 
 		return static_cast<std::uint32_t>(meshIndex);
 	}
@@ -761,9 +767,10 @@ protected:
 	ModelBuffers                 m_modelBuffers;
 	std::vector<Pipeline>        m_graphicsPipelines;
 	ReusableVector<MeshManager>  m_meshBundles;
+	std::vector<ModelBundleType> m_modelBundles;
+	bool                         m_tempCopyNecessary;
 	// Configure this buffer in the child class, if desired.
 	SharedBuffer                 m_meshBoundsBuffer;
-	std::vector<ModelBundleType> m_modelBundles;
 
 	// The fragment binding slot should be 0. 1 to 4 are also reserved for
 	// the fragment shader on the RenderEngine class.
@@ -784,8 +791,9 @@ public:
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
-		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
-		m_modelBundles{ std::move(other.m_modelBundles) }
+		m_modelBundles{ std::move(other.m_modelBundles) },
+		m_tempCopyNecessary{ other.m_tempCopyNecessary },
+		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
@@ -797,8 +805,9 @@ public:
 		m_modelBuffers           = std::move(other.m_modelBuffers);
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_meshBundles            = std::move(other.m_meshBundles);
-		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
 		m_modelBundles           = std::move(other.m_modelBundles);
+		m_tempCopyNecessary      = other.m_tempCopyNecessary;
+		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
 
 		return *this;
 	}
@@ -832,7 +841,7 @@ public:
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
-	void CopyTempData(const VKCommandBuffer& transferCmdBuffer) const noexcept;
+	void CopyTempData(const VKCommandBuffer& transferCmdBuffer) noexcept;
 
 private:
 	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
