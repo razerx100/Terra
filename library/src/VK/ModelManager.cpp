@@ -959,10 +959,9 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 
 			constexpr std::uint32_t value = 0u;
 
-			size_t offset             = 0u;
 			std::uint8_t* bufferStart = m_counterResetBuffer.CPUHandle();
 
-			for (; offset < counterBufferSize; offset += counterSize)
+			for (size_t offset = 0u; offset < counterBufferSize; offset += counterSize)
 				memcpy(bufferStart + offset, &value, counterSize);
 		}
 	}

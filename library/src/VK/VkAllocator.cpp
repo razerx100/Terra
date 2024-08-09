@@ -54,8 +54,7 @@ std::optional<VkDeviceSize> VkAllocator::AllocateBuffer(
 
 std::optional<VkDeviceSize> VkAllocator::AllocateImage(
 	VkDevice device, const VkMemoryRequirements& memoryReq, VkImage image
-) noexcept
-{
+) noexcept {
 	std::optional<VkDeviceSize> allocationStart = Allocate(memoryReq);
 
 	if (allocationStart)
@@ -66,8 +65,7 @@ std::optional<VkDeviceSize> VkAllocator::AllocateImage(
 
 void VkAllocator::Deallocate(
 	VkDeviceSize startingAddress, VkDeviceSize bufferSize, VkDeviceSize alignment
-) noexcept
-{
+) noexcept {
 	m_allocator.Deallocate(
 		static_cast<size_t>(startingAddress), static_cast<size_t>(bufferSize),
 		static_cast<size_t>(alignment)
@@ -117,8 +115,7 @@ DeviceMemory MemoryManager::CreateMemory(VkDeviceSize size, MemoryType memoryTyp
 
 std::optional<MemoryManager::MemoryType> MemoryManager::GetMemoryType(
 	VkDeviceSize size, VkMemoryPropertyFlagBits memoryType
-) const noexcept
-{
+) const noexcept {
 	VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudget
 	{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT
@@ -151,8 +148,7 @@ std::optional<MemoryManager::MemoryType> MemoryManager::GetMemoryType(
 
 VkDeviceSize MemoryManager::GetAvailableMemoryOfType(
 	VkMemoryPropertyFlagBits memoryType
-) const noexcept
-{
+) const noexcept {
 	VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudget
 	{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT

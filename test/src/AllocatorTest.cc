@@ -50,7 +50,7 @@ void AllocatorTest::TearDownTestSuite()
 
 TEST_F(AllocatorTest, VkAllocatorTest)
 {
-	VkDevice logicalDevice = s_deviceManager->GetLogicalDevice();
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
 
 	MemoryManager memoryManager{ physicalDevice, logicalDevice, 2_MB, 200_KB };
