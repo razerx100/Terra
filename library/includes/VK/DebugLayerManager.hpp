@@ -37,8 +37,7 @@ public:
 		DebugCallbackType type
 	) const noexcept;
 	[[nodiscard]]
-	const std::vector<const char*>& GetActiveLayerNames() const noexcept
-	{ return m_layers; }
+	const std::vector<const char*>& GetActiveLayerNames() const noexcept { return m_layers; }
 	[[nodiscard]]
 	// Returns empty if all of the layers are supported. If a layer isn't supported
 	// returns its name.
@@ -78,7 +77,9 @@ private:
 public:
 	[[nodiscard]]
 	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
-	{ return s_requiredExtensions; }
+	{
+		return s_requiredExtensions;
+	}
 
 private:
 	[[nodiscard]]

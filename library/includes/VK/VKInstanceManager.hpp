@@ -16,11 +16,9 @@ public:
 	void CreateInstance(CoreVersion version);
 
 	[[nodiscard]]
-	VkInstanceExtensionManager& ExtensionManager() noexcept
-	{ return m_extensionManager; }
+	VkInstanceExtensionManager& ExtensionManager() noexcept { return m_extensionManager; }
 	[[nodiscard]]
-	DebugLayerManager& DebugLayers() noexcept
-	{ return m_debugLayer; }
+	DebugLayerManager& DebugLayers() noexcept { return m_debugLayer; }
 
 	[[nodiscard]]
 	VkInstance GetVKInstance() const noexcept;

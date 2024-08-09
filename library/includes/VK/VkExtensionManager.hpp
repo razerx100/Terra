@@ -58,7 +58,9 @@ public:
 	}
 	[[nodiscard]]
 	const std::vector<const char*>& GetExtensionNames() const noexcept
-	{ return m_extensionNames; }
+	{
+		return m_extensionNames;
+	}
 	[[nodiscard]]
 	std::vector<ExtensionType> GetActiveExtensions() const noexcept
 	{
@@ -124,7 +126,8 @@ public:
 	VkDeviceExtensionManager& operator=(const VkDeviceExtensionManager&) = delete;
 
 	VkDeviceExtensionManager(VkDeviceExtensionManager&& other) noexcept
-		: VkExtensionManager{ std::move(other) } {}
+		: VkExtensionManager{ std::move(other) }
+	{}
 
 	VkDeviceExtensionManager& operator=(VkDeviceExtensionManager&& other) noexcept
 	{
@@ -159,7 +162,8 @@ public:
 	VkInstanceExtensionManager& operator=(const VkInstanceExtensionManager&) = delete;
 
 	VkInstanceExtensionManager(VkInstanceExtensionManager&& other) noexcept
-		: VkExtensionManager{ std::move(other) } {}
+		: VkExtensionManager{ std::move(other) }
+	{}
 
 	VkInstanceExtensionManager& operator=(VkInstanceExtensionManager&& other) noexcept
 	{
@@ -178,15 +182,13 @@ namespace VkDeviceExtension
 		static void vkCmdDrawMeshTasksEXT(
 			VkCommandBuffer commandBuffer,
 			std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ
-		)
-		{
+		) {
 			s_vkCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
 		}
 		static void vkCmdDrawMeshTasksIndirectCountEXT(
 			VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
 			VkDeviceSize countBufferOffset, std::uint32_t maxDrawCount, std::uint32_t stride
-		)
-		{
+		) {
 			s_vkCmdDrawMeshTasksIndirectCountEXT(
 				commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride
 			);
@@ -194,8 +196,7 @@ namespace VkDeviceExtension
 		static void vkCmdDrawMeshTasksIndirectEXT(
 			VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
 			std::uint32_t drawCount, std::uint32_t stride
-		)
-		{
+		) {
 			s_vkCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
 		}
 
@@ -212,8 +213,7 @@ namespace VkDeviceExtension
 		static void vkCmdBindDescriptorBufferEmbeddedSamplersEXT(
 			VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
 			VkPipelineLayout layout, std::uint32_t set
-		)
-		{
+		) {
 			s_vkCmdBindDescriptorBufferEmbeddedSamplersEXT(
 				commandBuffer, pipelineBindPoint, layout, set
 			);
@@ -221,68 +221,58 @@ namespace VkDeviceExtension
 		static void vkCmdBindDescriptorBuffersEXT(
 			VkCommandBuffer commandBuffer, std::uint32_t bufferCount,
 			const VkDescriptorBufferBindingInfoEXT* pBindingInfos
-		)
-		{
+		) {
 			s_vkCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
 		}
 		static void vkCmdSetDescriptorBufferOffsetsEXT(
 			VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
 			VkPipelineLayout layout, std::uint32_t firstSet, std::uint32_t setCount,
 			const std::uint32_t* pBufferIndices, const VkDeviceSize* pOffsets
-		)
-		{
+		) {
 			s_vkCmdSetDescriptorBufferOffsetsEXT(
 				commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pBufferIndices, pOffsets
 			);
 		}
 		static void vkGetBufferOpaqueCaptureDescriptorDataEXT(
 			VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT* pInfo, void* pData
-		)
-		{
+		) {
 			s_vkGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
 		}
 		static void vkGetDescriptorEXT(
 			VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
 			void* pDescriptor
-		)
-		{
+		) {
 			s_vkGetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
 		}
 		static void vkGetDescriptorSetLayoutBindingOffsetEXT(
 			VkDevice device, VkDescriptorSetLayout layout, std::uint32_t binding, VkDeviceSize* pOffset
-		)
-		{
+		) {
 			s_vkGetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
 		}
 		static void vkGetDescriptorSetLayoutSizeEXT(
 			VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes
-		)
-		{
+		) {
 			s_vkGetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
 		}
 		static void vkGetImageOpaqueCaptureDescriptorDataEXT(
 			VkDevice device, const VkImageCaptureDescriptorDataInfoEXT* pInfo, void* pData
-		)
-		{
+		) {
 			s_vkGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
 		}
 		static void vkGetImageViewOpaqueCaptureDescriptorDataEXT(
 			VkDevice device, const VkImageViewCaptureDescriptorDataInfoEXT* pInfo, void* pData
-		)
-		{
+		) {
 			s_vkGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
 		}
 		static void vkGetSamplerOpaqueCaptureDescriptorDataEXT(
 			VkDevice device, const VkSamplerCaptureDescriptorDataInfoEXT* pInfo, void* pData
-		)
-		{
+		) {
 			s_vkGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
 		}
 		static void vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
 			VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo,
 			void* pData
-		)
-		{
+		) {
 			s_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
 		}
 
@@ -316,8 +306,7 @@ namespace VkInstanceExtension
 	public:
 		static void vkCmdBeginDebugUtilsLabelEXT(
 			VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo
-		)
-		{
+		) {
 			s_vkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 		}
 		static void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
@@ -326,28 +315,24 @@ namespace VkInstanceExtension
 		}
 		static void vkCmdInsertDebugUtilsLabelEXT(
 			VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo
-		)
-		{
+		) {
 			s_vkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 		}
 		static void vkCreateDebugUtilsMessengerEXT(
 			VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
 			const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger
-		)
-		{
+		) {
 			s_vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
 		}
 		static void vkDestroyDebugUtilsMessengerEXT(
 			VkInstance instance, VkDebugUtilsMessengerEXT messenger,
 			const VkAllocationCallbacks* pAllocator
-		)
-		{
+		) {
 			s_vkDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 		}
 		static void vkQueueBeginDebugUtilsLabelEXT(
 			VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo
-		)
-		{
+		) {
 			s_vkQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
 		}
 		static void vkQueueEndDebugUtilsLabelEXT(VkQueue queue)
@@ -356,28 +341,24 @@ namespace VkInstanceExtension
 		}
 		static void vkQueueInsertDebugUtilsLabelEXT(
 			VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo
-		)
-		{
+		) {
 			s_vkQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
 		}
 		static void vkSetDebugUtilsObjectNameEXT(
 			VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo
-		)
-		{
+		) {
 			s_vkSetDebugUtilsObjectNameEXT(device, pNameInfo);
 		}
 		static void vkSetDebugUtilsObjectTagEXT(
 			VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo
-		)
-		{
+		) {
 			s_vkSetDebugUtilsObjectTagEXT(device, pTagInfo);
 		}
 		static void vkSubmitDebugUtilsMessageEXT(
 			VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageTypes,
 			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData
-		)
-		{
+		) {
 			s_vkSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
 		}
 

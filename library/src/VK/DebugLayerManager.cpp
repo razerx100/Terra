@@ -43,8 +43,7 @@ std::string VKAPI_CALL DebugLayerManager::FormatDebugMessage(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData
-)
-{
+) {
 	return std::format(
 		"Type : {}    Severity : {}    ID : {}.\nDescription : {}.\n",
 		GenerateMessageType(messageType), messageSeverities[messageSeverity],
@@ -101,8 +100,9 @@ void DebugLayerManager::AddValidationLayer(ValidationLayer layer) noexcept
 	m_layers.emplace_back(validationLayersNames.at(static_cast<size_t>(layer)));
 }
 
-std::string VKAPI_CALL DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept {
-	std::string messageTypeDescription;
+std::string VKAPI_CALL DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept
+{
+	std::string messageTypeDescription{};
 	for (std::uint32_t index = 0u; index < 3u; ++index) {
 		const std::uint32_t flagIndex = 1u << index;
 		if (typeFlag & flagIndex)
@@ -168,8 +168,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackStdError(
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	void*/* pUserData */
-)
-{
+) {
 	std::cerr << FormatDebugMessage(messageSeverity, messageType, pCallbackData);
 
 	return VK_FALSE;

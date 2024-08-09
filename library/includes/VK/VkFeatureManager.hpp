@@ -27,7 +27,9 @@ public:
 	bool CheckFeatureSupport(VkPhysicalDevice device) const noexcept;
 	[[nodiscard]]
 	VkPhysicalDeviceFeatures2 const* GetDeviceFeatures2() const noexcept
-	{ return m_deviceFeatures2.GetPtr(); }
+	{
+		return m_deviceFeatures2.GetPtr();
+	}
 
 private:
 	void SetBaseCoreFeatures() noexcept;
@@ -86,7 +88,8 @@ private:
 public:
 	VkFeatureManager(const VkFeatureManager& other) noexcept
 		: m_deviceFeatures2{ other.m_deviceFeatures2 }, m_feature1Members{ other.m_feature1Members },
-		m_chainStructMembers{ other.m_chainStructMembers } {}
+		m_chainStructMembers{ other.m_chainStructMembers }
+	{}
 	VkFeatureManager& operator=(const VkFeatureManager& other) noexcept
 	{
 		m_deviceFeatures2    = other.m_deviceFeatures2;
@@ -98,7 +101,8 @@ public:
 	VkFeatureManager(VkFeatureManager&& other) noexcept
 		: m_deviceFeatures2{ std::move(other.m_deviceFeatures2) },
 		m_feature1Members{ std::move(other.m_feature1Members) },
-		m_chainStructMembers{ std::move(other.m_chainStructMembers) } {}
+		m_chainStructMembers{ std::move(other.m_chainStructMembers) }
+	{}
 	VkFeatureManager& operator=(VkFeatureManager&& other) noexcept
 	{
 		m_deviceFeatures2    = std::move(other.m_deviceFeatures2);

@@ -1,7 +1,6 @@
 #ifndef VK_SYNC_OBJECTS_HPP_
 #define VK_SYNC_OBJECTS_HPP_
 #include <vulkan/vulkan.hpp>
-#include <vector>
 #include <utility>
 
 template<typename ObjType>

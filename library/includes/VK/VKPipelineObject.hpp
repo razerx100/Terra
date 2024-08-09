@@ -113,7 +113,9 @@ public:
 
 	[[nodiscard]]
 	VkPipelineDepthStencilStateCreateInfo const* GetRef() const noexcept
-	{ return &m_depthStencilStateInfo; }
+	{
+		return &m_depthStencilStateInfo;
+	}
 	[[nodiscard]]
 	VkPipelineDepthStencilStateCreateInfo Get() const noexcept { return m_depthStencilStateInfo; }
 

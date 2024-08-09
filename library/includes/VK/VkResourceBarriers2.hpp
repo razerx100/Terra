@@ -14,7 +14,8 @@ public:
 			.sType               = type,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
-		} {}
+		}
+	{}
 
 	[[nodiscard]]
 	VkBarrierType Get() const noexcept { return m_barrier; }

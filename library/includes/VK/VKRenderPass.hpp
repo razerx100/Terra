@@ -28,7 +28,8 @@ public:
 			.pSubpasses      = &m_subpassDesc,
 			.dependencyCount = 1u,
 			.pDependencies   = &m_subpassDependency
-		} {}
+		}
+	{}
 
 	RenderPassBuilder& AddColourAttachment(VkFormat format) noexcept;
 	RenderPassBuilder& AddDepthAttachment(VkFormat format) noexcept;

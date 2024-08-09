@@ -8,7 +8,8 @@ class PipelineLayout
 {
 public:
 	PipelineLayout(VkDevice device)
-		: m_device{ device }, m_pipelineLayout{ VK_NULL_HANDLE }, m_pushConstantOffset{ 0u } {}
+		: m_device{ device }, m_pipelineLayout{ VK_NULL_HANDLE }, m_pushConstantOffset{ 0u }
+	{}
 	~PipelineLayout() noexcept;
 
 	void AddPushConstantRange(VkShaderStageFlags shaderFlag, std::uint32_t rangeSize) noexcept;

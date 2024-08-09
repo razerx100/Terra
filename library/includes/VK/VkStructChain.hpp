@@ -54,7 +54,8 @@ private:
 public:
 	VkStructChain(const VkStructChain& other) noexcept
 		: m_baseStruct{ other.m_baseStruct }, m_lastInChain{ other.m_lastInChain },
-		m_chainedStructs{ other.m_chainedStructs } {}
+		m_chainedStructs{ other.m_chainedStructs }
+	{}
 	VkStructChain& operator=(const VkStructChain& other) noexcept
 	{
 		m_baseStruct     = other.m_baseStruct;
@@ -65,7 +66,8 @@ public:
 	}
 	VkStructChain(VkStructChain&& other) noexcept
 		: m_baseStruct{ other.m_baseStruct }, m_lastInChain{ std::move(other.m_lastInChain) },
-		m_chainedStructs{ std::move(other.m_chainedStructs) } {}
+		m_chainedStructs{ std::move(other.m_chainedStructs) }
+	{}
 	VkStructChain& operator=(VkStructChain&& other) noexcept
 	{
 		m_baseStruct     = other.m_baseStruct;

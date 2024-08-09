@@ -17,7 +17,8 @@ public:
 			.srcOffset = 0u,
 			.dstOffset = 0u,
 			.size      = 0u
-		} {}
+		}
+	{}
 
 	BufferToBufferCopyBuilder& Size(VkDeviceSize size) noexcept
 	{

@@ -6,7 +6,7 @@
 class VertexLayout
 {
 public:
-	VertexLayout(std::uint32_t binding = 0u) noexcept
+	VertexLayout(std::uint32_t binding = 0u)
 		: m_bindingDesc{
 			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 		},
