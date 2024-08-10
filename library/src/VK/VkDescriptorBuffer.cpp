@@ -1,4 +1,5 @@
 #include <VkDescriptorBuffer.hpp>
+#include <numeric>
 
 // Vk Descriptor Buffer
 VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorInfo{
@@ -8,9 +9,11 @@ VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorIn
 VkDescriptorBuffer::VkDescriptorBuffer(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t setLayoutCount
 ) : m_device{ device }, m_memoryManager{ memoryManager }, m_layoutOffsets(setLayoutCount, 0u),
-	m_setLayouts{},
+	m_layoutIndices(setLayoutCount, 0u), m_setLayouts{},
 	m_descriptorBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
 {
+	std::iota(std::begin(m_layoutIndices), std::end(m_layoutIndices), 0u);
+
 	for (size_t index = 0u; index < setLayoutCount; ++index)
 		m_setLayouts.emplace_back(device);
 }
@@ -134,7 +137,7 @@ void* VkDescriptorBuffer::GetDescriptorAddress(
 void VkDescriptorBuffer::BindDescriptorBuffer(
 	const VkDescriptorBuffer& descriptorBuffer, const VKCommandBuffer& cmdBuffer,
 	VkPipelineBindPoint bindPoint, const PipelineLayout& pipelineLayout
-) noexcept {
+) {
 	using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
 
 	VkCommandBuffer commandBuffer = cmdBuffer.Get();
@@ -147,12 +150,15 @@ void VkDescriptorBuffer::BindDescriptorBuffer(
 
 	DescBuffer::vkCmdBindDescriptorBuffersEXT(commandBuffer, 1u, &bindingInfo);
 
-	VkPipelineLayout layout = pipelineLayout.Get();
+	const std::vector<VkDeviceSize>& setLayoutOffsets  = descriptorBuffer.GetLayoutOffsets();
+	const std::vector<std::uint32_t>& setLayoutIndices = descriptorBuffer.GetLayoutIndices();
 
-	static constexpr std::uint32_t bindingInfoIndices[] = { 0u };
-	static constexpr VkDeviceSize  bufferOffsets[]      = { 0u };
+	VkPipelineLayout layout      = pipelineLayout.Get();
+	const auto setCount          = static_cast<std::uint32_t>(std::size(setLayoutOffsets));
+	const std::uint32_t firstSet = setLayoutIndices.front();
 
 	DescBuffer::vkCmdSetDescriptorBufferOffsetsEXT(
-		commandBuffer, bindPoint, layout, 0u, 1u, bindingInfoIndices, bufferOffsets
+		commandBuffer, bindPoint, layout, firstSet, setCount,
+		std::data(setLayoutIndices), std::data(setLayoutOffsets)
 	);
 }
