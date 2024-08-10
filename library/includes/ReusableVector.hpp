@@ -19,20 +19,6 @@ public:
 		: m_elements{ initialSize }, m_availableIndices( initialSize )
 	{}
 
-	template<typename U>
-	// It has a different template, cuz the ctor might be able to receive a different value.
-	void AddNewElement(U&& element) noexcept
-	{
-		m_elements.emplace_back(std::forward<U>(element));
-		m_availableIndices.emplace_back(false);
-	}
-	template<typename U>
-	// It has a different template, cuz the ctor might be able to receive a different value.
-	void UpdateElement(size_t elementIndex, U&& element) noexcept
-	{
-		m_elements.at(elementIndex)         = std::forward<U>(element);
-		m_availableIndices.at(elementIndex) = false;
-	}
 	void ReserveNewElements(size_t newCount) noexcept
 	{
 		// Can't use resize for the elements container, as it creates empty items. For example,
@@ -69,7 +55,7 @@ public:
 
 	template<typename U>
 	// To use this, T must have a copy ctor for the reserving.
-	size_t Add(U&& element, size_t extraAllocCount) noexcept
+	size_t Add(U&& element, size_t extraAllocCount)
 	{
 		size_t elementIndex = GetNextFreeIndex(extraAllocCount);
 
@@ -90,7 +76,7 @@ public:
 	}
 
 	template<typename U>
-	size_t Add(U&& element) noexcept
+	size_t Add(U&& element)
 	{
 		return Add(std::move(element), 0u);
 	}
@@ -101,18 +87,11 @@ public:
 		// change the capacity. And also we don't want a null object lingering around which can
 		// be accessed.
 		m_elements.erase(std::next(std::begin(m_elements), index));
-		m_availableIndices.at(index) = true;
-	}
+		// Once the previous element has been erased, the objects afterwards would be shifted
+		// left. So, the next free index should be the size of the m_elements containter.
+		const size_t freeIndex = std::size(m_elements);
 
-	[[nodiscard]]
-	std::optional<size_t> GetFirstAvailableIndex() const noexcept
-	{
-		return ::GetFirstAvailableIndex(m_availableIndices);
-	}
-	[[nodiscard]]
-	std::vector<size_t> GetAvailableIndices() const noexcept
-	{
-		return ::GetAvailableIndices(m_availableIndices);
+		m_availableIndices.at(freeIndex) = true;
 	}
 
 	T& at(size_t index) noexcept { return m_elements.at(index); }
@@ -133,6 +112,13 @@ public:
 	// Lets just use the size of the availableIndices just in case. The capacity of elements and
 	// size of availableIndices should be the same.
 	size_t GetCapacityCount() const noexcept { return std::size(m_availableIndices); }
+
+private:
+	[[nodiscard]]
+	std::optional<size_t> GetFirstAvailableIndex() const noexcept
+	{
+		return ::GetFirstAvailableIndex(m_availableIndices);
+	}
 
 private:
 	std::vector<T>    m_elements;

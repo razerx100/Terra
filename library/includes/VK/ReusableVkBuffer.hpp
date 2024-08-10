@@ -37,44 +37,27 @@ public:
 	// Returns the indices of the elements in the ElementBuffer.
 	std::vector<size_t> AddMultiple(std::vector<T>&& elements)
 	{
-		std::vector<size_t> freeIndices = m_elements.GetAvailableIndices();
+		const size_t oldCount          = m_elements.GetCapacityCount();
+		const size_t extraElementCount = static_cast<Derived*>(this)->GetExtraElementAllocationCount();
 
-		for (size_t index = 0u; index < std::size(freeIndices); ++index)
+		const size_t elementCount = std::size(elements);
+
+		std::vector<size_t> elementIndices{};
+		elementIndices.reserve(elementCount);
+
+		for (auto& element : elements)
 		{
-			const size_t freeIndex = freeIndices.at(index);
+			const size_t elementIndex = m_elements.Add(std::move(element), extraElementCount);
 
-			m_elements.UpdateElement(freeIndex, std::move(elements.at(index)));
+			elementIndices.emplace_back(elementIndex);
 		}
 
-		const size_t newElementCount = std::size(elements);
-		const size_t freeIndexCount  = std::size(freeIndices);
+		const size_t newCount = m_elements.GetCapacityCount();
 
-		if (newElementCount > freeIndexCount)
-		{
-			// Since the free indices might not be in order. But the last one should have the
-			// highest index.
-			const size_t newFreeIndex = std::empty(freeIndices) ? freeIndexCount : freeIndices.back() + 1u;
+		if(newCount > oldCount)
+			static_cast<Derived*>(this)->CreateBuffer(newCount);
 
-			for (size_t index = freeIndexCount, freeIndex = newFreeIndex;
-				index < newElementCount; ++index, ++freeIndex)
-			{
-				m_elements.AddNewElement(std::move(elements.at(index)));
-
-				freeIndices.emplace_back(freeIndex);
-			}
-
-			const size_t newExtraElementCount = newElementCount
-				+ static_cast<Derived*>(this)->GetExtraElementAllocationCount();
-
-			m_elements.ReserveNewElements(newExtraElementCount);
-
-			static_cast<Derived*>(this)->CreateBuffer(newExtraElementCount);
-		}
-
-		// Now these are the new used indices.
-		freeIndices.resize(newElementCount);
-
-		return freeIndices;
+		return elementIndices;
 	}
 
 	void Remove(size_t index) noexcept { m_elements.RemoveElement(index); }
@@ -146,9 +129,9 @@ public:
 	{}
 
 	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot
+		VkDescriptorBuffer& descriptorBuffer, std::uint32_t bindingSlot, size_t setLayoutIndex
 	) const {
-		descriptorBuffer.SetStorageBufferDescriptor(m_buffer, bindingSlot, 0u);
+		descriptorBuffer.SetStorageBufferDescriptor(m_buffer, bindingSlot, setLayoutIndex, 0u);
 	}
 
 	void Add(size_t index, const T& value)
