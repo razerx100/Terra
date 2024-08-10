@@ -42,7 +42,7 @@ private:
 
 private:
 	// Graphics
-	static constexpr std::uint32_t s_cameraBindingSlot = 10u;
+	static constexpr std::uint32_t s_cameraBindingSlot = 5u;
 
 public:
 	RenderEngineMS(const RenderEngineMS&) = delete;

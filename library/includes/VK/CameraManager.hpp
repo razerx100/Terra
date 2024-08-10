@@ -29,17 +29,20 @@ public:
 
 	void SetDescriptorBufferLayoutGraphics(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
-		VkShaderStageFlagBits shaderStage
+		size_t setLayoutIndex, VkShaderStageFlagBits shaderStage
 	) const noexcept;
 	void SetDescriptorBufferLayoutCompute(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+		size_t setLayoutIndex
 	) const noexcept;
 
 	void SetDescriptorBufferGraphics(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+		size_t setLayoutIndex
 	) const;
 	void SetDescriptorBufferCompute(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+		size_t setLayoutIndex
 	) const;
 
 private:

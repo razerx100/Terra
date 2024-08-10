@@ -21,10 +21,12 @@ public:
 	{}
 
 	void SetDescriptorBufferLayout(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot,
+		size_t setLayoutIndex
 	) const noexcept;
 	void SetDescriptorBuffer(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot,
+		size_t setLayoutIndex
 	) const;
 
 	// Shouldn't be called on every frame. Only updates the index specified.

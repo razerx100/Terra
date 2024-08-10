@@ -38,7 +38,7 @@ private:
 	);
 
 private:
-	static constexpr std::uint32_t s_cameraBindingSlot = 6u;
+	static constexpr std::uint32_t s_cameraBindingSlot = 1u;
 
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
@@ -91,9 +91,12 @@ private:
 
 private:
 	// Graphics
-	static constexpr std::uint32_t s_cameraBindingSlot        = 7u;
+	static constexpr std::uint32_t s_cameraBindingSlot        = 2u;
 
 	// Compute
+	static constexpr std::uint32_t s_computePipelineSetLayoutCount = 1u;
+	static constexpr std::uint32_t s_computeShaderSetLayoutIndex   = 0u;
+
 	static constexpr std::uint32_t s_cameraComputeBindingSlot = 10u;
 
 private:

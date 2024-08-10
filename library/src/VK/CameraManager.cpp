@@ -56,39 +56,43 @@ void CameraManager::Update(VkDeviceSize index) const noexcept
 
 void CameraManager::SetDescriptorBufferLayoutGraphics(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
-	VkShaderStageFlagBits shaderStage
+	size_t setLayoutIndex, VkShaderStageFlagBits shaderStage
 ) const noexcept {
 	for (auto& descriptorBuffer : descriptorBuffers)
 		descriptorBuffer.AddBinding(
-			cameraBindingSlot, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, shaderStage
+			cameraBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, shaderStage
 		);
 }
 
 void CameraManager::SetDescriptorBufferLayoutCompute(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+	size_t setLayoutIndex
 ) const noexcept {
 	for (auto& descriptorBuffer : descriptorBuffers)
 		descriptorBuffer.AddBinding(
-			cameraBindingSlot, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_COMPUTE_BIT
+			cameraBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 }
 
 void CameraManager::SetDescriptorBufferGraphics(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+	size_t setLayoutIndex
 ) const {
 	for (size_t index = 0u; index < std::size(descriptorBuffers); ++index)
 		descriptorBuffers.at(index).SetUniformBufferDescriptor(
-			m_cameraBuffer, cameraBindingSlot, 0u,
+			m_cameraBuffer, cameraBindingSlot, setLayoutIndex, 0u,
 			index * m_cameraBufferInstanceSize, m_cameraBufferInstanceSize
 		);
 }
 
 void CameraManager::SetDescriptorBufferCompute(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
+	size_t setLayoutIndex
 ) const {
 	for (size_t index = 0u; index < std::size(descriptorBuffers); ++index)
 		descriptorBuffers.at(index).SetUniformBufferDescriptor(
-			m_cameraBuffer, cameraBindingSlot, 0u,
+			m_cameraBuffer, cameraBindingSlot, setLayoutIndex, 0u,
 			index * m_cameraBufferInstanceSize, m_cameraBufferInstanceSize
 		);
 }

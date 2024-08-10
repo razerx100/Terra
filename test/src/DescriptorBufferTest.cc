@@ -9,7 +9,8 @@
 
 namespace Constants
 {
-	constexpr const char* appName  = "TerraTest";
+	constexpr const char* appName    = "TerraTest";
+	constexpr std::uint32_t setCount = 2u;
 }
 
 class DescriptorBufferTest : public ::testing::Test
@@ -73,27 +74,34 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		Buffer testStorageM{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 		testStorageM.Create(4_KB, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 
-		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
+		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager, Constants::setCount };
 		descBuffer.SetDescriptorBufferInfo(physicalDevice);
-		descBuffer.AddBinding(0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddBinding(1u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(0u, 0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(1u, 0u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
 		descBuffer.AddBinding(
-			2u, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+			2u, 0u, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
-		descBuffer.AddBinding(3u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddBinding(4u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(3u, 0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(4u, 0u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		descBuffer.AddBinding(0u, 1u, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT);
+		descBuffer.AddBinding(1u, 1u, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT);
+
 		descBuffer.CreateBuffer();
 
-		descBuffer.SetStorageBufferDescriptor(testStorage, 0u, 0u);
-		descBuffer.SetUniformBufferDescriptor(testUniform, 1u, 0u);
-		descBuffer.SetStorageTexelBufferDescriptor(testTexel, 2u, 0u, VK_FORMAT_R8G8B8A8_UINT);
+		descBuffer.SetStorageBufferDescriptor(testStorage, 0u, 0u, 0u);
+		descBuffer.SetUniformBufferDescriptor(testUniform, 1u, 0u, 0u);
+		descBuffer.SetStorageTexelBufferDescriptor(testTexel, 2u, 0u, 0u, VK_FORMAT_R8G8B8A8_UINT);
 		descBuffer.SetStorageBufferDescriptor(
-			testStorageM, 3u, 0u, 0u, static_cast<VkDeviceSize>(2_KB)
+			testStorageM, 3u, 0u, 0u, 0u, static_cast<VkDeviceSize>(2_KB)
 		);
 		descBuffer.SetStorageBufferDescriptor(
-			testStorageM, 4u, 0u,
+			testStorageM, 4u, 0u, 0u,
 			static_cast<VkDeviceAddress>(2_KB), static_cast<VkDeviceSize>(2_KB)
 		);
+
+		descBuffer.SetStorageBufferDescriptor(testStorage, 0u, 1u, 0u);
+		descBuffer.SetUniformBufferDescriptor(testUniform, 1u, 1u, 0u);
 	}
 
 	{
@@ -104,14 +112,17 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		VKSampler sampler{ logicalDevice };
 		sampler.Create(samplerCreateInfo);
 
-		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
+		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager, Constants::setCount };
 		descBuffer.SetDescriptorBufferInfo(physicalDevice);
 		descBuffer.AddBinding(
-			0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+			0u, 0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
-		descBuffer.AddBinding(1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddBinding(2u, VK_DESCRIPTOR_TYPE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
-		descBuffer.AddBinding(3u, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(1u, 0u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(2u, 0u, VK_DESCRIPTOR_TYPE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+		descBuffer.AddBinding(3u, 0u, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		descBuffer.AddBinding(0u, 1u, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1u, VK_SHADER_STAGE_VERTEX_BIT);
+
 		descBuffer.CreateBuffer();
 
 		VkTextureView textureView{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
@@ -126,19 +137,23 @@ TEST_F(DescriptorBufferTest, DescriptorBufferTest)
 		);
 
 		descBuffer.SetCombinedImageDescriptor(
-			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+			textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u, 0u
 		);
 		descBuffer.SetSampledImageDescriptor(
-			textureView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
+			textureView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u, 0u
 		);
-		descBuffer.SetSamplerDescriptor(sampler, 2u, 0u);
+		descBuffer.SetSamplerDescriptor(sampler, 2u, 0u, 0u);
 		descBuffer.SetStorageImageDescriptor(
-			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u, 0u
+			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 3u, 0u, 0u
+		);
+
+		descBuffer.SetStorageImageDescriptor(
+			storageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 1u, 0u
 		);
 
 		// PipelineLayout
 		PipelineLayout pipelineLayout{ logicalDevice };
-		pipelineLayout.Create(descBuffer.GetLayout());
+		pipelineLayout.Create(descBuffer.GetLayouts());
 	}
 }
 
@@ -170,36 +185,39 @@ TEST_F(DescriptorBufferTest, DescriptorBufferCopyTest)
 			VK_IMAGE_VIEW_TYPE_2D, {}
 		);
 
-		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager };
+		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager, Constants::setCount };
 		{
 			descBuffer.SetDescriptorBufferInfo(physicalDevice);
 			descBuffer.AddBinding(
-				0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+				0u, 0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_VERTEX_BIT
+			);
+			descBuffer.AddBinding(
+				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			descBuffer.CreateBuffer();
 
 			descBuffer.UpdateBinding(
-				0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
+				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			descBuffer.AddBinding(
-				1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 255u, VK_SHADER_STAGE_FRAGMENT_BIT
+				1u, 1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 255u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			descBuffer.RecreateBuffer();
 		}
 
 		{
-			VkDescriptorBuffer descBuffer1{ logicalDevice, &memoryManager };
+			VkDescriptorBuffer descBuffer1{ logicalDevice, &memoryManager, Constants::setCount };
 			descBuffer1.SetDescriptorBufferInfo(physicalDevice);
 
 			descBuffer1.AddBinding(
-				0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+				0u, 0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			descBuffer1.AddBinding(
-				1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+				0u, 1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			descBuffer1.CreateBuffer();
@@ -211,26 +229,26 @@ TEST_F(DescriptorBufferTest, DescriptorBufferCopyTest)
 
 			{
 				void const* desc = descBuffer1.GetCombinedImageDescriptor(
-					textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+					textureView, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u, 0u
 				);
 
-				descBuffer.SetCombinedImageDescriptor(desc, 0u, 0u);
+				descBuffer.SetCombinedImageDescriptor(desc, 0u, 0u, 0u);
 			}
 
 			{
 				void const* desc = descBuffer1.GetCombinedImageDescriptor(
-					textureView1, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u
+					textureView1, sampler, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 0u, 0u
 				);
 
-				descBuffer.SetCombinedImageDescriptor(desc, 0u, 1u);
+				descBuffer.SetCombinedImageDescriptor(desc, 0u, 0u, 1u);
 			}
 
 			{
 				void const* desc = descBuffer1.GetSampledImageDescriptor(
-					textureView2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1u, 0u
+					textureView2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u, 1u, 0u
 				);
 
-				descBuffer.SetSampledImageDescriptor(desc, 1u, 0u);
+				descBuffer.SetSampledImageDescriptor(desc, 0u, 1u, 0u);
 			}
 		}
 	}

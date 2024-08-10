@@ -1,5 +1,5 @@
 #include <MeshManagerVertexShader.hpp>
-#include <SharedPtrVector.hpp>
+#include <VectorToSharedPtr.hpp>
 
 MeshManagerVertexShader::MeshManagerVertexShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u }, m_indexBufferSharedData{ nullptr, 0u, 0u },
@@ -19,7 +19,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 		m_vertexBufferSharedData = vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize, tempBuffer);
 
-		std::shared_ptr<std::uint8_t> vertexBufferData = CopyVectorToSharedPtr(vertices);
+		std::shared_ptr<std::uint8_t[]> vertexBufferData = CopyVectorToSharedPtr(vertices);
 
 		stagingBufferMan.AddBuffer(
 			std::move(vertexBufferData), vertexBufferSize,
@@ -36,7 +36,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 		m_indexBufferSharedData = indexSharedBuffer.AllocateAndGetSharedData(indexBufferSize, tempBuffer);
 
-		std::shared_ptr<std::uint8_t> indexBufferData = CopyVectorToSharedPtr(indices);
+		std::shared_ptr<std::uint8_t[]> indexBufferData = CopyVectorToSharedPtr(indices);
 
 		stagingBufferMan.AddBuffer(
 			std::move(indexBufferData), indexBufferSize,
@@ -67,7 +67,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize, tempBuffer);
 
-	std::shared_ptr<std::uint8_t> boundBufferData = CopyVectorToSharedPtr(bounds);
+	std::shared_ptr<std::uint8_t[]> boundBufferData = CopyVectorToSharedPtr(bounds);
 
 	stagingBufferMan.AddBuffer(
 		std::move(boundBufferData), boundSize,
@@ -90,7 +90,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize, tempBuffer);
 
-	std::shared_ptr<std::uint8_t> boundBufferData = CopyVectorToSharedPtr(bounds);
+	std::shared_ptr<std::uint8_t[]> boundBufferData = CopyVectorToSharedPtr(bounds);
 
 	stagingBufferMan.AddBuffer(
 		std::move(boundBufferData), boundSize,

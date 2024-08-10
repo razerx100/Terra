@@ -13,7 +13,9 @@ RenderEngineMS::RenderEngineMS(
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
 	// The layout shouldn't change throughout the runtime.
-	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferLayout(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_MESH_BIT_EXT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
@@ -23,7 +25,9 @@ RenderEngineMS::RenderEngineMS(
 		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
 
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
-	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
+	m_cameraManager.SetDescriptorBufferGraphics(
+		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
+	);
 }
 
 std::uint32_t RenderEngineMS::AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader)
@@ -37,7 +41,9 @@ std::uint32_t RenderEngineMS::AddModel(std::shared_ptr<ModelMS>&& model, const S
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferOfModels(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferOfModels(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 
 	return index;
 }
@@ -54,7 +60,9 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferOfModels(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferOfModels(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 
 	return index;
 }
@@ -69,7 +77,7 @@ std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBu
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_modelManager.SetDescriptorBufferOfMeshes(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferOfMeshes(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
 	return index;
 }

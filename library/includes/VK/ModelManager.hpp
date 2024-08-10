@@ -17,7 +17,6 @@
 #include <GraphicsPipelineMeshShader.hpp>
 #include <ComputePipeline.hpp>
 #include <TemporaryDataBuffer.hpp>
-#include <SharedPtrVector.hpp>
 
 #include <MeshManagerVertexShader.hpp>
 #include <MeshManagerMeshShader.hpp>
@@ -183,7 +182,7 @@ private:
 	std::vector<ModelDetails> m_modelDetails;
 	SharedBufferData          m_meshletSharedData;
 	// Should replace this with a better alternative one day.
-	SharedPtrVector<Meshlet>  m_meshlets;
+	std::vector<Meshlet>      m_meshlets;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -227,7 +226,7 @@ public:
 public:
 	ModelBundleCSIndirect();
 
-	void AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept;
+	void AddModelDetails(const std::shared_ptr<ModelVS>& model);
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
 		SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
@@ -260,13 +259,13 @@ public:
 	}
 
 private:
-	SharedBufferData                              m_argumentInputSharedData;
-	SharedBufferData                              m_cullingSharedData;
-	SharedBufferData                              m_modelBundleIndexSharedData;
+	SharedBufferData                          m_argumentInputSharedData;
+	SharedBufferData                          m_cullingSharedData;
+	SharedBufferData                          m_modelBundleIndexSharedData;
 	// Should replace this with a better alternative one day.
-	SharedPtrVector<VkDrawIndexedIndirectCommand> m_indirectArguments;
-	std::unique_ptr<CullingData>                  m_cullingData;
-	std::uint32_t                                 m_bundleID;
+	std::vector<VkDrawIndexedIndirectCommand> m_indirectArguments;
+	std::unique_ptr<CullingData>              m_cullingData;
+	std::uint32_t                             m_bundleID;
 
 public:
 	ModelBundleCSIndirect(const ModelBundleCSIndirect&) = delete;
@@ -393,10 +392,12 @@ public:
 	{}
 
 	void SetDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot,
+		size_t setLayoutIndex
 	) const;
 	void SetFragmentDescriptorBuffer(
-		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot,
+		size_t setLayoutIndex
 	) const;
 
 	void Update(VkDeviceSize bufferIndex) const noexcept;
@@ -772,11 +773,9 @@ protected:
 	// Configure this buffer in the child class, if desired.
 	SharedBuffer                 m_meshBoundsBuffer;
 
-	// The fragment binding slot should be 0. 1 to 4 are also reserved for
-	// the fragment shader on the RenderEngine class.
+	// The fragment and Vertex data are on different sets. So both can be 0u.
 	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
-	// And the vertex index should start from 5.
-	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 5u;
+	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -836,8 +835,14 @@ class ModelManagerVSIndividual : public
 public:
 	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount);
 
-	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
-	void SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers);
+	void SetDescriptorBufferLayout(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers,
+		size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+	);
+	void SetDescriptorBuffer(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers,
+		size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+	);
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
@@ -935,13 +940,23 @@ public:
 
 	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
-	void SetDescriptorBufferLayoutVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
-	void SetDescriptorBufferVS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+	void SetDescriptorBufferLayoutVS(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+	) const noexcept;
+	void SetDescriptorBufferVS(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+	) const;
 
-	void SetDescriptorBufferLayoutCS(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
+	void SetDescriptorBufferLayoutCS(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
+	) const noexcept;
 
-	void SetDescriptorBufferCSOfModels(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
-	void SetDescriptorBufferCSOfMeshes(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+	void SetDescriptorBufferCSOfModels(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
+	) const;
+	void SetDescriptorBufferCSOfMeshes(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
+	) const;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
@@ -1001,7 +1016,7 @@ private:
 	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
 
 	// Vertex Shader ones
-	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 6u;
+	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
 
 	// Compute Shader ones
 	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
@@ -1100,12 +1115,18 @@ public:
 		std::uint32_t frameCount
 	);
 
-	void SetDescriptorBufferLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers) const noexcept;
+	void SetDescriptorBufferLayout(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
+	) const noexcept;
 
 	// Should be called after a new Mesh has been added.
-	void SetDescriptorBufferOfMeshes(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+	void SetDescriptorBufferOfMeshes(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
+	) const;
 	// Should be called after a new Model has been added.
-	void SetDescriptorBufferOfModels(std::vector<VkDescriptorBuffer>& descriptorBuffers) const;
+	void SetDescriptorBufferOfModels(
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
+	) const;
 
 	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
@@ -1136,10 +1157,10 @@ private:
 	SharedBuffer          m_vertexIndicesBuffer;
 	SharedBuffer          m_primIndicesBuffer;
 
-	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 6u;
-	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 7u;
-	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 8u;
-	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 9u;
+	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 1u;
+	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 2u;
+	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 3u;
+	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 4u;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;

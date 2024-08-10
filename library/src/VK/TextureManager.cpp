@@ -145,7 +145,8 @@ void TextureManager::IncreaseAvailableIndices(TextureDescType descType) noexcept
 
 void TextureManager::SetDescriptorBufferLayout(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
-	std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot
+	std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot,
+	size_t setLayoutIndex
 ) const noexcept {
 	const auto combinedDescCount = static_cast<std::uint32_t>(
 		std::size(m_availableIndicesCombinedTextures)
@@ -154,7 +155,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	if(combinedDescCount)
 	{
 		descriptorBuffer.AddBinding(
-			combinedTexturesBindingSlot, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			combinedTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 	}
@@ -166,7 +167,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	if (sampledDescCount)
 	{
 		descriptorBuffer.AddBinding(
-			sampledTexturesBindingSlot, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			sampledTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 	}
@@ -178,7 +179,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	if (samplerDescCount)
 	{
 		descriptorBuffer.AddBinding(
-			samplersBindingSlot, VK_DESCRIPTOR_TYPE_SAMPLER,
+			samplersBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLER,
 			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 	}

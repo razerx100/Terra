@@ -6,7 +6,9 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
 	// The layout shouldn't change throughout the runtime.
-	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferLayout(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
@@ -17,7 +19,9 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 	// This descriptor shouldn't change, so it should be fine to set it here.
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
-	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
+	m_cameraManager.SetDescriptorBufferGraphics(
+		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
+	);
 }
 
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
@@ -40,7 +44,9 @@ std::uint32_t RenderEngineVSIndividual::AddModel(
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBuffer(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBuffer(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 
 	return index;
 }
@@ -57,7 +63,9 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBuffer(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBuffer(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 
 	return index;
 }
@@ -176,7 +184,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(			// And since the swapchain doe
 {
 	// Graphics Descriptors.
 	// The layout shouldn't change throughout the runtime.
-	m_modelManager.SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferLayoutVS(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
@@ -190,14 +200,16 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(			// And since the swapchain doe
 		static_cast<std::uint32_t>(frameCount)
 	);
 	// This descriptor shouldn't change, so it should be fine to set it here.
-	m_cameraManager.SetDescriptorBufferGraphics(m_graphicsDescriptorBuffers, s_cameraBindingSlot);
+	m_cameraManager.SetDescriptorBufferGraphics(
+		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
+	);
 
 	// Compute stuffs.
 	VkDevice device = deviceManager.GetLogicalDevice();
 
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
-		m_computeDescriptorBuffers.emplace_back(device, &m_memoryManager);
+		m_computeDescriptorBuffers.emplace_back(device, &m_memoryManager, s_computePipelineSetLayoutCount);
 
 		// Let's make all of the non graphics semaphores, timeline semaphores.
 		m_computeWait.emplace_back(device).Create(true);
@@ -208,9 +220,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(			// And since the swapchain doe
 	m_computeQueue.CreateCommandBuffers(frameCountU32);
 
 	// Compute Descriptors.
-	m_modelManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 	m_cameraManager.SetDescriptorBufferLayoutCompute(
-		m_computeDescriptorBuffers, s_cameraComputeBindingSlot
+		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
 	);
 
 	for (auto& descriptorBuffer : m_computeDescriptorBuffers)
@@ -220,7 +232,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(			// And since the swapchain doe
 		m_modelManager.CreatePipelineCS(m_computeDescriptorBuffers.front());
 
 	// This descriptor shouldn't change, so it should be fine to set it here.
-	m_cameraManager.SetDescriptorBufferCompute(m_computeDescriptorBuffers, s_cameraComputeBindingSlot);
+	m_cameraManager.SetDescriptorBufferCompute(
+		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
+	);
 }
 
 ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
@@ -245,8 +259,10 @@ std::uint32_t RenderEngineVSIndirect::AddModel(
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferVS(m_graphicsDescriptorBuffers);
-	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferVS(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
+	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	return index;
 }
@@ -263,8 +279,10 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferVS(m_graphicsDescriptorBuffers);
-	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferVS(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
+	);
+	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	return index;
 }
@@ -279,7 +297,7 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers);
+	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	return index;
 }

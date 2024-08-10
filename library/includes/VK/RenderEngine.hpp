@@ -146,8 +146,11 @@ protected:
 
 protected:
 	// These descriptors are bound to the Fragment shader. So, they should be the same across
-	// all of the pipeline types.
-	// Binding 0 is for the ModelTextureData which is set from the ModelManager.
+	// all of the pipeline types. That's why we are going to bind them to their own setLayout.
+	static constexpr std::uint32_t s_graphicsPipelineSetLayoutCount = 2u;
+	static constexpr std::uint32_t s_vertexShaderSetLayoutIndex     = 0u;
+	static constexpr std::uint32_t s_fragmentShaderSetLayoutIndex   = 1u;
+
 	static constexpr std::uint32_t s_materialBindingSlot        = 1u;
 	static constexpr std::uint32_t s_combinedTextureBindingSlot = 2u;
 	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 3u;
@@ -236,7 +239,7 @@ public:
 		for(auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
-				GetSamplerBindingSlot()
+				GetSamplerBindingSlot(), s_fragmentShaderSetLayoutIndex
 		);
 	}
 

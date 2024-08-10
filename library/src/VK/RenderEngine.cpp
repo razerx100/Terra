@@ -47,7 +47,9 @@ RenderEngine::RenderEngine(
 
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
-		m_graphicsDescriptorBuffers.emplace_back(logicalDevice, &m_memoryManager);
+		m_graphicsDescriptorBuffers.emplace_back(
+			logicalDevice, &m_memoryManager, s_graphicsPipelineSetLayoutCount
+		);
 
 		// The graphics Wait semaphores will be used by the Swapchain, which doesn't support
 		// timeline semaphores.
@@ -72,7 +74,9 @@ size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
 
 	m_materialBuffers.Update(index);
 
-	m_materialBuffers.SetDescriptorBuffer(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
+	m_materialBuffers.SetDescriptorBuffer(
+		m_graphicsDescriptorBuffers, GetMaterialBindingSlot(), s_fragmentShaderSetLayoutIndex
+	);
 
 	return index;
 }
@@ -86,7 +90,9 @@ std::vector<size_t> RenderEngine::AddMaterials(std::vector<std::shared_ptr<Mater
 
 	m_materialBuffers.Update(indices);
 
-	m_materialBuffers.SetDescriptorBuffer(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
+	m_materialBuffers.SetDescriptorBuffer(
+		m_graphicsDescriptorBuffers, GetMaterialBindingSlot(), s_fragmentShaderSetLayoutIndex
+	);
 
 	return indices;
 }
@@ -127,7 +133,7 @@ void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerInde
 	if (!std::empty(m_graphicsDescriptorBuffers))
 	{
 		void const* globalDescriptor = m_graphicsDescriptorBuffers.front().GetDescriptor<DescType>(
-			GetCombinedTextureBindingSlot(), globalDescIndex
+			GetCombinedTextureBindingSlot(), s_fragmentShaderSetLayoutIndex, globalDescIndex
 		);
 
 		m_textureManager.SetLocalDescriptor<DescType>(
@@ -168,7 +174,7 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 		{
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
-				GetSamplerBindingSlot()
+				GetSamplerBindingSlot(), s_fragmentShaderSetLayoutIndex
 			);
 
 			descriptorBuffer.RecreateBuffer();
@@ -198,14 +204,15 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
-				localDescriptor, GetCombinedTextureBindingSlot(), freeGlobalDescIndex
+				localDescriptor, GetCombinedTextureBindingSlot(), s_fragmentShaderSetLayoutIndex,
+				freeGlobalDescIndex
 			);
 	}
 	else
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
 				*textureView, *defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-				GetCombinedTextureBindingSlot(), freeGlobalDescIndex
+				GetCombinedTextureBindingSlot(), s_fragmentShaderSetLayoutIndex, freeGlobalDescIndex
 			);
 
 	return freeGlobalDescIndex;
@@ -255,9 +262,11 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 	VkShaderStageFlagBits cameraShaderStage
 ) noexcept {
 	m_cameraManager.SetDescriptorBufferLayoutGraphics(
-		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), cameraShaderStage
+		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), s_vertexShaderSetLayoutIndex, cameraShaderStage
 	);
-	m_materialBuffers.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, GetMaterialBindingSlot());
+	m_materialBuffers.SetDescriptorBufferLayout(
+		m_graphicsDescriptorBuffers, GetMaterialBindingSlot(), s_fragmentShaderSetLayoutIndex
+	);
 }
 
 std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)

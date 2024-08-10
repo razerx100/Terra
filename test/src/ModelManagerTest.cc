@@ -9,8 +9,11 @@
 
 namespace Constants
 {
-	constexpr const char* appName      = "TerraTest";
-	constexpr std::uint32_t frameCount = 2u;
+	constexpr const char* appName              = "TerraTest";
+	constexpr std::uint32_t frameCount         = 2u;
+	constexpr std::uint32_t descSetLayoutCount = 2u;
+	constexpr std::uint32_t vsSetLayoutIndex   = 0u;
+	constexpr std::uint32_t fsSetLayoutIndex   = 1u;
 }
 
 class ModelManagerTest : public ::testing::Test
@@ -333,9 +336,13 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	std::vector<VkDescriptorBuffer> descBuffers{};
 
 	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
-		descBuffers.emplace_back(VkDescriptorBuffer{ logicalDevice, &memoryManager });
+		descBuffers.emplace_back(
+			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
+		);
 
-	vsIndividual.SetDescriptorBufferLayout(descBuffers);
+	vsIndividual.SetDescriptorBufferLayout(
+		descBuffers, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
+	);
 
 	for (auto& descBuffer : descBuffers)
 		descBuffer.CreateBuffer();
@@ -364,7 +371,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		std::uint32_t index = vsIndividual.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
-		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+		EXPECT_EQ(index, 1u) << "Index isn't 1u";
 	}
 
 	{
@@ -396,7 +403,10 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
 
 		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelsVS), L"H", tempDataBuffer);
-		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+		// It is 6 because, there were 0, 1. Then 5 more were added. A bundle's ID will be the index
+		// of the first model. So, we removed 1. That would leave 0-5. And the then we added 7 more
+		// and so their index is 6.
+		EXPECT_EQ(index, 6u) << "Index isn't 6.";
 	}
 }
 
@@ -425,9 +435,13 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	std::vector<VkDescriptorBuffer> descBuffers{};
 
 	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
-		descBuffers.emplace_back(VkDescriptorBuffer{ logicalDevice, &memoryManager });
+		descBuffers.emplace_back(
+			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
+		);
 
-	vsIndirect.SetDescriptorBufferLayoutVS(descBuffers);
+	vsIndirect.SetDescriptorBufferLayoutVS(
+		descBuffers, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
+	);
 
 	for (auto& descBuffer : descBuffers)
 		descBuffer.CreateBuffer();
@@ -456,7 +470,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		std::uint32_t index = vsIndirect.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
-		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+		EXPECT_EQ(index, 1u) << "Index isn't 1u";
 	}
 
 	{
@@ -488,7 +502,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
 
 		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelsVS), L"H", tempDataBuffer);
-		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+		EXPECT_EQ(index, 6u) << "Index isn't 6.";
 
 		vsIndirect.ChangePSO(index, L"A");
 	}
@@ -496,13 +510,13 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		auto modelVS = std::make_shared<ModelDummyVS>();
 
 		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"H", tempDataBuffer);
-		EXPECT_EQ(index, 11u) << "Index isn't 11.";
+		EXPECT_EQ(index, 13u) << "Index isn't 13.";
 	}
 	{
 		auto modelVS = std::make_shared<ModelDummyVS>();
 
 		std::uint32_t index = vsIndirect.AddModel(std::move(modelVS), L"A", tempDataBuffer);
-		EXPECT_EQ(index, 12u) << "Index isn't 12.";
+		EXPECT_EQ(index, 14u) << "Index isn't 14.";
 	}
 }
 
@@ -530,9 +544,13 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	std::vector<VkDescriptorBuffer> descBuffers{};
 
 	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
-		descBuffers.emplace_back(VkDescriptorBuffer{ logicalDevice, &memoryManager });
+		descBuffers.emplace_back(
+			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
+		);
 
-	managerMS.SetDescriptorBufferLayout(descBuffers);
+	managerMS.SetDescriptorBufferLayout(
+		descBuffers, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
+	);
 
 	for (auto& descBuffer : descBuffers)
 		descBuffer.CreateBuffer();
@@ -561,7 +579,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		std::uint32_t index = managerMS.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
-		EXPECT_EQ(index, 0u) << "Index isn't 0u";
+		EXPECT_EQ(index, 1u) << "Index isn't 1u";
 	}
 	{
 		auto meshMS = std::make_unique<MeshDummyMS>();
@@ -600,7 +618,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 			modelsMS.emplace_back(std::make_shared<ModelDummyMS>());
 
 		std::uint32_t index = managerMS.AddModelBundle(std::move(modelsMS), L"H", tempDataBuffer);
-		EXPECT_EQ(index, 1u) << "Index isn't 1.";
+		EXPECT_EQ(index, 6u) << "Index isn't 6.";
 	}
 }
 

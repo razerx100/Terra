@@ -1,4 +1,5 @@
 #include <ModelManager.hpp>
+#include <VectorToSharedPtr.hpp>
 
 // Model Bundle
 VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
@@ -61,9 +62,7 @@ void ModelBundleMS::AddModelDetails(
 			.threadGroupCountX = static_cast<std::uint32_t>(meshletCount)
 		});
 
-	auto& previousMeshlets = m_meshlets.GetVector();
-
-	std::ranges::move(newMeshlets, std::back_inserter(previousMeshlets));
+	std::ranges::move(newMeshlets, std::back_inserter(m_meshlets));
 }
 
 void ModelBundleMS::Draw(
@@ -106,8 +105,8 @@ void ModelBundleMS::CreateBuffers(
 
 	m_meshletSharedData = meshletSharedBuffer.AllocateAndGetSharedData(meshletBufferSize, tempBuffer);
 
-	std::shared_ptr<std::uint8_t> tempDataBuffer = m_meshlets.GetSharedPtr();
-	m_meshlets.Reset();
+	std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(m_meshlets);
+	m_meshlets = std::vector<Meshlet>{};
 
 	stagingBufferMan.AddBuffer(
 		std::move(tempDataBuffer), meshletBufferSize, m_meshletSharedData.bufferData,
@@ -151,7 +150,7 @@ void ModelBundleVSIndirect::CreateBuffers(
 
 	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize, tempBuffer);
 
-	std::shared_ptr<std::uint8_t> tempDataBuffer = CopyVectorToSharedPtr(m_modelIndices);
+	std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(m_modelIndices);
 
 	stagingBufferMan.AddBuffer(
 		std::move(tempDataBuffer), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u,
@@ -187,11 +186,9 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 	}, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
-void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model) noexcept
+void ModelBundleCSIndirect::AddModelDetails(const std::shared_ptr<ModelVS>& model)
 {
-	auto& indirectArguments = m_indirectArguments.GetVector();
-
-	indirectArguments.emplace_back(ModelBundle::GetDrawIndexedIndirectCommand(model));
+	m_indirectArguments.emplace_back(ModelBundle::GetDrawIndexedIndirectCommand(model));
 }
 
 void ModelBundleCSIndirect::CreateBuffers(
@@ -220,15 +217,15 @@ void ModelBundleCSIndirect::CreateBuffers(
 	m_cullingData->commandOffset
 		= static_cast<std::uint32_t>(m_argumentInputSharedData.offset / strideSize);
 
-	std::shared_ptr<std::uint8_t> indirectArgumentData = m_indirectArguments.GetSharedPtr();
-	m_indirectArguments.Reset();
+	std::shared_ptr<std::uint8_t[]> indirectArgumentData = CopyVectorToSharedPtr(m_indirectArguments);
+	m_indirectArguments = std::vector<VkDrawIndexedIndirectCommand>{};
 
 	// Each thread will process a single model independently. And since we are trying to
 	// cull all of the models across all of the bundles with a single call to dispatch, we can't
 	// set the index as constantData per bundle. So, we will be giving each model the index
 	// of its bundle so each thread can work independently.
 	auto modelIndices = std::vector<std::uint32_t>(argumentCount, modelBundleIndex);
-	std::shared_ptr<std::uint8_t> modelIndicesData = CopyVectorToSharedPtr(modelIndices);
+	std::shared_ptr<std::uint8_t[]> modelIndicesData = CopyVectorToSharedPtr(modelIndices);
 
 	stagingBufferMan.AddBuffer(
 		std::move(indirectArgumentData), argumentBufferSize, m_argumentInputSharedData.bufferData,
@@ -276,23 +273,25 @@ void ModelBuffers::CreateBuffer(size_t modelCount)
 }
 
 void ModelBuffers::SetDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot,
+	size_t setLayoutIndex
 ) const {
 	const auto bufferOffset = static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersInstanceSize);
 
 	descriptorBuffer.SetStorageBufferDescriptor(
-		m_buffers, bindingSlot, 0u, bufferOffset, m_modelBuffersInstanceSize
+		m_buffers, bindingSlot, setLayoutIndex, 0u, bufferOffset, m_modelBuffersInstanceSize
 	);
 }
 
 void ModelBuffers::SetFragmentDescriptorBuffer(
-	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot
+	VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot,
+	size_t setLayoutIndex
 ) const {
 	const auto bufferOffset
 		= static_cast<VkDeviceAddress>(frameIndex * m_modelBuffersFragmentInstanceSize);
 
 	descriptorBuffer.SetStorageBufferDescriptor(
-		m_fragmentModelBuffers, bindingSlot, 0u, bufferOffset, m_modelBuffersFragmentInstanceSize
+		m_fragmentModelBuffers, bindingSlot, setLayoutIndex, 0u, bufferOffset, m_modelBuffersFragmentInstanceSize
 	);
 }
 
@@ -357,7 +356,7 @@ void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer
 	constexpr std::uint32_t pushConstantSize = ModelBundleVSIndividual::GetConstantBufferSize();
 
 	m_graphicsPipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
-	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
+	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
 }
 
 void ModelManagerVSIndividual::ConfigureModel(
@@ -430,7 +429,8 @@ void ModelManagerVSIndividual::CopyTempData(const VKCommandBuffer& transferCmdBu
 }
 
 void ModelManagerVSIndividual::SetDescriptorBufferLayout(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers,
+	size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
 ) {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -439,18 +439,20 @@ void ModelManagerVSIndividual::SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
-			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersGraphicsBindingSlot, vsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_modelBuffersFragmentBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_FRAGMENT_BIT
 		);
 	}
 }
 
-void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffer>& descriptorBuffers)
-{
+void ModelManagerVSIndividual::SetDescriptorBuffer(
+	std::vector<VkDescriptorBuffer>& descriptorBuffers,
+	size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+) {
 	const auto frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
@@ -459,10 +461,10 @@ void ModelManagerVSIndividual::SetDescriptorBuffer(std::vector<VkDescriptorBuffe
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, vsSetLayoutIndex
 		);
 		m_modelBuffers.SetFragmentDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
 	}
 }
@@ -531,7 +533,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
-	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
+	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
 }
 
 void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer)
@@ -541,7 +543,7 @@ void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descript
 
 	m_pipelineLayoutCS.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
 
-	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayout());
+	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayouts());
 
 	m_computePipeline.Create(
 		m_device, m_pipelineLayoutCS, L"VertexShaderCSIndirect", m_shaderPath
@@ -730,7 +732,7 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
 ) const noexcept {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -739,22 +741,22 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
-			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersGraphicsBindingSlot, vsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_modelBuffersFragmentBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_FRAGMENT_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_modelIndicesVSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelIndicesVSBindingSlot, vsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_VERTEX_BIT
 		);
 	}
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferVS(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
 ) const {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -764,19 +766,19 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, vsSetLayoutIndex
 		);
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesVSBindingSlot, 0u
+			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesVSBindingSlot, vsSetLayoutIndex, 0u
 		);
 	}
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const noexcept {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -785,46 +787,46 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
-			s_argumentInputBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_argumentInputBufferBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_cullingDataBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_cullingDataBufferBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_argumenOutputBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_argumenOutputBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_counterBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_counterBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_modelIndicesCSBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelIndicesCSBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_modelBundleIndexBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBundleIndexBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_meshBoundingBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_meshBoundingBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_meshIndexBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_meshIndexBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_meshDetailsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_meshDetailsBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 	}
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -834,39 +836,39 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 		const auto frameIndex = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot, csSetLayoutIndex
 		);
 
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_argumentInputBuffer.GetBuffer(), s_argumentInputBufferBindingSlot, 0u
+			m_argumentInputBuffer.GetBuffer(), s_argumentInputBufferBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_cullingDataBuffer.GetBuffer(), s_cullingDataBufferBindingSlot, 0u
+			m_cullingDataBuffer.GetBuffer(), s_cullingDataBufferBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_argumentOutputBuffers.at(index).GetBuffer(), s_argumenOutputBindingSlot, 0u
+			m_argumentOutputBuffers.at(index).GetBuffer(), s_argumenOutputBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_counterBuffers.at(index).GetBuffer(), s_counterBindingSlot, 0u
+			m_counterBuffers.at(index).GetBuffer(), s_counterBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesCSBindingSlot, 0u
+			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesCSBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, 0u
+			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, csSetLayoutIndex, 0u
 		);
 
-		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndexBindingSlot);
-		m_meshDetailsBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshDetailsBindingSlot);
+		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndexBindingSlot, csSetLayoutIndex);
+		m_meshDetailsBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshDetailsBindingSlot, csSetLayoutIndex);
 	}
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferCSOfMeshes(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
 	for (auto& descriptorBuffer : descriptorBuffers)
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_meshBoundsBuffer.GetBuffer(), s_meshBoundingBindingSlot, 0u
+			m_meshBoundsBuffer.GetBuffer(), s_meshBoundingBindingSlot, csSetLayoutIndex, 0u
 		);
 }
 
@@ -1061,7 +1063,7 @@ void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descript
 	m_graphicsPipelineLayout.AddPushConstantRange(
 		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
 	);
-	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayout());
+	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
 }
 
 void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
@@ -1078,7 +1080,7 @@ void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noex
 }
 
 void ModelManagerMS::SetDescriptorBufferLayout(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
 ) const noexcept {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -1087,34 +1089,34 @@ void ModelManagerMS::SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
-			s_modelBuffersGraphicsBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersGraphicsBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
-			s_modelBuffersFragmentBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_FRAGMENT_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_meshletBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_meshletBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
-			s_vertexBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_vertexBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
-			s_vertexIndicesBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_vertexIndicesBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
-			s_primIndicesBufferBindingSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_primIndicesBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 	}
 }
 
 void ModelManagerMS::SetDescriptorBufferOfModels(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
 ) const {
 	const auto frameCount = std::size(descriptorBuffers);
 
@@ -1124,30 +1126,30 @@ void ModelManagerMS::SetDescriptorBufferOfModels(
 		const auto frameIndex = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, msSetLayoutIndex
 		);
 		m_modelBuffers.SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, 0u
+			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 	}
 }
 
 void ModelManagerMS::SetDescriptorBufferOfMeshes(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers
+	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
 ) const {
 	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
 	{
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_vertexBuffer.GetBuffer(), s_vertexBufferBindingSlot, 0u
+			m_vertexBuffer.GetBuffer(), s_vertexBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_vertexIndicesBuffer.GetBuffer(), s_vertexIndicesBufferBindingSlot, 0u
+			m_vertexIndicesBuffer.GetBuffer(), s_vertexIndicesBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_primIndicesBuffer.GetBuffer(), s_primIndicesBufferBindingSlot, 0u
+			m_primIndicesBuffer.GetBuffer(), s_primIndicesBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 	}
 }

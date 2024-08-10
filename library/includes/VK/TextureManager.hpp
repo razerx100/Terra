@@ -190,9 +190,13 @@ class TextureManager
 	static constexpr std::uint32_t s_localDescriptorCount
 		= std::numeric_limits<std::uint8_t>::max();
 
+	// I will keep all the Fragment shader resources in a different layout.
+	// So, the local count being 1 is fine.
+	static constexpr std::uint32_t localSetLayoutCount = 1u;
+
 public:
 	TextureManager(VkDevice device, MemoryManager* memoryManager)
-		: m_localDescBuffer{ device, memoryManager }, m_inactiveCombinedDescDetails{},
+		: m_localDescBuffer{ device, memoryManager, localSetLayoutCount }, m_inactiveCombinedDescDetails{},
 		m_inactiveSampledDescDetails{}, m_inactiveSamplerDescDetails{},
 		m_availableIndicesCombinedTextures(s_combinedTextureDescriptorCount, true),
 		m_availableIndicesSampledTextures{},
@@ -206,7 +210,8 @@ public:
 
 	void SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
-		std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot
+		std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot,
+		size_t setLayoutIndex
 	) const noexcept;
 
 public:
@@ -347,7 +352,7 @@ public:
 
 			inactiveDescDetails.erase(result);
 
-			return m_localDescBuffer.GetDescriptor<type>(localBindingSlot, localDescIndex);
+			return m_localDescBuffer.GetDescriptor<type>(localBindingSlot, 0u, localDescIndex);
 		}
 
 		return {};
@@ -375,7 +380,7 @@ public:
 			localDescCount += s_localDescriptorCount;
 
 			m_localDescBuffer.UpdateBinding(
-				localBindingSlot, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
+				localBindingSlot, 0u, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			// Add binding will add a new binding to the Layout and we use the layout size to
@@ -383,7 +388,7 @@ public:
 			m_localDescBuffer.RecreateBuffer();
 		}
 
-		m_localDescBuffer.SetDescriptor<type>(descriptor, localBindingSlot, localDescIndex);
+		m_localDescBuffer.SetDescriptor<type>(descriptor, localBindingSlot, 0u, localDescIndex);
 
 		inactiveDescDetails.emplace_back(descDetails);
 	}
