@@ -584,6 +584,10 @@ void ModelManagerVSIndirect::ConfigureModel(
 		tempBuffer
 	);
 
+	const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
+
+	m_meshIndexBuffer.Add(modelBundleIndexInBuffer, modelBundleObj.GetMeshIndex());
+
 	UpdateCounterResetValues();
 
 	++m_argumentCount;
