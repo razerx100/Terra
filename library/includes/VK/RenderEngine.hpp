@@ -15,6 +15,7 @@
 #include <VkFramebuffer.hpp>
 #include <Shader.hpp>
 #include <TemporaryDataBuffer.hpp>
+#include <Texture.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
 // first. And these extensions must be added before the device is created. Each implemention may
@@ -55,9 +56,7 @@ public:
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 
 	[[nodiscard]]
-	size_t AddTextureAsCombined(
-		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
-	);
+	size_t AddTextureAsCombined(STexture&& texture);
 
 	void UnbindCombinedTexture(size_t index);
 	void UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex);

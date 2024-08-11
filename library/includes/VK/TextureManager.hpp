@@ -10,6 +10,7 @@
 #include <deque>
 #include <type_traits>
 #include <optional>
+#include <Texture.hpp>
 
 // This class will store the texture. A texture added here will also be added to the manager at first.
 // But can be removed and re-added.
@@ -29,8 +30,7 @@ public:
 
 	[[nodiscard]]
 	size_t AddTexture(
-		std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height,
-		StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
+		STexture&& texture, StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
 	);
 	[[nodiscard]]
 	size_t AddSampler(const VkSamplerCreateInfoBuilder& builder);

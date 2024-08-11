@@ -104,14 +104,13 @@ void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector)
 	};
 }
 
-size_t RenderEngine::AddTextureAsCombined(
-	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
-) {
+size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
+{
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const size_t textureIndex = m_textureStorage.AddTexture(
-		std::move(textureData), width, height, m_stagingManager, m_temporaryDataBuffer
+		std::move(texture), m_stagingManager, m_temporaryDataBuffer
 	);
 
 	return textureIndex;

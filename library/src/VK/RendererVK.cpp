@@ -64,10 +64,9 @@ void RendererVK::SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBun
 	m_terra.GetRenderEngine().SetMeshIndex(modelBundleID, meshBundleID);
 }
 
-size_t RendererVK::AddTexture(
-	std::unique_ptr<std::uint8_t> textureData, size_t width, size_t height
-) {
-	return m_terra.GetRenderEngine().AddTextureAsCombined(std::move(textureData), width, height);
+size_t RendererVK::AddTexture(STexture&& texture)
+{
+	return m_terra.GetRenderEngine().AddTextureAsCombined(std::move(texture));
 }
 
 void RendererVK::UnbindTexture(size_t index)
