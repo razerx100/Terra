@@ -1,5 +1,4 @@
 #include <VkDescriptorBuffer.hpp>
-#include <numeric>
 
 // Vk Descriptor Buffer
 VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorInfo{
@@ -8,12 +7,12 @@ VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorIn
 
 VkDescriptorBuffer::VkDescriptorBuffer(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t setLayoutCount
-) : m_device{ device }, m_memoryManager{ memoryManager }, m_layoutOffsets(setLayoutCount, 0u),
-	m_layoutIndices(setLayoutCount, 0u), m_setLayouts{},
+) : m_device{ device }, m_memoryManager{ memoryManager }, m_setLayouts{},
+	// Since we have all of the SetLayouts in a single buffer, the indices are all the same, 0.
+	m_bufferIndices(setLayoutCount, 0u),
+	m_layoutOffsets(setLayoutCount, 0u),
 	m_descriptorBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
 {
-	std::iota(std::begin(m_layoutIndices), std::end(m_layoutIndices), 0u);
-
 	for (size_t index = 0u; index < setLayoutCount; ++index)
 		m_setLayouts.emplace_back(device);
 }
@@ -150,15 +149,18 @@ void VkDescriptorBuffer::BindDescriptorBuffer(
 
 	DescBuffer::vkCmdBindDescriptorBuffersEXT(commandBuffer, 1u, &bindingInfo);
 
-	const std::vector<VkDeviceSize>& setLayoutOffsets  = descriptorBuffer.GetLayoutOffsets();
-	const std::vector<std::uint32_t>& setLayoutIndices = descriptorBuffer.GetLayoutIndices();
+	VkPipelineLayout layout                           = pipelineLayout.Get();
+	const std::vector<VkDeviceSize>& setLayoutOffsets = descriptorBuffer.GetLayoutOffsets();
+	const std::vector<std::uint32_t>& bufferIndices   = descriptorBuffer.GetBufferIndices();
 
-	VkPipelineLayout layout      = pipelineLayout.Get();
-	const auto setCount          = static_cast<std::uint32_t>(std::size(setLayoutOffsets));
-	const std::uint32_t firstSet = setLayoutIndices.front();
+	// Since we have all of the SetLayouts in a single buffer, the indices should all be 0.
+	// And also the firstSet should be 0 and should progressively increase, which would be
+	// done by the API call below.
+	constexpr std::uint32_t firstSet = 0u;
+	const auto setCount              = static_cast<std::uint32_t>(std::size(setLayoutOffsets));
 
 	DescBuffer::vkCmdSetDescriptorBufferOffsetsEXT(
 		commandBuffer, bindPoint, layout, firstSet, setCount,
-		std::data(setLayoutIndices), std::data(setLayoutOffsets)
+		std::data(bufferIndices), std::data(setLayoutOffsets)
 	);
 }

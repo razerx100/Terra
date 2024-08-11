@@ -34,6 +34,18 @@ public:
 	static void SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept;
 
 	[[nodiscard]]
+	const std::vector<DescriptorSetLayout>& GetLayouts() const noexcept
+	{
+		return m_setLayouts;
+	}
+
+	static void BindDescriptorBuffer(
+		const VkDescriptorBuffer& descriptorBuffer, const VKCommandBuffer& cmdBuffer,
+		VkPipelineBindPoint bindPoint, const PipelineLayout& pipelineLayout
+	);
+
+private:
+	[[nodiscard]]
 	VkDeviceAddress GpuPhysicalAddress() const noexcept
 	{
 		return m_descriptorBuffer.GpuPhysicalAddress();
@@ -48,22 +60,12 @@ public:
 	{
 		return m_layoutOffsets;
 	}
-	const std::vector<std::uint32_t>& GetLayoutIndices() const noexcept
-	{
-		return m_layoutIndices;
-	}
 	[[nodiscard]]
-	const std::vector<DescriptorSetLayout>& GetLayouts() const noexcept
+	const std::vector<std::uint32_t>& GetBufferIndices() const noexcept
 	{
-		return m_setLayouts;
+		return m_bufferIndices;
 	}
 
-	static void BindDescriptorBuffer(
-		const VkDescriptorBuffer& descriptorBuffer, const VKCommandBuffer& cmdBuffer,
-		VkPipelineBindPoint bindPoint, const PipelineLayout& pipelineLayout
-	);
-
-private:
 	void _createBuffer(
 		Buffer& descriptorBuffer, const std::vector<std::uint32_t>& queueFamilyIndices
 	);
@@ -71,9 +73,9 @@ private:
 private:
 	VkDevice                         m_device;
 	MemoryManager*                   m_memoryManager;
-	std::vector<VkDeviceSize>        m_layoutOffsets;
-	std::vector<std::uint32_t>       m_layoutIndices;
 	std::vector<DescriptorSetLayout> m_setLayouts;
+	std::vector<std::uint32_t>       m_bufferIndices;
+	std::vector<VkDeviceSize>        m_layoutOffsets;
 	Buffer                           m_descriptorBuffer;
 
 	static VkPhysicalDeviceDescriptorBufferPropertiesEXT s_descriptorInfo;
@@ -577,9 +579,9 @@ public:
 
 	VkDescriptorBuffer(VkDescriptorBuffer&& other) noexcept
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
-		m_layoutOffsets{ std::move(other.m_layoutOffsets) },
-		m_layoutIndices{ std::move(other.m_layoutIndices) },
 		m_setLayouts{ std::move(other.m_setLayouts) },
+		m_bufferIndices{ std::move(other.m_bufferIndices) },
+		m_layoutOffsets{ std::move(other.m_layoutOffsets) },
 		m_descriptorBuffer{ std::move(other.m_descriptorBuffer) }
 	{}
 
@@ -587,9 +589,9 @@ public:
 	{
 		m_device           = other.m_device;
 		m_memoryManager    = other.m_memoryManager;
-		m_layoutOffsets    = std::move(other.m_layoutOffsets);
-		m_layoutIndices    = std::move(other.m_layoutIndices);
 		m_setLayouts       = std::move(other.m_setLayouts);
+		m_bufferIndices    = std::move(other.m_bufferIndices);
+		m_layoutOffsets    = std::move(other.m_layoutOffsets);
 		m_descriptorBuffer = std::move(other.m_descriptorBuffer);
 
 		return *this;
