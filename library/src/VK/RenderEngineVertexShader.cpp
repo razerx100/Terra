@@ -297,7 +297,7 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_modelManager.SetDescriptorBufferCSOfMeshes(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	return index;
 }
