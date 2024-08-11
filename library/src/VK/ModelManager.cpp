@@ -894,6 +894,8 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 {
 	VkCommandBuffer cmdBuffer = computeBuffer.Get();
 
+	m_computePipeline.Bind(computeBuffer);
+
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
