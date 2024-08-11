@@ -101,16 +101,22 @@ public:
 	virtual void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) = 0;
 
 	[[nodiscard]]
-	virtual std::uint32_t AddModel(std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader);
-	[[nodiscard]]
-	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader
+	virtual std::uint32_t AddModel(
+		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
 	);
 	[[nodiscard]]
-	virtual std::uint32_t AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader);
+	virtual std::uint32_t AddModelBundle(
+		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
+		std::uint32_t meshID
+	);
+	[[nodiscard]]
+	virtual std::uint32_t AddModel(
+		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
+	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
+		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
+		std::uint32_t meshID
 	);
 
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;

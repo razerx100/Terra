@@ -518,7 +518,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModel(
 		std::shared_ptr<ModelType>&& model, const ShaderName& fragmentShader,
-		TemporaryDataBufferGPU& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer, std::uint32_t meshID
 	) {
 		// This is necessary since the model buffers needs an Rvalue ref and returns the modelIndex,
 		// which is necessary to add MeshDetails. Which can't be done without the modelIndex.
@@ -534,6 +534,7 @@ public:
 		const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
 		modelBundle.SetPSOIndex(psoIndex);
+		modelBundle.SetMeshIndex(meshID);
 
 		const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
 
@@ -547,7 +548,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
 		std::vector<std::shared_ptr<ModelType>>&& modelBundle, const ShaderName& fragmentShader,
-		TemporaryDataBufferGPU& tempBuffer
+		TemporaryDataBufferGPU& tempBuffer, std::uint32_t meshID
 	) {
 		const size_t modelCount = std::size(modelBundle);
 
@@ -570,6 +571,7 @@ public:
 			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
 			modelBundleObj.SetPSOIndex(psoIndex);
+			modelBundleObj.SetMeshIndex(meshID);
 
 			const auto bundleID = static_cast<std::uint32_t>(modelBundleObj.GetID());
 

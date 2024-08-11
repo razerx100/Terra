@@ -30,13 +30,14 @@ RenderEngineMS::RenderEngineMS(
 	);
 }
 
-std::uint32_t RenderEngineMS::AddModel(std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader)
-{
+std::uint32_t RenderEngineMS::AddModel(
+	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
+) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModel(
-		std::move(model), fragmentShader, m_temporaryDataBuffer
+		std::move(model), fragmentShader, m_temporaryDataBuffer, meshID
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
@@ -49,13 +50,14 @@ std::uint32_t RenderEngineMS::AddModel(std::shared_ptr<ModelMS>&& model, const S
 }
 
 std::uint32_t RenderEngineMS::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader
+	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
+	std::uint32_t meshID
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer, meshID
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
