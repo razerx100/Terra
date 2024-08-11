@@ -529,12 +529,14 @@ public:
 		auto dvThis = static_cast<Derived*>(this);
 
 		ModelBundleType modelBundle{};
+
+		modelBundle.SetMeshIndex(meshID);
+
 		dvThis->ConfigureModel(modelBundle, modelIndex, std::move(tempModel), tempBuffer);
 
 		const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
 		modelBundle.SetPSOIndex(psoIndex);
-		modelBundle.SetMeshIndex(meshID);
 
 		const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
 
@@ -566,12 +568,13 @@ public:
 
 			ModelBundleType modelBundleObj{};
 
+			modelBundleObj.SetMeshIndex(meshID);
+
 			dvThis->ConfigureModelBundle(modelBundleObj, modelIndices, std::move(modelBundle), tempBuffer);
 
 			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
 			modelBundleObj.SetPSOIndex(psoIndex);
-			modelBundleObj.SetMeshIndex(meshID);
 
 			const auto bundleID = static_cast<std::uint32_t>(modelBundleObj.GetID());
 

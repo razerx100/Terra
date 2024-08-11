@@ -594,11 +594,21 @@ void ModelManagerVSIndirect::ConfigureModel(
 void ModelManagerVSIndirect::_setMeshIndex(
 	size_t modelBundelVSIndex, std::uint32_t meshBundleID
 ) {
-	// Both should have the same index.
-	ModelBundleCSIndirect& modelBundleCS = m_modelBundlesCS.at(modelBundelVSIndex);
+	const auto modelID = static_cast<std::uint32_t>(m_modelBundles[modelBundelVSIndex].GetID());
 
-	if (m_modelBundles.at(modelBundelVSIndex).GetModelCount())
+	// The VS model bundles will be sorted based on its PSO. But that's not needed
+	// for the CS model bundles. So, their indices won't match.
+	auto result = std::ranges::find(
+		m_modelBundlesCS, modelID, [](const ModelBundleCSIndirect& csBundle)
+		{
+			return csBundle.GetID();
+		}
+	);
+
+	if (result != std::end(m_modelBundlesCS))
 	{
+		ModelBundleCSIndirect& modelBundleCS = *result;
+
 		const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
 
 		m_meshIndexBuffer.Add(modelBundleIndexInBuffer, meshBundleID);
@@ -636,6 +646,10 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		*m_stagingBufferMan, m_argumentInputBuffer, m_cullingDataBuffer, m_modelBundleIndexBuffer,
 		tempBuffer
 	);
+
+	const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
+
+	m_meshIndexBuffer.Add(modelBundleIndexInBuffer, modelBundleObj.GetMeshIndex());
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
