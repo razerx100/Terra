@@ -117,11 +117,6 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetMeshIndex() const noexcept override { return m_meshID; }
 	[[nodiscard]]
-	std::shared_ptr<ModelVS>& GetModel(size_t index) noexcept override
-	{
-		return m_models[index];
-	}
-	[[nodiscard]]
 	const std::vector<std::shared_ptr<ModelVS>>& GetModels() const noexcept override
 	{
 		return m_models;
@@ -141,11 +136,6 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t GetMeshIndex() const noexcept override { return m_meshID; }
-	[[nodiscard]]
-	std::shared_ptr<ModelMS>& GetModel(size_t index) noexcept override
-	{
-		return m_models[index];
-	}
 	[[nodiscard]]
 	const std::vector<std::shared_ptr<ModelMS>>& GetModels() const noexcept override
 	{
