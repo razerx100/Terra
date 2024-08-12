@@ -100,7 +100,7 @@ public:
 	[[nodiscard]]
 	virtual std::uint32_t GetMeshIndex() const noexcept = 0;
 	[[nodiscard]]
-	virtual const std::shared_ptr<ModelVS>& GetModel(size_t index) const noexcept = 0;
+	virtual std::shared_ptr<ModelVS>& GetModel(size_t index) noexcept = 0;
 	[[nodiscard]]
 	virtual const std::vector<std::shared_ptr<ModelVS>>& GetModels() const noexcept = 0;
 };
@@ -113,7 +113,7 @@ public:
 	[[nodiscard]]
 	virtual std::uint32_t GetMeshIndex() const noexcept = 0;
 	[[nodiscard]]
-	virtual const std::shared_ptr<ModelMS>& GetModel(size_t index) const noexcept = 0;
+	virtual std::shared_ptr<ModelMS>& GetModel(size_t index) noexcept = 0;
 	[[nodiscard]]
 	virtual const std::vector<std::shared_ptr<ModelMS>>& GetModels() const noexcept = 0;
 };
