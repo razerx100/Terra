@@ -32,34 +32,14 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 	return ModelManagerVSIndividual{ deviceManager.GetLogicalDevice(), memoryManager, frameCount };
 }
 
-std::uint32_t RenderEngineVSIndividual::AddModel(
-	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
-) {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
-	const std::uint32_t index = m_modelManager.AddModel(
-		std::move(model), fragmentShader, m_temporaryDataBuffer, meshID
-	);
-
-	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
-	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBuffer(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
-
-	return index;
-}
-
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
-	std::uint32_t meshID
+	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer, meshID
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -248,35 +228,14 @@ ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
 	};
 }
 
-std::uint32_t RenderEngineVSIndirect::AddModel(
-	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
-) {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
-	const std::uint32_t index = m_modelManager.AddModel(
-		std::move(model), fragmentShader, m_temporaryDataBuffer, meshID
-	);
-
-	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
-	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferVS(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
-	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
-
-	return index;
-}
-
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
-	std::uint32_t meshID
+	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer, meshID
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have

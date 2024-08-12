@@ -5,7 +5,7 @@ void RenderEngineMSDeviceExtension::SetDeviceExtensions(
 ) noexcept {
 	RenderEngineDeviceExtension::SetDeviceExtensions(extensionManager);
 
-	extensionManager.AddExtensions(ModelBundleMS::GetRequiredExtensions());
+	extensionManager.AddExtensions(ModelBundleMSIndividual::GetRequiredExtensions());
 }
 
 RenderEngineMS::RenderEngineMS(
@@ -30,34 +30,14 @@ RenderEngineMS::RenderEngineMS(
 	);
 }
 
-std::uint32_t RenderEngineMS::AddModel(
-	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
-) {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
-	const std::uint32_t index = m_modelManager.AddModel(
-		std::move(model), fragmentShader, m_temporaryDataBuffer, meshID
-	);
-
-	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
-	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferOfModels(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
-
-	return index;
-}
-
 std::uint32_t RenderEngineMS::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
-	std::uint32_t meshID
+	std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer, meshID
+		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have

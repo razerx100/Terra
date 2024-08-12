@@ -44,7 +44,7 @@ void ModelManagerTest::SetUpTestSuite()
 		VkDeviceExtensionManager& extensionManager = s_deviceManager->ExtensionManager();
 		extensionManager.AddExtensions(MemoryManager::GetRequiredExtensions());
 		extensionManager.AddExtensions(VkDescriptorBuffer::GetRequiredExtensions());
-		extensionManager.AddExtensions(ModelBundleMS::GetRequiredExtensions());
+		extensionManager.AddExtensions(ModelBundleMSIndividual::GetRequiredExtensions());
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)
@@ -101,6 +101,56 @@ public:
 	std::uint32_t GetSpecularIndex() const noexcept { return 0u; }
 	[[nodiscard]]
 	UVInfo GetSpecularUVInfo() const noexcept { return UVInfo{}; }
+};
+
+class ModelBundleDummyVS : public ModelBundleVS
+{
+	std::uint32_t                         m_meshID = Constants::meshID;
+	std::vector<std::shared_ptr<ModelVS>> m_models;
+
+public:
+	void AddModel(std::shared_ptr<ModelVS> model) noexcept
+	{
+		m_models.emplace_back(std::move(model));
+	}
+
+	[[nodiscard]]
+	std::uint32_t GetMeshIndex() const noexcept override { return m_meshID; }
+	[[nodiscard]]
+	const std::shared_ptr<ModelVS>& GetModel(size_t index) const noexcept override
+	{
+		return m_models[index];
+	}
+	[[nodiscard]]
+	const std::vector<std::shared_ptr<ModelVS>>& GetModels() const noexcept override
+	{
+		return m_models;
+	}
+};
+
+class ModelBundleDummyMS : public ModelBundleMS
+{
+	std::uint32_t                         m_meshID = Constants::meshID;
+	std::vector<std::shared_ptr<ModelMS>> m_models;
+
+public:
+	void AddModel(std::shared_ptr<ModelMS> model) noexcept
+	{
+		m_models.emplace_back(std::move(model));
+	}
+
+	[[nodiscard]]
+	std::uint32_t GetMeshIndex() const noexcept override { return m_meshID; }
+	[[nodiscard]]
+	const std::shared_ptr<ModelMS>& GetModel(size_t index) const noexcept override
+	{
+		return m_models[index];
+	}
+	[[nodiscard]]
+	const std::vector<std::shared_ptr<ModelMS>>& GetModels() const noexcept override
+	{
+		return m_models;
+	}
 };
 
 class ModelDummyMS : public ModelMS
@@ -376,41 +426,47 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	}
 
 	{
-		auto modelVS = std::make_shared<ModelDummyVS>();
+		auto modelVS       = std::make_shared<ModelDummyVS>();
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
-		std::uint32_t index = vsIndividual.AddModel(
-			std::move(modelVS), L"", tempDataBuffer, Constants::meshID
+		modelBundleVS->AddModel(std::move(modelVS));
+
+		std::uint32_t index = vsIndividual.AddModelBundle(
+			std::move(modelBundleVS), L"", tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
 	{
-		auto modelVS = std::make_shared<ModelDummyVS>();
+		auto modelVS       = std::make_shared<ModelDummyVS>();
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
-		std::uint32_t index = vsIndividual.AddModel(
-			std::move(modelVS), L"", tempDataBuffer, Constants::meshID
+		modelBundleVS->AddModel(std::move(modelVS));
+
+		std::uint32_t index = vsIndividual.AddModelBundle(
+			std::move(modelBundleVS), L"", tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
-		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
 		for (size_t index = 0u; index < 5u; ++index)
-			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+			modelBundleVS->AddModel(std::make_shared<ModelDummyVS>());
 
 		std::uint32_t index = vsIndividual.AddModelBundle(
-			std::move(modelsVS), L"H", tempDataBuffer, Constants::meshID
+			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
 	vsIndividual.RemoveModelBundle(1u);
 	{
-		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
 		for (size_t index = 0u; index < 7u; ++index)
-			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+			modelBundleVS->AddModel(std::make_shared<ModelDummyVS>());
 
 		std::uint32_t index = vsIndividual.AddModelBundle(
-			std::move(modelsVS), L"H", tempDataBuffer, Constants::meshID
+			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
 		// It is 6 because, there were 0, 1. Then 5 more were added. A bundle's ID will be the index
 		// of the first model. So, we removed 1. That would leave 0-5. And the then we added 7 more
@@ -483,59 +539,71 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	}
 
 	{
-		auto modelVS = std::make_shared<ModelDummyVS>();
+		auto modelVS       = std::make_shared<ModelDummyVS>();
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
-		std::uint32_t index = vsIndirect.AddModel(
-			std::move(modelVS), L"", tempDataBuffer, Constants::meshID
+		modelBundleVS->AddModel(std::move(modelVS));
+
+		std::uint32_t index = vsIndirect.AddModelBundle(
+			std::move(modelBundleVS), L"", tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
 	{
-		auto modelVS = std::make_shared<ModelDummyVS>();
+		auto modelVS       = std::make_shared<ModelDummyVS>();
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
-		std::uint32_t index = vsIndirect.AddModel(
-			std::move(modelVS), L"A", tempDataBuffer, Constants::meshID
+		modelBundleVS->AddModel(std::move(modelVS));
+
+		std::uint32_t index = vsIndirect.AddModelBundle(
+			std::move(modelBundleVS), L"A", tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
-		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
 		for (size_t index = 0u; index < 5u; ++index)
-			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+			modelBundleVS->AddModel(std::make_shared<ModelDummyVS>());
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelsVS), L"H", tempDataBuffer, Constants::meshID
+			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
 	vsIndirect.RemoveModelBundle(1u);
 	{
-		std::vector<std::shared_ptr<ModelVS>> modelsVS{};
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
 		for (size_t index = 0u; index < 7u; ++index)
-			modelsVS.emplace_back(std::make_shared<ModelDummyVS>());
+			modelBundleVS->AddModel(std::make_shared<ModelDummyVS>());
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelsVS), L"H", tempDataBuffer, Constants::meshID
+			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
 		EXPECT_EQ(index, 6u) << "Index isn't 6.";
 
 		vsIndirect.ChangePSO(index, L"A");
 	}
 	{
-		auto modelVS = std::make_shared<ModelDummyVS>();
+		auto modelVS       = std::make_shared<ModelDummyVS>();
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
-		std::uint32_t index = vsIndirect.AddModel(
-			std::move(modelVS), L"H", tempDataBuffer, Constants::meshID
+		modelBundleVS->AddModel(std::move(modelVS));
+
+		std::uint32_t index = vsIndirect.AddModelBundle(
+			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
 		EXPECT_EQ(index, 13u) << "Index isn't 13.";
 	}
 	{
-		auto modelVS = std::make_shared<ModelDummyVS>();
+		auto modelVS       = std::make_shared<ModelDummyVS>();
+		auto modelBundleVS = std::make_shared<ModelBundleDummyVS>();
 
-		std::uint32_t index = vsIndirect.AddModel(
-			std::move(modelVS), L"A", tempDataBuffer, Constants::meshID
+		modelBundleVS->AddModel(std::move(modelVS));
+
+		std::uint32_t index = vsIndirect.AddModelBundle(
+			std::move(modelBundleVS), L"A", tempDataBuffer
 		);
 		EXPECT_EQ(index, 14u) << "Index isn't 14.";
 	}
@@ -611,41 +679,47 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	}
 
 	{
-		auto modelMS = std::make_shared<ModelDummyMS>();
+		auto modelMS       = std::make_shared<ModelDummyMS>();
+		auto modelBundleMS = std::make_shared<ModelBundleDummyMS>();
 
-		std::uint32_t index = managerMS.AddModel(
-			std::move(modelMS), L"", tempDataBuffer, Constants::meshID
+		modelBundleMS->AddModel(std::move(modelMS));
+
+		std::uint32_t index = managerMS.AddModelBundle(
+			std::move(modelBundleMS), L"", tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
 	{
-		auto modelMS = std::make_shared<ModelDummyMS>();
+		auto modelMS       = std::make_shared<ModelDummyMS>();
+		auto modelBundleMS = std::make_shared<ModelBundleDummyMS>();
 
-		std::uint32_t index = managerMS.AddModel(
-			std::move(modelMS), L"", tempDataBuffer, Constants::meshID
+		modelBundleMS->AddModel(std::move(modelMS));
+
+		std::uint32_t index = managerMS.AddModelBundle(
+			std::move(modelBundleMS), L"", tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
-		std::vector<std::shared_ptr<ModelMS>> modelsMS{};
+		auto modelBundleMS = std::make_shared<ModelBundleDummyMS>();
 
 		for (size_t index = 0u; index < 5u; ++index)
-			modelsMS.emplace_back(std::make_shared<ModelDummyMS>());
+			modelBundleMS->AddModel(std::make_shared<ModelDummyMS>());
 
 		std::uint32_t index = managerMS.AddModelBundle(
-			std::move(modelsMS), L"H", tempDataBuffer, Constants::meshID
+			std::move(modelBundleMS), L"H", tempDataBuffer
 		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
 	managerMS.RemoveModelBundle(1u);
 	{
-		std::vector<std::shared_ptr<ModelMS>> modelsMS{};
+		auto modelBundleMS = std::make_shared<ModelBundleDummyMS>();
 
 		for (size_t index = 0u; index < 7u; ++index)
-			modelsMS.emplace_back(std::make_shared<ModelDummyMS>());
+			modelBundleMS->AddModel(std::make_shared<ModelDummyMS>());
 
 		std::uint32_t index = managerMS.AddModelBundle(
-			std::move(modelsMS), L"H", tempDataBuffer, Constants::meshID
+			std::move(modelBundleMS), L"H", tempDataBuffer
 		);
 		EXPECT_EQ(index, 6u) << "Index isn't 6.";
 	}

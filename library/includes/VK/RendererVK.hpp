@@ -27,8 +27,6 @@ public:
 	void AddPixelShader(const ShaderName& fragmentShader) override;
 	void ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader) override;
 
-	void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) override;
-
 	[[nodiscard]]
 	// The returned Index is the texture's ID. Not its index in the shader. It should be
 	// used to remove or bind the texture.
@@ -40,22 +38,12 @@ public:
 	void RemoveTexture(size_t index) override;
 
 	[[nodiscard]]
-	std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
-	) override;
-	[[nodiscard]]
-	std::uint32_t AddModel(
-		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
+	std::uint32_t AddModelBundle(
+		std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
-		std::uint32_t meshID
-	) override;
-	[[nodiscard]]
-	std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
-		std::uint32_t meshID
+		std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 	void RemoveModelBundle(std::uint32_t bundleID) noexcept override;
 

@@ -94,8 +94,8 @@ public:
 		m_availableIndices.at(freeIndex) = true;
 	}
 
-	T& at(size_t index) noexcept { return m_elements.at(index); }
-	const T& at(size_t index) const noexcept { return m_elements.at(index); }
+	T& at(size_t index) noexcept { return m_elements[index]; }
+	const T& at(size_t index) const noexcept { return m_elements[index]; }
 
 	[[nodiscard]]
 	const std::vector<T>& Get() const noexcept { return m_elements; }

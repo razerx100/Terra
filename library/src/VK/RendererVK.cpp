@@ -59,11 +59,6 @@ void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName
 	m_terra.GetRenderEngine().ChangeFragmentShader(modelBundleID, fragmentShader);
 }
 
-void RendererVK::SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID)
-{
-	m_terra.GetRenderEngine().SetMeshIndex(modelBundleID, meshBundleID);
-}
-
 size_t RendererVK::AddTexture(STexture&& texture)
 {
 	return m_terra.GetRenderEngine().AddTextureAsCombined(std::move(texture));
@@ -84,30 +79,16 @@ void RendererVK::RemoveTexture(size_t index)
 	m_terra.GetRenderEngine().RemoveTexture(index);
 }
 
-std::uint32_t RendererVK::AddModel(
-	std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
+std::uint32_t RendererVK::AddModelBundle(
+	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	return m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader, meshID);
-}
-
-std::uint32_t RendererVK::AddModel(
-	std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
-) {
-	return m_terra.GetRenderEngine().AddModel(std::move(model), fragmentShader, meshID);
+	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
-	std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
-	std::uint32_t meshID
+	std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader, meshID);
-}
-
-std::uint32_t RendererVK::AddModelBundle(
-	std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
-	std::uint32_t meshID
-) {
-	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader, meshID);
+	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept

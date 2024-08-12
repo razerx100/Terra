@@ -98,25 +98,14 @@ public:
 		std::uint32_t width, std::uint32_t height,
 		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
 	) = 0;
-	virtual void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) = 0;
 
 	[[nodiscard]]
-	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelVS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
+	virtual std::uint32_t AddModelBundle(
+		std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 	);
 	[[nodiscard]]
 	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelVS>>&& modelBundle, const ShaderName& fragmentShader,
-		std::uint32_t meshID
-	);
-	[[nodiscard]]
-	virtual std::uint32_t AddModel(
-		std::shared_ptr<ModelMS>&& model, const ShaderName& fragmentShader, std::uint32_t meshID
-	);
-	[[nodiscard]]
-	virtual std::uint32_t AddModelBundle(
-		std::vector<std::shared_ptr<ModelMS>>&& modelBundle, const ShaderName& fragmentShader,
-		std::uint32_t meshID
+		std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 	);
 
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
@@ -270,11 +259,6 @@ public:
 	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
 	{
 		m_modelManager.RemoveMeshBundle(bundleIndex);
-	}
-
-	void SetMeshIndex(std::uint32_t modelBundleID, std::uint32_t meshBundleID) override
-	{
-		m_modelManager.SetMeshIndex(modelBundleID, meshBundleID);
 	}
 
 	void Resize(

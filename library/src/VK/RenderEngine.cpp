@@ -278,32 +278,16 @@ std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshB
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
-std::uint32_t RenderEngine::AddModel(
-	[[maybe_unused]] std::shared_ptr<ModelVS>&& model, [[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] std::uint32_t meshID
+std::uint32_t RenderEngine::AddModelBundle(
+	[[maybe_unused]] std::shared_ptr<ModelBundleVS>&& modelBundle,
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
 
 std::uint32_t RenderEngine::AddModelBundle(
-	[[maybe_unused]] std::vector<std::shared_ptr<ModelVS>>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader, [[maybe_unused]] std::uint32_t meshID
-) {
-	return std::numeric_limits<std::uint32_t>::max();
-}
-
-std::uint32_t RenderEngine::AddModel(
-	[[maybe_unused]] std::shared_ptr<ModelMS>&& model,
-	[[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] std::uint32_t meshID
-) {
-	return std::numeric_limits<std::uint32_t>::max();
-}
-
-std::uint32_t RenderEngine::AddModelBundle(
-	[[maybe_unused]] std::vector<std::shared_ptr<ModelMS>>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader,
-	[[maybe_unused]] std::uint32_t meshID
+	[[maybe_unused]] std::shared_ptr<ModelBundleMS>&& modelBundle,
+	[[maybe_unused]] const ShaderName& fragmentShader
 ) {
 	return std::numeric_limits<std::uint32_t>::max();
 }
