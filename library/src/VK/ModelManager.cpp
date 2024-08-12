@@ -495,7 +495,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_meshIndexBuffer{ device, memoryManager }, m_meshDetailsBuffer{ device, memoryManager },
+	m_meshIndexBuffer{ device, memoryManager, frameCount }, m_meshDetailsBuffer{ device, memoryManager },
 	m_modelIndicesBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
@@ -579,9 +579,12 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		tempBuffer
 	);
 
-	const std::uint32_t modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
+	{
+		// The buffer index should be the same as the CS bundles.
+		const auto modelBundleIndexInBuffer = std::size(m_modelBundlesCS);
 
-	m_meshIndexBuffer.Add(modelBundleIndexInBuffer, modelBundleObj.GetMeshIndex());
+		m_meshIndexBuffer.Add(modelBundleIndexInBuffer);
+	}
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
@@ -675,6 +678,16 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 
 	BoundsDetails details = meshManager.GetBoundsDetails();
 	m_meshDetailsBuffer.Add(meshIndex, details);
+}
+
+void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
+{
+	auto MeshIndexGetter = [](const ModelBundleCSIndirect& bundleCS) -> std::uint32_t
+		{
+			return bundleCS.GetMeshIndex();
+		};
+
+	m_meshIndexBuffer.Update<ModelBundleCSIndirect>(frameIndex, m_modelBundlesCS, MeshIndexGetter);
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(

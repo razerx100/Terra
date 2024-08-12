@@ -475,7 +475,7 @@ template<
 	class MeshType,
 	class ModelBundleType,
 	class ModelBundleSType,
-	bool meshBounds
+	bool meshBounds, bool additionalUpdate
 >
 class ModelManager
 {
@@ -505,6 +505,9 @@ public:
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
 		m_modelBuffers.Update(frameIndex);
+
+		if constexpr (additionalUpdate)
+			static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 	}
 
 	void SetRenderPass(VKRenderPass* renderPass) noexcept
@@ -788,7 +791,7 @@ class ModelManagerVSIndividual : public
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndividual, ModelBundleVS,
-		false
+		false, false
 	>
 {
 	friend class ModelManager
@@ -797,7 +800,7 @@ class ModelManagerVSIndividual : public
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndividual, ModelBundleVS,
-			false
+			false, false
 		>;
 	friend class ModelManagerVSIndividualTest;
 
@@ -864,7 +867,7 @@ class ModelManagerVSIndirect : public
 		GraphicsPipelineIndirectDraw,
 		MeshManagerVertexShader, MeshBundleVS,
 		ModelBundleVSIndirect, ModelBundleVS,
-		true
+		true, true
 	>
 {
 	friend class ModelManager
@@ -873,7 +876,7 @@ class ModelManagerVSIndirect : public
 			GraphicsPipelineIndirectDraw,
 			MeshManagerVertexShader, MeshBundleVS,
 			ModelBundleVSIndirect, ModelBundleVS,
-			true
+			true, true
 		>;
 	friend class ModelManagerVSIndirectTest;
 
@@ -941,6 +944,8 @@ private:
 		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
+	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
+
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
 
@@ -953,26 +958,26 @@ private:
 	using BoundsDetails =  MeshManagerVertexShader::BoundsDetails;
 
 private:
-	StagingBufferManager*              m_stagingBufferMan;
-	SharedBuffer                       m_argumentInputBuffer;
-	std::vector<SharedBuffer>          m_argumentOutputBuffers;
-	SharedBuffer                       m_cullingDataBuffer;
-	std::vector<SharedBuffer>          m_counterBuffers;
-	Buffer                             m_counterResetBuffer;
-	ReusableCPUBuffer<std::uint32_t>   m_meshIndexBuffer;
-	ReusableCPUBuffer<BoundsDetails>   m_meshDetailsBuffer;
-	SharedBuffer                       m_modelIndicesBuffer;
-	SharedBuffer                       m_vertexBuffer;
-	SharedBuffer                       m_indexBuffer;
-	SharedBuffer                       m_modelBundleIndexBuffer;
-	PipelineLayout                     m_pipelineLayoutCS;
-	ComputePipeline                    m_computePipeline;
-	QueueIndices3                      m_queueIndices3;
-	std::uint32_t                      m_dispatchXCount;
-	std::uint32_t                      m_argumentCount;
+	StagingBufferManager*                 m_stagingBufferMan;
+	SharedBuffer                          m_argumentInputBuffer;
+	std::vector<SharedBuffer>             m_argumentOutputBuffers;
+	SharedBuffer                          m_cullingDataBuffer;
+	std::vector<SharedBuffer>             m_counterBuffers;
+	Buffer                                m_counterResetBuffer;
+	MultiInstanceCPUBuffer<std::uint32_t> m_meshIndexBuffer;
+	ReusableCPUBuffer<BoundsDetails>      m_meshDetailsBuffer;
+	SharedBuffer                          m_modelIndicesBuffer;
+	SharedBuffer                          m_vertexBuffer;
+	SharedBuffer                          m_indexBuffer;
+	SharedBuffer                          m_modelBundleIndexBuffer;
+	PipelineLayout                        m_pipelineLayoutCS;
+	ComputePipeline                       m_computePipeline;
+	QueueIndices3                         m_queueIndices3;
+	std::uint32_t                         m_dispatchXCount;
+	std::uint32_t                         m_argumentCount;
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
-	std::vector<ModelBundleCSIndirect> m_modelBundlesCS;
+	std::vector<ModelBundleCSIndirect>   m_modelBundlesCS;
 
 	// Vertex Shader ones
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
@@ -1055,7 +1060,7 @@ class ModelManagerMS : public
 		GraphicsPipelineMeshShader,
 		MeshManagerMeshShader, MeshBundleMS,
 		ModelBundleMSIndividual, ModelBundleMS,
-		false
+		false, false
 	>
 {
 	friend class ModelManager
@@ -1064,7 +1069,7 @@ class ModelManagerMS : public
 			GraphicsPipelineMeshShader,
 			MeshManagerMeshShader, MeshBundleMS,
 			ModelBundleMSIndividual, ModelBundleMS,
-			false
+			false, false
 		>;
 	friend class ModelManagerMSTest;
 
