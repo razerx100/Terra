@@ -216,12 +216,17 @@ public:
 		descriptorBuffer.SetStorageBufferDescriptor(m_buffer, bindingSlot, setLayoutIndex, 0u);
 	}
 
+	std::uint8_t* GetInstancePtr(VkDeviceSize instanceIndex) const noexcept
+	{
+		return m_buffer.CPUHandle() + (m_instanceSize * instanceIndex);
+	}
+
 	template<typename U>
 	void Update(
 		VkDeviceSize instanceIndex, const std::vector<U>& elements,
 		T(*getterFunction)(const U&)
 	) const noexcept {
-		std::uint8_t* bufferOffsetPtr = m_buffer.CPUHandle() + (m_instanceSize * instanceIndex);
+		std::uint8_t* bufferOffsetPtr = GetInstancePtr(instanceIndex);
 		constexpr size_t strideSize   = GetStride();
 		VkDeviceSize bufferOffset     = 0u;
 

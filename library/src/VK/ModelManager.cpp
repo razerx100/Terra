@@ -579,12 +579,9 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 		tempBuffer
 	);
 
-	{
-		// The buffer index should be the same as the CS bundles.
-		const auto modelBundleIndexInBuffer = std::size(m_modelBundlesCS);
+	const auto modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
 
-		m_meshIndexBuffer.Add(modelBundleIndexInBuffer);
-	}
+	m_meshIndexBuffer.Add(modelBundleIndexInBuffer);
 
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
@@ -682,12 +679,26 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 
 void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
 {
-	auto MeshIndexGetter = [](const ModelBundleCSIndirect& bundleCS) -> std::uint32_t
-		{
-			return bundleCS.GetMeshIndex();
-		};
+		std::uint8_t* bufferOffsetPtr = m_meshIndexBuffer.GetInstancePtr(frameIndex);
+		constexpr size_t strideSize   = sizeof(std::uint32_t);
+		VkDeviceSize bufferOffset     = 0u;
 
-	m_meshIndexBuffer.Update<ModelBundleCSIndirect>(frameIndex, m_modelBundlesCS, MeshIndexGetter);
+		// This is necessary because, while the indices should be the same as the CS bundles
+		// if we decide to remove a bundle, the bundles afterwards will be shifted. In that
+		// case either we can shift the modelBundleIndices to accommodate the bundle changes or
+		// write data the modelBundles' old position. I think the second approach is better
+		// as the model bundle indices are currently set as GPU only data. While the mesh indices
+		// are cpu data which is reset every frame.
+		for (const ModelBundleCSIndirect& bundle : m_modelBundlesCS)
+		{
+			const std::uint32_t meshIndex        = bundle.GetMeshIndex();
+
+			const std::uint32_t modelBundleIndex = bundle.GetModelBundleIndex();
+
+			bufferOffset = strideSize * modelBundleIndex;
+
+			memcpy(bufferOffsetPtr + bufferOffset, &meshIndex, strideSize);
+		}
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
