@@ -23,7 +23,7 @@ public:
 	Resolution GetFirstDisplayCoordinates() const override;
 
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept override;
-	void SetShaderPath(const wchar_t* path) noexcept override;
+	void SetShaderPath(const wchar_t* path) override;
 	void AddPixelShader(const ShaderName& fragmentShader) override;
 	void ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader) override;
 

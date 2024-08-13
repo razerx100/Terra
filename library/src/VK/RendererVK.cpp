@@ -44,7 +44,7 @@ Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const
 	return Renderer::Resolution{ .width = resolution.width, .height = resolution.height };
 }
 
-void RendererVK::SetShaderPath(const wchar_t* path) noexcept
+void RendererVK::SetShaderPath(const wchar_t* path)
 {
 	m_terra.GetRenderEngine().SetShaderPath(path);
 }

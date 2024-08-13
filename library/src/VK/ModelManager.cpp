@@ -541,7 +541,11 @@ void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descript
 	m_pipelineLayoutCS.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
 
 	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayouts());
+}
 
+void ModelManagerVSIndirect::ShaderPathSet()
+{
+	// Must create the pipeline object after the shader path has been set.
 	m_computePipeline.Create(
 		m_device, m_pipelineLayoutCS, L"VertexShaderCSIndirect", m_shaderPath
 	);

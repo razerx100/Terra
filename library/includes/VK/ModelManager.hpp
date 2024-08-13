@@ -474,8 +474,7 @@ template<
 	class MeshManager,
 	class MeshType,
 	class ModelBundleType,
-	class ModelBundleSType,
-	bool meshBounds, bool additionalUpdate
+	class ModelBundleSType
 >
 class ModelManager
 {
@@ -506,8 +505,7 @@ public:
 	{
 		m_modelBuffers.Update(frameIndex);
 
-		if constexpr (additionalUpdate)
-			static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
+		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 	}
 
 	void SetRenderPass(VKRenderPass* renderPass) noexcept
@@ -515,9 +513,11 @@ public:
 		m_renderPass = renderPass;
 	}
 
-	void SetShaderPath(std::wstring shaderPath) noexcept
+	void SetShaderPath(std::wstring shaderPath)
 	{
 		m_shaderPath = std::move(shaderPath);
+
+		static_cast<Derived*>(this)->ShaderPathSet();
 	}
 
 	[[nodiscard]]
@@ -525,7 +525,7 @@ public:
 		std::shared_ptr<ModelBundleSType>&& modelBundle, const ShaderName& fragmentShader,
 		TemporaryDataBufferGPU& tempBuffer
 	) {
-		const auto& models = modelBundle->GetModels();
+		const auto& models      = modelBundle->GetModels();
 		const size_t modelCount = std::size(models);
 
 		if (modelCount)
@@ -790,8 +790,7 @@ class ModelManagerVSIndividual : public
 		ModelManagerVSIndividual,
 		GraphicsPipelineIndividualDraw,
 		MeshManagerVertexShader, MeshBundleVS,
-		ModelBundleVSIndividual, ModelBundleVS,
-		false, false
+		ModelBundleVSIndividual, ModelBundleVS
 	>
 {
 	friend class ModelManager
@@ -799,8 +798,7 @@ class ModelManagerVSIndividual : public
 			ModelManagerVSIndividual,
 			GraphicsPipelineIndividualDraw,
 			MeshManagerVertexShader, MeshBundleVS,
-			ModelBundleVSIndividual, ModelBundleVS,
-			false, false
+			ModelBundleVSIndividual, ModelBundleVS
 		>;
 	friend class ModelManagerVSIndividualTest;
 
@@ -837,6 +835,10 @@ private:
 		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
+	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
+	// To create compute shader pipelines.
+	void ShaderPathSet() {}
+
 private:
 	SharedBuffer m_vertexBuffer;
 	SharedBuffer m_indexBuffer;
@@ -866,8 +868,7 @@ class ModelManagerVSIndirect : public
 		ModelManagerVSIndirect,
 		GraphicsPipelineIndirectDraw,
 		MeshManagerVertexShader, MeshBundleVS,
-		ModelBundleVSIndirect, ModelBundleVS,
-		true, true
+		ModelBundleVSIndirect, ModelBundleVS
 	>
 {
 	friend class ModelManager
@@ -875,8 +876,7 @@ class ModelManagerVSIndirect : public
 			ModelManagerVSIndirect,
 			GraphicsPipelineIndirectDraw,
 			MeshManagerVertexShader, MeshBundleVS,
-			ModelBundleVSIndirect, ModelBundleVS,
-			true, true
+			ModelBundleVSIndirect, ModelBundleVS
 		>;
 	friend class ModelManagerVSIndirectTest;
 
@@ -945,6 +945,9 @@ private:
 	);
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
+
+	// To create compute shader pipelines.
+	void ShaderPathSet();
 
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
@@ -1059,8 +1062,7 @@ class ModelManagerMS : public
 		ModelManagerMS,
 		GraphicsPipelineMeshShader,
 		MeshManagerMeshShader, MeshBundleMS,
-		ModelBundleMSIndividual, ModelBundleMS,
-		false, false
+		ModelBundleMSIndividual, ModelBundleMS
 	>
 {
 	friend class ModelManager
@@ -1068,8 +1070,7 @@ class ModelManagerMS : public
 			ModelManagerMS,
 			GraphicsPipelineMeshShader,
 			MeshManagerMeshShader, MeshBundleMS,
-			ModelBundleMSIndividual, ModelBundleMS,
-			false, false
+			ModelBundleMSIndividual, ModelBundleMS
 		>;
 	friend class ModelManagerMSTest;
 
@@ -1109,6 +1110,10 @@ private:
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
+
+	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
+	// To create compute shader pipelines.
+	void ShaderPathSet() {}
 
 private:
 	StagingBufferManager* m_stagingBufferMan;

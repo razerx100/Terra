@@ -80,7 +80,7 @@ public:
 	[[nodiscard]]
 	const VKSemaphore& GetGraphicsWait(size_t index) const noexcept { return m_graphicsWait.at(index); }
 
-	virtual void SetShaderPath(const std::wstring& shaderPath) noexcept = 0;
+	virtual void SetShaderPath(const std::wstring& shaderPath) = 0;
 	virtual void AddFragmentShader(const ShaderName& fragmentShader) = 0;
 	virtual void ChangeFragmentShader(
 		std::uint32_t modelBundleID, const ShaderName& fragmentShader
@@ -237,7 +237,7 @@ public:
 		);
 	}
 
-	void SetShaderPath(const std::wstring& shaderPath) noexcept override
+	void SetShaderPath(const std::wstring& shaderPath) override
 	{
 		m_modelManager.SetShaderPath(shaderPath);
 	}

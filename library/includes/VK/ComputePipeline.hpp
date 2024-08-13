@@ -28,10 +28,10 @@ public:
 
 private:
 	[[nodiscard]]
-	std::unique_ptr<VkPipelineObject> _createComputePipeline(
+	static std::unique_ptr<VkPipelineObject> _createComputePipeline(
 		VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
 		const std::wstring& shaderPath
-	) const noexcept;
+	);
 
 private:
 	std::unique_ptr<VkPipelineObject> m_computePipeline;
