@@ -761,6 +761,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
 
 		descriptorBuffer.AddBinding(
+			s_modelBuffersComputeBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
+		descriptorBuffer.AddBinding(
 			s_argumentInputBufferBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
