@@ -160,6 +160,8 @@ public:
 
 	[[nodiscard]]
 	static const decltype(s_requiredExtensions)& GetRequiredExtensions() noexcept
-	{ return s_requiredExtensions; }
+	{
+		return s_requiredExtensions;
+	}
 };
 #endif

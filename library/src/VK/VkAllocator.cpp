@@ -88,7 +88,7 @@ MemoryManager::MemoryManager(
 		const VkDeviceSize cpuBudget                  = std::min(availableCPUMemory, initialBudgetCPU);
 		std::optional<MemoryType> cpuMemType          = GetMemoryType(cpuBudget, cpuFlagBit);
 
-		if (!cpuMemType) // This should alway succeed but still checking anywayr
+		if (!cpuMemType) // This should alway succeed but still checking anyway.
 			throw Exception("MemoryException", "Not Enough memory for allocation.");
 
 		m_cpuAllocators.emplace_back(CreateMemory(cpuBudget, cpuMemType.value()), GetID(true));
@@ -333,7 +333,7 @@ void MemoryManager::Deallocate(
 
 std::uint16_t MemoryManager::GetID(bool cpu) noexcept
 {
-	std::vector<VkAllocator>& allocators = cpu ? m_cpuAllocators : m_gpuAllocators;
+	std::vector<VkAllocator>& allocators        = cpu ? m_cpuAllocators : m_gpuAllocators;
 	std::queue<std::uint16_t>& availableIndices = cpu ? m_availableCPUIndices : m_availableGPUIndices;
 
 	if (std::empty(availableIndices))

@@ -742,7 +742,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, vsSetLayoutIndex
 		);
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelBuffers.SetFragmentDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
