@@ -225,7 +225,7 @@ void VkGraphicsQueue::CreateCommandBuffers(std::uint32_t bufferCount)
 
 void VkGraphicsQueue::WaitForSubmission(size_t bufferIndex)
 {
-	m_fences.at(bufferIndex).Wait();
+	m_fences[bufferIndex].Wait();
 }
 
 void VkGraphicsQueue::WaitForQueueToFinish()

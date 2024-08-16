@@ -465,10 +465,11 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetFamilyIndex() const noexcept { return m_queueIndex; }
 	[[nodiscard]]
-	VKCommandBuffer& GetCommandBuffer(size_t index) noexcept { return m_commandBuffers.at(index); }
+	VKCommandBuffer& GetCommandBuffer(size_t index) noexcept { return m_commandBuffers[index]; }
 	[[nodiscard]]
-	const VKCommandBuffer& GetCommandBuffer(size_t index) const noexcept {
-		return m_commandBuffers.at(index);
+	const VKCommandBuffer& GetCommandBuffer(size_t index) const noexcept
+	{
+		return m_commandBuffers[index];
 	}
 	[[nodiscard]]
 	VkQueue GetQueue() const noexcept { return m_commandQueue; }
@@ -518,7 +519,7 @@ public:
 	void CreateCommandBuffers(std::uint32_t bufferCount) override;
 
 	[[nodiscard]]
-	VKFence& GetFence(size_t index) noexcept { return m_fences.at(index); }
+	VKFence& GetFence(size_t index) noexcept { return m_fences[index]; }
 
 private:
 	std::vector<VKFence> m_fences;
