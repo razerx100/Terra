@@ -153,23 +153,16 @@ void Terra::Render()
 
 	VkDevice device = m_deviceManager.GetLogicalDevice();
 
-	// It should be okay to even use the same semaphore present is waiting on.
-	// Because that will be signalled by the Graphics Queue when it is done. And
-	// Then the imageWait semaphore will be signalled when the swapchain is done
-	// presenting. So, even if it is the same semaphore, it shouldn't be used at
-	// the same time.
-	constexpr size_t nextPotentialImageIndex = 0u;
-	const VKSemaphore& imageWaitSemaphore    = m_renderEngine->GetGraphicsWait(nextPotentialImageIndex);
-
 	// This semaphore will be signaled when the image becomes available.
-	m_swapchain->QueryNextImageIndex(device, imageWaitSemaphore);
+	m_swapchain->QueryNextImageIndex(device);
 
+	const VKSemaphore& nextImageSemaphore = m_swapchain->GetNextImageSemaphore();
 	const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();
 	const size_t nextImageIndex           = nextImageIndexU32;
 
 	m_renderEngine->Render(
 		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
-		m_swapchain->GetCurrentSwapchainExtent(), frameNumber, imageWaitSemaphore
+		m_swapchain->GetCurrentSwapchainExtent(), frameNumber, nextImageSemaphore
 	);
 
 	const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextImageIndex);

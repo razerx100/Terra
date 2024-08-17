@@ -94,8 +94,7 @@ public:
 	void CreateFramebuffers(
 		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
 	);
-	// The semaphore will be signaled when the image becomes available.
-	void QueryNextImageIndex(VkDevice device, const VKSemaphore& signalSemaphore);
+	void QueryNextImageIndex(VkDevice device);
 
 	[[nodiscard]]
 	VkExtent2D GetCurrentSwapchainExtent() const noexcept { return m_swapchain.GetExtent(); }
@@ -106,6 +105,8 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t GetNextImageIndex() const noexcept { return m_nextImageIndex; };
+	[[nodiscard]]
+	const VKSemaphore& GetNextImageSemaphore() const noexcept { return m_imageSemaphore; }
 	[[nodiscard]]
 	VkSwapchainKHR GetVkSwapchain() const noexcept { return m_swapchain.Get(); }
 	[[nodiscard]]
@@ -119,6 +120,9 @@ public:
 private:
 	VkQueue       m_presentQueue;
 	VkSwapchain   m_swapchain;
+	// It should be okay to have a single sync object,
+	// since we would need to wait on the CPU for some fences anyway.
+	VKSemaphore   m_imageSemaphore;
 	std::uint32_t m_nextImageIndex;
 	bool          m_hasSwapchainFormatChanged;
 
@@ -138,6 +142,7 @@ public:
 	SwapchainManager(SwapchainManager&& other) noexcept
 		: m_presentQueue{ other.m_presentQueue },
 		m_swapchain{ std::move(other.m_swapchain) },
+		m_imageSemaphore{ std::move(other.m_imageSemaphore) },
 		m_nextImageIndex{ other.m_nextImageIndex },
 		m_hasSwapchainFormatChanged{ other.m_hasSwapchainFormatChanged }
 	{}
@@ -145,6 +150,7 @@ public:
 	{
 		m_presentQueue              = other.m_presentQueue;
 		m_swapchain                 = std::move(other.m_swapchain);
+		m_imageSemaphore            = std::move(other.m_imageSemaphore);
 		m_nextImageIndex            = other.m_nextImageIndex;
 		m_hasSwapchainFormatChanged = other.m_hasSwapchainFormatChanged;
 

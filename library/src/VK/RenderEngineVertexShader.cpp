@@ -72,6 +72,8 @@ void RenderEngineVSIndividual::Render(
 	// its submission.
 	m_temporaryDataBuffer.Clear(frameIndex);
 
+	// This should be fine. But putting this as a reminder, that
+	// the presentation engine might still be running and using some resources.
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
 	// Transfer Phase
@@ -268,6 +270,8 @@ void RenderEngineVSIndirect::Render(
 	// its submission.
 	m_temporaryDataBuffer.Clear(frameIndex);
 
+	// This should be fine. But putting this as a reminder, that
+	// the presentation engine might still be running and using some resources.
 	Update(static_cast<VkDeviceSize>(frameIndex));
 
 	// Transfer Phase

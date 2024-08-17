@@ -130,9 +130,11 @@ void VkSwapchain::SelfDestruct() noexcept
 
 // Swapchain Manager
 SwapchainManager::SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount)
-	: m_presentQueue{ presentQueue }, m_swapchain{ device, bufferCount }, m_nextImageIndex{ 0u },
-	m_hasSwapchainFormatChanged{ false }
-{}
+	: m_presentQueue{ presentQueue }, m_swapchain{ device, bufferCount },
+	m_imageSemaphore{ device }, m_nextImageIndex{ 0u }, m_hasSwapchainFormatChanged{ false }
+{
+	m_imageSemaphore.Create();
+}
 
 void SwapchainManager::Present(
 	std::uint32_t imageIndex, const VKSemaphore& waitSemaphore
@@ -178,10 +180,10 @@ void SwapchainManager::CreateFramebuffers(
 	);
 }
 
-void SwapchainManager::QueryNextImageIndex(VkDevice device, const VKSemaphore& signalSemaphore)
+void SwapchainManager::QueryNextImageIndex(VkDevice device)
 {
 	vkAcquireNextImageKHR(
-		device, m_swapchain.Get(), UINT64_MAX, signalSemaphore.Get(), VK_NULL_HANDLE,
+		device, m_swapchain.Get(), UINT64_MAX, m_imageSemaphore.Get(), VK_NULL_HANDLE,
 		&m_nextImageIndex
 	);
 }
