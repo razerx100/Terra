@@ -33,9 +33,6 @@ RenderEngineMS::RenderEngineMS(
 std::uint32_t RenderEngineMS::AddModelBundle(
 	std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
@@ -51,10 +48,6 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 
 std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
 {
-	// Add a mesh Bundle will update the Vertex, VertexIndices and PrimIndices buffers.
-	// So, must wait for the queue to finish.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const std::uint32_t index = m_modelManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);

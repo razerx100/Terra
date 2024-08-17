@@ -35,9 +35,6 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
@@ -53,10 +50,6 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 
 std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
 {
-	// Add a mesh Bundle will update the Vertex and Index buffers. So, must wait for the queue to
-	// finish.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	return m_modelManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
@@ -228,9 +221,6 @@ ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
 	);
@@ -247,10 +237,6 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 
 std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
 {
-	// Add a mesh Bundle will update the Vertex and Index buffers. So, must wait for the queue to
-	// finish.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const std::uint32_t index = m_modelManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);

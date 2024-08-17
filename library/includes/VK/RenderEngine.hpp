@@ -46,8 +46,10 @@ public:
 	virtual ~RenderEngine() = default;
 
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	size_t AddMaterial(std::shared_ptr<Material> material);
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	std::vector<size_t> AddMaterials(std::vector<std::shared_ptr<Material>>&& materials);
 
 	void UpdateMaterial(size_t index) const noexcept { m_materialBuffers.Update(index); }
@@ -56,6 +58,7 @@ public:
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	size_t AddTextureAsCombined(STexture&& texture);
 
 	void UnbindCombinedTexture(size_t index);
@@ -74,8 +77,6 @@ public:
 	}
 	void SetCamera(std::uint32_t index) noexcept { m_cameraManager.SetCamera(index); }
 	void RemoveCamera(std::uint32_t index) noexcept { m_cameraManager.RemoveCamera(index); }
-
-	void WaitForQueues() { m_graphicsQueue.WaitForQueueToFinish(); }
 
 	[[nodiscard]]
 	const VKSemaphore& GetGraphicsWait(size_t index) const noexcept { return m_graphicsWait.at(index); }
@@ -100,10 +101,12 @@ public:
 	) = 0;
 
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	virtual std::uint32_t AddModelBundle(
 		std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 	);
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	virtual std::uint32_t AddModelBundle(
 		std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 	);
@@ -111,8 +114,10 @@ public:
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle);
 	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
 	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle);
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;

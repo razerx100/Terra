@@ -67,9 +67,6 @@ RenderEngine::RenderEngine(
 
 size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
 {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const size_t index = m_materialBuffers.Add(std::move(material));
 
 	m_materialBuffers.Update(index);
@@ -83,9 +80,6 @@ size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
 
 std::vector<size_t> RenderEngine::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
 {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	std::vector<size_t> indices = m_materialBuffers.AddMultiple(std::move(materials));
 
 	m_materialBuffers.Update(indices);
@@ -106,9 +100,6 @@ void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector)
 
 size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
 {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	const size_t textureIndex = m_textureStorage.AddTexture(
 		std::move(texture), m_stagingManager, m_temporaryDataBuffer
 	);
