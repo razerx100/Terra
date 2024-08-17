@@ -175,6 +175,7 @@ protected:
 	VkClearColorValue               m_backgroundColour;
 	ViewportAndScissorManager       m_viewportAndScissors;
 	TemporaryDataBufferGPU          m_temporaryDataBuffer;
+	bool                            m_copyNecessary;
 
 public:
 	RenderEngine(const RenderEngine&) = delete;
@@ -197,7 +198,8 @@ public:
 		m_renderPass{ std::move(other.m_renderPass) },
 		m_backgroundColour{ other.m_backgroundColour },
 		m_viewportAndScissors{ other.m_viewportAndScissors },
-		m_temporaryDataBuffer{ std::move(other.m_temporaryDataBuffer) }
+		m_temporaryDataBuffer{ std::move(other.m_temporaryDataBuffer) },
+		m_copyNecessary{ other.m_copyNecessary }
 	{}
 	RenderEngine& operator=(RenderEngine&& other) noexcept
 	{
@@ -218,6 +220,7 @@ public:
 		m_backgroundColour          = other.m_backgroundColour;
 		m_viewportAndScissors       = other.m_viewportAndScissors;
 		m_temporaryDataBuffer       = std::move(other.m_temporaryDataBuffer);
+		m_copyNecessary             = other.m_copyNecessary;
 
 		return *this;
 	}

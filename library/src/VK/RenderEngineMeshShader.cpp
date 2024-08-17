@@ -55,6 +55,8 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
 	);
 
+	m_copyNecessary = true;
+
 	return index;
 }
 
@@ -66,6 +68,8 @@ std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBu
 
 	m_modelManager.SetDescriptorBufferOfMeshes(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
+	m_copyNecessary = true;
+
 	return index;
 }
 
@@ -75,35 +79,46 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Transfer Phase
-	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
+	// If the Transfer stage isn't executed, pass the waitSemaphore on.
+	VkSemaphore signalledSemaphore = waitSemaphore;
+
+	// Only execute this stage if copying is necessary.
+	if (m_copyNecessary)
 	{
-		const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
+		const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
-		m_stagingManager.CopyAndClear(transferCmdBufferScope);
-		m_modelManager.CopyTempBuffers(transferCmdBuffer);
+		{
+			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-		m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+			m_stagingManager.CopyAndClear(transferCmdBufferScope);
+			m_modelManager.CopyTempBuffers(transferCmdBuffer);
+
+			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+		}
+
+		const VKSemaphore& transferWaitSemaphore = m_transferWait[frameIndex];
+
+		{
+			QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
+			transferSubmitBuilder
+				.SignalSemaphore(transferWaitSemaphore, semaphoreCounter)
+				.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
+				.CommandBuffer(transferCmdBuffer);
+
+			m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
+
+			m_temporaryDataBuffer.SetUsed(frameIndex);
+		}
+
+		// Since this is the first stage for now. The receiving semaphore won't be a timeline one.
+		// So, no need to increase it.
+
+		m_copyNecessary    = false;
+		signalledSemaphore = transferWaitSemaphore.Get();
 	}
 
-	const VKSemaphore& transferWaitSemaphore = m_transferWait[frameIndex];
-
-	{
-		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
-		transferSubmitBuilder
-			.SignalSemaphore(transferWaitSemaphore, semaphoreCounter)
-			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
-			.CommandBuffer(transferCmdBuffer);
-
-		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
-
-		m_temporaryDataBuffer.SetUsed(frameIndex);
-	}
-
-	// Since this is the first stage for now. The receiving semaphore won't be a timeline one.
-	// So, no need to increase it.
-
-	return transferWaitSemaphore.Get();
+	return signalledSemaphore;
 }
 
 VkSemaphore RenderEngineMS::DrawingStage(

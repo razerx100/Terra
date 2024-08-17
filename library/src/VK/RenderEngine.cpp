@@ -41,7 +41,7 @@ RenderEngine::RenderEngine(
 	m_cameraManager{ logicalDevice, &m_memoryManager },
 	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
 	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
-	m_temporaryDataBuffer{}
+	m_temporaryDataBuffer{}, m_copyNecessary{ false }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
 
@@ -75,6 +75,8 @@ size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
 		m_graphicsDescriptorBuffers, GetMaterialBindingSlot(), s_fragmentShaderSetLayoutIndex
 	);
 
+	m_copyNecessary = true;
+
 	return index;
 }
 
@@ -87,6 +89,8 @@ std::vector<size_t> RenderEngine::AddMaterials(std::vector<std::shared_ptr<Mater
 	m_materialBuffers.SetDescriptorBuffer(
 		m_graphicsDescriptorBuffers, GetMaterialBindingSlot(), s_fragmentShaderSetLayoutIndex
 	);
+
+	m_copyNecessary = true;
 
 	return indices;
 }
@@ -103,6 +107,8 @@ size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
 	const size_t textureIndex = m_textureStorage.AddTexture(
 		std::move(texture), m_stagingManager, m_temporaryDataBuffer
 	);
+
+	m_copyNecessary = true;
 
 	return textureIndex;
 }
