@@ -308,12 +308,12 @@ public:
 	}
 
 	QueueSubmitBuilder& WaitSemaphore(
-		const VKSemaphore& semaphore, VkPipelineStageFlagBits pipelineStage,
+		VkSemaphore semaphore, VkPipelineStageFlagBits pipelineStage,
 		std::uint64_t waitValue = 1u
 	) {
 		assert(m_currentWaitIndex < WaitCount && "More Wait semaphores than the allowed amount.");
 
-		m_waitSemaphores.at(m_currentWaitIndex) = semaphore.Get();
+		m_waitSemaphores.at(m_currentWaitIndex) = semaphore;
 		m_waitStages.at(m_currentWaitIndex)     = pipelineStage;
 		m_waitValues.at(m_currentWaitIndex)     = waitValue;
 
@@ -321,16 +321,26 @@ public:
 
 		return *this;
 	}
-	QueueSubmitBuilder& SignalSemaphore(const VKSemaphore& semaphore, std::uint64_t signalValue = 1u)
+	QueueSubmitBuilder& SignalSemaphore(VkSemaphore semaphore, std::uint64_t signalValue = 1u)
 	{
 		assert(m_currentSignalIndex < SignalCount && "More Signal semaphores than the allowed amount.");
 
-		m_signalSemaphores.at(m_currentSignalIndex) = semaphore.Get();
+		m_signalSemaphores.at(m_currentSignalIndex) = semaphore;
 		m_signalValues.at(m_currentSignalIndex)     = signalValue;
 
 		++m_currentSignalIndex;
 
 		return *this;
+	}
+	QueueSubmitBuilder& WaitSemaphore(
+		const VKSemaphore& semaphore, VkPipelineStageFlagBits pipelineStage,
+		std::uint64_t waitValue = 1u
+	) {
+		return WaitSemaphore(semaphore.Get(), pipelineStage, waitValue);
+	}
+	QueueSubmitBuilder& SignalSemaphore(const VKSemaphore& semaphore, std::uint64_t signalValue = 1u)
+	{
+		return SignalSemaphore(semaphore.Get(), signalValue);
 	}
 	QueueSubmitBuilder& CommandBuffer(const VKCommandBuffer& commandBuffer)
 	{

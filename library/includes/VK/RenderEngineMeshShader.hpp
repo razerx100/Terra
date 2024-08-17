@@ -28,17 +28,25 @@ public:
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle) override;
 
-	void Render(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
-	) override;
-
 private:
 	[[nodiscard]]
 	static ModelManagerMS GetModelManager(
 		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
 		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
 	);
+
+	[[nodiscard]]
+	VkSemaphore GenericTransferStage(
+		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+	);
+	[[nodiscard]]
+	VkSemaphore DrawingStage(
+		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+	);
+
+	void SetupPipelineStages();
 
 private:
 	// Graphics

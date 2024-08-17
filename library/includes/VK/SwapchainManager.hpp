@@ -85,7 +85,12 @@ class SwapchainManager
 public:
 	SwapchainManager(VkDevice device, VkQueue presentQueue, std::uint32_t bufferCount);
 
-	void Present(std::uint32_t imageIndex, const VKSemaphore& waitSemaphore) const noexcept;
+	void Present(std::uint32_t imageIndex, VkSemaphore waitSemaphore) const;
+	void Present(std::uint32_t imageIndex, const VKSemaphore& waitSemaphore) const
+	{
+		Present(imageIndex, waitSemaphore.Get());
+	}
+
 	void CreateSwapchain(
 		const VkDeviceManager& deviceManager, const SurfaceManager& surface,
 		std::uint32_t width, std::uint32_t height

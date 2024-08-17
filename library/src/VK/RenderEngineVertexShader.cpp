@@ -22,6 +22,18 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	m_cameraManager.SetDescriptorBufferGraphics(
 		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
 	);
+
+	SetupPipelineStages();
+}
+
+void RenderEngineVSIndividual::SetupPipelineStages()
+{
+	constexpr size_t stageCount = 2u;
+
+	m_pipelineStages.reserve(stageCount);
+
+	m_pipelineStages.emplace_back(&RenderEngineVSIndividual::GenericTransferStage);
+	m_pipelineStages.emplace_back(&RenderEngineVSIndividual::DrawingStage);
 }
 
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
@@ -55,20 +67,11 @@ std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundle
 	);
 }
 
-void RenderEngineVSIndividual::Render(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-	std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
+VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
+	size_t frameIndex,
+	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
+	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
 ) {
-	// Wait for the previous Graphics command buffer to finish.
-	m_graphicsQueue.WaitForSubmission(frameIndex);
-	// It should be okay to clear the data now that the frame has finished
-	// its submission.
-	m_temporaryDataBuffer.Clear(frameIndex);
-
-	// This should be fine. But putting this as a reminder, that
-	// the presentation engine might still be running and using some resources.
-	Update(static_cast<VkDeviceSize>(frameIndex));
-
 	// Transfer Phase
 	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
@@ -86,9 +89,8 @@ void RenderEngineVSIndividual::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
-			.SignalSemaphore(transferWaitSemaphore, frameNumber)
-			// The present queue could still be using some resources. So, need to wait.
-			.WaitSemaphore(imageWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
+			.SignalSemaphore(transferWaitSemaphore, semaphoreCounter)
+			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
@@ -96,8 +98,13 @@ void RenderEngineVSIndividual::Render(
 		m_temporaryDataBuffer.SetUsed(frameIndex);
 	}
 
-	// Compute Phase (Not using atm)
+	return transferWaitSemaphore.Get();
+}
 
+VkSemaphore RenderEngineVSIndividual::DrawingStage(
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+) {
 	// Graphics Phase
 	const VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndex);
 
@@ -130,9 +137,7 @@ void RenderEngineVSIndividual::Render(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			// The graphics queue should wait for the transfer queue to finish and then start the
-			// Input Assembler Stage.
-			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, frameNumber)
+			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, semaphoreCounter)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
@@ -140,6 +145,8 @@ void RenderEngineVSIndividual::Render(
 
 		m_graphicsQueue.SubmitCommandBuffer(graphicsSubmitBuilder, signalFence);
 	}
+
+	return graphicsWaitSemaphore.Get();
 }
 
 // VS Indirect
@@ -206,6 +213,19 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(			// And since the swapchain doe
 	m_cameraManager.SetDescriptorBufferCompute(
 		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
 	);
+
+	SetupPipelineStages();
+}
+
+void RenderEngineVSIndirect::SetupPipelineStages()
+{
+	constexpr size_t stageCount = 3u;
+
+	m_pipelineStages.reserve(stageCount);
+
+	m_pipelineStages.emplace_back(&RenderEngineVSIndirect::GenericTransferStage);
+	m_pipelineStages.emplace_back(&RenderEngineVSIndirect::FrustumCullingStage);
+	m_pipelineStages.emplace_back(&RenderEngineVSIndirect::DrawingStage);
 }
 
 ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
@@ -246,20 +266,11 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS
 	return index;
 }
 
-void RenderEngineVSIndirect::Render(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-	std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
+VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
+	size_t frameIndex,
+	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
+	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
 ) {
-	// Wait for the previous Graphics command buffer to finish.
-	m_graphicsQueue.WaitForSubmission(frameIndex);
-	// It should be okay to clear the data now that the frame has finished
-	// its submission.
-	m_temporaryDataBuffer.Clear(frameIndex);
-
-	// This should be fine. But putting this as a reminder, that
-	// the presentation engine might still be running and using some resources.
-	Update(static_cast<VkDeviceSize>(frameIndex));
-
 	// Transfer Phase
 	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
@@ -282,9 +293,8 @@ void RenderEngineVSIndirect::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> transferSubmitBuilder{};
 		transferSubmitBuilder
-			.SignalSemaphore(transferWaitSemaphore, frameNumber)
-			// The present queue could still be using some resources. So, need to wait.
-			.WaitSemaphore(imageWaitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
+			.SignalSemaphore(transferWaitSemaphore, semaphoreCounter)
+			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_TRANSFER_BIT)
 			.CommandBuffer(transferCmdBuffer);
 
 		m_transferQueue.SubmitCommandBuffer(transferSubmitBuilder);
@@ -292,7 +302,15 @@ void RenderEngineVSIndirect::Render(
 		m_temporaryDataBuffer.SetUsed(frameIndex);
 	}
 
-	// Compute Phase
+	return transferWaitSemaphore.Get();
+}
+
+VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
+	size_t frameIndex,
+	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
+	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+) {
+// Compute Phase
 	const VKCommandBuffer& computeCmdBuffer = m_computeQueue.GetCommandBuffer(frameIndex);
 
 	{
@@ -315,13 +333,20 @@ void RenderEngineVSIndirect::Render(
 	{
 		QueueSubmitBuilder<1u, 1u> computeSubmitBuilder{};
 		computeSubmitBuilder
-			.SignalSemaphore(computeWaitSemaphore, frameNumber)
-			.WaitSemaphore(transferWaitSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, frameNumber)
+			.SignalSemaphore(computeWaitSemaphore, semaphoreCounter)
+			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, semaphoreCounter)
 			.CommandBuffer(computeCmdBuffer);
 
 		m_computeQueue.SubmitCommandBuffer(computeSubmitBuilder);
 	}
 
+	return computeWaitSemaphore.Get();
+}
+
+VkSemaphore RenderEngineVSIndirect::DrawingStage(
+	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+) {
 	// Graphics Phase
 	const VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndex);
 
@@ -354,9 +379,7 @@ void RenderEngineVSIndirect::Render(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			// The graphics queue should wait for the compute queue to finish and then start the
-			// Input Assembler Stage.
-			.WaitSemaphore(computeWaitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, frameNumber)
+			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, semaphoreCounter)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
@@ -364,4 +387,6 @@ void RenderEngineVSIndirect::Render(
 
 		m_graphicsQueue.SubmitCommandBuffer(graphicsSubmitBuilder, signalFence);
 	}
+
+	return graphicsWaitSemaphore.Get();
 }

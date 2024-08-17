@@ -160,14 +160,12 @@ void Terra::Render()
 	const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();
 	const size_t nextImageIndex           = nextImageIndexU32;
 
-	m_renderEngine->Render(
+	VkSemaphore renderFinishedSemaphore = m_renderEngine->Render(
 		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
 		m_swapchain->GetCurrentSwapchainExtent(), frameNumber, nextImageSemaphore
 	);
 
-	const VKSemaphore& waitSemaphore = m_renderEngine->GetGraphicsWait(nextImageIndex);
-
-	m_swapchain->Present(nextImageIndexU32, waitSemaphore);
+	m_swapchain->Present(nextImageIndexU32, renderFinishedSemaphore);
 }
 
 void Terra::WaitForGPUToFinish()

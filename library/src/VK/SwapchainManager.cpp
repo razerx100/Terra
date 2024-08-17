@@ -137,9 +137,9 @@ SwapchainManager::SwapchainManager(VkDevice device, VkQueue presentQueue, std::u
 }
 
 void SwapchainManager::Present(
-	std::uint32_t imageIndex, const VKSemaphore& waitSemaphore
-) const noexcept {
-	const VkSemaphore semapohores[]   = { waitSemaphore.Get() };
+	std::uint32_t imageIndex, VkSemaphore waitSemaphore
+) const {
+	const VkSemaphore semapohores[]   = { waitSemaphore };
 	const VkSwapchainKHR swapchains[] = { m_swapchain.Get() };
 
 	VkPresentInfoKHR presentInfo{

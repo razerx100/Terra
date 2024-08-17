@@ -91,7 +91,9 @@ public:
 		const VKCommandBuffer& graphicsCmdBuffer, const VKFramebuffer& frameBuffer,
 		VkExtent2D renderArea
 	);
-	virtual void Render(
+	[[nodiscard]]
+	// Returned semaphore will be signalled when the rendering is finished.
+	virtual VkSemaphore Render(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
 		std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
 	) = 0;
@@ -233,7 +235,7 @@ public:
 				deviceManager, &m_memoryManager, &m_stagingManager,
 				static_cast<std::uint32_t>(frameCount)
 			)
-		}
+		}, m_pipelineStages{}
 	{
 		for(auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
@@ -317,6 +319,31 @@ public:
 		return Derived::s_samplerBindingSlot;
 	}
 
+	[[nodiscard]]
+	VkSemaphore Render(
+		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
+	) final {
+		// Wait for the previous Graphics command buffer to finish.
+		m_graphicsQueue.WaitForSubmission(frameIndex);
+		// It should be okay to clear the data now that the frame has finished
+		// its submission.
+		m_temporaryDataBuffer.Clear(frameIndex);
+
+		// This should be fine. But putting this as a reminder, that
+		// the presentation engine might still be running and using some resources.
+		Update(static_cast<VkDeviceSize>(frameIndex));
+
+		VkSemaphore waitSemaphore = imageWaitSemaphore.Get();
+
+		for (auto pipelineStage : m_pipelineStages)
+			waitSemaphore = (static_cast<Derived*>(this)->*pipelineStage)(
+				frameIndex, frameBuffer, renderArea, frameNumber, waitSemaphore
+			);
+
+		return waitSemaphore;
+	}
+
 protected:
 	void Update(VkDeviceSize frameIndex) const noexcept override
 	{
@@ -325,8 +352,13 @@ protected:
 		m_modelManager.UpdatePerFrame(frameIndex);
 	}
 
+	using PipelineSignature = VkSemaphore (Derived::*)(
+		size_t, const VKFramebuffer&, VkExtent2D, std::uint64_t, VkSemaphore
+	);
+
 protected:
-	ModelManager_t m_modelManager;
+	ModelManager_t                 m_modelManager;
+	std::vector<PipelineSignature> m_pipelineStages;
 
 public:
 	RenderEngineCommon(const RenderEngineCommon&) = delete;
@@ -334,12 +366,14 @@ public:
 
 	RenderEngineCommon(RenderEngineCommon&& other) noexcept
 		: RenderEngine{ std::move(other) },
-		m_modelManager{ std::move(other.m_modelManager) }
+		m_modelManager{ std::move(other.m_modelManager) },
+		m_pipelineStages{ std::move(other.m_pipelineStages) }
 	{}
 	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
 	{
 		RenderEngine::operator=(std::move(other));
-		m_modelManager = std::move(other.m_modelManager);
+		m_modelManager   = std::move(other.m_modelManager);
+		m_pipelineStages = std::move(other.m_pipelineStages);
 
 		return *this;
 	}
