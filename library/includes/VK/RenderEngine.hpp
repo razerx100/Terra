@@ -95,7 +95,7 @@ public:
 	// Returned semaphore will be signalled when the rendering is finished.
 	virtual VkSemaphore Render(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
+		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
 	) = 0;
 	virtual void Resize(
 		std::uint32_t width, std::uint32_t height,
@@ -322,7 +322,7 @@ public:
 	[[nodiscard]]
 	VkSemaphore Render(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t frameNumber, const VKSemaphore& imageWaitSemaphore
+		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
 	) final {
 		// Wait for the previous Graphics command buffer to finish.
 		m_graphicsQueue.WaitForSubmission(frameIndex);
@@ -338,7 +338,7 @@ public:
 
 		for (auto pipelineStage : m_pipelineStages)
 			waitSemaphore = (static_cast<Derived*>(this)->*pipelineStage)(
-				frameIndex, frameBuffer, renderArea, frameNumber, waitSemaphore
+				frameIndex, frameBuffer, renderArea, semaphoreCounter, waitSemaphore
 			);
 
 		return waitSemaphore;
@@ -353,7 +353,7 @@ protected:
 	}
 
 	using PipelineSignature = VkSemaphore (Derived::*)(
-		size_t, const VKFramebuffer&, VkExtent2D, std::uint64_t, VkSemaphore
+		size_t, const VKFramebuffer&, VkExtent2D, std::uint64_t&, VkSemaphore
 	);
 
 protected:

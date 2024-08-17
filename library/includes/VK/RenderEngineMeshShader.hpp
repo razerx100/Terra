@@ -38,12 +38,12 @@ private:
 	[[nodiscard]]
 	VkSemaphore GenericTransferStage(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 	[[nodiscard]]
 	VkSemaphore DrawingStage(
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 
 	void SetupPipelineStages();

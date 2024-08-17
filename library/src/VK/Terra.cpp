@@ -146,10 +146,8 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 
 void Terra::Render()
 {
-	// I guess I can use this single value to signal multiple semaphores?
-	// As long as it is signalled once a frame.
-	static std::uint64_t frameNumber = 0u;
-	++frameNumber;
+	// Semaphores will be initialised as 0. So, the starting value should be 1.
+	static std::uint64_t semaphoreCounter = 1u;
 
 	VkDevice device = m_deviceManager.GetLogicalDevice();
 
@@ -162,7 +160,7 @@ void Terra::Render()
 
 	VkSemaphore renderFinishedSemaphore = m_renderEngine->Render(
 		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
-		m_swapchain->GetCurrentSwapchainExtent(), frameNumber, nextImageSemaphore
+		m_swapchain->GetCurrentSwapchainExtent(), semaphoreCounter, nextImageSemaphore
 	);
 
 	m_swapchain->Present(nextImageIndexU32, renderFinishedSemaphore);

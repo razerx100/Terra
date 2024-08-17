@@ -72,7 +72,7 @@ std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBu
 VkSemaphore RenderEngineMS::GenericTransferStage(
 	size_t frameIndex,
 	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
-	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Transfer Phase
 	const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
@@ -100,12 +100,15 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 		m_temporaryDataBuffer.SetUsed(frameIndex);
 	}
 
+	// Since this is the first stage for now. The receiving semaphore won't be a timeline one.
+	// So, no need to increase it.
+
 	return transferWaitSemaphore.Get();
 }
 
 VkSemaphore RenderEngineMS::DrawingStage(
 	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-	std::uint64_t semaphoreCounter, VkSemaphore waitSemaphore
+	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Graphics Phase
 	const VKCommandBuffer& graphicsCmdBuffer = m_graphicsQueue.GetCommandBuffer(frameIndex);
@@ -136,10 +139,13 @@ VkSemaphore RenderEngineMS::DrawingStage(
 	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait[frameIndex];
 
 	{
+		const std::uint64_t oldSemaphoreCounterValue = semaphoreCounter;
+		++semaphoreCounter;
+
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT, semaphoreCounter)
+			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT, oldSemaphoreCounterValue)
 			.CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
