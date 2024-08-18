@@ -309,7 +309,9 @@ public:
 		std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
-	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
+	void Draw(
+		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	) const noexcept;
 
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
@@ -333,12 +335,15 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetModelOffset() const noexcept { return m_modelOffset; }
 	[[nodiscard]]
-	const SharedBufferData& GetArgumentOutputSharedData() const noexcept
+	const std::vector<SharedBufferData>& GetArgumentOutputSharedData() const noexcept
 	{
 		return m_argumentOutputSharedData;
 	}
 	[[nodiscard]]
-	const SharedBufferData& GetCounterSharedData() const noexcept { return m_counterSharedData; }
+	const std::vector<SharedBufferData>& GetCounterSharedData() const noexcept
+	{
+		return m_counterSharedData;
+	}
 	[[nodiscard]]
 	const SharedBufferData& GetModelIndicesSharedData() const noexcept
 	{
@@ -355,10 +360,10 @@ public:
 	}
 
 private:
-	std::uint32_t    m_modelOffset;
-	SharedBufferData m_argumentOutputSharedData;
-	SharedBufferData m_counterSharedData;
-	SharedBufferData m_modelIndicesSharedData;
+	std::uint32_t                 m_modelOffset;
+	std::vector<SharedBufferData> m_argumentOutputSharedData;
+	std::vector<SharedBufferData> m_counterSharedData;
+	SharedBufferData              m_modelIndicesSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
@@ -936,7 +941,7 @@ public:
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 	) const;
 
-	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+	void Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept;
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 private:

@@ -404,7 +404,7 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
-		m_modelManager.Draw(graphicsCmdBufferScope);
+		m_modelManager.Draw(frameIndex, graphicsCmdBufferScope);
 
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}

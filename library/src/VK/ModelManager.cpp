@@ -119,7 +119,7 @@ void ModelBundleMSIndividual::CreateBuffers(
 // Model Bundle VS Indirect
 ModelBundleVSIndirect::ModelBundleVSIndirect()
 	: ModelBundle{}, m_modelOffset{ 0u },
-	m_argumentOutputSharedData{ nullptr, 0u, 0u }, m_counterSharedData{ nullptr, 0u, 0u },
+	m_argumentOutputSharedData{}, m_counterSharedData{},
 	m_modelIndicesSharedData{ nullptr, 0u, 0u }, m_modelIndices{}, m_modelBundle{}
 {}
 
@@ -142,15 +142,33 @@ void ModelBundleVSIndirect::CreateBuffers(
 	const auto argumentOutputBufferSize = static_cast<VkDeviceSize>(modelCount * argStrideSize);
 	const auto modelIndiceBufferSize    = static_cast<VkDeviceSize>(modelCount * indexStrideSize);
 
-	for (auto& argumentOutputSharedBuffer : argumentOutputSharedBuffers)
-		m_argumentOutputSharedData = argumentOutputSharedBuffer.AllocateAndGetSharedData(
-			argumentOutputBufferSize, tempBuffer
-		);
+	{
+		const size_t argumentOutputBufferCount = std::size(argumentOutputSharedBuffers);
+		m_argumentOutputSharedData.resize(argumentOutputBufferCount);
 
-	for (auto& counterSharedBuffer : counterSharedBuffers)
-		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(s_counterBufferSize, tempBuffer);
+		for (size_t index = 0u; index < argumentOutputBufferCount; ++index)
+		{
+			SharedBufferData& argumentOutputSharedData = m_argumentOutputSharedData[index];
 
-	m_modelOffset = static_cast<std::uint32_t>(m_argumentOutputSharedData.offset / argStrideSize);
+			argumentOutputSharedData = argumentOutputSharedBuffers[index].AllocateAndGetSharedData(
+				argumentOutputBufferSize, tempBuffer
+			);
+
+			// The offset on each sharedBuffer should be the same. But still need to keep track of each
+			// of them because we will need the Buffer object to draw.
+			m_modelOffset = static_cast<std::uint32_t>(argumentOutputSharedData.offset / argStrideSize);
+		}
+	}
+
+	{
+		const size_t counterBufferCount = std::size(counterSharedBuffers);
+		m_counterSharedData.resize(counterBufferCount);
+
+		for (size_t index = 0u; index < counterBufferCount; ++index)
+			m_counterSharedData[index] = counterSharedBuffers[index].AllocateAndGetSharedData(
+				s_counterBufferSize, tempBuffer
+			);
+	}
 
 	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize, tempBuffer);
 
@@ -163,7 +181,7 @@ void ModelBundleVSIndirect::CreateBuffers(
 }
 
 void ModelBundleVSIndirect::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	constexpr auto strideSize = static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
@@ -178,10 +196,13 @@ void ModelBundleVSIndirect::Draw(
 		);
 	}
 
+	const SharedBufferData& argumentOutputSharedData = m_argumentOutputSharedData[frameIndex];
+	const SharedBufferData& counterSharedData        = m_counterSharedData[frameIndex];
+
 	vkCmdDrawIndexedIndirectCount(
 		cmdBuffer,
-		m_argumentOutputSharedData.bufferData->Get(), m_argumentOutputSharedData.offset,
-		m_counterSharedData.bufferData->Get(), m_counterSharedData.offset,
+		argumentOutputSharedData.bufferData->Get(), argumentOutputSharedData.offset,
+		counterSharedData.bufferData->Get(), counterSharedData.offset,
 		GetModelCount(), strideSize
 	);
 }
@@ -627,17 +648,16 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 	const auto bundleID = static_cast<std::uint32_t>(modelBundle.GetID());
 
 	{
-		// All of the shared data instances should have the same offset and size, so it should be
-		// fine to relinquish them with the same shared data.
-		const SharedBufferData& argumentOutputSharedData = modelBundle.GetArgumentOutputSharedData();
+		const std::vector<SharedBufferData>& argumentOutputSharedData
+			= modelBundle.GetArgumentOutputSharedData();
 
-		for (auto& argumentOutputBuffer : m_argumentOutputBuffers)
-			argumentOutputBuffer.RelinquishMemory(argumentOutputSharedData);
+		for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
+			m_argumentOutputBuffers[index].RelinquishMemory(argumentOutputSharedData[index]);
 
-		const SharedBufferData& counterSharedData = modelBundle.GetCounterSharedData();
+		const std::vector<SharedBufferData>& counterSharedData = modelBundle.GetCounterSharedData();
 
-		for(auto& counterBuffer : m_counterBuffers)
-			counterBuffer.RelinquishMemory(counterSharedData);
+		for (size_t index = 0u; index < std::size(m_counterBuffers); ++index)
+			m_counterBuffers[index].RelinquishMemory(counterSharedData[index]);
 
 		const SharedBufferData& modelIndicesSharedData = modelBundle.GetModelIndicesSharedData();
 
@@ -891,7 +911,7 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
 
-void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
+void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept
 {
 	auto previousPSOIndex = std::numeric_limits<size_t>::max();
 
@@ -904,7 +924,7 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 		BindMesh(modelBundle, graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout.Get());
+		modelBundle.Draw(frameIndex, graphicsBuffer, m_graphicsPipelineLayout.Get());
 	}
 }
 
