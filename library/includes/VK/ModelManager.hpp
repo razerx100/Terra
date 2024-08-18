@@ -229,12 +229,15 @@ public:
 
 	void SetModelBundle(std::shared_ptr<ModelBundleVS> bundle) noexcept;
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan, SharedBufferGPU& argumentInputSharedBuffer,
+		StagingBufferManager& stagingBufferMan,
+		std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
 		SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& modelBundleIndexSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
+
+	void Update(size_t bufferIndex) const noexcept;
 
 	[[nodiscard]]
 	std::uint32_t GetID() const noexcept { return m_bundleID; }
@@ -249,7 +252,7 @@ public:
 	}
 
 	[[nodiscard]]
-	const SharedBufferData& GetArgumentInputSharedData() const noexcept
+	const std::vector<SharedBufferData>& GetArgumentInputSharedData() const noexcept
 	{
 		return m_argumentInputSharedData;
 	}
@@ -262,11 +265,11 @@ public:
 	}
 
 private:
-	SharedBufferData               m_argumentInputSharedData;
-	SharedBufferData               m_cullingSharedData;
 	SharedBufferData               m_modelBundleIndexSharedData;
-	std::unique_ptr<CullingData>   m_cullingData;
+	SharedBufferData               m_cullingSharedData;
+	std::vector<SharedBufferData>  m_argumentInputSharedData;
 	std::shared_ptr<ModelBundleVS> m_modelBundle;
+	std::unique_ptr<CullingData>   m_cullingData;
 	std::uint32_t                  m_bundleID;
 
 public:
@@ -274,20 +277,20 @@ public:
 	ModelBundleCSIndirect& operator=(const ModelBundleCSIndirect&) = delete;
 
 	ModelBundleCSIndirect(ModelBundleCSIndirect&& other) noexcept
-		: m_argumentInputSharedData{ other.m_argumentInputSharedData },
+		: m_modelBundleIndexSharedData{ other.m_modelBundleIndexSharedData },
 		m_cullingSharedData{ other.m_cullingSharedData },
-		m_modelBundleIndexSharedData{ other.m_modelBundleIndexSharedData },
-		m_cullingData{ std::move(other.m_cullingData) },
+		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) },
 		m_modelBundle{ std::move(other.m_modelBundle) },
+		m_cullingData{ std::move(other.m_cullingData) },
 		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
-		m_argumentInputSharedData    = other.m_argumentInputSharedData;
-		m_cullingSharedData          = other.m_cullingSharedData;
 		m_modelBundleIndexSharedData = other.m_modelBundleIndexSharedData;
-		m_cullingData                = std::move(other.m_cullingData);
+		m_cullingSharedData          = other.m_cullingSharedData;
+		m_argumentInputSharedData    = std::move(other.m_argumentInputSharedData);
 		m_modelBundle                = std::move(other.m_modelBundle);
+		m_cullingData                = std::move(other.m_cullingData);
 		m_bundleID                   = other.m_bundleID;
 
 		return *this;
@@ -360,16 +363,16 @@ public:
 	}
 
 private:
-	std::uint32_t                 m_modelOffset;
-	std::vector<SharedBufferData> m_argumentOutputSharedData;
-	std::vector<SharedBufferData> m_counterSharedData;
-	SharedBufferData              m_modelIndicesSharedData;
+	std::uint32_t                  m_modelOffset;
+	std::shared_ptr<ModelBundleVS> m_modelBundle;
+	std::vector<SharedBufferData>  m_argumentOutputSharedData;
+	std::vector<SharedBufferData>  m_counterSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
 	// Should replace this with a better alternative one day.
 	std::vector<std::uint32_t>     m_modelIndices;
-	std::shared_ptr<ModelBundleVS> m_modelBundle;
+	SharedBufferData               m_modelIndicesSharedData;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
@@ -380,21 +383,21 @@ public:
 	ModelBundleVSIndirect(ModelBundleVSIndirect&& other) noexcept
 		: ModelBundle{ std::move(other) },
 		m_modelOffset{ other.m_modelOffset },
-		m_argumentOutputSharedData{ other.m_argumentOutputSharedData },
-		m_counterSharedData{ other.m_counterSharedData },
-		m_modelIndicesSharedData{ other.m_modelIndicesSharedData },
+		m_modelBundle{ std::move(other.m_modelBundle) },
+		m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
+		m_counterSharedData{ std::move(other.m_counterSharedData) },
 		m_modelIndices{ std::move(other.m_modelIndices) },
-		m_modelBundle{ std::move(other.m_modelBundle) }
+		m_modelIndicesSharedData{ other.m_modelIndicesSharedData }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
 		m_modelOffset              = other.m_modelOffset;
-		m_argumentOutputSharedData = other.m_argumentOutputSharedData;
-		m_counterSharedData        = other.m_counterSharedData;
-		m_modelIndicesSharedData   = other.m_modelIndicesSharedData;
-		m_modelIndices             = std::move(other.m_modelIndices);
 		m_modelBundle              = std::move(other.m_modelBundle);
+		m_argumentOutputSharedData = std::move(other.m_argumentOutputSharedData);
+		m_counterSharedData        = std::move(other.m_counterSharedData);
+		m_modelIndices             = std::move(other.m_modelIndices);
+		m_modelIndicesSharedData   = other.m_modelIndicesSharedData;
 
 		return *this;
 	}
@@ -909,9 +912,7 @@ public:
 		QueueIndices3 queueIndices3, std::uint32_t frameCount
 	);
 
-	void ResetCounterBuffer(
-		const VKCommandBuffer& computeCmdBuffer, VkDeviceSize frameIndex
-	) const noexcept;
+	void ResetCounterBuffer(const VKCommandBuffer& computeCmdBuffer, size_t frameIndex) const noexcept;
 
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
 
@@ -978,7 +979,7 @@ private:
 
 private:
 	StagingBufferManager*                 m_stagingBufferMan;
-	SharedBufferGPU                       m_argumentInputBuffer;
+	std::vector<SharedBufferCPU>          m_argumentInputBuffers;
 	std::vector<SharedBufferGPU>          m_argumentOutputBuffers;
 	SharedBufferGPU                       m_cullingDataBuffer;
 	std::vector<SharedBufferGPU>          m_counterBuffers;
@@ -1028,7 +1029,7 @@ public:
 	ModelManagerVSIndirect(ModelManagerVSIndirect&& other) noexcept
 		: ModelManager{ std::move(other) },
 		m_stagingBufferMan{ other.m_stagingBufferMan },
-		m_argumentInputBuffer{ std::move(other.m_argumentInputBuffer) },
+		m_argumentInputBuffers{ std::move(other.m_argumentInputBuffers) },
 		m_argumentOutputBuffers{ std::move(other.m_argumentOutputBuffers) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
@@ -1050,7 +1051,7 @@ public:
 	{
 		ModelManager::operator=(std::move(other));
 		m_stagingBufferMan       = other.m_stagingBufferMan;
-		m_argumentInputBuffer    = std::move(other.m_argumentInputBuffer);
+		m_argumentInputBuffers   = std::move(other.m_argumentInputBuffers);
 		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
 		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
