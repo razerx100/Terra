@@ -307,11 +307,6 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
 			m_stagingManager.CopyAndClear(transferCmdBufferScope);
-
-			m_modelManager.ResetCounterBuffer(
-				transferCmdBufferScope, static_cast<VkDeviceSize>(frameIndex)
-			);
-
 			m_modelManager.CopyTempBuffers(transferCmdBufferScope);
 
 			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
@@ -355,6 +350,8 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 		m_stagingManager.AcquireOwnership(
 			computeCmdBufferScope, m_computeQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
 		);
+
+		m_modelManager.ResetCounterBuffer(computeCmdBuffer, static_cast<VkDeviceSize>(frameIndex));
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_computeDescriptorBuffers[frameIndex], computeCmdBufferScope,

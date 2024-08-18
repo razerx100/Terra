@@ -1,5 +1,6 @@
 #include <ModelManager.hpp>
 #include <VectorToSharedPtr.hpp>
+#include <VkResourceBarriers2.hpp>
 
 // Model Bundle
 VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
@@ -933,9 +934,18 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 }
 
 void ModelManagerVSIndirect::ResetCounterBuffer(
-	const VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
+	const VKCommandBuffer& computeCmdBuffer, VkDeviceSize frameIndex
 ) const noexcept {
-	transferBuffer.CopyWhole(m_counterResetBuffer, m_counterBuffers.at(frameIndex).GetBuffer());
+	const SharedBuffer& counterBuffer = m_counterBuffers.at(frameIndex);
+
+	computeCmdBuffer.CopyWhole(m_counterResetBuffer, counterBuffer.GetBuffer());
+
+	VkBufferBarrier2{}.AddMemoryBarrier(
+		BufferBarrierBuilder{}
+		.Buffer(counterBuffer.GetBuffer(), counterBuffer.Size())
+		.AccessMasks(VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_ACCESS_2_SHADER_READ_BIT)
+		.StageMasks(VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
+	).RecordBarriers(computeCmdBuffer.Get());
 }
 
 void ModelManagerVSIndirect::UpdateCounterResetValues()

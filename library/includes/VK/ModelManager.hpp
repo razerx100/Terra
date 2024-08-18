@@ -905,7 +905,7 @@ public:
 	);
 
 	void ResetCounterBuffer(
-		const VKCommandBuffer& transferBuffer, VkDeviceSize frameIndex
+		const VKCommandBuffer& computeCmdBuffer, VkDeviceSize frameIndex
 	) const noexcept;
 
 	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
