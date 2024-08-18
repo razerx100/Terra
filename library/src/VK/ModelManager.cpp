@@ -170,12 +170,15 @@ void ModelBundleVSIndirect::CreateBuffers(
 			);
 	}
 
-	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize, tempBuffer);
+	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(
+		modelIndiceBufferSize, tempBuffer
+	);
 
 	std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(m_modelIndices);
 
 	stagingBufferMan.AddBuffer(
-		std::move(tempDataBuffer), modelIndiceBufferSize, m_modelIndicesSharedData.bufferData, 0u,
+		std::move(tempDataBuffer), modelIndiceBufferSize,
+		m_modelIndicesSharedData.bufferData, m_modelIndicesSharedData.offset,
 		tempBuffer
 	);
 }
