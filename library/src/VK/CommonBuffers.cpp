@@ -70,7 +70,51 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 }
 
 // Shared Buffer
-void SharedBuffer::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
+void SharedBufferAllocator::AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept
+{
+	auto result = std::ranges::upper_bound(
+		m_availableMemory, size, {},
+		[](const AllocInfo& info) { return info.size; }
+	);
+
+	m_availableMemory.insert(result, AllocInfo{ offset, size });
+}
+
+std::optional<size_t> SharedBufferAllocator::GetAvailableAllocInfo(VkDeviceSize size) const noexcept
+{
+	auto result = std::ranges::lower_bound(
+		m_availableMemory, size, {},
+		[](const AllocInfo& info) { return info.size; }
+	);
+
+	if (result != std::end(m_availableMemory))
+		return std::distance(std::begin(m_availableMemory), result);
+	else
+		return {};
+}
+
+SharedBufferAllocator::AllocInfo SharedBufferAllocator::GetAndRemoveAllocInfo(size_t index) noexcept
+{
+	AllocInfo allocInfo = m_availableMemory[index];
+
+	m_availableMemory.erase(std::next(std::begin(m_availableMemory), index));
+
+	return allocInfo;
+}
+
+VkDeviceSize SharedBufferAllocator::AllocateMemory(
+	const AllocInfo& allocInfo, VkDeviceSize size
+) noexcept {
+	const VkDeviceSize offset     = allocInfo.offset;
+	const VkDeviceSize freeMemory = allocInfo.size - size;
+
+	if (freeMemory)
+		AddAllocInfo(offset + size, freeMemory);
+
+	return offset;
+}
+
+void SharedBufferGPU::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
 {
 	// Moving it into the temp, as we will want to copy it back to the new bigger buffer.
 
@@ -96,7 +140,24 @@ void SharedBuffer::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempB
 	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
 }
 
-void SharedBuffer::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept
+VkDeviceSize SharedBufferGPU::ExtendBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
+{
+	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
+	const VkDeviceSize oldSize = m_buffer.BufferSize();
+	const VkDeviceSize offset  = oldSize;
+	const VkDeviceSize newSize = oldSize + size;
+
+	// If the alignment is 16bytes, at least 16bytes will be allocated. If the requested size
+	// is bigger, then there shouldn't be any issues. But if the requested size is smaller,
+	// the offset would be correct, but the buffer would be unnecessarily recreated, even though
+	// it is not necessary. So, putting a check here.
+	if (newSize > oldSize)
+		CreateBuffer(newSize, tempBuffer);
+
+	return offset;
+}
+
+void SharedBufferGPU::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept
 {
 	if (m_tempBuffer)
 	{
@@ -105,56 +166,23 @@ void SharedBuffer::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexce
 	}
 }
 
-VkDeviceSize SharedBuffer::AllocateMemory(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
-{
-	auto result = std::ranges::lower_bound(
-		m_availableMemory, size, {},
-		[](const AllocInfo& info) { return info.size; }
-	);
+SharedBufferData SharedBufferGPU::AllocateAndGetSharedData(
+	VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer
+) {
+	auto availableAllocIndex = m_allocator.GetAvailableAllocInfo(size);
+	SharedBufferAllocator::AllocInfo allocInfo{ .offset = 0u, .size = 0u };
 
-	VkDeviceSize offset = 0u;
-
-	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
-	if (result == std::end(m_availableMemory))
+	if (!availableAllocIndex)
 	{
-		const VkDeviceSize oldSize = m_buffer.BufferSize();
-		offset                     = oldSize;
-		const VkDeviceSize newSize = oldSize + size;
-
-		// If the alignment is 16bytes, at least 16bytes will be allocated. If the requested size
-		// is bigger, then there shouldn't be any issues. But if the requested size is smaller,
-		// the offset would be correct, but the buffer would be unnecessarily recreated, even though
-		// it is not necessary. So, putting a check here.
-		if (newSize > oldSize)
-			CreateBuffer(newSize, tempBuffer);
+		allocInfo.size   = size;
+		allocInfo.offset = ExtendBuffer(size, tempBuffer);
 	}
 	else
-	{
-		const AllocInfo& allocInfo = *result;
-		offset = allocInfo.offset;
+		allocInfo = m_allocator.GetAndRemoveAllocInfo(*availableAllocIndex);
 
-		const VkDeviceSize freeMemory = allocInfo.size - size;
-
-		m_availableMemory.erase(result);
-
-		if (freeMemory)
-			AddAllocInfo(offset + size, freeMemory);
-	}
-
-	return offset;
-}
-
-void SharedBuffer::AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept
-{
-	auto result = std::ranges::upper_bound(
-		m_availableMemory, size, {},
-		[](const AllocInfo& info) { return info.size; }
-	);
-
-	m_availableMemory.insert(result, AllocInfo{ offset, size });
-}
-
-void SharedBuffer::RelinquishMemory(VkDeviceSize offset, VkDeviceSize size) noexcept
-{
-	AddAllocInfo(offset, size);
+	return SharedBufferData{
+		.bufferData = &m_buffer,
+		.offset     = m_allocator.AllocateMemory(allocInfo, size),
+		.size       = size
+	};
 }

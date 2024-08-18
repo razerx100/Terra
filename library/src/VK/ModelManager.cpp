@@ -96,7 +96,7 @@ void ModelBundleMSIndividual::Draw(
 }
 
 void ModelBundleMSIndividual::CreateBuffers(
-	StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
+	StagingBufferManager& stagingBufferMan, SharedBufferGPU& meshletSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	/*
@@ -132,8 +132,8 @@ void ModelBundleVSIndirect::SetModelBundle(
 
 void ModelBundleVSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
-	std::vector<SharedBuffer>& argumentOutputSharedBuffers,
-	std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
+	std::vector<SharedBufferGPU>& argumentOutputSharedBuffers,
+	std::vector<SharedBufferGPU>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
@@ -230,8 +230,8 @@ void ModelBundleCSIndirect::SetModelBundle(std::shared_ptr<ModelBundleVS> bundle
 }
 
 void ModelBundleCSIndirect::CreateBuffers(
-	StagingBufferManager& stagingBufferMan, SharedBuffer& argumentSharedBuffer,
-	SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
+	StagingBufferManager& stagingBufferMan, SharedBufferGPU& argumentSharedBuffer,
+	SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& modelBundleIndexSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	std::vector<VkDrawIndexedIndirectCommand> indirectArguments{};
@@ -548,14 +548,14 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
 		m_argumentOutputBuffers.emplace_back(
-			SharedBuffer{
+			SharedBufferGPU{
 				m_device, m_memoryManager,
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
 		m_counterBuffers.emplace_back(
-			SharedBuffer{
+			SharedBufferGPU{
 				m_device, m_memoryManager,
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
 				VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -959,7 +959,7 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 void ModelManagerVSIndirect::ResetCounterBuffer(
 	const VKCommandBuffer& computeCmdBuffer, VkDeviceSize frameIndex
 ) const noexcept {
-	const SharedBuffer& counterBuffer = m_counterBuffers.at(frameIndex);
+	const SharedBufferGPU& counterBuffer = m_counterBuffers.at(frameIndex);
 
 	computeCmdBuffer.CopyWhole(m_counterResetBuffer, counterBuffer.GetBuffer());
 
@@ -975,7 +975,7 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 {
 	if (!std::empty(m_counterBuffers))
 	{
-		const SharedBuffer& counterBuffer    = m_counterBuffers.front();
+		const SharedBufferGPU& counterBuffer = m_counterBuffers.front();
 
 		const VkDeviceSize counterBufferSize = counterBuffer.Size();
 		const VkDeviceSize oldCounterSize    = m_counterResetBuffer.BufferSize();

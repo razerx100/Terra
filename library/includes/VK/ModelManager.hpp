@@ -142,7 +142,7 @@ public:
 		std::shared_ptr<ModelBundleMS> bundle, std::vector<std::uint32_t> modelBufferIndices
 	) noexcept;
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan, SharedBuffer& meshletSharedBuffer,
+		StagingBufferManager& stagingBufferMan, SharedBufferGPU& meshletSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -229,8 +229,8 @@ public:
 
 	void SetModelBundle(std::shared_ptr<ModelBundleVS> bundle) noexcept;
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan, SharedBuffer& argumentInputSharedBuffer,
-		SharedBuffer& cullingSharedBuffer, SharedBuffer& modelBundleIndexSharedBuffer,
+		StagingBufferManager& stagingBufferMan, SharedBufferGPU& argumentInputSharedBuffer,
+		SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& modelBundleIndexSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -305,8 +305,8 @@ public:
 
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan,
-		std::vector<SharedBuffer>& argumentOutputSharedBuffers,
-		std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
+		std::vector<SharedBufferGPU>& argumentOutputSharedBuffers,
+		std::vector<SharedBufferGPU>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 	void Draw(
@@ -759,7 +759,7 @@ protected:
 	std::vector<ModelBundleType> m_modelBundles;
 	bool                         m_tempCopyNecessary;
 	// Configure this buffer in the child class, if desired.
-	SharedBuffer                 m_meshBoundsBuffer;
+	SharedBufferGPU              m_meshBoundsBuffer;
 
 	// The fragment and Vertex data are on different sets. So both can be 0u.
 	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
@@ -856,8 +856,8 @@ private:
 	void ShaderPathSet() {}
 
 private:
-	SharedBuffer m_vertexBuffer;
-	SharedBuffer m_indexBuffer;
+	SharedBufferGPU m_vertexBuffer;
+	SharedBufferGPU m_indexBuffer;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -978,17 +978,17 @@ private:
 
 private:
 	StagingBufferManager*                 m_stagingBufferMan;
-	SharedBuffer                          m_argumentInputBuffer;
-	std::vector<SharedBuffer>             m_argumentOutputBuffers;
-	SharedBuffer                          m_cullingDataBuffer;
-	std::vector<SharedBuffer>             m_counterBuffers;
+	SharedBufferGPU                       m_argumentInputBuffer;
+	std::vector<SharedBufferGPU>          m_argumentOutputBuffers;
+	SharedBufferGPU                       m_cullingDataBuffer;
+	std::vector<SharedBufferGPU>          m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshIndexBuffer;
 	ReusableCPUBuffer<BoundsDetails>      m_meshDetailsBuffer;
-	SharedBuffer                          m_modelIndicesBuffer;
-	SharedBuffer                          m_vertexBuffer;
-	SharedBuffer                          m_indexBuffer;
-	SharedBuffer                          m_modelBundleIndexBuffer;
+	SharedBufferGPU                       m_modelIndicesBuffer;
+	SharedBufferGPU                       m_vertexBuffer;
+	SharedBufferGPU                       m_indexBuffer;
+	SharedBufferGPU                       m_modelBundleIndexBuffer;
 	PipelineLayout                        m_pipelineLayoutCS;
 	ComputePipeline                       m_computePipeline;
 	QueueIndices3                         m_queueIndices3;
@@ -1133,10 +1133,10 @@ private:
 
 private:
 	StagingBufferManager* m_stagingBufferMan;
-	SharedBuffer          m_meshletBuffer;
-	SharedBuffer          m_vertexBuffer;
-	SharedBuffer          m_vertexIndicesBuffer;
-	SharedBuffer          m_primIndicesBuffer;
+	SharedBufferGPU       m_meshletBuffer;
+	SharedBufferGPU       m_vertexBuffer;
+	SharedBufferGPU       m_vertexIndicesBuffer;
+	SharedBufferGPU       m_primIndicesBuffer;
 
 	static constexpr std::uint32_t s_meshletBufferBindingSlot       = 1u;
 	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 2u;

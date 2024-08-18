@@ -27,21 +27,21 @@ public:
 	// Without bound data.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 	// With bound data when the bound data has exclusive ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-		SharedBuffer& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
+		SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
 		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 	);
 	// With bound data when the bound data has shared ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
-		SharedBuffer& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
+		SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
@@ -59,7 +59,7 @@ public:
 private:
 	void SetMeshBundle(
 		StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& indexSharedBuffer,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer, std::unique_ptr<MeshBundleVS> meshBundle
 	);
 

@@ -45,22 +45,22 @@ public:
 	// Without bound data.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 	);
 	// With bound data when the bound data has exclusive ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& boundsSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer,
 		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
 	);
 	// With bound data when the bound data has shared ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, SharedBuffer& boundsSharedBuffer,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& boundsSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -94,8 +94,8 @@ public:
 private:
 	void SetMeshBundle(
 		StagingBufferManager& stagingBufferMan,
-		SharedBuffer& vertexSharedBuffer, SharedBuffer& vertexIndicesSharedBuffer,
-		SharedBuffer& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
 		std::unique_ptr<MeshBundleMS> meshBundle
 	);
 
