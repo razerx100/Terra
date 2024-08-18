@@ -241,4 +241,44 @@ public:
 		return *this;
 	}
 };
+
+class SharedBufferCPU : public SharedBufferBase
+{
+public:
+	SharedBufferCPU(
+		VkDevice device, MemoryManager* memoryManager, VkBufferUsageFlags usageFlags,
+		const std::vector<std::uint32_t>& queueIndices
+	) : SharedBufferBase{
+			device, memoryManager, usageFlags, queueIndices, GetCPUResource<Buffer>(device, memoryManager)
+		}
+	{}
+
+	[[nodiscard]]
+	// The offset from the start of the buffer will be returned.
+	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size);
+
+	void RelinquishMemory(const SharedBufferData& sharedData) noexcept
+	{
+		m_allocator.RelinquishMemory(sharedData.offset, sharedData.size);
+	}
+
+private:
+	void CreateBuffer(VkDeviceSize size);
+	[[nodiscard]]
+	VkDeviceSize ExtendBuffer(VkDeviceSize size);
+
+public:
+	SharedBufferCPU(const SharedBufferCPU&) = delete;
+	SharedBufferCPU& operator=(const SharedBufferCPU&) = delete;
+
+	SharedBufferCPU(SharedBufferCPU&& other) noexcept
+		: SharedBufferBase{ std::move(other) }
+	{}
+	SharedBufferCPU& operator=(SharedBufferCPU&& other) noexcept
+	{
+		SharedBufferBase::operator=(std::move(other));
+
+		return *this;
+	}
+};
 #endif

@@ -69,7 +69,7 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 	}
 }
 
-// Shared Buffer
+// Shared Buffer Allocator
 void SharedBufferAllocator::AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept
 {
 	auto result = std::ranges::upper_bound(
@@ -114,6 +114,7 @@ VkDeviceSize SharedBufferAllocator::AllocateMemory(
 	return offset;
 }
 
+// Shared Buffer GPU
 void SharedBufferGPU::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
 {
 	// Moving it into the temp, as we will want to copy it back to the new bigger buffer.
@@ -185,4 +186,52 @@ SharedBufferData SharedBufferGPU::AllocateAndGetSharedData(
 		.offset     = m_allocator.AllocateMemory(allocInfo, size),
 		.size       = size
 	};
+}
+
+// Shared Buffer CPU
+SharedBufferData SharedBufferCPU::AllocateAndGetSharedData(VkDeviceSize size)
+{
+	auto availableAllocIndex = m_allocator.GetAvailableAllocInfo(size);
+	SharedBufferAllocator::AllocInfo allocInfo{ .offset = 0u, .size = 0u };
+
+	if (!availableAllocIndex)
+	{
+		allocInfo.size   = size;
+		allocInfo.offset = ExtendBuffer(size);
+	}
+	else
+		allocInfo = m_allocator.GetAndRemoveAllocInfo(*availableAllocIndex);
+
+	return SharedBufferData{
+		.bufferData = &m_buffer,
+		.offset     = m_allocator.AllocateMemory(allocInfo, size),
+		.size       = size
+	};
+}
+
+void SharedBufferCPU::CreateBuffer(VkDeviceSize size)
+{
+	Buffer buffer = GetCPUResource<Buffer>(m_device, m_memoryManager);
+	buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
+
+	memcpy(buffer.CPUHandle(), m_buffer.CPUHandle(), m_buffer.BufferSize());
+
+	m_buffer = std::move(buffer);
+}
+
+VkDeviceSize SharedBufferCPU::ExtendBuffer(VkDeviceSize size)
+{
+	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
+	const VkDeviceSize oldSize = m_buffer.BufferSize();
+	const VkDeviceSize offset  = oldSize;
+	const VkDeviceSize newSize = oldSize + size;
+
+	// If the alignment is 16bytes, at least 16bytes will be allocated. If the requested size
+	// is bigger, then there shouldn't be any issues. But if the requested size is smaller,
+	// the offset would be correct, but the buffer would be unnecessarily recreated, even though
+	// it is not necessary. So, putting a check here.
+	if (newSize > oldSize)
+		CreateBuffer(newSize);
+
+	return offset;
 }
