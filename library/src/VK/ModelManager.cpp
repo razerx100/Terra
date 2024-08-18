@@ -117,7 +117,7 @@ void ModelBundleMSIndividual::CreateBuffers(
 
 // Model Bundle VS Indirect
 ModelBundleVSIndirect::ModelBundleVSIndirect()
-	: ModelBundle{},
+	: ModelBundle{}, m_modelOffset{ 0u },
 	m_argumentOutputSharedData{ nullptr, 0u, 0u }, m_counterSharedData{ nullptr, 0u, 0u },
 	m_modelIndicesSharedData{ nullptr, 0u, 0u }, m_modelIndices{}, m_modelBundle{}
 {}
@@ -149,6 +149,8 @@ void ModelBundleVSIndirect::CreateBuffers(
 	for (auto& counterSharedBuffer : counterSharedBuffers)
 		m_counterSharedData = counterSharedBuffer.AllocateAndGetSharedData(s_counterBufferSize, tempBuffer);
 
+	m_modelOffset = static_cast<std::uint32_t>(m_argumentOutputSharedData.offset / argStrideSize);
+
 	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(modelIndiceBufferSize, tempBuffer);
 
 	std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(m_modelIndices);
@@ -159,11 +161,21 @@ void ModelBundleVSIndirect::CreateBuffers(
 	);
 }
 
-void ModelBundleVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
-{
+void ModelBundleVSIndirect::Draw(
+	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+) const noexcept {
 	constexpr auto strideSize = static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+
+	{
+		constexpr auto pushConstantSize = GetConstantBufferSize();
+
+		vkCmdPushConstants(
+			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
+			pushConstantSize, &m_modelOffset
+		);
+	}
 
 	vkCmdDrawIndexedIndirectCount(
 		cmdBuffer,
@@ -530,6 +542,10 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
+	constexpr auto pushConstantSize = ModelBundleVSIndirect::GetConstantBufferSize();
+
+	m_graphicsPipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
+
 	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
 }
 
@@ -887,7 +903,7 @@ void ModelManagerVSIndirect::Draw(const VKCommandBuffer& graphicsBuffer) const n
 		BindMesh(modelBundle, graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer);
+		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout.Get());
 	}
 }
 

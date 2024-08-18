@@ -309,7 +309,7 @@ public:
 		std::vector<SharedBuffer>& counterSharedBuffers, SharedBuffer& modelIndicesBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
-	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
+	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
 
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
@@ -331,6 +331,8 @@ public:
 		return static_cast<std::uint32_t>(std::size(m_modelIndices));
 	}
 	[[nodiscard]]
+	std::uint32_t GetModelOffset() const noexcept { return m_modelOffset; }
+	[[nodiscard]]
 	const SharedBufferData& GetArgumentOutputSharedData() const noexcept
 	{
 		return m_argumentOutputSharedData;
@@ -346,7 +348,14 @@ public:
 	[[nodiscard]]
 	static VkDeviceSize GetCounterBufferSize() noexcept { return s_counterBufferSize; }
 
+	[[nodiscard]]
+	static constexpr std::uint32_t GetConstantBufferSize() noexcept
+	{
+		return static_cast<std::uint32_t>(sizeof(m_modelOffset));
+	}
+
 private:
+	std::uint32_t    m_modelOffset;
 	SharedBufferData m_argumentOutputSharedData;
 	SharedBufferData m_counterSharedData;
 	SharedBufferData m_modelIndicesSharedData;
@@ -365,6 +374,7 @@ public:
 
 	ModelBundleVSIndirect(ModelBundleVSIndirect&& other) noexcept
 		: ModelBundle{ std::move(other) },
+		m_modelOffset{ other.m_modelOffset },
 		m_argumentOutputSharedData{ other.m_argumentOutputSharedData },
 		m_counterSharedData{ other.m_counterSharedData },
 		m_modelIndicesSharedData{ other.m_modelIndicesSharedData },
@@ -374,6 +384,7 @@ public:
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
+		m_modelOffset              = other.m_modelOffset;
 		m_argumentOutputSharedData = other.m_argumentOutputSharedData;
 		m_counterSharedData        = other.m_counterSharedData;
 		m_modelIndicesSharedData   = other.m_modelIndicesSharedData;
