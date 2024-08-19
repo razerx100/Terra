@@ -21,11 +21,7 @@ public:
 
 	void ReserveNewElements(size_t newCount) noexcept
 	{
-		// Can't use resize for the elements container, as it creates empty items. For example,
-		// if we add a single model shared_ptr and the allocationCount is 4. 4 empty shared_ptrs
-		// would be added and only a single one will be populated. But we will be able to access
-		// the three empty ones as well, and the program can crash trying to access those.
-		m_elements.reserve(newCount);
+		m_elements.resize(newCount);
 		m_availableIndices.resize(newCount, true);
 	}
 
@@ -59,18 +55,8 @@ public:
 	{
 		size_t elementIndex = GetNextFreeIndex(extraAllocCount);
 
-		// The boolean available indices container represents the possible allocation count. The
-		// element count should always be less than or equal to the index. Or it would mean that
-		// there are non-removed null elements. Which should have probably caused a crash by now.
-		// But lets still do an assertion.
-		// And the available indices' size will always be bigger.
-		assert(
-			std::size(m_elements) <= elementIndex &&
-			"The index is less than the element count. Meaning there are null elements"
-		);
-
-		m_elements.emplace_back(std::move(element));
-		m_availableIndices.at(elementIndex) = false;
+		m_elements[elementIndex]         = std::move(element);
+		m_availableIndices[elementIndex] = false;
 
 		return elementIndex;
 	}
@@ -83,16 +69,16 @@ public:
 
 	void RemoveElement(size_t index) noexcept
 	{
-		// We want to avoid reallocation of the vector as much as possible. But erase shouldn't
-		// change the capacity. And also we don't want a null object lingering around which can
-		// be accessed.
-		m_elements.erase(std::next(std::begin(m_elements), index));
-		// Once the previous element has been erased, the objects afterwards would be shifted
-		// left. So, the next free index should be the size of the m_elements containter.
-		const size_t freeIndex = std::size(m_elements);
-
-		m_availableIndices.at(freeIndex) = true;
+		m_elements[index] = T{};
+		ToggleAvailability(index, true);
 	}
+
+	void ToggleAvailability(size_t index, bool on) noexcept
+	{
+		m_availableIndices[index] = on;
+	}
+
+	bool IsElementAvailable(size_t index) const noexcept { return m_availableIndices[index]; }
 
 	T& at(size_t index) noexcept { return m_elements[index]; }
 	const T& at(size_t index) const noexcept { return m_elements[index]; }
@@ -107,11 +93,6 @@ public:
 	T* GetPtr() noexcept { return std::data(m_elements); }
 	[[nodiscard]]
 	size_t GetCount() const noexcept { return std::size(m_elements); }
-	[[nodiscard]]
-	// I cannot be sure that the initial capacity of the elements vector will be 0, it should though.
-	// Lets just use the size of the availableIndices just in case. The capacity of elements and
-	// size of availableIndices should be the same.
-	size_t GetCapacityCount() const noexcept { return std::size(m_availableIndices); }
 
 private:
 	[[nodiscard]]

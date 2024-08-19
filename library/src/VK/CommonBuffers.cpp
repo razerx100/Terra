@@ -44,12 +44,13 @@ void MaterialBuffers::Update(size_t index) const noexcept
 	constexpr size_t strideSize = GetStride();
 	size_t materialOffset       = index * strideSize;
 
-	auto& materials = m_elements.Get();
+	if (m_elements.IsElementAvailable(index))
+	{
+		const std::shared_ptr<Material>& material = m_elements.at(index);
+		const MaterialData materialData           = material->Get();
 
-	const std::shared_ptr<Material>& material = materials.at(index);
-	const MaterialData materialData           = material->Get();
-
-	memcpy(bufferOffset + materialOffset, &materialData, strideSize);
+		memcpy(bufferOffset + materialOffset, &materialData, strideSize);
+	}
 }
 
 void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
@@ -57,15 +58,16 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 	std::uint8_t* bufferOffset  = m_buffers.CPUHandle();
 	constexpr size_t strideSize = GetStride();
 
-	auto& materials = m_elements.Get();
-
 	for (size_t index : indices)
 	{
-		const std::shared_ptr<Material>& material = materials.at(index);
-		const MaterialData materialData           = material->Get();
+		if (m_elements.IsElementAvailable(index))
+		{
+			const std::shared_ptr<Material>& material = m_elements.at(index);
+			const MaterialData materialData           = material->Get();
 
-		const size_t materialOffset = index * strideSize;
-		memcpy(bufferOffset + materialOffset, &materialData, strideSize);
+			const size_t materialOffset = index * strideSize;
+			memcpy(bufferOffset + materialOffset, &materialData, strideSize);
+		}
 	}
 }
 

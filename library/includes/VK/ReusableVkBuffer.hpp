@@ -20,12 +20,12 @@ public:
 	// Returns the index of the element in the ElementBuffer.
 	size_t Add(U&& element)
 	{
-		const size_t oldCount          = m_elements.GetCapacityCount();
+		const size_t oldCount          = m_elements.GetCount();
 		const size_t extraElementCount = static_cast<Derived*>(this)->GetExtraElementAllocationCount();
 
 		const size_t elementIndex      = m_elements.Add(std::forward<U>(element), extraElementCount);
 
-		const size_t newCount          = m_elements.GetCapacityCount();
+		const size_t newCount          = m_elements.GetCount();
 
 		if(newCount > oldCount)
 			static_cast<Derived*>(this)->CreateBuffer(newCount);
@@ -37,7 +37,7 @@ public:
 	// Returns the indices of the elements in the ElementBuffer.
 	std::vector<size_t> AddMultiple(std::vector<T>&& elements)
 	{
-		const size_t oldCount          = m_elements.GetCapacityCount();
+		const size_t oldCount          = m_elements.GetCount();
 		const size_t extraElementCount = static_cast<Derived*>(this)->GetExtraElementAllocationCount();
 
 		const size_t elementCount = std::size(elements);
@@ -52,7 +52,7 @@ public:
 			elementIndices.emplace_back(elementIndex);
 		}
 
-		const size_t newCount = m_elements.GetCapacityCount();
+		const size_t newCount = m_elements.GetCount();
 
 		if(newCount > oldCount)
 			static_cast<Derived*>(this)->CreateBuffer(newCount);

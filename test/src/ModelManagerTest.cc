@@ -412,7 +412,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		std::uint32_t index = vsIndividual.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
-		EXPECT_EQ(index, 1u) << "Index isn't 1u";
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 
 	{
@@ -458,10 +458,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		std::uint32_t index = vsIndividual.AddModelBundle(
 			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
-		// It is 6 because, there were 0, 1. Then 5 more were added. A bundle's ID will be the index
-		// of the first model. So, we removed 1. That would leave 0-5. And the then we added 7 more
-		// and so their index is 6.
-		EXPECT_EQ(index, 6u) << "Index isn't 6.";
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 }
 
@@ -525,7 +522,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		std::uint32_t index = vsIndirect.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
-		EXPECT_EQ(index, 1u) << "Index isn't 1u";
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 
 	{
@@ -571,7 +568,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		std::uint32_t index = vsIndirect.AddModelBundle(
 			std::move(modelBundleVS), L"H", tempDataBuffer
 		);
-		EXPECT_EQ(index, 6u) << "Index isn't 6.";
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 
 		vsIndirect.ChangePSO(index, L"A");
 	}
@@ -658,7 +655,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		std::uint32_t index = managerMS.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
-		EXPECT_EQ(index, 1u) << "Index isn't 1u";
+		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
 		auto meshMS = std::make_unique<MeshDummyMS>();
@@ -711,7 +708,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		std::uint32_t index = managerMS.AddModelBundle(
 			std::move(modelBundleMS), L"H", tempDataBuffer
 		);
-		EXPECT_EQ(index, 6u) << "Index isn't 6.";
+		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 }
 

@@ -371,33 +371,43 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 	constexpr size_t fragmentStrideSize = GetFragmentStride();
 	size_t fragmentModelOffset          = 0u;
 
-	auto& models = m_elements.Get();
+	const size_t modelCount = m_elements.GetCount();
 
-	for (auto& model : models)
+	// All of the models will be here. Even after multiple models have been removed, there
+	// should be null models there. It is necessary to keep them to preserve the model indices,
+	// which is used to keep track of the models both on the CPU and the GPU side.
+	for (size_t index = 0u; index < modelCount; ++index)
 	{
-		// Vertex Data
+		// Don't update the data if the model is unavailable. Could use this functionality to
+		// temporarily hide models later.
+		if (m_elements.IsElementAvailable(index))
 		{
-			const ModelVertexData modelVertexData{
-				.modelMatrix   = model->GetModelMatrix(),
-				.modelOffset   = model->GetModelOffset(),
-				.materialIndex = model->GetMaterialIndex()
-			};
+			const auto& model = m_elements.at(index);
 
-			memcpy(vertexBufferOffset + vertexModelOffset, &modelVertexData, vertexStrideSize);
-			vertexModelOffset += vertexStrideSize;
-		}
+			// Vertex Data
+			{
+				const ModelVertexData modelVertexData{
+					.modelMatrix   = model->GetModelMatrix(),
+					.modelOffset   = model->GetModelOffset(),
+					.materialIndex = model->GetMaterialIndex()
+				};
 
-		// Fragment Data
-		{
-			const ModelFragmentData modelFragmentData{
-				.diffuseTexUVInfo  = model->GetDiffuseUVInfo(),
-				.specularTexUVInfo = model->GetSpecularUVInfo(),
-				.diffuseTexIndex   = model->GetDiffuseIndex(),
-				.specularTexIndex  = model->GetSpecularIndex()
-			};
+				memcpy(vertexBufferOffset + vertexModelOffset, &modelVertexData, vertexStrideSize);
+				vertexModelOffset += vertexStrideSize;
+			}
 
-			memcpy(fragmentBufferOffset + fragmentModelOffset, &modelFragmentData, fragmentStrideSize);
-			fragmentModelOffset += fragmentStrideSize;
+			// Fragment Data
+			{
+				const ModelFragmentData modelFragmentData{
+					.diffuseTexUVInfo  = model->GetDiffuseUVInfo(),
+					.specularTexUVInfo = model->GetSpecularUVInfo(),
+					.diffuseTexIndex   = model->GetDiffuseIndex(),
+					.specularTexIndex  = model->GetSpecularIndex()
+				};
+
+				memcpy(fragmentBufferOffset + fragmentModelOffset, &modelFragmentData, fragmentStrideSize);
+				fragmentModelOffset += fragmentStrideSize;
+			}
 		}
 	}
 }
