@@ -44,7 +44,7 @@ void MaterialBuffers::Update(size_t index) const noexcept
 	constexpr size_t strideSize = GetStride();
 	size_t materialOffset       = index * strideSize;
 
-	if (m_elements.IsElementAvailable(index))
+	if (m_elements.IsInUse(index))
 	{
 		const std::shared_ptr<Material>& material = m_elements.at(index);
 		const MaterialData materialData           = material->Get();
@@ -60,7 +60,7 @@ void MaterialBuffers::Update(const std::vector<size_t>& indices) const noexcept
 
 	for (size_t index : indices)
 	{
-		if (m_elements.IsElementAvailable(index))
+		if (m_elements.IsInUse(index))
 		{
 			const std::shared_ptr<Material>& material = m_elements.at(index);
 			const MaterialData materialData           = material->Get();

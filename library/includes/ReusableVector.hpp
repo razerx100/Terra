@@ -78,7 +78,8 @@ public:
 		m_availableIndices[index] = on;
 	}
 
-	bool IsElementAvailable(size_t index) const noexcept { return m_availableIndices[index]; }
+	[[nodiscard]]
+	bool IsInUse(size_t index) const noexcept { return !m_availableIndices[index]; }
 
 	T& at(size_t index) noexcept { return m_elements[index]; }
 	const T& at(size_t index) const noexcept { return m_elements[index]; }

@@ -378,9 +378,9 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 	// which is used to keep track of the models both on the CPU and the GPU side.
 	for (size_t index = 0u; index < modelCount; ++index)
 	{
-		// Don't update the data if the model is unavailable. Could use this functionality to
+		// Don't update the data if the model is not in use. Could use this functionality to
 		// temporarily hide models later.
-		if (m_elements.IsElementAvailable(index))
+		if (m_elements.IsInUse(index))
 		{
 			const auto& model = m_elements.at(index);
 
