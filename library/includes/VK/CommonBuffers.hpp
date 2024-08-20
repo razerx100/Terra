@@ -242,20 +242,39 @@ public:
 	}
 };
 
-class SharedBufferCPU : public SharedBufferBase
+template<VkMemoryPropertyFlagBits MemoryType>
+class SharedBufferWriteOnly : public SharedBufferBase
 {
 public:
-	SharedBufferCPU(
+	SharedBufferWriteOnly(
 		VkDevice device, MemoryManager* memoryManager, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueIndices
 	) : SharedBufferBase{
-			device, memoryManager, usageFlags, queueIndices, GetCPUResource<Buffer>(device, memoryManager)
+			device, memoryManager, usageFlags, queueIndices, Buffer{ device, memoryManager, MemoryType }
 		}
 	{}
 
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size);
+	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size)
+	{
+		auto availableAllocIndex = m_allocator.GetAvailableAllocInfo(size);
+		SharedBufferAllocator::AllocInfo allocInfo{ .offset = 0u, .size = 0u };
+
+		if (!availableAllocIndex)
+		{
+			allocInfo.size   = size;
+			allocInfo.offset = ExtendBuffer(size);
+		}
+		else
+			allocInfo = m_allocator.GetAndRemoveAllocInfo(*availableAllocIndex);
+
+		return SharedBufferData{
+			.bufferData = &m_buffer,
+			.offset     = m_allocator.AllocateMemory(allocInfo, size),
+			.size       = size
+		};
+	}
 
 	void RelinquishMemory(const SharedBufferData& sharedData) noexcept
 	{
@@ -263,22 +282,44 @@ public:
 	}
 
 private:
-	void CreateBuffer(VkDeviceSize size);
+	void CreateBuffer(VkDeviceSize size)
+	{
+		m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
+	}
+
 	[[nodiscard]]
-	VkDeviceSize ExtendBuffer(VkDeviceSize size);
+	VkDeviceSize ExtendBuffer(VkDeviceSize size)
+	{
+		// I probably don't need to worry about aligning here, since it's all inside a single buffer?
+		const VkDeviceSize oldSize = m_buffer.BufferSize();
+		const VkDeviceSize offset  = oldSize;
+		const VkDeviceSize newSize = oldSize + size;
+
+		// If the alignment is 16bytes, at least 16bytes will be allocated. If the requested size
+		// is bigger, then there shouldn't be any issues. But if the requested size is smaller,
+		// the offset would be correct, but the buffer would be unnecessarily recreated, even though
+		// it is not necessary. So, putting a check here.
+		if (newSize > oldSize)
+			CreateBuffer(newSize);
+
+		return offset;
+	}
 
 public:
-	SharedBufferCPU(const SharedBufferCPU&) = delete;
-	SharedBufferCPU& operator=(const SharedBufferCPU&) = delete;
+	SharedBufferWriteOnly(const SharedBufferWriteOnly&) = delete;
+	SharedBufferWriteOnly& operator=(const SharedBufferWriteOnly&) = delete;
 
-	SharedBufferCPU(SharedBufferCPU&& other) noexcept
+	SharedBufferWriteOnly(SharedBufferWriteOnly&& other) noexcept
 		: SharedBufferBase{ std::move(other) }
 	{}
-	SharedBufferCPU& operator=(SharedBufferCPU&& other) noexcept
+	SharedBufferWriteOnly& operator=(SharedBufferWriteOnly&& other) noexcept
 	{
 		SharedBufferBase::operator=(std::move(other));
 
 		return *this;
 	}
 };
+
+typedef SharedBufferWriteOnly<VK_MEMORY_PROPERTY_HOST_COHERENT_BIT> SharedBufferCPU;
+typedef SharedBufferWriteOnly<VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT>  SharedBufferGPUWriteOnly;
 #endif
