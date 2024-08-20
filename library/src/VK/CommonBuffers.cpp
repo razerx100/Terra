@@ -160,7 +160,7 @@ VkDeviceSize SharedBufferGPU::ExtendBuffer(VkDeviceSize size, TemporaryDataBuffe
 	return offset;
 }
 
-void SharedBufferGPU::CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept
+void SharedBufferGPU::CopyOldBuffer(const VKCommandBuffer& copyBuffer) noexcept
 {
 	if (m_tempBuffer)
 	{

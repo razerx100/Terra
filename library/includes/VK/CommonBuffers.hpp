@@ -206,7 +206,7 @@ public:
 		}, m_tempBuffer{}
 	{}
 
-	void CopyOldBuffer(const VKCommandBuffer& copyBuffer) const noexcept;
+	void CopyOldBuffer(const VKCommandBuffer& copyBuffer) noexcept;
 
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
