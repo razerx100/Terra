@@ -393,7 +393,6 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 				};
 
 				memcpy(vertexBufferOffset + vertexModelOffset, &modelVertexData, vertexStrideSize);
-				vertexModelOffset += vertexStrideSize;
 			}
 
 			// Fragment Data
@@ -406,9 +405,11 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 				};
 
 				memcpy(fragmentBufferOffset + fragmentModelOffset, &modelFragmentData, fragmentStrideSize);
-				fragmentModelOffset += fragmentStrideSize;
 			}
 		}
+		// The offsets need to be always increased to keep them consistent.
+		vertexModelOffset   += vertexStrideSize;
+		fragmentModelOffset += fragmentStrideSize;
 	}
 }
 
