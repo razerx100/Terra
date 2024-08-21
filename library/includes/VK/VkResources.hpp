@@ -61,8 +61,6 @@ private:
 	MemoryManager::MemoryAllocation m_allocationInfo;
 	VkMemoryPropertyFlagBits        m_resourceType;
 
-protected:
-
 public:
 	Resource(const Resource&) = delete;
 	Resource& operator=(const Resource&) = delete;
