@@ -1,6 +1,7 @@
 #include <StagingBufferManager.hpp>
 #include <ranges>
 #include <algorithm>
+#include <cassert>
 
 StagingBufferManager& StagingBufferManager::AddTextureView(
 	std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
@@ -8,6 +9,11 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 	TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
 ) {
 	const VkDeviceSize bufferSize = dst->GetTexture().GetBufferSize();
+
+	assert(
+		!CheckForDuplicateTextureViewOwnershipTransfer(dst, dstQueueType)
+		&& "The same texture is being added for copy more than once back to back."
+	);
 
 	m_textureInfo.emplace_back(
 		TextureInfo{
@@ -35,6 +41,11 @@ StagingBufferManager& StagingBufferManager::AddBuffer(
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
 	TemporaryDataBufferGPU& tempDataBuffer
 ) {
+	assert(
+		!CheckForDuplicateBufferOwnershipTransfer(dst, dstQueueType)
+		&& "The same buffer is being added for copy more than once back to back."
+	);
+
 	m_bufferInfo.emplace_back(
 		BufferInfo{ cpuData.get(), bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
 	);
@@ -326,4 +337,40 @@ void StagingBufferManager::AcquireOwnership(
 	// Erase_if shouldn't reduce the capacity.
 	std::erase_if(m_bufferInfo, eraseFunction);
 	std::erase_if(m_textureInfo, eraseFunction);
+}
+
+bool StagingBufferManager::CheckForDuplicateTextureViewOwnershipTransfer(
+	VkTextureView const* textureView, QueueType type
+) const noexcept {
+	// If the type is None, that means the queue has concurrent type and
+	// ownership transfer won't be necessary.
+	if (type == QueueType::None)
+		return false;
+
+	auto result = std::ranges::find(
+		m_textureInfo, textureView, [](const TextureInfo& info)
+		{
+			return info.dst;
+		}
+	);
+
+	return result != std::end(m_textureInfo);
+}
+
+bool StagingBufferManager::CheckForDuplicateBufferOwnershipTransfer(
+	Buffer const* buffer, QueueType type
+) const noexcept {
+	// If the type is None, that means the queue has concurrent type and
+	// ownership transfer won't be necessary.
+	if (type == QueueType::None)
+		return false;
+
+	auto result = std::ranges::find(
+		m_bufferInfo, buffer, [](const BufferInfo& info)
+		{
+			return info.dst;
+		}
+	);
+
+	return result != std::end(m_bufferInfo);
 }

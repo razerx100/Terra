@@ -73,6 +73,13 @@ private:
 	void CleanUpTempBuffers() noexcept;
 	void CleanUpBufferInfo() noexcept;
 
+	[[nodiscard]]
+	bool CheckForDuplicateTextureViewOwnershipTransfer(
+		VkTextureView const* textureView, QueueType type
+	) const noexcept;
+	[[nodiscard]]
+	bool CheckForDuplicateBufferOwnershipTransfer(Buffer const* buffer, QueueType type) const noexcept;
+
 private:
 	struct BufferInfo
 	{
