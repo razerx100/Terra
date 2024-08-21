@@ -198,6 +198,9 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 	std::vector<VkAllocator>& allocators = isCPUAccessible ? m_cpuAllocators : m_gpuAllocators;
 
 	// Look through the already existing allocators and try to allocate the buffer.
+	// An allocator may still fail even if its total available size is more than the bufferSize.
+	// As in a buddy allocator, there must be a block with more than or equal to the size of the
+	// allocation.
 	for(size_t index = 0u; index < std::size(allocators); ++index)
 	{
 		VkAllocator& allocator = allocators[index];
@@ -231,7 +234,7 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 	}
 
 	{
-		// If already available allocators were unable to allocate, then try to allocate new memory.
+		// If the already available allocators were unable to allocate, then try to allocate new memory.
 		VkDeviceSize newAllocationSize = std::max(bufferSize, GetNewAllocationSize(memoryType));
 
 		std::optional<MemoryType> memType = GetMemoryType(newAllocationSize, memoryType);
@@ -249,6 +252,8 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 		if (!memType)
 			throw Exception("MemoryException", "Not Enough memory for allocation.");
 
+		// Since this is a new allocator. If the code reaches here, at least the top most
+		// block should have enough memory for allocation.
 		VkAllocator allocator{
 			CreateMemory(newAllocationSize, memType.value()), GetID(isCPUAccessible)
 		};
