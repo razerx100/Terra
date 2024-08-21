@@ -306,7 +306,6 @@ void MemoryManager::Deallocate(
 	const bool isCPUAccessible           = memoryType & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	std::vector<VkAllocator>& allocators = isCPUAccessible ? m_cpuAllocators : m_gpuAllocators;
 
-	// Deallocate from the allocators.
 	auto result = std::ranges::find_if(
 		allocators,
 		[id = allocation.memoryID](const VkAllocator& alloc) { return alloc.GetID() == id; }
