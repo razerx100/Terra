@@ -308,8 +308,8 @@ public:
 
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan,
-		std::vector<SharedBufferGPU>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPU>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
+		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
+		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 	void Draw(
@@ -408,11 +408,13 @@ class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model
 	friend class ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>;
 
 public:
-	ModelBuffers(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+	ModelBuffers(
+		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
+		const std::vector<std::uint32_t>& modelBufferQueueIndices
+	) : ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 		m_fragmentModelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 		m_modelBuffersInstanceSize{ 0u }, m_modelBuffersFragmentInstanceSize{ 0u },
-		m_bufferInstanceCount{ frameCount }
+		m_bufferInstanceCount{ frameCount }, m_modelBuffersQueueIndices{ modelBufferQueueIndices }
 	{}
 
 	void SetDescriptorBuffer(
@@ -459,10 +461,11 @@ private:
 	void CreateBuffer(size_t modelCount);
 
 private:
-	Buffer        m_fragmentModelBuffers;
-	VkDeviceSize  m_modelBuffersInstanceSize;
-	VkDeviceSize  m_modelBuffersFragmentInstanceSize;
-	std::uint32_t m_bufferInstanceCount;
+	Buffer                     m_fragmentModelBuffers;
+	VkDeviceSize               m_modelBuffersInstanceSize;
+	VkDeviceSize               m_modelBuffersFragmentInstanceSize;
+	std::uint32_t              m_bufferInstanceCount;
+	std::vector<std::uint32_t> m_modelBuffersQueueIndices;
 
 public:
 	ModelBuffers(const ModelBuffers&) = delete;
@@ -473,7 +476,8 @@ public:
 		m_fragmentModelBuffers{ std::move(other.m_fragmentModelBuffers) },
 		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
 		m_modelBuffersFragmentInstanceSize{ other.m_modelBuffersFragmentInstanceSize },
-		m_bufferInstanceCount{ other.m_bufferInstanceCount }
+		m_bufferInstanceCount{ other.m_bufferInstanceCount },
+		m_modelBuffersQueueIndices{ std::move(other.m_modelBuffersQueueIndices) }
 	{}
 	ModelBuffers& operator=(ModelBuffers&& other) noexcept
 	{
@@ -482,6 +486,7 @@ public:
 		m_modelBuffersInstanceSize         = other.m_modelBuffersInstanceSize;
 		m_modelBuffersFragmentInstanceSize = other.m_modelBuffersFragmentInstanceSize;
 		m_bufferInstanceCount              = other.m_bufferInstanceCount;
+		m_modelBuffersQueueIndices         = std::move(other.m_modelBuffersQueueIndices);
 
 		return *this;
 	}
@@ -498,14 +503,12 @@ template<
 class ModelManager
 {
 public:
-	ModelManager(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount)
-		: m_device{ device }, m_memoryManager{ memoryManager },
+	ModelManager(
+		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices, std::uint32_t frameCount
+	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_graphicsPipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
-		m_modelBuffers{ device, memoryManager, frameCount }, m_graphicsPipelines{},
-		m_meshBundles{}, m_modelBundles{}, m_tempCopyNecessary{ true }, m_meshBoundsBuffer{
-			device, memoryManager,
-			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}
-		}
+		m_modelBuffers{ Derived::ConstructModelBuffers(device, memoryManager, frameCount, queueIndices) },
+		m_graphicsPipelines{}, m_meshBundles{}, m_modelBundles{}, m_tempCopyNecessary{ true }
 	{}
 
 	// The layout should be the same across the multiple descriptors for each frame.
@@ -761,8 +764,6 @@ protected:
 	ReusableVector<MeshManager>  m_meshBundles;
 	std::vector<ModelBundleType> m_modelBundles;
 	bool                         m_tempCopyNecessary;
-	// Configure this buffer in the child class, if desired.
-	SharedBufferGPU              m_meshBoundsBuffer;
 
 	// The fragment and Vertex data are on different sets. So both can be 0u.
 	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
@@ -782,8 +783,7 @@ public:
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_modelBundles{ std::move(other.m_modelBundles) },
-		m_tempCopyNecessary{ other.m_tempCopyNecessary },
-		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) }
+		m_tempCopyNecessary{ other.m_tempCopyNecessary }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
@@ -797,7 +797,6 @@ public:
 		m_meshBundles            = std::move(other.m_meshBundles);
 		m_modelBundles           = std::move(other.m_modelBundles);
 		m_tempCopyNecessary      = other.m_tempCopyNecessary;
-		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
 
 		return *this;
 	}
@@ -822,7 +821,10 @@ class ModelManagerVSIndividual : public
 	friend class ModelManagerVSIndividualTest;
 
 public:
-	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount);
+	ModelManagerVSIndividual(
+		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3,
+		std::uint32_t frameCount
+	);
 
 	void SetDescriptorBufferLayout(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers,
@@ -857,6 +859,11 @@ private:
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 	// To create compute shader pipelines.
 	void ShaderPathSet() {}
+
+	[[nodiscard]]
+	static ModelBuffers ConstructModelBuffers(
+		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
+	) noexcept;
 
 private:
 	SharedBufferGPU m_vertexBuffer;
@@ -970,6 +977,11 @@ private:
 	void UpdateCounterResetValues();
 
 	[[nodiscard]]
+	static ModelBuffers ConstructModelBuffers(
+		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
+	) noexcept;
+
+	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
 		return static_cast<std::uint32_t>(sizeof(ConstantData));
@@ -980,9 +992,9 @@ private:
 private:
 	StagingBufferManager*                 m_stagingBufferMan;
 	std::vector<SharedBufferCPU>          m_argumentInputBuffers;
-	std::vector<SharedBufferGPU>          m_argumentOutputBuffers;
+	std::vector<SharedBufferGPUWriteOnly> m_argumentOutputBuffers;
 	SharedBufferGPU                       m_cullingDataBuffer;
-	std::vector<SharedBufferGPU>          m_counterBuffers;
+	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshIndexBuffer;
 	ReusableCPUBuffer<BoundsDetails>      m_meshDetailsBuffer;
@@ -990,6 +1002,7 @@ private:
 	SharedBufferGPU                       m_vertexBuffer;
 	SharedBufferGPU                       m_indexBuffer;
 	SharedBufferGPU                       m_modelBundleIndexBuffer;
+	SharedBufferGPU                       m_meshBoundsBuffer;
 	PipelineLayout                        m_pipelineLayoutCS;
 	ComputePipeline                       m_computePipeline;
 	QueueIndices3                         m_queueIndices3;
@@ -1040,6 +1053,7 @@ public:
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
 		m_modelBundleIndexBuffer{ std::move(other.m_modelBundleIndexBuffer) },
+		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
 		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -1062,6 +1076,7 @@ public:
 		m_vertexBuffer           = std::move(other.m_vertexBuffer);
 		m_indexBuffer            = std::move(other.m_indexBuffer);
 		m_modelBundleIndexBuffer = std::move(other.m_modelBundleIndexBuffer);
+		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
 		m_pipelineLayoutCS       = std::move(other.m_pipelineLayoutCS);
 		m_computePipeline        = std::move(other.m_computePipeline);
 		m_queueIndices3          = other.m_queueIndices3;
@@ -1094,7 +1109,7 @@ class ModelManagerMS : public
 public:
 	ModelManagerMS(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-		std::uint32_t frameCount
+		QueueIndices3 queueIndices3, std::uint32_t frameCount
 	);
 
 	void SetDescriptorBufferLayout(
@@ -1131,6 +1146,11 @@ private:
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 	// To create compute shader pipelines.
 	void ShaderPathSet() {}
+
+	[[nodiscard]]
+	static ModelBuffers ConstructModelBuffers(
+		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
+	) noexcept;
 
 private:
 	StagingBufferManager* m_stagingBufferMan;

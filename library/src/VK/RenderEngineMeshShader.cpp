@@ -177,6 +177,7 @@ ModelManagerMS RenderEngineMS::GetModelManager(
 	StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
 ) {
 	return ModelManagerMS{
-		deviceManager.GetLogicalDevice(), memoryManager, stagingBufferMan, frameCount
+		deviceManager.GetLogicalDevice(), memoryManager, stagingBufferMan,
+		deviceManager.GetQueueFamilyManager().GetAllIndices(), frameCount
 	};
 }

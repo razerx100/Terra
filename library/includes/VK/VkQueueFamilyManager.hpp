@@ -23,6 +23,15 @@ struct QueueIndicesTG
 	std::vector<std::uint32_t> ResolveQueueIndices() const noexcept;
 };
 
+struct QueueIndicesTC
+{
+	std::uint32_t transfer;
+	std::uint32_t compute;
+
+	[[nodiscard]]
+	std::vector<std::uint32_t> ResolveQueueIndices() const noexcept;
+};
+
 struct QueueIndicesCG
 {
 	std::uint32_t compute;
@@ -39,6 +48,7 @@ struct QueueIndices3
 	std::uint32_t compute;
 
 	operator QueueIndicesTG() const { return { transfer, graphics }; }
+	operator QueueIndicesTC() const { return { transfer, compute }; }
 	operator QueueIndicesCG() const { return { compute, graphics }; }
 
 	template<typename T>

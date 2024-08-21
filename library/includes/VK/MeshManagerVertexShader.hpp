@@ -30,13 +30,6 @@ public:
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
-	// With bound data when the bound data has exclusive ownership.
-	void SetMeshBundle(
-		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
-		SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
-		QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
-	);
 	// With bound data when the bound data has shared ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,

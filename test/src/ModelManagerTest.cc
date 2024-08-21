@@ -249,7 +249,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Single Model Once.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 		std::vector<std::shared_ptr<Model>> models{};
 		for (size_t index = 0u; index < 6u; ++index)
@@ -265,7 +265,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Single Model with delete.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 		std::vector<std::shared_ptr<Model>> models{};
 		for (size_t index = 0u; index < 6u; ++index)
@@ -287,7 +287,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Multiple Model Once.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 		{
 			std::vector<std::shared_ptr<Model>> models{};
@@ -321,7 +321,7 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 
 	// Multiple Model with delete.
 	{
-		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount };
+		ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 		{
 			std::vector<std::shared_ptr<Model>> models{};
@@ -371,7 +371,10 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
 
-	ModelManagerVSIndividual vsIndividual{ logicalDevice, &memoryManager, Constants::frameCount };
+	ModelManagerVSIndividual vsIndividual{
+		logicalDevice, &memoryManager, queueManager.GetAllIndices(),
+		Constants::frameCount
+	};
 	vsIndividual.SetRenderPass(&renderPass);
 
 	std::vector<VkDescriptorBuffer> descBuffers{};
@@ -613,7 +616,8 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	renderPass.Create(RenderPassBuilder{});
 
 	ModelManagerMS managerMS{
-		logicalDevice, &memoryManager, &stagingBufferManager, Constants::frameCount
+		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices(),
+		Constants::frameCount
 	};
 	managerMS.SetRenderPass(&renderPass);
 

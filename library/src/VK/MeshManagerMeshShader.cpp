@@ -34,8 +34,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 
 		stagingBufferMan.AddBuffer(
 			std::move(tempDataBuffer), bufferSize, sharedData.bufferData, sharedData.offset,
-			QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT,
-			VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT, tempBuffer
+			tempBuffer
 		);
 	};
 
@@ -61,33 +60,6 @@ void MeshManagerMeshShader::SetMeshBundle(
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
-	SetMeshBundle(
-		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer, std::move(meshBundle)
-	);
-}
-
-void MeshManagerMeshShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& boundsSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer, QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
-) {
-	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
-
-	constexpr auto boundStride = sizeof(MeshBound);
-	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
-
-	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize, tempBuffer);
-
-	std::shared_ptr<std::uint8_t[]> boundBufferData = CopyVectorToSharedPtr(bounds);
-
-	stagingBufferMan.AddBuffer(
-		std::move(boundBufferData), boundSize,
-		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset,
-		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage, tempBuffer
-	);
-
 	SetMeshBundle(
 		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
 		tempBuffer, std::move(meshBundle)

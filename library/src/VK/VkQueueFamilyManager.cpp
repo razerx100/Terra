@@ -26,6 +26,11 @@ std::vector<std::uint32_t> QueueIndicesTG::ResolveQueueIndices() const noexcept
 	return QueueIndices3::ResolveQueueIndices(transfer, graphics);
 }
 
+std::vector<std::uint32_t> QueueIndicesTC::ResolveQueueIndices() const noexcept
+{
+	return QueueIndices3::ResolveQueueIndices(transfer, compute);
+}
+
 // Queue Family Manager
 VkQueueFamilyMananger::VkQueueFamilyMananger() noexcept
 	: m_queueIndices{}, m_graphicsQueue{ VK_NULL_HANDLE }, m_computeQueue{ VK_NULL_HANDLE },

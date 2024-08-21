@@ -24,8 +24,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 		stagingBufferMan.AddBuffer(
 			std::move(vertexBufferData), vertexBufferSize,
 			m_vertexBufferSharedData.bufferData, m_vertexBufferSharedData.offset,
-			QueueType::GraphicsQueue, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
-			VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, tempBuffer
+			tempBuffer
 		);
 	}
 
@@ -41,7 +40,6 @@ void MeshManagerVertexShader::SetMeshBundle(
 		stagingBufferMan.AddBuffer(
 			std::move(indexBufferData), indexBufferSize,
 			m_indexBufferSharedData.bufferData, m_indexBufferSharedData.offset,
-			QueueType::GraphicsQueue, VK_ACCESS_2_INDEX_READ_BIT, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT,
 			tempBuffer
 		);
 	}
@@ -52,30 +50,6 @@ void MeshManagerVertexShader::SetMeshBundle(
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
-	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer, std::move(meshBundle));
-}
-
-void MeshManagerVertexShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
-	SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
-	QueueType dstQueue, VkPipelineStageFlagBits2 dstPipelineStage
-) {
-	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
-
-	constexpr auto boundStride = sizeof(MeshBound);
-	const auto boundSize       = static_cast<VkDeviceSize>(boundStride * std::size(bounds));
-
-	m_meshBoundsSharedData = boundsSharedBuffer.AllocateAndGetSharedData(boundSize, tempBuffer);
-
-	std::shared_ptr<std::uint8_t[]> boundBufferData = CopyVectorToSharedPtr(bounds);
-
-	stagingBufferMan.AddBuffer(
-		std::move(boundBufferData), boundSize,
-		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset,
-		dstQueue, VK_ACCESS_2_SHADER_READ_BIT, dstPipelineStage, tempBuffer
-	);
-
 	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer, std::move(meshBundle));
 }
 

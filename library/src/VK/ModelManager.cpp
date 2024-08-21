@@ -132,8 +132,8 @@ void ModelBundleVSIndirect::SetModelBundle(
 
 void ModelBundleVSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
-	std::vector<SharedBufferGPU>& argumentOutputSharedBuffers,
-	std::vector<SharedBufferGPU>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
+	std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
+	std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
@@ -151,7 +151,7 @@ void ModelBundleVSIndirect::CreateBuffers(
 			SharedBufferData& argumentOutputSharedData = m_argumentOutputSharedData[index];
 
 			argumentOutputSharedData = argumentOutputSharedBuffers[index].AllocateAndGetSharedData(
-				argumentOutputBufferSize, tempBuffer
+				argumentOutputBufferSize
 			);
 
 			// The offset on each sharedBuffer should be the same. But still need to keep track of each
@@ -166,7 +166,7 @@ void ModelBundleVSIndirect::CreateBuffers(
 
 		for (size_t index = 0u; index < counterBufferCount; ++index)
 			m_counterSharedData[index] = counterSharedBuffers[index].AllocateAndGetSharedData(
-				s_counterBufferSize, tempBuffer
+				s_counterBufferSize
 			);
 	}
 
@@ -277,14 +277,11 @@ void ModelBundleCSIndirect::CreateBuffers(
 
 	stagingBufferMan.AddBuffer(
 		std::move(m_cullingData), cullingDataSize, m_cullingSharedData.bufferData,
-		m_cullingSharedData.offset,
-		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-		tempBuffer
+		m_cullingSharedData.offset, tempBuffer
 	);
 	stagingBufferMan.AddBuffer(
 		std::move(modelIndicesData), modelIndexDataSize,
 		m_modelBundleIndexSharedData.bufferData, m_modelBundleIndexSharedData.offset,
-		QueueType::ComputeQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 		tempBuffer
 	);
 }
@@ -415,12 +412,15 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 
 // Model Manager VS Individual
 ModelManagerVSIndividual::ModelManagerVSIndividual(
-	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount
-) : ModelManager{ device, memoryManager, frameCount },
+	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3,
+	std::uint32_t frameCount
+) : ModelManager{ device, memoryManager, queueIndices3, frameCount },
 	m_vertexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_indexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}
 {}
 
@@ -545,14 +545,23 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 	}
 }
 
+ModelBuffers ModelManagerVSIndividual::ConstructModelBuffers(
+	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
+	[[maybe_unused]] QueueIndices3 queueIndices
+) noexcept {
+	// Only being accessed from the graphics queue.
+	return ModelBuffers{ device, memoryManager, frameCount, {} };
+}
+
 // Model Manager VS Indirect.
 ModelManagerVSIndirect::ModelManagerVSIndirect(
 	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
 	QueueIndices3 queueIndices3, std::uint32_t frameCount
-) : ModelManager{ device, memoryManager, frameCount }, m_stagingBufferMan{ stagingBufferMan },
-	m_argumentInputBuffers{}, m_argumentOutputBuffers{},
+) : ModelManager{ device, memoryManager, queueIndices3, frameCount },
+	m_stagingBufferMan{ stagingBufferMan }, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
 	m_cullingDataBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_meshIndexBuffer{ device, memoryManager, frameCount }, m_meshDetailsBuffer{ device, memoryManager },
@@ -560,32 +569,40 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndices3>()
 	}, m_vertexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_indexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_modelBundleIndexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
+	}, m_meshBoundsBuffer{
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
 	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
+		// Only getting written and read on the Compute Queue, so should be exclusive resource.
 		m_argumentInputBuffers.emplace_back(
 			SharedBufferCPU{ m_device, m_memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {} }
 		);
 		m_argumentOutputBuffers.emplace_back(
-			SharedBufferGPU{
+			SharedBufferGPUWriteOnly{
 				m_device, m_memoryManager,
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
+		// Doing the resetting on the Compute queue, so CG should be fine.
 		m_counterBuffers.emplace_back(
-			SharedBufferGPU{
+			SharedBufferGPUWriteOnly{
 				m_device, m_memoryManager,
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
 				VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-				m_queueIndices3.ResolveQueueIndices<QueueIndices3>()
+				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
 	}
@@ -742,7 +759,7 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_meshBoundsBuffer,
-		tempBuffer, QueueType::ComputeQueue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+		tempBuffer
 	);
 
 	// This function is also used by the the Add function. Calling it early
@@ -977,14 +994,9 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 		m_modelBundleIndexBuffer.CopyOldBuffer(transferBuffer);
 		m_meshBoundsBuffer.CopyOldBuffer(transferBuffer);
 
-		// This should be okay, since when adding new stuffs to these, all of the command buffers
-		// should be finished before. And they will be copied in the same transfer buffer. So, it
-		// be okay to free it when that single transfer buffer has been finished executing.
-		for (size_t index = 0u; index < std::size(m_argumentOutputBuffers); ++index)
-		{
-			m_argumentOutputBuffers[index].CopyOldBuffer(transferBuffer);
-			m_counterBuffers[index].CopyOldBuffer(transferBuffer);
-		}
+		// I don't think copying is needed for the Output Argument
+		// and the counter buffers. As their data will be only
+		// needed on the same frame and not afterwards.
 
 		m_tempCopyNecessary = false;
 	}
@@ -993,7 +1005,7 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 void ModelManagerVSIndirect::ResetCounterBuffer(
 	const VKCommandBuffer& computeCmdBuffer, size_t frameIndex
 ) const noexcept {
-	const SharedBufferGPU& counterBuffer = m_counterBuffers[frameIndex];
+	const SharedBufferGPUWriteOnly& counterBuffer = m_counterBuffers[frameIndex];
 
 	computeCmdBuffer.CopyWhole(m_counterResetBuffer, counterBuffer.GetBuffer());
 
@@ -1009,7 +1021,7 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 {
 	if (!std::empty(m_counterBuffers))
 	{
-		const SharedBufferGPU& counterBuffer = m_counterBuffers.front();
+		const SharedBufferGPUWriteOnly& counterBuffer = m_counterBuffers.front();
 
 		const VkDeviceSize counterBufferSize = counterBuffer.Size();
 		const VkDeviceSize oldCounterSize    = m_counterResetBuffer.BufferSize();
@@ -1032,20 +1044,33 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 	}
 }
 
+ModelBuffers ModelManagerVSIndirect::ConstructModelBuffers(
+	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
+) noexcept {
+	// Will be accessed from both the Graphics queue and the compute queue.
+	return ModelBuffers{
+		device, memoryManager, frameCount, queueIndices.ResolveQueueIndices<QueueIndicesCG>()
+	};
+}
+
 // Model Manager MS.
 ModelManagerMS::ModelManagerMS(
 	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-	std::uint32_t frameCount
-) : ModelManager{ device, memoryManager, frameCount },
+	QueueIndices3 queueIndices3, std::uint32_t frameCount
+) : ModelManager{ device, memoryManager, queueIndices3, frameCount },
 	m_stagingBufferMan{ stagingBufferMan },
 	m_meshletBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_vertexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_vertexIndicesBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_primIndicesBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {}
+		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}
 {}
 
@@ -1226,4 +1251,12 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		// Model
 		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
 	}
+}
+
+ModelBuffers ModelManagerMS::ConstructModelBuffers(
+	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
+	[[maybe_unused]] QueueIndices3 queueIndices
+) noexcept {
+	// Will be accessed from both the Graphics queue only.
+	return ModelBuffers{ device, memoryManager, frameCount, {} };
 }

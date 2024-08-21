@@ -41,7 +41,10 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 	[[maybe_unused]] StagingBufferManager* stagingBufferMan,
 	std::uint32_t frameCount
 ) {
-	return ModelManagerVSIndividual{ deviceManager.GetLogicalDevice(), memoryManager, frameCount };
+	return ModelManagerVSIndividual{
+		deviceManager.GetLogicalDevice(), memoryManager, deviceManager.GetQueueFamilyManager().GetAllIndices(),
+		frameCount
+	};
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
