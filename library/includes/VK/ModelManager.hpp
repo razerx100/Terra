@@ -312,9 +312,7 @@ public:
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
-	void Draw(
-		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
-	) const noexcept;
+	void Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
@@ -336,8 +334,6 @@ public:
 		return static_cast<std::uint32_t>(std::size(m_modelIndices));
 	}
 	[[nodiscard]]
-	std::uint32_t GetModelOffset() const noexcept { return m_modelOffset; }
-	[[nodiscard]]
 	const std::vector<SharedBufferData>& GetArgumentOutputSharedData() const noexcept
 	{
 		return m_argumentOutputSharedData;
@@ -356,14 +352,7 @@ public:
 	[[nodiscard]]
 	static VkDeviceSize GetCounterBufferSize() noexcept { return s_counterBufferSize; }
 
-	[[nodiscard]]
-	static constexpr std::uint32_t GetConstantBufferSize() noexcept
-	{
-		return static_cast<std::uint32_t>(sizeof(m_modelOffset));
-	}
-
 private:
-	std::uint32_t                  m_modelOffset;
 	std::shared_ptr<ModelBundleVS> m_modelBundle;
 	std::vector<SharedBufferData>  m_argumentOutputSharedData;
 	std::vector<SharedBufferData>  m_counterSharedData;
@@ -382,7 +371,6 @@ public:
 
 	ModelBundleVSIndirect(ModelBundleVSIndirect&& other) noexcept
 		: ModelBundle{ std::move(other) },
-		m_modelOffset{ other.m_modelOffset },
 		m_modelBundle{ std::move(other.m_modelBundle) },
 		m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
 		m_counterSharedData{ std::move(other.m_counterSharedData) },
@@ -392,7 +380,6 @@ public:
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
-		m_modelOffset              = other.m_modelOffset;
 		m_modelBundle              = std::move(other.m_modelBundle);
 		m_argumentOutputSharedData = std::move(other.m_argumentOutputSharedData);
 		m_counterSharedData        = std::move(other.m_counterSharedData);

@@ -118,9 +118,8 @@ void ModelBundleMSIndividual::CreateBuffers(
 
 // Model Bundle VS Indirect
 ModelBundleVSIndirect::ModelBundleVSIndirect()
-	: ModelBundle{}, m_modelOffset{ 0u }, m_modelBundle{},
-	m_argumentOutputSharedData{}, m_counterSharedData{}, m_modelIndices{},
-	m_modelIndicesSharedData{ nullptr, 0u, 0u }
+	: ModelBundle{}, m_modelBundle{}, m_argumentOutputSharedData{}, m_counterSharedData{},
+	m_modelIndices{}, m_modelIndicesSharedData{ nullptr, 0u, 0u }
 {}
 
 void ModelBundleVSIndirect::SetModelBundle(
@@ -153,10 +152,6 @@ void ModelBundleVSIndirect::CreateBuffers(
 			argumentOutputSharedData = argumentOutputSharedBuffers[index].AllocateAndGetSharedData(
 				argumentOutputBufferSize
 			);
-
-			// The offset on each sharedBuffer should be the same. But still need to keep track of each
-			// of them because we will need the Buffer object to draw.
-			m_modelOffset = static_cast<std::uint32_t>(argumentOutputSharedData.offset / argStrideSize);
 		}
 	}
 
@@ -183,21 +178,11 @@ void ModelBundleVSIndirect::CreateBuffers(
 	);
 }
 
-void ModelBundleVSIndirect::Draw(
-	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
-) const noexcept {
+void ModelBundleVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept
+{
 	constexpr auto strideSize = static_cast<std::uint32_t>(sizeof(VkDrawIndexedIndirectCommand));
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
-
-	{
-		constexpr auto pushConstantSize = GetConstantBufferSize();
-
-		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
-			pushConstantSize, &m_modelOffset
-		);
-	}
 
 	const SharedBufferData& argumentOutputSharedData = m_argumentOutputSharedData[frameIndex];
 	const SharedBufferData& counterSharedData        = m_counterSharedData[frameIndex];
@@ -610,10 +595,6 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 
 void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
 {
-	constexpr auto pushConstantSize = ModelBundleVSIndirect::GetConstantBufferSize();
-
-	m_graphicsPipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
-
 	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
 }
 
@@ -979,7 +960,7 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 		BindMesh(modelBundle, graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(frameIndex, graphicsBuffer, m_graphicsPipelineLayout.Get());
+		modelBundle.Draw(frameIndex, graphicsBuffer);
 	}
 }
 
