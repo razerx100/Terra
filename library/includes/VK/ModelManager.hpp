@@ -232,6 +232,7 @@ public:
 		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
 		SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& modelBundleIndexSharedBuffer,
+		SharedBufferGPU& modelIndicesBuffer, const std::vector<std::uint32_t>& modelIndices,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -263,10 +264,16 @@ public:
 	{
 		return m_modelBundleIndexSharedData;
 	}
+	[[nodiscard]]
+	const SharedBufferData& GetModelIndicesSharedData() const noexcept
+	{
+		return m_modelIndicesSharedData;
+	}
 
 private:
 	SharedBufferData               m_modelBundleIndexSharedData;
 	SharedBufferData               m_cullingSharedData;
+	SharedBufferData               m_modelIndicesSharedData;
 	std::vector<SharedBufferData>  m_argumentInputSharedData;
 	std::shared_ptr<ModelBundleVS> m_modelBundle;
 	std::unique_ptr<CullingData>   m_cullingData;
@@ -279,6 +286,7 @@ public:
 	ModelBundleCSIndirect(ModelBundleCSIndirect&& other) noexcept
 		: m_modelBundleIndexSharedData{ other.m_modelBundleIndexSharedData },
 		m_cullingSharedData{ other.m_cullingSharedData },
+		m_modelIndicesSharedData{ other.m_modelIndicesSharedData },
 		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) },
 		m_modelBundle{ std::move(other.m_modelBundle) },
 		m_cullingData{ std::move(other.m_cullingData) },
@@ -288,6 +296,7 @@ public:
 	{
 		m_modelBundleIndexSharedData = other.m_modelBundleIndexSharedData;
 		m_cullingSharedData          = other.m_cullingSharedData;
+		m_modelIndicesSharedData     = other.m_modelIndicesSharedData;
 		m_argumentInputSharedData    = std::move(other.m_argumentInputSharedData);
 		m_modelBundle                = std::move(other.m_modelBundle);
 		m_cullingData                = std::move(other.m_cullingData);
@@ -309,7 +318,8 @@ public:
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
+		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
+		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 	void Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept;
@@ -344,7 +354,7 @@ public:
 		return m_counterSharedData;
 	}
 	[[nodiscard]]
-	const SharedBufferData& GetModelIndicesSharedData() const noexcept
+	const std::vector<SharedBufferData>& GetModelIndicesSharedData() const noexcept
 	{
 		return m_modelIndicesSharedData;
 	}
@@ -356,12 +366,12 @@ private:
 	std::shared_ptr<ModelBundleVS> m_modelBundle;
 	std::vector<SharedBufferData>  m_argumentOutputSharedData;
 	std::vector<SharedBufferData>  m_counterSharedData;
+	std::vector<SharedBufferData>  m_modelIndicesSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
 	// Should replace this with a better alternative one day.
 	std::vector<std::uint32_t>     m_modelIndices;
-	SharedBufferData               m_modelIndicesSharedData;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
@@ -374,8 +384,8 @@ public:
 		m_modelBundle{ std::move(other.m_modelBundle) },
 		m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
 		m_counterSharedData{ std::move(other.m_counterSharedData) },
-		m_modelIndices{ std::move(other.m_modelIndices) },
-		m_modelIndicesSharedData{ other.m_modelIndicesSharedData }
+		m_modelIndicesSharedData{ std::move(other.m_modelIndicesSharedData) },
+		m_modelIndices{ std::move(other.m_modelIndices) }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
@@ -383,8 +393,8 @@ public:
 		m_modelBundle              = std::move(other.m_modelBundle);
 		m_argumentOutputSharedData = std::move(other.m_argumentOutputSharedData);
 		m_counterSharedData        = std::move(other.m_counterSharedData);
+		m_modelIndicesSharedData   = std::move(other.m_modelIndicesSharedData);
 		m_modelIndices             = std::move(other.m_modelIndices);
-		m_modelIndicesSharedData   = other.m_modelIndicesSharedData;
 
 		return *this;
 	}
@@ -980,12 +990,13 @@ private:
 	StagingBufferManager*                 m_stagingBufferMan;
 	std::vector<SharedBufferCPU>          m_argumentInputBuffers;
 	std::vector<SharedBufferGPUWriteOnly> m_argumentOutputBuffers;
+	std::vector<SharedBufferGPUWriteOnly> m_modelIndicesVSBuffers;
 	SharedBufferGPU                       m_cullingDataBuffer;
 	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshIndexBuffer;
 	ReusableCPUBuffer<BoundsDetails>      m_meshDetailsBuffer;
-	SharedBufferGPU                       m_modelIndicesBuffer;
+	SharedBufferGPU                       m_modelIndicesCSBuffer;
 	SharedBufferGPU                       m_vertexBuffer;
 	SharedBufferGPU                       m_indexBuffer;
 	SharedBufferGPU                       m_modelBundleIndexBuffer;
@@ -1013,6 +1024,8 @@ private:
 	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 7u;
 	static constexpr std::uint32_t s_meshIndexBindingSlot           = 8u;
 	static constexpr std::uint32_t s_meshDetailsBindingSlot         = 9u;
+	// To write the model indices of the not culled models.
+	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 10u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -1031,12 +1044,13 @@ public:
 		m_stagingBufferMan{ other.m_stagingBufferMan },
 		m_argumentInputBuffers{ std::move(other.m_argumentInputBuffers) },
 		m_argumentOutputBuffers{ std::move(other.m_argumentOutputBuffers) },
+		m_modelIndicesVSBuffers{ std::move(other.m_modelIndicesVSBuffers) },
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_meshIndexBuffer{ std::move(other.m_meshIndexBuffer) },
 		m_meshDetailsBuffer{ std::move(other.m_meshDetailsBuffer) },
-		m_modelIndicesBuffer{ std::move(other.m_modelIndicesBuffer) },
+		m_modelIndicesCSBuffer{ std::move(other.m_modelIndicesCSBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
 		m_modelBundleIndexBuffer{ std::move(other.m_modelBundleIndexBuffer) },
@@ -1054,12 +1068,13 @@ public:
 		m_stagingBufferMan       = other.m_stagingBufferMan;
 		m_argumentInputBuffers   = std::move(other.m_argumentInputBuffers);
 		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
+		m_modelIndicesVSBuffers  = std::move(other.m_modelIndicesVSBuffers);
 		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
 		m_meshIndexBuffer        = std::move(other.m_meshIndexBuffer);
 		m_meshDetailsBuffer      = std::move(other.m_meshDetailsBuffer);
-		m_modelIndicesBuffer     = std::move(other.m_modelIndicesBuffer);
+		m_modelIndicesCSBuffer   = std::move(other.m_modelIndicesCSBuffer);
 		m_vertexBuffer           = std::move(other.m_vertexBuffer);
 		m_indexBuffer            = std::move(other.m_indexBuffer);
 		m_modelBundleIndexBuffer = std::move(other.m_modelBundleIndexBuffer);

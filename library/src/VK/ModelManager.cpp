@@ -119,7 +119,7 @@ void ModelBundleMSIndividual::CreateBuffers(
 // Model Bundle VS Indirect
 ModelBundleVSIndirect::ModelBundleVSIndirect()
 	: ModelBundle{}, m_modelBundle{}, m_argumentOutputSharedData{}, m_counterSharedData{},
-	m_modelIndices{}, m_modelIndicesSharedData{ nullptr, 0u, 0u }
+	m_modelIndicesSharedData{}, m_modelIndices{}
 {}
 
 void ModelBundleVSIndirect::SetModelBundle(
@@ -132,7 +132,8 @@ void ModelBundleVSIndirect::SetModelBundle(
 void ModelBundleVSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-	std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers, SharedBufferGPU& modelIndicesBuffer,
+	std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
+	std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
@@ -165,17 +166,15 @@ void ModelBundleVSIndirect::CreateBuffers(
 			);
 	}
 
-	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(
-		modelIndiceBufferSize, tempBuffer
-	);
+	{
+		const size_t modelIndicesBufferCount = std::size(modelIndicesSharedBuffers);
+		m_modelIndicesSharedData.resize(modelIndicesBufferCount);
 
-	std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(m_modelIndices);
-
-	stagingBufferMan.AddBuffer(
-		std::move(tempDataBuffer), modelIndiceBufferSize,
-		m_modelIndicesSharedData.bufferData, m_modelIndicesSharedData.offset,
-		tempBuffer
-	);
+		for (size_t index = 0u; index < modelIndicesBufferCount; ++index)
+			m_modelIndicesSharedData[index] = modelIndicesSharedBuffers[index].AllocateAndGetSharedData(
+				modelIndiceBufferSize
+			);
+	}
 }
 
 void ModelBundleVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept
@@ -218,15 +217,16 @@ void ModelBundleCSIndirect::CreateBuffers(
 	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
 	SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& modelBundleIndexSharedBuffer,
+	SharedBufferGPU& modelIndicesBuffer, const std::vector<std::uint32_t>& modelIndices,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
-	constexpr size_t strideSize  = sizeof(VkDrawIndexedIndirectCommand);
-	const auto argumentCount     = static_cast<std::uint32_t>(std::size(m_modelBundle->GetModels()));
-	m_cullingData->commandCount  = argumentCount;
+	constexpr size_t strideSize     = sizeof(VkDrawIndexedIndirectCommand);
+	const auto argumentCount        = static_cast<std::uint32_t>(std::size(m_modelBundle->GetModels()));
+	m_cullingData->commandCount     = argumentCount;
 
-	const auto argumentBufferSize = static_cast<VkDeviceSize>(strideSize * argumentCount);
-	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
-	const auto modelIndexDataSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t) * argumentCount);
+	const auto argumentBufferSize   = static_cast<VkDeviceSize>(strideSize * argumentCount);
+	const auto cullingDataSize      = static_cast<VkDeviceSize>(sizeof(CullingData));
+	const auto modelIndicesDataSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t) * argumentCount);
 
 	{
 		const size_t argumentInputBufferCount = std::size(argumentInputSharedBuffer);
@@ -248,7 +248,10 @@ void ModelBundleCSIndirect::CreateBuffers(
 
 	m_cullingSharedData          = cullingSharedBuffer.AllocateAndGetSharedData(cullingDataSize, tempBuffer);
 	m_modelBundleIndexSharedData = modelBundleIndexSharedBuffer.AllocateAndGetSharedData(
-		modelIndexDataSize, tempBuffer
+		modelIndicesDataSize, tempBuffer
+	);
+	m_modelIndicesSharedData = modelIndicesBuffer.AllocateAndGetSharedData(
+		modelIndicesDataSize, tempBuffer
 	);
 
 	const auto modelBundleIndex = GetModelBundleIndex();
@@ -257,15 +260,24 @@ void ModelBundleCSIndirect::CreateBuffers(
 	// cull all of the models across all of the bundles with a single call to dispatch, we can't
 	// set the index as constantData per bundle. So, we will be giving each model the index
 	// of its bundle so each thread can work independently.
-	auto modelIndices = std::vector<std::uint32_t>(argumentCount, modelBundleIndex);
-	std::shared_ptr<std::uint8_t[]> modelIndicesData = CopyVectorToSharedPtr(modelIndices);
+	auto modelBundleIndicesInModels = std::vector<std::uint32_t>(argumentCount, modelBundleIndex);
+	std::shared_ptr<std::uint8_t[]> modelBundleIndicesInModelsData = CopyVectorToSharedPtr(
+		modelBundleIndicesInModels
+	);
 
+	std::shared_ptr<std::uint8_t[]> modelIndicesTempBuffer = CopyVectorToSharedPtr(modelIndices);
+
+	stagingBufferMan.AddBuffer(
+		std::move(modelIndicesTempBuffer), modelIndicesDataSize,
+		m_modelIndicesSharedData.bufferData, m_modelIndicesSharedData.offset,
+		tempBuffer
+	);
 	stagingBufferMan.AddBuffer(
 		std::move(m_cullingData), cullingDataSize, m_cullingSharedData.bufferData,
 		m_cullingSharedData.offset, tempBuffer
 	);
 	stagingBufferMan.AddBuffer(
-		std::move(modelIndicesData), modelIndexDataSize,
+		std::move(modelBundleIndicesInModelsData), modelIndicesDataSize,
 		m_modelBundleIndexSharedData.bufferData, m_modelBundleIndexSharedData.offset,
 		tempBuffer
 	);
@@ -544,15 +556,16 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	QueueIndices3 queueIndices3, std::uint32_t frameCount
 ) : ModelManager{ device, memoryManager, queueIndices3, frameCount },
 	m_stagingBufferMan{ stagingBufferMan }, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
+	m_modelIndicesVSBuffers{},
 	m_cullingDataBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_meshIndexBuffer{ device, memoryManager, frameCount }, m_meshDetailsBuffer{ device, memoryManager },
-	m_modelIndicesBuffer{
+	m_modelIndicesCSBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndices3>()
+		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_vertexBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
@@ -585,8 +598,13 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		m_counterBuffers.emplace_back(
 			SharedBufferGPUWriteOnly{
 				m_device, m_memoryManager,
-				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
-				VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
+			}
+		);
+		m_modelIndicesVSBuffers.emplace_back(
+			SharedBufferGPUWriteOnly{
+				m_device, m_memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
@@ -637,7 +655,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	modelBundleCS.SetID(static_cast<std::uint32_t>(modelBundleObj.GetID()));
 
 	modelBundleObj.CreateBuffers(
-		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffer,
+		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers,
 		tempBuffer
 	);
 
@@ -645,7 +663,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	modelBundleCS.CreateBuffers(
 		*m_stagingBufferMan, m_argumentInputBuffers, m_cullingDataBuffer, m_modelBundleIndexBuffer,
-		tempBuffer
+		m_modelIndicesCSBuffer, modelBundleObj.GetModelIndices(), tempBuffer
 	);
 
 	const auto modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
@@ -686,15 +704,18 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 		for (size_t index = 0u; index < std::size(m_counterBuffers); ++index)
 			m_counterBuffers[index].RelinquishMemory(counterSharedData[index]);
 
-		const SharedBufferData& modelIndicesSharedData = modelBundle.GetModelIndicesSharedData();
+		const std::vector<SharedBufferData>& modelIndicesSharedData
+			= modelBundle.GetModelIndicesSharedData();
 
-		m_modelIndicesBuffer.RelinquishMemory(modelIndicesSharedData);
+		for (size_t index = 0u; index < std::size(m_modelIndicesVSBuffers); ++index)
+			m_modelIndicesVSBuffers[index].RelinquishMemory(modelIndicesSharedData[index]);
 	}
 
 	std::erase_if(
 		m_modelBundlesCS,
 		[bundleID, &argumentInputs = m_argumentInputBuffers,
-		&cullingData = m_cullingDataBuffer, &bundleIndices = m_modelBundleIndexBuffer]
+		&cullingData = m_cullingDataBuffer,
+		&bundleIndices = m_modelBundleIndexBuffer, &modelIndicesBuffer = m_modelIndicesCSBuffer]
 		(const ModelBundleCSIndirect& bundle)
 		{
 			const bool result = bundleID == bundle.GetID();
@@ -711,6 +732,7 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 
 				cullingData.RelinquishMemory(bundle.GetCullingSharedData());
 				bundleIndices.RelinquishMemory(bundle.GetModelBundleIndexSharedData());
+				modelIndicesBuffer.RelinquishMemory(bundle.GetModelIndicesSharedData());
 			}
 
 			return result;
@@ -754,28 +776,27 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 
 void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
 {
-		std::uint8_t* bufferOffsetPtr = m_meshIndexBuffer.GetInstancePtr(frameIndex);
-		constexpr size_t strideSize   = sizeof(std::uint32_t);
-		VkDeviceSize bufferOffset     = 0u;
+	std::uint8_t* bufferOffsetPtr = m_meshIndexBuffer.GetInstancePtr(frameIndex);
+	constexpr size_t strideSize   = sizeof(std::uint32_t);
+	VkDeviceSize bufferOffset     = 0u;
 
-		// This is necessary because, while the indices should be the same as the CS bundles
-		// if we decide to remove a bundle, the bundles afterwards will be shifted. In that
-		// case either we can shift the modelBundleIndices to accommodate the bundle changes or
-		// write data the modelBundles' old position. I think the second approach is better
-		// as the model bundle indices are currently set as GPU only data. While the mesh indices
-		// are cpu data which is reset every frame.
-		for (const ModelBundleCSIndirect& bundle : m_modelBundlesCS)
-		{
-			bundle.Update(static_cast<size_t>(frameIndex));
+	// This is necessary because, while the indices should be the same as the CS bundles
+	// if we decide to remove a bundle, the bundles afterwards will be shifted. In that
+	// case either we can shift the modelBundleIndices to accommodate the bundle changes or
+	// write data the modelBundles' old position. I think the second approach is better
+	// as the model bundle indices are currently set as GPU only data. While the mesh indices
+	// are cpu data which is reset every frame.
+	for (const ModelBundleCSIndirect& bundle : m_modelBundlesCS)
+	{
+		bundle.Update(static_cast<size_t>(frameIndex));
 
-			const std::uint32_t meshIndex        = bundle.GetMeshIndex();
+		const std::uint32_t meshIndex        = bundle.GetMeshIndex();
+		const std::uint32_t modelBundleIndex = bundle.GetModelBundleIndex();
 
-			const std::uint32_t modelBundleIndex = bundle.GetModelBundleIndex();
+		bufferOffset = strideSize * modelBundleIndex;
 
-			bufferOffset = strideSize * modelBundleIndex;
-
-			memcpy(bufferOffsetPtr + bufferOffset, &meshIndex, strideSize);
-		}
+		memcpy(bufferOffsetPtr + bufferOffset, &meshIndex, strideSize);
+	}
 }
 
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
@@ -819,7 +840,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesVSBindingSlot, vsSetLayoutIndex, 0u
+			m_modelIndicesVSBuffers[index].GetBuffer(), s_modelIndicesVSBindingSlot, vsSetLayoutIndex, 0u
 		);
 	}
 }
@@ -873,6 +894,10 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			s_meshDetailsBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
+		descriptorBuffer.AddBinding(
+			s_modelIndicesVSCSBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			VK_SHADER_STAGE_COMPUTE_BIT
+		);
 	}
 }
 
@@ -903,10 +928,13 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 			m_counterBuffers[index].GetBuffer(), s_counterBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesBuffer.GetBuffer(), s_modelIndicesCSBindingSlot, csSetLayoutIndex, 0u
+			m_modelIndicesCSBuffer.GetBuffer(), s_modelIndicesCSBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_modelBundleIndexBuffer.GetBuffer(), s_modelBundleIndexBindingSlot, csSetLayoutIndex, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_modelIndicesVSBuffers[index].GetBuffer(), s_modelIndicesVSCSBindingSlot, csSetLayoutIndex, 0u
 		);
 
 		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndexBindingSlot, csSetLayoutIndex);
@@ -969,7 +997,7 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 	if (m_tempCopyNecessary)
 	{
 		m_cullingDataBuffer.CopyOldBuffer(transferBuffer);
-		m_modelIndicesBuffer.CopyOldBuffer(transferBuffer);
+		m_modelIndicesCSBuffer.CopyOldBuffer(transferBuffer);
 		m_vertexBuffer.CopyOldBuffer(transferBuffer);
 		m_indexBuffer.CopyOldBuffer(transferBuffer);
 		m_modelBundleIndexBuffer.CopyOldBuffer(transferBuffer);
