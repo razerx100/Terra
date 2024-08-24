@@ -89,7 +89,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
-	const MeshDetailsVS& GetMeshDetailsVS() const noexcept override
+	MeshDetailsVS GetMeshDetailsVS() const noexcept override
 	{
 		return m_details;
 	}
@@ -148,10 +148,7 @@ class ModelDummyMS : public ModelMS
 	MeshDetailsMS m_details = {};
 
 public:
-	ModelDummyMS() : m_details{}
-	{
-		m_details.meshlets = { Meshlet{}, Meshlet{} };
-	}
+	ModelDummyMS() : m_details{} {}
 
 	[[nodiscard]]
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
@@ -160,7 +157,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetMaterialIndex() const noexcept override { return 0u; }
 	[[nodiscard]]
-	MeshDetailsMS& GetMeshDetailsMS() noexcept override
+	MeshDetailsMS GetMeshDetailsMS() const noexcept override
 	{
 		return m_details;
 	}
@@ -206,6 +203,7 @@ public:
 
 class MeshDummyMS : public MeshBundleMS
 {
+	std::vector<Meshlet>       m_meshlets      = { Meshlet{}, Meshlet{} };
 	std::vector<MeshBound>     m_bounds        = { MeshBound{} };
 	std::vector<Vertex>        m_vertices      = { Vertex{} };
 	std::vector<std::uint32_t> m_vertexIndices = { 0u, 1u, 2u };
@@ -237,6 +235,11 @@ public:
 	const std::vector<std::uint32_t>& GetPrimIndices() const noexcept override
 	{
 		return m_primIndices;
+	}
+	[[nodiscard]]
+	const std::vector<Meshlet>& GetMeshlets() const noexcept override
+	{
+		return m_meshlets;
 	}
 };
 
