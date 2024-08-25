@@ -7,15 +7,18 @@ void GraphicsPipelineMeshShader::Create(
 ) {
 	m_fragmentShader = fragmentShader;
 
+	constexpr const wchar_t* meshShaderName = L"MeshShaderIndividual";
+	constexpr const wchar_t* taskShaderName = L"MeshShaderTSIndividual";
+
 	if (m_useTaskShader)
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
 			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
-			L"MeshShader", L"TaskShader"
+			meshShaderName, taskShaderName
 		);
 	else
 		m_graphicsPipeline = CreateGraphicsPipelineMS(
 			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
-			L"MeshShader"
+			meshShaderName
 		);
 }
 
