@@ -2,16 +2,13 @@
 
 #include <RendererVK.hpp>
 
-Renderer* CreateTerraInstance(
+std::shared_ptr<Renderer> CreateTerraInstance(
 	const char* appName,
-	void* windowHandle,
-	void* moduleHandle,
-	std::uint32_t width, std::uint32_t height,
-	std::shared_ptr<ThreadPool> threadPool,
+	void* windowHandle, void* moduleHandle,
+	std::uint32_t width, std::uint32_t height, std::shared_ptr<ThreadPool> threadPool,
 	RenderEngineType engineType, std::uint32_t bufferCount
 ) {
-	return new RendererVK(
-		appName, windowHandle, moduleHandle, width, height, bufferCount,
-		std::move(threadPool), engineType
+	return std::make_shared<RendererVK>(
+		appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool), engineType
 	);
 }

@@ -6,7 +6,7 @@
 VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
 	const std::shared_ptr<ModelVS>& model
 ) noexcept {
-	const MeshDetailsVS& meshDetails = model->GetMeshDetailsVS();
+	MeshDetailsVS meshDetails = model->GetMeshDetailsVS();
 
 	const VkDrawIndexedIndirectCommand indirectCommand{
 		.indexCount    = meshDetails.indexCount,
