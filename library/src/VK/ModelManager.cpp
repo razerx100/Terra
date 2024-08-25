@@ -74,10 +74,10 @@ void ModelBundleMSIndividual::Draw(
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 		const MeshDetailsMS meshDetails = model->GetMeshDetailsMS();
 
-		const RenderData msConstants
+		const ModelDetails msConstants
 		{
 			.modelBufferIndex = m_modelBufferIndices[index],
-			.meshDetails      = meshDetails
+			.meshletOffset    = meshDetails.meshletOffset
 		};
 
 		constexpr std::uint32_t offset = MeshManagerMeshShader::GetConstantBufferSize();

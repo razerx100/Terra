@@ -118,10 +118,10 @@ public:
 class ModelBundleMSIndividual : public ModelBundle
 {
 public:
-	struct RenderData
+	struct ModelDetails
 	{
 		std::uint32_t modelBufferIndex;
-		MeshDetailsMS meshDetails;
+		std::uint32_t meshletOffset;
 	};
 
 public:
@@ -138,7 +138,7 @@ public:
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
-		return static_cast<std::uint32_t>(sizeof(RenderData));
+		return static_cast<std::uint32_t>(sizeof(ModelDetails));
 	}
 
 	[[nodiscard]]
