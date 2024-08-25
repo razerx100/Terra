@@ -31,6 +31,7 @@ public:
 		std::uint32_t vertexOffset;
 		std::uint32_t vertexIndicesOffset;
 		std::uint32_t primIndicesOffset;
+		std::uint32_t meshletOffset;
 	};
 
 	struct BoundsDetails
@@ -46,14 +47,15 @@ public:
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-		SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+		TemporaryDataBufferGPU& tempBuffer
 	);
 	// With bound data when the bound data has shared ownership.
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& boundsSharedBuffer,
-		TemporaryDataBufferGPU& tempBuffer
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+		SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	[[nodiscard]]
@@ -67,6 +69,11 @@ public:
 	const SharedBufferData& GetPrimIndicesSharedData() const noexcept
 	{
 		return m_primIndicesBufferSharedData;
+	}
+	[[nodiscard]]
+	const SharedBufferData& GetMeshletSharedData() const noexcept
+	{
+		return m_meshletBufferSharedData;
 	}
 	[[nodiscard]]
 	const SharedBufferData& GetBoundsSharedData() const noexcept { return m_meshBoundsSharedData; }
@@ -91,6 +98,7 @@ private:
 	SharedBufferData m_vertexBufferSharedData;
 	SharedBufferData m_vertexIndicesBufferSharedData;
 	SharedBufferData m_primIndicesBufferSharedData;
+	SharedBufferData m_meshletBufferSharedData;
 	SharedBufferData m_meshBoundsSharedData;
 	MeshDetails      m_meshDetails;
 
@@ -102,6 +110,7 @@ public:
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_vertexIndicesBufferSharedData{ other.m_vertexIndicesBufferSharedData },
 		m_primIndicesBufferSharedData{ other.m_primIndicesBufferSharedData },
+		m_meshletBufferSharedData{ other.m_meshletBufferSharedData },
 		m_meshBoundsSharedData{ other.m_meshBoundsSharedData },
 		m_meshDetails{ other.m_meshDetails }
 	{}
@@ -111,6 +120,7 @@ public:
 		m_vertexBufferSharedData        = other.m_vertexBufferSharedData;
 		m_vertexIndicesBufferSharedData = other.m_vertexIndicesBufferSharedData;
 		m_primIndicesBufferSharedData   = other.m_primIndicesBufferSharedData;
+		m_meshletBufferSharedData       = other.m_meshletBufferSharedData;
 		m_meshBoundsSharedData          = other.m_meshBoundsSharedData;
 		m_meshDetails                   = other.m_meshDetails;
 

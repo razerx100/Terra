@@ -4,13 +4,15 @@
 MeshManagerMeshShader::MeshManagerMeshShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
-	m_meshBoundsSharedData{ nullptr, 0u, 0u }, m_meshDetails{ 0u, 0u, 0u }
+	m_meshletBufferSharedData{ nullptr, 0u, 0u }, m_meshBoundsSharedData{ nullptr, 0u, 0u },
+	m_meshDetails{ 0u, 0u, 0u }
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-	SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
+	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
 
@@ -39,6 +41,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 
 	const std::vector<std::uint32_t>& vertexIndices = meshBundle->GetVertexIndices();
 	const std::vector<std::uint32_t>& primIndices   = meshBundle->GetPrimIndices();
+	const std::vector<Meshlet>& meshlets            = meshBundle->GetMeshlets();
 
 	ConfigureBuffer(
 		glslVertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
@@ -52,13 +55,17 @@ void MeshManagerMeshShader::SetMeshBundle(
 		primIndices, stagingBufferMan, primIndicesSharedBuffer, m_primIndicesBufferSharedData,
 		m_meshDetails.primIndicesOffset, tempBuffer
 	);
+	ConfigureBuffer(
+		meshlets, stagingBufferMan, meshletSharedBuffer, m_meshletBufferSharedData,
+		m_meshDetails.meshletOffset, tempBuffer
+	);
 }
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& boundsSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer
+	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+	SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
 
@@ -77,7 +84,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 	SetMeshBundle(
 		std::move(meshBundle),
 		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer
+		meshletSharedBuffer, tempBuffer
 	);
 }
 

@@ -62,7 +62,6 @@ void ModelBundleMSIndividual::SetModelBundle(
 void ModelBundleMSIndividual::Draw(
 	const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
 ) const noexcept {
-	/*
 	using MS = VkDeviceExtension::VkExtMeshShader;
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
@@ -70,12 +69,15 @@ void ModelBundleMSIndividual::Draw(
 
 	for (size_t index = 0u; index < std::size(models); ++index)
 	{
+		const auto& model = models[index];
+
 		constexpr auto pushConstantSize = GetConstantBufferSize();
+		const MeshDetailsMS meshDetails = model->GetMeshDetailsMS();
 
 		const RenderData msConstants
 		{
-			//.modelBufferIndex = modelDetail.modelBufferIndex,
-			//.meshletOffset    = modelDetail.meshletOffset
+			.modelBufferIndex = m_modelBufferIndices[index],
+			.meshDetails      = meshDetails
 		};
 
 		constexpr std::uint32_t offset = MeshManagerMeshShader::GetConstantBufferSize();
@@ -88,32 +90,10 @@ void ModelBundleMSIndividual::Draw(
 		// Unlike the Compute Shader where we process the data of a model with a thread, here
 		// each group handles a Meshlet and its threads handle the vertices and primitives.
 		// So, we need a thread group for each Meshlet.
-		//MS::vkCmdDrawMeshTasksEXT(cmdBuffer, modelDetail.threadGroupCountX, 1u, 1u);
+		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, meshDetails.meshletCount, 1u, 1u);
 		// It might be worth checking if we are reaching the Group Count Limit and if needed
 		// launch more Groups. Could achieve that by passing a GroupLaunch index.
 	}
-	*/
-}
-
-void ModelBundleMSIndividual::CreateBuffers(
-	StagingBufferManager& stagingBufferMan, SharedBufferGPU& meshletSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer
-) {
-	/*
-	const auto meshletBufferSize = static_cast<VkDeviceSize>(std::size(m_meshlets) * sizeof(Meshlet));
-
-	m_meshletSharedData = meshletSharedBuffer.AllocateAndGetSharedData(meshletBufferSize, tempBuffer);
-
-	std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(m_meshlets);
-	m_meshlets = std::vector<Meshlet>{};
-
-	stagingBufferMan.AddBuffer(
-		std::move(tempDataBuffer), meshletBufferSize, m_meshletSharedData.bufferData,
-		m_meshletSharedData.offset,
-		QueueType::GraphicsQueue, VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT,
-		tempBuffer
-	);
-	*/
 }
 
 // Model Bundle VS Indirect
@@ -1107,7 +1087,6 @@ void ModelManagerMS::ConfigureModelBundle(
 	std::shared_ptr<ModelBundleMS>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
-	modelBundleObj.CreateBuffers(*m_stagingBufferMan, m_meshletBuffer, tempBuffer);
 }
 
 void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
@@ -1118,12 +1097,6 @@ void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
 
 	for (std::uint32_t modelIndex : modelIndices)
 		m_modelBuffers.Remove(modelIndex);
-
-	{
-		const SharedBufferData& meshletSharedData = modelBundle.GetMeshletSharedData();
-
-		m_meshletBuffer.RelinquishMemory(meshletSharedData);
-	}
 }
 
 void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
@@ -1139,6 +1112,9 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 
 		const SharedBufferData& primIndicesSharedData   = meshManager.GetPrimIndicesSharedData();
 		m_primIndicesBuffer.RelinquishMemory(primIndicesSharedData);
+
+		const SharedBufferData& meshletSharedData       = meshManager.GetMeshletSharedData();
+		m_meshletBuffer.RelinquishMemory(meshletSharedData);
 	}
 }
 
@@ -1148,7 +1124,7 @@ void ModelManagerMS::ConfigureMeshBundle(
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
-		m_primIndicesBuffer, tempBuffer
+		m_primIndicesBuffer, m_meshletBuffer, tempBuffer
 	);
 }
 
@@ -1229,9 +1205,6 @@ void ModelManagerMS::SetDescriptorBufferOfModels(
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, msSetLayoutIndex, 0u
-		);
 	}
 }
 
@@ -1248,6 +1221,9 @@ void ModelManagerMS::SetDescriptorBufferOfMeshes(
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_primIndicesBuffer.GetBuffer(), s_primIndicesBufferBindingSlot, msSetLayoutIndex, 0u
+		);
+		descriptorBuffer.SetStorageBufferDescriptor(
+			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 	}
 }

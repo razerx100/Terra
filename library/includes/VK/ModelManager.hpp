@@ -118,33 +118,18 @@ public:
 class ModelBundleMSIndividual : public ModelBundle
 {
 public:
-	struct ModelDetails
-	{
-		std::uint32_t modelBufferIndex;
-		// Since there could be meshlets of multiple Models, we need the starting point of each.
-		std::uint32_t meshletOffset;
-		std::uint32_t threadGroupCountX;
-	};
-
 	struct RenderData
 	{
 		std::uint32_t modelBufferIndex;
-		std::uint32_t meshletOffset;
+		MeshDetailsMS meshDetails;
 	};
 
 public:
-	ModelBundleMSIndividual()
-		: ModelBundle{}, m_modelBundle{}, m_modelBufferIndices{},
-		m_meshletSharedData{ nullptr, 0u, 0u }, m_meshlets{}
-	{}
+	ModelBundleMSIndividual() : ModelBundle{}, m_modelBundle{}, m_modelBufferIndices{} {}
 
 	void SetModelBundle(
 		std::shared_ptr<ModelBundleMS> bundle, std::vector<std::uint32_t> modelBufferIndices
 	) noexcept;
-	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan, SharedBufferGPU& meshletSharedBuffer,
-		TemporaryDataBufferGPU& tempBuffer
-	);
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
@@ -170,16 +155,9 @@ public:
 			return std::numeric_limits<std::uint32_t>::max();
 	}
 
-	[[nodiscard]]
-	const SharedBufferData& GetMeshletSharedData() const noexcept { return m_meshletSharedData; }
-
 private:
 	std::shared_ptr<ModelBundleMS> m_modelBundle;
 	std::vector<std::uint32_t>     m_modelBufferIndices;
-	SharedBufferData          m_meshletSharedData;
-	// Should replace this with a better alternative one day.
-	// Should move this out of here later.
-	std::vector<Meshlet>      m_meshlets;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -199,17 +177,13 @@ public:
 	ModelBundleMSIndividual(ModelBundleMSIndividual&& other) noexcept
 		: ModelBundle{ std::move(other) },
 		m_modelBundle{ std::move(other.m_modelBundle) },
-		m_modelBufferIndices{ std::move(other.m_modelBufferIndices) },
-		m_meshletSharedData{ other.m_meshletSharedData },
-		m_meshlets{ std::move(other.m_meshlets) }
+		m_modelBufferIndices{ std::move(other.m_modelBufferIndices) }
 	{}
 	ModelBundleMSIndividual& operator=(ModelBundleMSIndividual&& other) noexcept
 	{
 		ModelBundle::operator=(std::move(other));
 		m_modelBundle        = std::move(other.m_modelBundle);
 		m_modelBufferIndices = std::move(other.m_modelBufferIndices);
-		m_meshletSharedData  = other.m_meshletSharedData;
-		m_meshlets           = std::move(other.m_meshlets);
 
 		return *this;
 	}
