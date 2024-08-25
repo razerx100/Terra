@@ -290,11 +290,9 @@ public:
 	) noexcept;
 
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
-		TemporaryDataBufferGPU& tempBuffer
+		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
 	void Draw(
 		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout

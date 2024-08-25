@@ -110,11 +110,9 @@ void ModelBundleVSIndirect::SetModelBundle(
 }
 
 void ModelBundleVSIndirect::CreateBuffers(
-	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 	std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-	std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
-	TemporaryDataBufferGPU& tempBuffer
+	std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	constexpr size_t indexStrideSize    = sizeof(std::uint32_t);
@@ -653,10 +651,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 
 	modelBundleCS.SetID(static_cast<std::uint32_t>(modelBundleObj.GetID()));
 
-	modelBundleObj.CreateBuffers(
-		*m_stagingBufferMan, m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers,
-		tempBuffer
-	);
+	modelBundleObj.CreateBuffers(m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers);
 
 	UpdateCounterResetValues();
 
@@ -1084,7 +1079,7 @@ ModelManagerMS::ModelManagerMS(
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundleMS>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundleMS>&& modelBundle, [[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
 ) {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
 }
