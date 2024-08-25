@@ -84,13 +84,6 @@ public:
 	}
 
 private:
-	void SetMeshBundle(
-		StagingBufferManager& stagingBufferMan,
-		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-		SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
-		std::unique_ptr<MeshBundleMS> meshBundle
-	);
-
 	[[nodiscard]]
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 

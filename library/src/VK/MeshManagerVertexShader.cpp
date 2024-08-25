@@ -7,9 +7,9 @@ MeshManagerVertexShader::MeshManagerVertexShader()
 {}
 
 void MeshManagerVertexShader::SetMeshBundle(
-	StagingBufferManager& stagingBufferMan,
+	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer, std::unique_ptr<MeshBundleVS> meshBundle
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	// Vertex Buffer
 	{
@@ -17,7 +17,9 @@ void MeshManagerVertexShader::SetMeshBundle(
 		const auto vertexBufferSize
 			= static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(vertices));
 
-		m_vertexBufferSharedData = vertexSharedBuffer.AllocateAndGetSharedData(vertexBufferSize, tempBuffer);
+		m_vertexBufferSharedData = vertexSharedBuffer.AllocateAndGetSharedData(
+			vertexBufferSize, tempBuffer
+		);
 
 		std::shared_ptr<std::uint8_t[]> vertexBufferData = CopyVectorToSharedPtr(vertices);
 
@@ -48,14 +50,6 @@ void MeshManagerVertexShader::SetMeshBundle(
 void MeshManagerVertexShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer
-) {
-	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer, std::move(meshBundle));
-}
-
-void MeshManagerVertexShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	SharedBufferGPU& boundsSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<MeshBound>& bounds = meshBundle->GetBounds();
@@ -72,7 +66,9 @@ void MeshManagerVertexShader::SetMeshBundle(
 		m_meshBoundsSharedData.bufferData, m_meshBoundsSharedData.offset, tempBuffer
 	);
 
-	SetMeshBundle(stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer, std::move(meshBundle));
+	SetMeshBundle(
+		std::move(meshBundle), stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer
+	);
 }
 
 void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept

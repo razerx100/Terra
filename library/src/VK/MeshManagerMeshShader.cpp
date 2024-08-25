@@ -8,10 +8,9 @@ MeshManagerMeshShader::MeshManagerMeshShader()
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
-	StagingBufferManager& stagingBufferMan,
+	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-	SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer,
-	std::unique_ptr<MeshBundleMS> meshBundle
+	SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
 
@@ -58,17 +57,6 @@ void MeshManagerMeshShader::SetMeshBundle(
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-	SharedBufferGPU& primIndicesSharedBuffer, TemporaryDataBufferGPU& tempBuffer
-) {
-	SetMeshBundle(
-		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer, std::move(meshBundle)
-	);
-}
-
-void MeshManagerMeshShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
-	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& boundsSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
@@ -87,8 +75,9 @@ void MeshManagerMeshShader::SetMeshBundle(
 	);
 
 	SetMeshBundle(
+		std::move(meshBundle),
 		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
-		tempBuffer, std::move(meshBundle)
+		tempBuffer
 	);
 }
 
@@ -97,7 +86,8 @@ std::vector<MeshManagerMeshShader::GLSLVertex> MeshManagerMeshShader::TransformV
 ) noexcept {
 	std::vector<GLSLVertex> glslVertices{ std::size(vertices) };
 
-	for (size_t index = 0u; index < std::size(vertices); ++index) {
+	for (size_t index = 0u; index < std::size(vertices); ++index)
+	{
 		glslVertices[index].position = vertices[index].position;
 		glslVertices[index].normal   = vertices[index].normal;
 		glslVertices[index].uv       = vertices[index].uv;

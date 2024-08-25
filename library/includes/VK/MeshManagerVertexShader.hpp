@@ -50,13 +50,6 @@ public:
 	BoundsDetails GetBoundsDetails() const noexcept;
 
 private:
-	void SetMeshBundle(
-		StagingBufferManager& stagingBufferMan,
-		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
-		TemporaryDataBufferGPU& tempBuffer, std::unique_ptr<MeshBundleVS> meshBundle
-	);
-
-private:
 	SharedBufferData m_vertexBufferSharedData;
 	SharedBufferData m_indexBufferSharedData;
 	SharedBufferData m_meshBoundsSharedData;
