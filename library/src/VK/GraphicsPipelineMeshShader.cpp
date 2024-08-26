@@ -48,7 +48,8 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 			shaderPath + taskShader.GetNameWithExtension(s_shaderBytecodeType)
 		);
 
-		builder.SetTaskStage(ts->Get());
+		if (tsSuccess)
+			builder.SetTaskStage(ts->Get());
 	}
 
 	auto pso = std::make_unique<VkPipelineObject>(device);

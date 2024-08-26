@@ -664,7 +664,7 @@ protected:
 		{
 			psoIndex = static_cast<std::uint32_t>(std::size(m_graphicsPipelines));
 
-			Pipeline pipeline{};
+			Pipeline pipeline = static_cast<Derived*>(this)->CreatePipelineObject();
 
 			pipeline.Create(
 				m_device, m_graphicsPipelineLayout, *m_renderPass, m_shaderPath, fragmentShader
@@ -842,9 +842,12 @@ private:
 	void ShaderPathSet() {}
 
 	[[nodiscard]]
+	static GraphicsPipelineIndividualDraw CreatePipelineObject();
+
+	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
 		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-	) noexcept;
+	);
 
 private:
 	SharedBufferGPU m_vertexBuffer;
@@ -958,9 +961,12 @@ private:
 	void UpdateCounterResetValues();
 
 	[[nodiscard]]
+	GraphicsPipelineIndirectDraw CreatePipelineObject();
+
+	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
 		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-	) noexcept;
+	);
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
@@ -1134,9 +1140,12 @@ private:
 	void ShaderPathSet() {}
 
 	[[nodiscard]]
+	GraphicsPipelineMeshShader CreatePipelineObject();
+
+	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
 		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-	) noexcept;
+	);
 
 private:
 	StagingBufferManager* m_stagingBufferMan;

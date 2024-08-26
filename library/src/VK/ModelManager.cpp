@@ -535,10 +535,15 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 	}
 }
 
+GraphicsPipelineIndividualDraw ModelManagerVSIndividual::CreatePipelineObject()
+{
+	return GraphicsPipelineIndividualDraw{};
+}
+
 ModelBuffers ModelManagerVSIndividual::ConstructModelBuffers(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
 	[[maybe_unused]] QueueIndices3 queueIndices
-) noexcept {
+) {
 	// Only being accessed from the graphics queue.
 	return ModelBuffers{ device, memoryManager, frameCount, {} };
 }
@@ -1047,9 +1052,14 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 	}
 }
 
+GraphicsPipelineIndirectDraw ModelManagerVSIndirect::CreatePipelineObject()
+{
+	return GraphicsPipelineIndirectDraw{};
+}
+
 ModelBuffers ModelManagerVSIndirect::ConstructModelBuffers(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-) noexcept {
+) {
 	// Will be accessed from both the Graphics queue and the compute queue.
 	return ModelBuffers{
 		device, memoryManager, frameCount, queueIndices.ResolveQueueIndices<QueueIndicesCG>()
@@ -1252,10 +1262,15 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 	}
 }
 
+GraphicsPipelineMeshShader ModelManagerMS::CreatePipelineObject()
+{
+	return GraphicsPipelineMeshShader{ false };
+}
+
 ModelBuffers ModelManagerMS::ConstructModelBuffers(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
 	[[maybe_unused]] QueueIndices3 queueIndices
-) noexcept {
+) {
 	// Will be accessed from both the Graphics queue only.
 	return ModelBuffers{ device, memoryManager, frameCount, {} };
 }
