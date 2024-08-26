@@ -457,9 +457,6 @@ void ModelManagerVSIndividual::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
-	// The vertex and index buffer should be guarded with the tempData mutex, but
-	// I am not doing it here, because the ConfigureMeshBundle function call is already
-	// being guarded by the tempData mutex.
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
 		tempBuffer
@@ -1207,7 +1204,7 @@ void ModelManagerMS::SetDescriptorBufferOfModels(
 		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, msSetLayoutIndex
 		);
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelBuffers.SetFragmentDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex
 		);
 	}
