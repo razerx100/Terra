@@ -67,7 +67,13 @@ TEST_F(BufferTest, VkBufferTest)
 	Buffer testTexel{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 	testTexel.Create(2_KB, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, {});
 
+	EXPECT_EQ(testTexel.BufferSize(), 2_KB) << "Buffer size isn't 2_KB.";
+	EXPECT_NE(testTexel.Get(), VK_NULL_HANDLE) << "Buffer wasn't created.";
+
 	testTexel.Create(4_KB, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, {});
+
+	EXPECT_EQ(testTexel.BufferSize(), 4_KB) << "Buffer size isn't 2_KB.";
+	EXPECT_NE(testTexel.Get(), VK_NULL_HANDLE) << "Buffer wasn't created.";
 }
 
 TEST_F(BufferTest, VkSamplerTest)
@@ -100,7 +106,17 @@ TEST_F(BufferTest, TextureTest)
 	Texture testTexture{ logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
 	testTexture.Create2D(1280u, 720u, 1u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, {});
 
+	EXPECT_EQ(testTexture.GetExtent().width, 1280u) << "Texture width isn't 1280.";
+	EXPECT_EQ(testTexture.GetExtent().height, 720u) << "Texture width isn't 720.";
+	EXPECT_EQ(testTexture.GetBufferSize(), 3'686'400lu) << "Texture size isn't 3'686'400.";
+	EXPECT_NE(testTexture.Get(), VK_NULL_HANDLE) << "Texture wasn't created.";
+
 	testTexture.Create2D(1920u, 1080u, 1u, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_SAMPLED_BIT, {});
+
+	EXPECT_EQ(testTexture.GetExtent().width, 1920u) << "Texture width isn't 1920.";
+	EXPECT_EQ(testTexture.GetExtent().height, 1080u) << "Texture width isn't 1080.";
+	EXPECT_EQ(testTexture.GetBufferSize(), 8'294'400lu) << "Texture size isn't 8'294'400.";
+	EXPECT_NE(testTexture.Get(), VK_NULL_HANDLE) << "Texture wasn't created.";
 }
 
 TEST_F(BufferTest, TextureViewTest)
