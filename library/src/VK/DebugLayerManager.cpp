@@ -21,10 +21,11 @@ static std::unordered_map<VkDebugUtilsMessageSeverityFlagBitsEXT, const char*> m
 
 static std::unordered_map<std::uint32_t, const char*> messageTypes
 {
-	{ VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,        "MESSAGE_TYPE_GENERAL"},
-	{ VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,     "MESSAGE_TYPE_VALIDATION"},
-	{ VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,    "MESSAGE_TYPE_PERFORMANCE"},
-	{ VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT, "NOTHING"}
+	{ VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT,                "MESSAGE_TYPE_GENERAL"},
+	{ VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,             "MESSAGE_TYPE_VALIDATION"},
+	{ VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,            "MESSAGE_TYPE_PERFORMANCE"},
+	{ VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT, "MESSAGE_TYPE_DEVICE_ADDRESS_BINDING"},
+	{ VK_DEBUG_UTILS_MESSAGE_TYPE_FLAG_BITS_MAX_ENUM_EXT,         "NOTHING"}
 };
 
 DebugLayerManager::DebugLayerManager()
@@ -57,7 +58,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackErrorTxt(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void*/* pUserData */
+	[[maybe_unused]] void* pUserData
 ) {
 	std::ofstream log("ErrorLog.txt", std::ios_base::app | std::ios_base::out);
 	log << FormatDebugMessage(messageSeverity, messageType, pCallbackData);
@@ -65,9 +66,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackErrorTxt(
 	return VK_FALSE;
 }
 
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackStdError(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	[[maybe_unused]] void* pUserData
+) {
+	std::cerr << FormatDebugMessage(messageSeverity, messageType, pCallbackData);
+
+	return VK_FALSE;
+}
+
 void DebugLayerManager::CreateDebugCallbacks(VkInstance instance)
 {
-	m_instance = instance;
+	m_instance      = instance;
 
 	using DebugUtil = VkInstanceExtension::VkExtDebugUtils;
 
@@ -92,22 +104,36 @@ void DebugLayerManager::CreateDebugCallbacks(VkInstance instance)
 	}
 }
 
-void DebugLayerManager::AddDebugCallback(DebugCallbackType type) noexcept
+DebugLayerManager& DebugLayerManager::AddDebugCallback(DebugCallbackType type) noexcept
 {
 	m_callbackTypes.set(static_cast<size_t>(type));
+
+	return *this;
 }
 
-void DebugLayerManager::AddValidationLayer(ValidationLayer layer) noexcept
+DebugLayerManager& DebugLayerManager::AddValidationLayer(ValidationLayer layer) noexcept
 {
 	m_layers.emplace_back(validationLayersNames.at(static_cast<size_t>(layer)));
+
+	return *this;
 }
 
 std::string VKAPI_CALL DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept
 {
 	std::string messageTypeDescription{};
-	for (std::uint32_t index = 0u; index < 3u; ++index) {
+	// Size -1 because the last entry is the invalid entry.
+	const std::uint32_t messageTypeCount   = std::size(messageTypes) - 1u;
+	// This would be 1 more than the value if all of bits were on for the max valid flag.
+	const std::uint32_t maxMessageBitValue = 1u << std::size(messageTypes);
+
+	for (std::uint32_t index = 0u; index < messageTypeCount; ++index)
+	{
 		const std::uint32_t flagIndex = 1u << index;
-		if (typeFlag & flagIndex)
+
+		// The second check should make sure that all of the types don't get
+		// appended in case the flag was invalid, in which case it would return
+		// a uint32max.
+		if ((typeFlag & flagIndex) && typeFlag < maxMessageBitValue)
 			messageTypeDescription
 			.append(messageTypes[static_cast<size_t>(flagIndex)])
 			.append(" ");
@@ -119,7 +145,8 @@ std::string VKAPI_CALL DebugLayerManager::GenerateMessageType(std::uint32_t type
 VkDebugUtilsMessengerCreateInfoEXT DebugLayerManager::GetDebugCallbackMessengerCreateInfo(
 	DebugCallbackType type
 ) const noexcept {
-	VkDebugUtilsMessengerCreateInfoEXT createInfo{
+	VkDebugUtilsMessengerCreateInfoEXT createInfo
+	{
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 		.messageSeverity =
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -127,7 +154,10 @@ VkDebugUtilsMessengerCreateInfoEXT DebugLayerManager::GetDebugCallbackMessengerC
 		.messageType =
 		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+		// This could be some user defined data. So, it can be used to send in an
+		// object to a custom logger.
+		.pUserData = nullptr
 	};
 
 	if (type == DebugCallbackType::FileOut)
@@ -143,7 +173,7 @@ std::optional<std::string_view> DebugLayerManager::CheckLayerSupport() const noe
 	std::uint32_t layerCount = 0u;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
-	std::vector<VkLayerProperties> availableLayers(layerCount);
+	std::vector<VkLayerProperties> availableLayers{ layerCount };
 	vkEnumerateInstanceLayerProperties(
 		&layerCount, std::data(availableLayers)
 	);
@@ -163,15 +193,4 @@ std::optional<std::string_view> DebugLayerManager::CheckLayerSupport() const noe
 	}
 
 	return {};
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugLayerManager::DebugCallbackStdError(
-	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	VkDebugUtilsMessageTypeFlagsEXT messageType,
-	const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void*/* pUserData */
-) {
-	std::cerr << FormatDebugMessage(messageSeverity, messageType, pCallbackData);
-
-	return VK_FALSE;
 }

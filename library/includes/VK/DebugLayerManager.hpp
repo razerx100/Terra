@@ -25,9 +25,9 @@ class DebugLayerManager
 public:
 	DebugLayerManager();
 
-	void AddValidationLayer(ValidationLayer layer) noexcept;
+	DebugLayerManager& AddValidationLayer(ValidationLayer layer) noexcept;
 
-	void AddDebugCallback(DebugCallbackType type) noexcept;
+	DebugLayerManager& AddDebugCallback(DebugCallbackType type) noexcept;
 
 	void CreateDebugCallbacks(VkInstance instance);
 	void DestroyDebugCallbacks() noexcept;
