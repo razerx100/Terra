@@ -29,7 +29,7 @@ void DescriptorBufferTest::SetUpTestSuite()
 	const CoreVersion coreVersion = CoreVersion::V1_3;
 
 	s_instanceManager = std::make_unique<VkInstanceManager>(Constants::appName);
-	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::standardError);
+	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::StandardError);
 	s_instanceManager->CreateInstance(coreVersion);
 	VkInstance vkInstance = s_instanceManager->GetVKInstance();
 

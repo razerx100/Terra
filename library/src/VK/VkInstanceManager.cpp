@@ -84,7 +84,7 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 	// to pass in a VkDebugUtilsMessengerCreateInfoEXT in the pNext.
 
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo
-		= m_debugLayer.GetDebugCallbackMessengerCreateInfo(DebugCallbackType::standardError);
+		= m_debugLayer.GetDebugCallbackMessengerCreateInfo(DebugCallbackType::StandardError);
 
 	const std::vector<const char*>& validationLayers = m_debugLayer.GetActiveLayerNames();
 

@@ -46,7 +46,7 @@ void SwapchainTest::SetUpTestSuite()
 #endif
 
 	s_instanceManager = std::make_unique<VkInstanceManager>(Constants::appName);
-	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::standardError);
+	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::StandardError);
 
 	{
 		VkInstanceExtensionManager& extensionManager = s_instanceManager->ExtensionManager();

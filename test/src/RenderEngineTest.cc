@@ -26,7 +26,7 @@ protected:
 void RenderEngineTest::SetUpTestSuite()
 {
 	s_instanceManager = std::make_unique<VkInstanceManager>(Constants::appName);
-	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::standardError);
+	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::StandardError);
 	s_instanceManager->CreateInstance(Constants::coreVersion);
 }
 

@@ -15,7 +15,7 @@ enum class ValidationLayer
 
 enum class DebugCallbackType
 {
-	standardError,
+	StandardError,
 	FileOut,
 	None
 };
