@@ -95,11 +95,12 @@ template<std::uint32_t barrierCount = 1u>
 class VkBufferBarrier2
 {
 public:
-	VkBufferBarrier2() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
+	VkBufferBarrier2() : m_currentIndex{ 0u }, m_barriers{} {}
 
 	void RecordBarriers(VkCommandBuffer commandBuffer) const noexcept
 	{
-		VkDependencyInfo dependencyInfo{
+		VkDependencyInfo dependencyInfo
+		{
 			.sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.dependencyFlags          = 0u,
 			.bufferMemoryBarrierCount = barrierCount,
@@ -192,11 +193,12 @@ template<std::uint32_t barrierCount = 1u>
 class VkImageBarrier2
 {
 public:
-	VkImageBarrier2() noexcept : m_currentIndex{ 0u }, m_barriers{} {}
+	VkImageBarrier2() : m_currentIndex{ 0u }, m_barriers{} {}
 
 	void RecordBarriers(VkCommandBuffer commandBuffer) const noexcept
 	{
-		VkDependencyInfo dependencyInfo{
+		VkDependencyInfo dependencyInfo
+		{
 			.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 			.dependencyFlags         = 0u,
 			.imageMemoryBarrierCount = barrierCount,
