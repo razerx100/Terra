@@ -1,28 +1,22 @@
 #ifndef REUSABLE_VECTOR_HPP_
 #define REUSABLE_VECTOR_HPP_
 #include <vector>
-#include <optional>
 #include <type_traits>
 #include <utility>
-
-[[nodiscard]]
-std::optional<size_t> GetFirstAvailableIndex(const std::vector<bool>& availableIndices) noexcept;
-[[nodiscard]]
-std::vector<size_t> GetAvailableIndices(const std::vector<bool>& availableIndices) noexcept;
+#include <IndicesManager.hpp>
 
 template<typename T>
 class ReusableVector
 {
 public:
 	ReusableVector() = default;
-	ReusableVector(size_t initialSize)
-		: m_elements{ initialSize }, m_availableIndices( initialSize )
+	ReusableVector(size_t initialSize) : m_elements{ initialSize }, m_indicesManager{ initialSize }
 	{}
 
 	void ReserveNewElements(size_t newCount) noexcept
 	{
 		m_elements.resize(newCount);
-		m_availableIndices.resize(newCount, true);
+		m_indicesManager.Resize(newCount);
 	}
 
 	[[nodiscard]]
@@ -30,7 +24,7 @@ public:
 	{
 		size_t elementIndex = std::numeric_limits<size_t>::max();
 
-		auto oElementIndex  = GetFirstAvailableIndex();
+		auto oElementIndex  = m_indicesManager.GetFirstAvailableIndex();
 
 		if (oElementIndex)
 			elementIndex = oElementIndex.value();
@@ -55,8 +49,8 @@ public:
 	{
 		size_t elementIndex = GetNextFreeIndex(extraAllocCount);
 
-		m_elements[elementIndex]         = std::move(element);
-		m_availableIndices[elementIndex] = false;
+		m_elements[elementIndex] = std::move(element);
+		m_indicesManager.ToggleAvailability(elementIndex, false);
 
 		return elementIndex;
 	}
@@ -70,16 +64,11 @@ public:
 	void RemoveElement(size_t index) noexcept
 	{
 		m_elements[index] = T{};
-		ToggleAvailability(index, true);
-	}
-
-	void ToggleAvailability(size_t index, bool on) noexcept
-	{
-		m_availableIndices[index] = on;
+		m_indicesManager.ToggleAvailability(index, true);
 	}
 
 	[[nodiscard]]
-	bool IsInUse(size_t index) const noexcept { return !m_availableIndices[index]; }
+	bool IsInUse(size_t index) const noexcept { return m_indicesManager.IsInUse(index); }
 
 	T& at(size_t index) noexcept { return m_elements[index]; }
 	const T& at(size_t index) const noexcept { return m_elements[index]; }
@@ -96,35 +85,28 @@ public:
 	size_t GetCount() const noexcept { return std::size(m_elements); }
 
 private:
-	[[nodiscard]]
-	std::optional<size_t> GetFirstAvailableIndex() const noexcept
-	{
-		return ::GetFirstAvailableIndex(m_availableIndices);
-	}
-
-private:
-	std::vector<T>    m_elements;
-	std::vector<bool> m_availableIndices;
+	std::vector<T> m_elements;
+	IndicesManager m_indicesManager;
 
 public:
 	ReusableVector(const ReusableVector& other) noexcept
-		: m_elements{ other.m_elements }, m_availableIndices{ other.m_availableIndices }
+		: m_elements{ other.m_elements }, m_indicesManager{ other.m_indicesManager }
 	{}
 	ReusableVector& operator=(const ReusableVector& other) noexcept
 	{
-		m_elements         = other.m_elements;
-		m_availableIndices = other.m_availableIndices;
+		m_elements       = other.m_elements;
+		m_indicesManager = other.m_indicesManager;
 
 		return *this;
 	}
 	ReusableVector(ReusableVector&& other) noexcept
 		: m_elements{ std::move(other.m_elements) },
-		m_availableIndices{ std::move(other.m_availableIndices) }
+		m_indicesManager{ std::move(other.m_indicesManager) }
 	{}
 	ReusableVector& operator=(ReusableVector&& other) noexcept
 	{
-		m_elements         = std::move(other.m_elements);
-		m_availableIndices = std::move(other.m_availableIndices);
+		m_elements       = std::move(other.m_elements);
+		m_indicesManager = std::move(other.m_indicesManager);
 
 		return *this;
 	}
