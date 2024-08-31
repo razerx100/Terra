@@ -23,7 +23,12 @@ public:
 	) noexcept;
 
 	void CreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
-	void RecreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
+
+	void IncreaseDescriptorCount(
+		std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type,
+		std::uint32_t oldDescriptorCount, std::uint32_t newDescriptorCount,
+		const std::vector<std::uint32_t>& queueFamilyIndices = {}
+	);
 
 	static void SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept;
 
@@ -105,9 +110,40 @@ public:
 		return descriptorSize;
 	}
 
+	[[nodiscard]]
+	static size_t GetDescriptorSize(VkDescriptorType type) noexcept
+	{
+		size_t descriptorSize = 0u;
+
+		if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+			descriptorSize = s_descriptorInfo.storageBufferDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+			descriptorSize = s_descriptorInfo.uniformBufferDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER)
+			descriptorSize = s_descriptorInfo.uniformTexelBufferDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
+			descriptorSize = s_descriptorInfo.storageTexelBufferDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+			descriptorSize = s_descriptorInfo.combinedImageSamplerDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+			descriptorSize = s_descriptorInfo.storageImageDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+			descriptorSize = s_descriptorInfo.sampledImageDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_SAMPLER)
+			descriptorSize = s_descriptorInfo.samplerDescriptorSize;
+
+		return descriptorSize;
+	}
+
 private:
 	[[nodiscard]]
 	VkDeviceSize GetBindingOffset(std::uint32_t binding, size_t setLayoutIndex) const noexcept;
+
+	[[nodiscard]]
+	VkDeviceSize GetDescriptorOffset(
+		std::uint32_t bindingIndex, size_t setLayoutIndex, size_t descriptorSize,
+		std::uint32_t descriptorIndex
+	) const noexcept;
 
 	[[nodiscard]]
 	void* GetDescriptorAddress(

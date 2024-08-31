@@ -56,13 +56,28 @@ void VkDescriptorBuffer::CreateBuffer(const std::vector<std::uint32_t>& queueFam
 	_createBuffer(m_descriptorBuffer, queueFamilyIndices);
 }
 
-void VkDescriptorBuffer::RecreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices/* = {} */)
-{
+void VkDescriptorBuffer::IncreaseDescriptorCount(
+	std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type,
+	std::uint32_t oldDescriptorCount, std::uint32_t newDescriptorCount,
+	const std::vector<std::uint32_t>& queueFamilyIndices /* = {} */
+) {
+	// Skip if this is called before the descriptorBuffer has been created.
+	if (m_descriptorBuffer.Get() == VK_NULL_HANDLE)
+		return;
+
 	Buffer newBuffer{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+
+	const VkDeviceSize oldDescriptorOffset = GetDescriptorOffset(
+		bindingIndex, setLayoutIndex, GetDescriptorSize(type), oldDescriptorCount
+	);
+
+	const std::vector<VkDeviceSize> oldLayoutOffsets = m_layoutOffsets;
 
 	_createBuffer(newBuffer, queueFamilyIndices);
 
-	const VkDeviceSize oldBufferSize = m_descriptorBuffer.BufferSize();
+	const VkDeviceSize newDescriptorOffset = GetDescriptorOffset(
+		bindingIndex, setLayoutIndex, GetDescriptorSize(type), newDescriptorCount
+	);
 
 	// Usually we should only recreate when have added more layout bindings, which should cause the
 	// size to increase.
@@ -71,8 +86,75 @@ void VkDescriptorBuffer::RecreateBuffer(const std::vector<std::uint32_t>& queueF
 	// But the copying can't be done if we change a layout to have less items, as the size will
 	// decrease and so the copying won't be possible. In that case, we will have to recreate the
 	// descriptors again.
-	if (oldBufferSize && newBuffer.BufferSize() >= oldBufferSize)
-		memcpy(newBuffer.CPUHandle(), m_descriptorBuffer.CPUHandle(), m_descriptorBuffer.BufferSize());
+	assert(
+		newBuffer.BufferSize() >= m_descriptorBuffer.BufferSize()
+		&& "The new descriptor buffer has a smaller size. So, copying the descriptors isn't possible."
+	);
+
+	{
+		// Copy the other SetLayouts first, as they should be unchanged.
+		const size_t layoutCount = std::size(oldLayoutOffsets);
+
+		for (size_t index = 0u; index < layoutCount; ++index)
+		{
+			const size_t difference     = layoutCount - index;
+			const size_t oldLayoutStart = static_cast<size_t>(oldLayoutOffsets[index]);
+			const size_t newLayoutStart = static_cast<size_t>(m_layoutOffsets[index]);
+			size_t layoutSize           = 0u;
+
+			if (difference > 1u)
+				layoutSize = static_cast<size_t>(oldLayoutOffsets[index + 1] - oldLayoutStart);
+			else
+				layoutSize = static_cast<size_t>(m_descriptorBuffer.BufferSize() - oldLayoutStart);
+
+			// For the changed Layout.
+			if (index == setLayoutIndex)
+			{
+				// The first unchanged part.
+				const auto firstUnchangedPartSize
+					= static_cast<size_t>(oldDescriptorOffset - oldLayoutStart);
+
+				memcpy(
+					newBuffer.CPUHandle() + newLayoutStart,
+					m_descriptorBuffer.CPUHandle() + oldLayoutStart,
+					firstUnchangedPartSize
+				);
+
+				size_t newLayoutSize = 0u;
+
+				if (difference > 1u)
+					newLayoutSize = static_cast<size_t>(m_layoutOffsets[index + 1] - newLayoutStart);
+				else
+					newLayoutSize = static_cast<size_t>(newBuffer.BufferSize() - newLayoutStart);
+
+				//The second unchanged part.
+				// The layout size might be bigger than the actual size held by the bindings.
+				// So, can't just copy the oldLastPart.
+				const auto oldLayoutLastPartSize = static_cast<size_t>(
+					oldLayoutStart + layoutSize - oldDescriptorOffset
+				);
+				const auto newLayoutLastPartSize = static_cast<size_t>(
+					newLayoutStart + newLayoutSize - newDescriptorOffset
+				);
+
+				const size_t secondUnchangedPartSize = std::min(
+					oldLayoutLastPartSize, newLayoutLastPartSize
+				);
+
+				memcpy(
+					newBuffer.CPUHandle() + newDescriptorOffset,
+					m_descriptorBuffer.CPUHandle() + oldDescriptorOffset,
+					secondUnchangedPartSize
+				);
+			}
+			else
+				memcpy(
+					newBuffer.CPUHandle() + newLayoutStart,
+					m_descriptorBuffer.CPUHandle() + oldLayoutStart,
+					layoutSize
+				);
+		}
+	}
 
 	m_descriptorBuffer = std::move(newBuffer);
 }
@@ -114,12 +196,21 @@ VkDeviceSize VkDescriptorBuffer::GetBindingOffset(
 	return offset;
 }
 
+VkDeviceSize VkDescriptorBuffer::GetDescriptorOffset(
+	std::uint32_t bindingIndex, size_t setLayoutIndex, size_t descriptorSize,
+	std::uint32_t descriptorIndex
+) const noexcept {
+	return m_layoutOffsets.at(setLayoutIndex) +
+		+ GetBindingOffset(bindingIndex, setLayoutIndex) + (descriptorIndex * descriptorSize);
+}
+
 void* VkDescriptorBuffer::GetDescriptorAddress(
 	std::uint32_t bindingIndex, size_t setLayoutIndex, size_t descriptorSize,
 	std::uint32_t descriptorIndex
 ) const noexcept {
-	return m_descriptorBuffer.CPUHandle() + m_layoutOffsets.at(setLayoutIndex) +
-		+ GetBindingOffset(bindingIndex, setLayoutIndex) + (descriptorIndex * descriptorSize);
+	return m_descriptorBuffer.CPUHandle() + GetDescriptorOffset(
+		bindingIndex, setLayoutIndex, descriptorSize, descriptorIndex
+	);
 }
 
 void VkDescriptorBuffer::BindDescriptorBuffer(

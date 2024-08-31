@@ -196,16 +196,6 @@ TEST_F(DescriptorBufferTest, DescriptorBufferCopyTest)
 			);
 
 			descBuffer.CreateBuffer();
-
-			descBuffer.AddBinding(
-				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
-			);
-
-			descBuffer.AddBinding(
-				1u, 1u, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 255u, VK_SHADER_STAGE_FRAGMENT_BIT
-			);
-
-			descBuffer.RecreateBuffer();
 		}
 
 		{
@@ -250,6 +240,56 @@ TEST_F(DescriptorBufferTest, DescriptorBufferCopyTest)
 
 				descBuffer.SetSampledImageDescriptor(desc, 0u, 1u, 0u);
 			}
+		}
+	}
+}
+
+TEST_F(DescriptorBufferTest, DescriptorBufferRecreationTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	using DescBuffer = VkDeviceExtension::VkExtDescriptorBuffer;
+
+	{
+		const std::uint32_t setCount = 4u;
+
+		MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+		VkDescriptorBuffer descBuffer{ logicalDevice, &memoryManager, setCount };
+		{
+			descBuffer.SetDescriptorBufferInfo(physicalDevice);
+			descBuffer.AddBinding(
+				0u, 0u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_VERTEX_BIT
+			);
+			descBuffer.AddBinding(
+				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+			descBuffer.AddBinding(
+				0u, 2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+			descBuffer.AddBinding(
+				1u, 2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+			descBuffer.AddBinding(
+				0u, 3u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+
+			descBuffer.CreateBuffer();
+
+			descBuffer.AddBinding(
+				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 85u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+			descBuffer.IncreaseDescriptorCount(
+				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, 85u
+			);
+
+			descBuffer.AddBinding(
+				0u, 2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000u, VK_SHADER_STAGE_FRAGMENT_BIT
+			);
+			descBuffer.IncreaseDescriptorCount(
+				0u, 2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, 1000u
+			);
 		}
 	}
 }

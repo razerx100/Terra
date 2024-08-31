@@ -154,7 +154,8 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	// Should wait for the current frames to be rendered before modifying the data.
 	m_graphicsQueue.WaitForQueueToFinish();
 
-	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
 
 	VkTextureView const* textureView = m_textureStorage.GetPtr(textureIndex);
 	VKSampler const* defaultSampler  = m_textureStorage.GetSamplerPtr(samplerIndex);
@@ -164,17 +165,14 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	// If there is no free global index, increase it and recreate the global descriptor buffers.
 	if (!oFreeGlobalDescIndex)
 	{
-		m_textureManager.IncreaseAvailableIndices(TextureDescType::CombinedTexture);
+		m_textureManager.IncreaseAvailableIndices<TexDescType>();
 
+		// The SetDescriptorBufferLayout call below will recreate the descriptorBuffers.
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
-		{
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
 				GetSamplerBindingSlot(), s_fragmentShaderSetLayoutIndex
 			);
-
-			descriptorBuffer.RecreateBuffer();
-		}
 
 		oFreeGlobalDescIndex = m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
 

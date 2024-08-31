@@ -204,10 +204,6 @@ public:
 		m_localSamplerDescCount{ 0u }
 	{}
 
-	// Add new entries to the available indices container. After calling
-	// this, the descriptor buffer needs to be updated and recreated.
-	void IncreaseAvailableIndices(TextureDescType descType) noexcept;
-
 	void SetDescriptorBufferLayout(
 		VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,
 		std::uint32_t sampledTexturesBindingSlot, std::uint32_t samplersBindingSlot,
@@ -303,6 +299,30 @@ private:
 	}
 
 public:
+	// Add new entries to the available indices container. After calling
+	// this, the descriptor buffer needs to be updated and recreated.
+	template<TextureDescType DescType>
+	void IncreaseAvailableIndices() noexcept
+	{
+		if constexpr (DescType == TextureDescType::CombinedTexture)
+		{
+			const size_t newSize =
+				std::size(m_availableIndicesCombinedTextures) + s_combinedTextureDescriptorCount;
+			m_availableIndicesCombinedTextures.resize(newSize, true);
+		}
+		else if constexpr (DescType == TextureDescType::SampledTexture)
+		{
+			const size_t newSize =
+				std::size(m_availableIndicesSampledTextures) + s_sampledTextureDescriptorCount;
+			m_availableIndicesSampledTextures.resize(newSize, true);
+		}
+		else if constexpr (DescType == TextureDescType::Sampler)
+		{
+			const size_t newSize = std::size(m_availableIndicesSamplers) + s_samplerDescriptorCount;
+			m_availableIndicesSamplers.resize(newSize, true);
+		}
+	}
+
 	template<VkDescriptorType type>
 	void RemoveLocalDescriptor(std::uint32_t resourceIndex) noexcept
 	{
@@ -385,7 +405,9 @@ public:
 
 			// Add binding will add a new binding to the Layout and we use the layout size to
 			// create the buffer. So, we don't need to pass a size.
-			m_localDescBuffer.RecreateBuffer();
+			m_localDescBuffer.IncreaseDescriptorCount(
+				localBindingSlot, 0u, type, localDescCount - s_localDescriptorCount, localDescCount
+			);
 		}
 
 		m_localDescBuffer.SetDescriptor<type>(descriptor, localBindingSlot, 0u, localDescIndex);
