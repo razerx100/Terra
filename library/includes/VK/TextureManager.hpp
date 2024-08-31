@@ -379,7 +379,7 @@ public:
 		{
 			localDescCount += s_localDescriptorCount;
 
-			m_localDescBuffer.UpdateBinding(
+			m_localDescBuffer.AddBinding(
 				localBindingSlot, 0u, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 

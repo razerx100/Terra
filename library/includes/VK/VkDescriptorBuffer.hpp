@@ -22,12 +22,6 @@ public:
 		VkDescriptorBindingFlags bindingFlags = 0u
 	) noexcept;
 
-	VkDescriptorBuffer& UpdateBinding(
-		std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type,
-		std::uint32_t descriptorCount, VkShaderStageFlags shaderFlags,
-		VkDescriptorBindingFlags bindingFlags = 0u
-	) noexcept;
-
 	void CreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
 	void RecreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
 

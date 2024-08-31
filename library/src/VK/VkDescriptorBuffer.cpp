@@ -21,17 +21,6 @@ VkDescriptorBuffer& VkDescriptorBuffer::AddBinding(
 	std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type, std::uint32_t descriptorCount,
 	VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags /* = 0u */
 ) noexcept {
-	m_setLayouts.at(setLayoutIndex).AddBinding(
-		bindingIndex, type, descriptorCount, shaderFlags, bindingFlags
-	);
-
-	return *this;
-}
-
-VkDescriptorBuffer& VkDescriptorBuffer::UpdateBinding(
-	std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type, std::uint32_t descriptorCount,
-	VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags /* = 0u */
-) noexcept {
 	m_setLayouts.at(setLayoutIndex).UpdateBinding(
 		bindingIndex, type, descriptorCount, shaderFlags, bindingFlags
 	);

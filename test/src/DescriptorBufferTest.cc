@@ -197,7 +197,7 @@ TEST_F(DescriptorBufferTest, DescriptorBufferCopyTest)
 
 			descBuffer.CreateBuffer();
 
-			descBuffer.UpdateBinding(
+			descBuffer.AddBinding(
 				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65535u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
