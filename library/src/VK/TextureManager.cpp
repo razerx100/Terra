@@ -1,6 +1,31 @@
 #include <TextureManager.hpp>
 #include <VkResourceBarriers2.hpp>
 
+template<typename T>
+static std::pair<size_t, T*> AddResource(
+	std::vector<bool>& availableIndices, std::deque<T>& resources, T&& resource
+) noexcept {
+	auto index     = std::numeric_limits<size_t>::max();
+	T* resourcePtr = nullptr;
+
+	auto result = std::ranges::find(availableIndices, true);
+
+	if (result != std::end(availableIndices))
+	{
+		index       = static_cast<size_t>(std::distance(std::begin(availableIndices), result));
+		resourcePtr = &resources[index];
+	}
+	else
+	{
+		index          = std::size(resources);
+		T& returnedRef = resources.emplace_back(std::move(resource));
+		availableIndices.emplace_back(false);
+		resourcePtr    = &returnedRef;
+	}
+
+	return { index, resourcePtr };
+}
+
 // Texture storage
 void TextureStorage::SetBindingIndex(
 	size_t index, std::uint32_t bindingIndex, std::vector<std::uint32_t>& bindingIndices
@@ -16,30 +41,10 @@ void TextureStorage::SetBindingIndex(
 size_t TextureStorage::AddTexture(
 	STexture&& texture, StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
 ) {
-	VkTextureView textureView{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
-
-	auto index = std::numeric_limits<size_t>::max();
-
-	VkTextureView* textureViewPtr = nullptr;
-
-	{
-		auto result = std::ranges::find(m_availableTextureIndices, true);
-
-		if (result != std::end(m_availableTextureIndices))
-		{
-			index          = static_cast<size_t>(
-				std::distance(std::begin(m_availableTextureIndices), result)
-			);
-			textureViewPtr = &m_textures.at(index);
-		}
-		else
-		{
-			index                      = std::size(m_textures);
-			VkTextureView& returnedRef = m_textures.emplace_back(std::move(textureView));
-			m_availableTextureIndices.emplace_back(false);
-			textureViewPtr             = &returnedRef;
-		}
-	}
+	auto [index, textureViewPtr] = AddResource(
+		m_availableTextureIndices, m_textures,
+		VkTextureView{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT }
+	);
 
 	textureViewPtr->CreateView2D(
 		texture.width, texture.height, s_textureFormat,
@@ -59,30 +64,7 @@ size_t TextureStorage::AddTexture(
 
 size_t TextureStorage::AddSampler(const VkSamplerCreateInfoBuilder& builder)
 {
-	VKSampler sampler{ m_device };
-
-	auto index = std::numeric_limits<size_t>::max();
-
-	VKSampler* samplerPtr = nullptr;
-
-	{
-		auto result = std::ranges::find(m_availableSamplerIndices, true);
-
-		if (result != std::end(m_availableSamplerIndices))
-		{
-			index      = static_cast<size_t>(
-				std::distance(std::begin(m_availableSamplerIndices), result)
-			);
-			samplerPtr = &m_samplers.at(index);
-		}
-		else
-		{
-			index                  = std::size(m_samplers);
-			VKSampler& returnedRef = m_samplers.emplace_back(std::move(sampler));
-			m_availableSamplerIndices.emplace_back(false);
-			samplerPtr             = &returnedRef;
-		}
-	}
+	auto [index, samplerPtr] = AddResource(m_availableSamplerIndices, m_samplers, VKSampler{ m_device });
 
 	samplerPtr->Create(builder);
 

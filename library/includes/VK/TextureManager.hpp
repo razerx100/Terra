@@ -130,6 +130,7 @@ private:
 	VkDevice                         m_device;
 	MemoryManager*                   m_memoryManager;
 	// The TextureView objects need to have the same address until their data is copied.
+	// For the transitionQueue member and also the StagingBufferManager.
 	std::deque<VkTextureView>        m_textures;
 	std::deque<VKSampler>            m_samplers;
 	std::vector<bool>                m_availableTextureIndices;
