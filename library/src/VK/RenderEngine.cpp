@@ -162,23 +162,15 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 
 	auto oFreeGlobalDescIndex        = m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
 
-	// If there is no free global index, increase it and recreate the global descriptor buffers.
-	if (!oFreeGlobalDescIndex)
-	{
-		m_textureManager.IncreaseAvailableIndices<TexDescType>();
-
-		// The SetDescriptorBufferLayout call below will recreate the descriptorBuffers.
-		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
-			m_textureManager.SetDescriptorBufferLayout(
-				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
-				GetSamplerBindingSlot(), s_fragmentShaderSetLayoutIndex
-			);
-
-		oFreeGlobalDescIndex = m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
-
-		// There should be free indices now. So, just gonna do an assert.
-		assert(oFreeGlobalDescIndex.has_value() && "No free global desc even after recreation");
-	}
+	// If there is no free global index, increase the limit. Right now it should be possible to
+	// have 65535 bound textures at once. There could be more textures. Adding new descriptors
+	// would change the PipelineLayout and that would require every single Pipeline Object to be
+	// recreated. Which isn't worth it. And it should be fine to have only 65535 textures bound
+	// at once.
+	assert(
+		oFreeGlobalDescIndex.has_value()
+		&& "No descriptor available to bind the texture. Free some already bound textures."
+	);
 
 	const std::uint32_t freeGlobalDescIndex = oFreeGlobalDescIndex.value();
 

@@ -240,11 +240,11 @@ public:
 			)
 		}, m_pipelineStages{}
 	{
-		for(auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
 				GetSamplerBindingSlot(), s_fragmentShaderSetLayoutIndex
-		);
+			);
 	}
 
 	void SetShaderPath(const std::wstring& shaderPath) override

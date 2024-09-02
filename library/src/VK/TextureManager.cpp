@@ -2,6 +2,7 @@
 #include <VkResourceBarriers2.hpp>
 
 template<typename T>
+[[nodiscard]]
 static std::pair<size_t, T*> AddResource(
 	std::vector<bool>& availableIndices, std::deque<T>& resources, T&& resource
 ) noexcept {
@@ -112,48 +113,30 @@ void TextureManager::SetDescriptorBufferLayout(
 	);
 
 	if(combinedDescCount)
-	{
 		descriptorBuffer.AddBinding(
 			combinedTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
-		descriptorBuffer.IncreaseDescriptorCount(
-			combinedTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			combinedDescCount - s_combinedTextureDescriptorCount, combinedDescCount
-		);
-	}
 
 	const auto sampledDescCount = static_cast<std::uint32_t>(
 		std::size(m_availableIndicesSampledTextures)
 	);
 
 	if (sampledDescCount)
-	{
 		descriptorBuffer.AddBinding(
 			sampledTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
-		descriptorBuffer.IncreaseDescriptorCount(
-			sampledTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			sampledDescCount - s_sampledTextureDescriptorCount, sampledDescCount
-		);
-	}
 
 	const auto samplerDescCount = static_cast<std::uint32_t>(
 		std::size(m_availableIndicesSamplers)
 	);
 
 	if (samplerDescCount)
-	{
 		descriptorBuffer.AddBinding(
 			samplersBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLER,
 			samplerDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
-		descriptorBuffer.IncreaseDescriptorCount(
-			samplersBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLER,
-			samplerDescCount - s_samplerDescriptorCount, samplerDescCount
-		);
-	}
 }
 
 std::optional<std::uint32_t> TextureManager::FindFreeIndex(
