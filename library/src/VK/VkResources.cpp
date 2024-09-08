@@ -200,6 +200,11 @@ VkDeviceSize Texture::GetBufferSize() const noexcept
 
 	auto formatSize = formatSizeMap.find(textureFormat);
 
+	assert(
+		formatSize != std::end(formatSizeMap)
+		&& "The texture format isn't available in the FormatSizeMap."
+	);
+
 	if (formatSize != std::end(formatSizeMap))
 	{
 		const VkDeviceSize sizePerPixel = formatSize->second;
