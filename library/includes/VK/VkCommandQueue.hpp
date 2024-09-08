@@ -166,16 +166,27 @@ public:
 
 	void Copy(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder
-	) const noexcept { Copy(src, dst, builder); }
+	) const noexcept {
+		Copy(src, dst, builder);
+	}
 	void CopyWhole(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder = {}
-	) const noexcept { CopyWhole(src, dst, builder); }
+	) const noexcept
+	{
+		CopyWhole(src, dst, builder);
+	}
 	void Copy(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder
-	) const noexcept { Copy(src, dst, builder); }
+	) const noexcept
+	{
+		Copy(src, dst, builder);
+	}
 	void CopyWhole(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder&& builder = {}
-	) const noexcept { CopyWhole(src, dst, builder); }
+	) const noexcept
+	{
+		CopyWhole(src, dst, builder);
+	}
 
 	void AcquireOwnership(
 		const Buffer& buffer,
