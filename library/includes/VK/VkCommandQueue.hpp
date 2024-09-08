@@ -313,9 +313,9 @@ public:
 	) {
 		assert(m_currentWaitIndex < WaitCount && "More Wait semaphores than the allowed amount.");
 
-		m_waitSemaphores.at(m_currentWaitIndex) = semaphore;
-		m_waitStages.at(m_currentWaitIndex)     = pipelineStage;
-		m_waitValues.at(m_currentWaitIndex)     = waitValue;
+		m_waitSemaphores[m_currentWaitIndex] = semaphore;
+		m_waitStages[m_currentWaitIndex]     = pipelineStage;
+		m_waitValues[m_currentWaitIndex]     = waitValue;
 
 		++m_currentWaitIndex;
 
@@ -325,8 +325,8 @@ public:
 	{
 		assert(m_currentSignalIndex < SignalCount && "More Signal semaphores than the allowed amount.");
 
-		m_signalSemaphores.at(m_currentSignalIndex) = semaphore;
-		m_signalValues.at(m_currentSignalIndex)     = signalValue;
+		m_signalSemaphores[m_currentSignalIndex] = semaphore;
+		m_signalValues[m_currentSignalIndex]     = signalValue;
 
 		++m_currentSignalIndex;
 
@@ -349,7 +349,7 @@ public:
 			&& "More CommandBuffers than the allowed amount."
 		);
 
-		m_commandBuffers.at(m_currentCmdBufferIndex) = commandBuffer.Get();
+		m_commandBuffers[m_currentCmdBufferIndex] = commandBuffer.Get();
 
 		++m_currentCmdBufferIndex;
 

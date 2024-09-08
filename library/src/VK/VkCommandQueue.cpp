@@ -2,7 +2,7 @@
 #include <VkResourceBarriers2.hpp>
 
 // Command Buffer
-VKCommandBuffer::VKCommandBuffer() : m_commandBuffer{VK_NULL_HANDLE} {}
+VKCommandBuffer::VKCommandBuffer() : m_commandBuffer{ VK_NULL_HANDLE } {}
 VKCommandBuffer::VKCommandBuffer(VkDevice device, VkCommandPool commandPool) : VKCommandBuffer{}
 {
 	Create(device, commandPool);
