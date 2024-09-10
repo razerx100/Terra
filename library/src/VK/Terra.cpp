@@ -120,7 +120,9 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 	if (m_windowWidth != width || m_windowHeight != height)
 	{
 		// Must recreate the swapchain first.
-		m_swapchain->CreateSwapchain(m_deviceManager, *m_surfaceManager, width, height);
+		m_swapchain->CreateSwapchain(
+			m_deviceManager.GetPhysicalDevice(), *m_surfaceManager, width, height
+		);
 
 		const VkExtent2D newExtent = m_swapchain->GetCurrentSwapchainExtent();
 
@@ -135,8 +137,7 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 
 		// Lastly the frame buffers.
 		m_swapchain->CreateFramebuffers(
-			m_deviceManager.GetLogicalDevice(), m_renderEngine->GetRenderPass(),
-			m_renderEngine->GetDepthBuffer()
+			m_renderEngine->GetRenderPass(), m_renderEngine->GetDepthBuffer()
 		);
 
 		m_windowWidth  = width;

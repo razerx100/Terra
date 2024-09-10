@@ -18,11 +18,11 @@ public:
 	~VkSwapchain() noexcept;
 
 	void Create(
-		VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
+		VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
 		std::uint32_t width, std::uint32_t height
 	);
 	void CreateFramebuffers(
-		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
+		const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
 		std::uint32_t width, std::uint32_t height
 	);
 
@@ -37,7 +37,7 @@ public:
 	[[nodiscard]]
 	const VKFramebuffer& GetFramebuffer(size_t imageIndex) const noexcept
 	{
-		return m_frameBuffers.at(imageIndex);
+		return m_frameBuffers[imageIndex];
 	}
 
 private:
@@ -92,13 +92,11 @@ public:
 	}
 
 	void CreateSwapchain(
-		const VkDeviceManager& deviceManager, const SurfaceManager& surface,
+		VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
 		std::uint32_t width, std::uint32_t height
 	);
 	// Should be created after the swapchain and the renderpass.
-	void CreateFramebuffers(
-		VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
-	);
+	void CreateFramebuffers(const VKRenderPass& renderPass, const DepthBuffer& depthBuffer);
 	void QueryNextImageIndex(VkDevice device);
 
 	[[nodiscard]]

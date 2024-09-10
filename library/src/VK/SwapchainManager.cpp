@@ -13,7 +13,7 @@ VkSwapchain::VkSwapchain(VkDevice device, std::uint32_t bufferCount)
 }
 
 void VkSwapchain::Create(
-	VkDevice logicalDevice, VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
+	VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
 	std::uint32_t width, std::uint32_t height
 ) {
 	// Create the swapchain.
@@ -66,7 +66,7 @@ void VkSwapchain::Create(
 		if (m_swapchain != VK_NULL_HANDLE)
 			SelfDestruct();
 
-		vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &m_swapchain);
+		vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain);
 
 		m_swapchainExtent = swapExtent;
 	}
@@ -87,11 +87,11 @@ void VkSwapchain::Create(
 
 		// Only add new image views if there are new images.
 		for (size_t index = swapImageViewCount; index < swapImageCount; ++index)
-			m_swapchainImageViews.emplace_back(logicalDevice);
+			m_swapchainImageViews.emplace_back(m_device);
 
 		for (size_t index = 0u; index < std::size(m_swapchainImageViews); ++index)
-			m_swapchainImageViews.at(index).CreateView(
-				m_swapchainImages.at(index), surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT,
+			m_swapchainImageViews[index].CreateView(
+				m_swapchainImages[index], surfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT,
 				VK_IMAGE_VIEW_TYPE_2D
 			);
 
@@ -100,7 +100,7 @@ void VkSwapchain::Create(
 }
 
 void VkSwapchain::CreateFramebuffers(
-	VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
+	const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
 	std::uint32_t width, std::uint32_t height
 ) {
 	const size_t swapImageViewCount = std::size(m_swapchainImageViews);
@@ -108,13 +108,13 @@ void VkSwapchain::CreateFramebuffers(
 
 	// Only add new frame buffers if there are new imageviews.
 	for (size_t index = frameBufferCount; index < swapImageViewCount; ++index)
-		m_frameBuffers.emplace_back(device);
+		m_frameBuffers.emplace_back(m_device);
 
 	for (size_t index = 0u; index < std::size(m_frameBuffers); ++index)
 	{
-		VkImageView attachments[] = { m_swapchainImageViews.at(index).Get(), depthBuffer.GetView() };
+		VkImageView attachments[] = { m_swapchainImageViews[index].Get(), depthBuffer.GetView() };
 
-		m_frameBuffers.at(index).Create(renderPass, width, height, attachments);
+		m_frameBuffers[index].Create(renderPass, width, height, attachments);
 	}
 }
 
@@ -156,14 +156,12 @@ void SwapchainManager::Present(
 }
 
 void SwapchainManager::CreateSwapchain(
-	const VkDeviceManager& deviceManager, const SurfaceManager& surface,
+	VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
 	std::uint32_t width, std::uint32_t height
 ) {
-	const VkFormat oldFormat        = m_swapchain.GetFormat();
-	VkDevice logicalDevice          = deviceManager.GetLogicalDevice();
-	VkPhysicalDevice physicalDevice = deviceManager.GetPhysicalDevice();
+	const VkFormat oldFormat = m_swapchain.GetFormat();
 
-	m_swapchain.Create(logicalDevice, physicalDevice, surface, width, height);
+	m_swapchain.Create(physicalDevice, surface, width, height);
 
 	const VkFormat newFormat = m_swapchain.GetFormat();
 
@@ -171,12 +169,12 @@ void SwapchainManager::CreateSwapchain(
 }
 
 void SwapchainManager::CreateFramebuffers(
-	VkDevice device, const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
+	const VKRenderPass& renderPass, const DepthBuffer& depthBuffer
 ) {
 	const VkExtent2D swapchainExtent = GetCurrentSwapchainExtent();
 
 	m_swapchain.CreateFramebuffers(
-		device, renderPass, depthBuffer, swapchainExtent.width, swapchainExtent.height
+		renderPass, depthBuffer, swapchainExtent.width, swapchainExtent.height
 	);
 }
 

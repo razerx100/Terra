@@ -123,7 +123,7 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 	};
 
 	swapchain.CreateSwapchain(
-		*s_deviceManager, *s_surfaceManager, Constants::width, Constants::height
+		s_deviceManager->GetPhysicalDevice(), *s_surfaceManager, Constants::width, Constants::height
 	);
 
 	{
@@ -139,13 +139,13 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 		);
 	}
 
-	swapchain.CreateFramebuffers(logicalDevice, renderPass, depthBuffer);
+	swapchain.CreateFramebuffers(renderPass, depthBuffer);
 
 	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
 
 	s_window->SetWindowResolution(2560u, 1440u);
 
-	swapchain.CreateSwapchain(*s_deviceManager, *s_surfaceManager, 2560u, 1440u);
+	swapchain.CreateSwapchain(s_deviceManager->GetPhysicalDevice(), *s_surfaceManager, 2560u, 1440u);
 
 	{
 		const VkExtent2D newExtent = swapchain.GetCurrentSwapchainExtent();
@@ -160,7 +160,7 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 		);
 	}
 
-	swapchain.CreateFramebuffers(logicalDevice, renderPass, depthBuffer);
+	swapchain.CreateFramebuffers(renderPass, depthBuffer);
 
 	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain re-creation failed.";
 }
