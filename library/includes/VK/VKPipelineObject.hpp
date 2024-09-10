@@ -17,7 +17,14 @@ protected:
 class StencilOpStateBuilder
 {
 public:
-	StencilOpStateBuilder() : m_opState{} {}
+	StencilOpStateBuilder()
+		: m_opState{
+			.failOp      = VK_STENCIL_OP_KEEP,
+			.passOp      = VK_STENCIL_OP_KEEP,
+			.depthFailOp = VK_STENCIL_OP_KEEP,
+			.compareOp   = VK_COMPARE_OP_ALWAYS
+		}
+	{}
 
 	StencilOpStateBuilder& StencilOps(
 		VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp
@@ -69,8 +76,8 @@ public:
 			.depthCompareOp        = VK_COMPARE_OP_LESS,
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable     = VK_FALSE,
-			.front                 = {},
-			.back                  = {},
+			.front                 = { StencilOpStateBuilder{}.Get() },
+			.back                  = { StencilOpStateBuilder{}.Get() },
 			.minDepthBounds        = 0.f,
 			.maxDepthBounds        = 1.f
 		}
@@ -213,10 +220,10 @@ public:
 		const DepthStencilStateBuilder& depthStencilBuilder
 	) noexcept;
 
+	// Can only be set on a Mesh Shader based Pipeline.
 	GraphicsPipelineBuilder& SetMeshStage(
 		VkShaderModule meshShader, VkShaderModule fragmentShader
 	) noexcept;
-	// Can only be set on a Mesh Shader based Pipeline.
 	GraphicsPipelineBuilder& SetTaskStage(VkShaderModule taskShader) noexcept;
 
 	GraphicsPipelineBuilder& AddDynamicState(VkDynamicState dynamicState) noexcept;
@@ -343,6 +350,26 @@ public:
 
 private:
 	VkComputePipelineCreateInfo m_pipelineCreateInfo;
+
+public:
+	ComputePipelineBuilder(const ComputePipelineBuilder& other) noexcept
+		: m_pipelineCreateInfo{ other.m_pipelineCreateInfo }
+	{}
+	ComputePipelineBuilder& operator=(const ComputePipelineBuilder& other) noexcept
+	{
+		m_pipelineCreateInfo = other.m_pipelineCreateInfo;
+
+		return *this;
+	}
+	ComputePipelineBuilder(ComputePipelineBuilder&& other) noexcept
+		: m_pipelineCreateInfo{ other.m_pipelineCreateInfo }
+	{}
+	ComputePipelineBuilder& operator=(ComputePipelineBuilder&& other) noexcept
+	{
+		m_pipelineCreateInfo = other.m_pipelineCreateInfo;
+
+		return *this;
+	}
 };
 
 class VkPipelineObject
