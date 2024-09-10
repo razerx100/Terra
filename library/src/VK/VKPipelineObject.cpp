@@ -68,6 +68,13 @@ void GraphicsPipelineBuilder::UpdateShaderStages() noexcept
 	m_pipelineCreateInfo.pStages    = std::data(m_shaderStagesInfo);
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthStencilState(
+	const DepthStencilStateBuilder& depthStencilBuilder
+) noexcept {
+	m_depthStencilStateInfo = depthStencilBuilder.Get();
+
+	return *this;
+}
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexStage(
 	VkShaderModule vertexShader, VkShaderModule fragmentShader

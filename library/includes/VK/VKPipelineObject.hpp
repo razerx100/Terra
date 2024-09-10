@@ -181,18 +181,8 @@ public:
 			.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 			.dynamicStateCount = static_cast<std::uint32_t>(std::size(m_dynamicStates)),
 			.pDynamicStates    = std::data(m_dynamicStates)
-		}, m_depthStencilStateInfo{
-			.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-			.depthTestEnable       = VK_TRUE,
-			.depthWriteEnable      = VK_TRUE,
-			.depthCompareOp        = VK_COMPARE_OP_LESS,
-			.depthBoundsTestEnable = VK_FALSE,
-			.stencilTestEnable     = VK_FALSE,
-			.front                 = {},
-			.back                  = {},
-			.minDepthBounds        = 0.f,
-			.maxDepthBounds        = 1.f
-		}, m_pipelineCreateInfo{
+		}, m_depthStencilStateInfo{ DepthStencilStateBuilder{}.Get() },
+		m_pipelineCreateInfo{
 			.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			.flags               = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
 			.pViewportState      = &m_viewportInfo,
@@ -217,6 +207,10 @@ public:
 	) noexcept;
 	GraphicsPipelineBuilder& SetVertexStage(
 		VkShaderModule vertexShader, VkShaderModule fragmentShader
+	) noexcept;
+
+	GraphicsPipelineBuilder& SetDepthStencilState(
+		const DepthStencilStateBuilder& depthStencilBuilder
 	) noexcept;
 
 	GraphicsPipelineBuilder& SetMeshStage(
