@@ -60,7 +60,9 @@ void SwapchainTest::SetUpTestSuite()
 
 	VkInstance vkInstance = s_instanceManager->GetVKInstance();
 
+#ifdef TERRA_WIN32
 	s_surfaceManager->Create(vkInstance, s_window->GetWindowHandle(), s_window->GetModuleInstance());
+#endif
 
 	s_deviceManager = std::make_unique<VkDeviceManager>();
 
