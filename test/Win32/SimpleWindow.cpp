@@ -1,6 +1,6 @@
 #include <SimpleWindow.hpp>
 
-WindowClass::WindowClass() noexcept
+WindowClass::WindowClass()
 	: m_wndClass{
 		.cbSize        = static_cast<UINT>(sizeof(m_wndClass)),
 		.style         = CS_OWNDC,

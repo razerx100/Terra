@@ -5,9 +5,10 @@
 #include <optional>
 #include <CleanWin.hpp>
 
-class WindowClass {
+class WindowClass
+{
 public:
-	WindowClass() noexcept;
+	WindowClass();
 	~WindowClass() noexcept;
 
 	void Register() noexcept;
