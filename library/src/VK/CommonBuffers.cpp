@@ -30,10 +30,9 @@ void MaterialBuffers::CreateBuffer(size_t materialCount)
 
 	// All of the old materials will be only copied if the new buffer is larger.
 	const VkDeviceSize oldBufferSize = m_buffers.BufferSize();
+
 	if (oldBufferSize && newBuffer.BufferSize() > oldBufferSize)
-	{
 		memcpy(newBuffer.CPUHandle(), m_buffers.CPUHandle(), m_buffers.BufferSize());
-	}
 
 	m_buffers = std::move(newBuffer);
 }

@@ -1,7 +1,6 @@
 #ifndef COMMON_BUFFERS_HPP_
 #define COMMON_BUFFERS_HPP_
 #include <VkResources.hpp>
-#include <StagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <ReusableVkBuffer.hpp>
 #include <VkCommandQueue.hpp>
