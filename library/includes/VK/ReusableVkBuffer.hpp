@@ -221,25 +221,6 @@ public:
 		return m_buffer.CPUHandle() + (m_instanceSize * instanceIndex);
 	}
 
-	template<typename U>
-	void Update(
-		VkDeviceSize instanceIndex, const std::vector<U>& elements,
-		T(*getterFunction)(const U&)
-	) const noexcept {
-		std::uint8_t* bufferOffsetPtr = GetInstancePtr(instanceIndex);
-		constexpr size_t strideSize   = GetStride();
-		VkDeviceSize bufferOffset     = 0u;
-
-		for (const U& element : elements)
-		{
-			T value = getterFunction(element);
-
-			memcpy(bufferOffsetPtr + bufferOffset, &value, strideSize);
-
-			bufferOffset += strideSize;
-		}
-	}
-
 	void Add(size_t index)
 	{
 		CreateBufferIfNecessary(index);
