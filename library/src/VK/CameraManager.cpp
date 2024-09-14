@@ -27,7 +27,7 @@ void CameraManager::RemoveCamera(std::uint32_t index) noexcept
 void CameraManager::CreateBuffer(
 	const std::vector<std::uint32_t>& queueIndices, std::uint32_t frameCount
 ) {
-	m_cameraBufferInstanceSize = static_cast<VkDeviceSize>(sizeof(CameraBufferData));
+	m_cameraBufferInstanceSize          = static_cast<VkDeviceSize>(sizeof(CameraBufferData));
 
 	const VkDeviceSize cameraBufferSize = m_cameraBufferInstanceSize * frameCount;
 
@@ -40,7 +40,7 @@ void CameraManager::Update(VkDeviceSize index) const noexcept
 
 	constexpr size_t matrixSize = sizeof(DirectX::XMMATRIX);
 
-	// Although I am not a big of useless checks. This would potentially allow us
+	// Although I am not a big fan of useless checks. This would potentially allow us
 	// to run the renderer without having any cameras.
 	if (m_activeCameraIndex < std::size(m_cameras)) [[likely]]
 	{
