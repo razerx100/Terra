@@ -86,14 +86,10 @@ TEST_F(StagingBufferTest, StagingTest)
 		VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D, {}
 	);
 
-	std::unique_ptr<std::uint8_t> bufferData  = std::unique_ptr<std::uint8_t>{ new std::uint8_t[2_KB] };
-
+	auto bufferData                      = std::make_unique<std::uint8_t[]>(2_KB);
 	const VkDeviceSize textureBufferSize = testTextureView.GetTexture().GetBufferSize();
 
-	std::unique_ptr<std::uint8_t> textureData =
-		std::unique_ptr<std::uint8_t>{
-			new std::uint8_t[textureBufferSize]
-		};
+	auto textureData                     = std::make_unique<std::uint8_t[]>(textureBufferSize);
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 
