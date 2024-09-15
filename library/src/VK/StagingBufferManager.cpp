@@ -17,7 +17,14 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 
 	m_textureInfo.emplace_back(
 		TextureInfo{
-			cpuData.get(), bufferSize, dst, offset, mipLevelIndex, dstQueueType, dstAccess, dstStage
+			.cpuHandle     = cpuData.get(),
+			.bufferSize    = bufferSize,
+			.dst           = dst,
+			.offset        = offset,
+			.mipLevelIndex = mipLevelIndex,
+			.dstQueueType  = dstQueueType,
+			.dstAccess     = dstAccess,
+			.dstStage      = dstStage
 		}
 	);
 
@@ -47,7 +54,15 @@ StagingBufferManager& StagingBufferManager::AddBuffer(
 	);
 
 	m_bufferInfo.emplace_back(
-		BufferInfo{ cpuData.get(), bufferSize, dst, offset, dstQueueType, dstAccess, dstStage }
+		BufferInfo{
+			.cpuHandle    = cpuData.get(),
+			.bufferSize   = bufferSize,
+			.dst          = dst,
+			.offset       = offset,
+			.dstQueueType = dstQueueType,
+			.dstAccess    = dstAccess,
+			.dstStage     = dstStage
+		}
 	);
 
 	m_cpuTempBuffer.Add(std::move(cpuData));
@@ -86,9 +101,9 @@ void StagingBufferManager::CopyCPU()
 	{
 		for (size_t index = 0u; index < std::size(m_bufferInfo); ++index)
 		{
-			const BufferInfo& bufferInfo = m_bufferInfo.at(index);
+			const BufferInfo& bufferInfo = m_bufferInfo[index];
 
-			tasks.emplace_back([&bufferInfo, &tempBuffer = m_tempBufferToBuffer.at(index)]
+			tasks.emplace_back([&bufferInfo, &tempBuffer = m_tempBufferToBuffer[index]]
 				{
 					memcpy(tempBuffer->CPUHandle(), bufferInfo.cpuHandle, bufferInfo.bufferSize);
 				});
@@ -116,9 +131,9 @@ void StagingBufferManager::CopyCPU()
 
 		for (size_t index = 0u; index < std::size(m_textureInfo); ++index)
 		{
-			const TextureInfo& textureInfo = m_textureInfo.at(index);
+			const TextureInfo& textureInfo = m_textureInfo[index];
 
-			tasks.emplace_back([&textureInfo, &tempBuffer = m_tempBufferToTexture.at(index)]
+			tasks.emplace_back([&textureInfo, &tempBuffer = m_tempBufferToTexture[index]]
 				{
 					memcpy(tempBuffer->CPUHandle(), textureInfo.cpuHandle, textureInfo.bufferSize);
 				});
@@ -156,7 +171,7 @@ void StagingBufferManager::CopyCPU()
 			{
 				for (size_t index = batch.startIndex; index <= batch.endIndex; ++index)
 				{
-					tTasks.at(index)();
+					tTasks[index]();
 				}
 			}}));
 	}
@@ -176,8 +191,8 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 	// Assuming the command buffer has been reset before this.
 	for(size_t index = 0u; index < std::size(m_bufferInfo); ++index)
 	{
-		const BufferInfo& bufferInfo = m_bufferInfo.at(index);
-		const Buffer& tempBuffer     = *m_tempBufferToBuffer.at(index);
+		const BufferInfo& bufferInfo = m_bufferInfo[index];
+		const Buffer& tempBuffer     = *m_tempBufferToBuffer[index];
 
 		BufferToBufferCopyBuilder bufferBuilder = BufferToBufferCopyBuilder{}
 			.Size(bufferInfo.bufferSize).DstOffset(bufferInfo.offset);
@@ -190,8 +205,8 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 
 	for(size_t index = 0u; index < std::size(m_textureInfo); ++index)
 	{
-		const TextureInfo& textureInfo = m_textureInfo.at(index);
-		const Buffer& tempBuffer       = *m_tempBufferToTexture.at(index);
+		const TextureInfo& textureInfo = m_textureInfo[index];
+		const Buffer& tempBuffer       = *m_tempBufferToTexture[index];
 
 		BufferToImageCopyBuilder bufferBuilder = BufferToImageCopyBuilder{}
 			.ImageOffset(textureInfo.offset).ImageMipLevel(textureInfo.mipLevelIndex);
