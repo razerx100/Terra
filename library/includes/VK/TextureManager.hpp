@@ -50,12 +50,12 @@ public:
 	[[nodiscard]]
 	const VkTextureView& Get(size_t index) const noexcept
 	{
-		return m_textures.at(index);
+		return m_textures[index];
 	}
 	[[nodiscard]]
 	VkTextureView const* GetPtr(size_t index) const noexcept
 	{
-		return &m_textures.at(index);
+		return &m_textures[index];
 	}
 
 	[[nodiscard]]
@@ -77,25 +77,25 @@ public:
 	[[nodiscard]]
 	const VKSampler& GetDefaultSampler() const noexcept
 	{
-		return m_samplers.at(s_defaultSamplerIndex);
+		return m_samplers[s_defaultSamplerIndex];
 	}
 
 	[[nodiscard]]
 	VKSampler const* GetDefaultSamplerPtr() const noexcept
 	{
-		return &m_samplers.at(s_defaultSamplerIndex);
+		return &m_samplers[s_defaultSamplerIndex];
 	}
 
 	[[nodiscard]]
 	const VKSampler& GetSampler(size_t index) const noexcept
 	{
-		return m_samplers.at(index);
+		return m_samplers[index];
 	}
 
 	[[nodiscard]]
 	VKSampler const* GetSamplerPtr(size_t index) const noexcept
 	{
-		return &m_samplers.at(index);
+		return &m_samplers[index];
 	}
 
 	// I could have used the AcquireOwnership function to do the layout transition. But there are
@@ -117,7 +117,7 @@ private:
 		// will mean the every single element here is also bound. So, their indices should
 		// be the same.
 		if (std::size(bindingIndices) > index)
-			return bindingIndices.at(index);
+			return bindingIndices[index];
 		else
 			return static_cast<std::uint32_t>(index);
 	}
@@ -435,7 +435,7 @@ public:
 		std::vector<bool>& availableIndices = GetAvailableIndices<type>();
 
 		if (std::size(availableIndices) > descriptorIndex)
-			availableIndices.at(static_cast<size_t>(descriptorIndex)) = availablity;
+			availableIndices[static_cast<size_t>(descriptorIndex)] = availablity;
 	}
 
 	// Use the global index to set the descriptor in the desired global descriptor buffer. If

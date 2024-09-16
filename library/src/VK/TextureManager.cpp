@@ -36,7 +36,7 @@ void TextureStorage::SetBindingIndex(
 		bindingIndices.resize(index + 1u);
 	}
 
-	bindingIndices.at(index) = bindingIndex;
+	bindingIndices[index] = bindingIndex;
 }
 
 size_t TextureStorage::AddTexture(
@@ -91,14 +91,14 @@ void TextureStorage::TransitionQueuedTextures(const VKCommandBuffer& graphicsCmd
 
 void TextureStorage::RemoveTexture(size_t index)
 {
-	m_availableTextureIndices.at(index) = true;
-	m_textures.at(index).Destroy();
+	m_availableTextureIndices[index] = true;
+	m_textures[index].Destroy();
 }
 
 void TextureStorage::RemoveSampler(size_t index)
 {
 	if (index != s_defaultSamplerIndex)
-		m_availableSamplerIndices.at(index) = true;
+		m_availableSamplerIndices[index] = true;
 	// Don't need to destroy this like textures, as it doesn't require any buffer allocations.
 }
 
