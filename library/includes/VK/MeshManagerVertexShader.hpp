@@ -2,10 +2,7 @@
 #define MESH_MANAGER_VERTEX_SHADER_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
-#include <vector>
-#include <deque>
 #include <VkResources.hpp>
-#include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
 #include <VkCommandQueue.hpp>
 #include <CommonBuffers.hpp>

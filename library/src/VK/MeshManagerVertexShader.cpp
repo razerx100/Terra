@@ -33,7 +33,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 	// Index Buffer
 	{
 		const std::vector<std::uint32_t>& indices = meshBundle->GetIndices();
-		const auto indexBufferSize = sizeof(std::uint32_t) * std::size(indices);
+		const auto indexBufferSize                = sizeof(std::uint32_t) * std::size(indices);
 
 		m_indexBufferSharedData = indexSharedBuffer.AllocateAndGetSharedData(indexBufferSize, tempBuffer);
 
