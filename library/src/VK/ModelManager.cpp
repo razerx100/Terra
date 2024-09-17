@@ -12,7 +12,7 @@ VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
 		.indexCount    = meshDetails.indexCount,
 		.instanceCount = 1u,
 		.firstIndex    = meshDetails.indexOffset,
-		.vertexOffset  = 0u,
+		.vertexOffset  = 0,
 		.firstInstance = 0u
 	};
 
@@ -802,7 +802,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
-		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
 		descriptorBuffer.AddBinding(
 			s_modelBuffersGraphicsBindingSlot, vsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
@@ -826,7 +826,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferVS(
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
-		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
@@ -848,7 +848,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
-		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
 		descriptorBuffer.AddBinding(
 			s_modelBuffersComputeBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
@@ -904,7 +904,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
-		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 		const auto frameIndex = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
@@ -1162,7 +1162,7 @@ void ModelManagerMS::SetDescriptorBufferLayout(
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
-		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
 		descriptorBuffer.AddBinding(
 			s_modelBuffersGraphicsBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
@@ -1198,7 +1198,7 @@ void ModelManagerMS::SetDescriptorBufferOfModels(
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
-		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers.at(index);
+		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 		const auto frameIndex = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers.SetDescriptorBuffer(
