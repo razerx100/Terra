@@ -78,9 +78,6 @@ public:
 	void SetCamera(std::uint32_t index) noexcept { m_cameraManager.SetCamera(index); }
 	void RemoveCamera(std::uint32_t index) noexcept { m_cameraManager.RemoveCamera(index); }
 
-	[[nodiscard]]
-	const VKSemaphore& GetGraphicsWait(size_t index) const noexcept { return m_graphicsWait.at(index); }
-
 	virtual void SetShaderPath(const std::wstring& shaderPath) = 0;
 	virtual void AddFragmentShader(const ShaderName& fragmentShader) = 0;
 	virtual void ChangeFragmentShader(
