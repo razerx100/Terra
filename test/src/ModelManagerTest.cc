@@ -13,6 +13,7 @@ namespace Constants
 	constexpr std::uint32_t frameCount         = 2u;
 	constexpr std::uint32_t descSetLayoutCount = 2u;
 	constexpr std::uint32_t vsSetLayoutIndex   = 0u;
+	constexpr std::uint32_t csSetLayoutIndex   = 0u;
 	constexpr std::uint32_t fsSetLayoutIndex   = 1u;
 	constexpr std::uint32_t meshID             = 0u;
 }
@@ -490,21 +491,31 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	};
 	vsIndirect.SetRenderPass(&renderPass);
 
-	std::vector<VkDescriptorBuffer> descBuffers{};
+	std::vector<VkDescriptorBuffer> descBuffersVS{};
+	std::vector<VkDescriptorBuffer> descBuffersCS{};
 
 	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
-		descBuffers.emplace_back(
+	{
+		descBuffersVS.emplace_back(
 			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
 		);
+		descBuffersCS.emplace_back(
+			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
+		);
+	}
 
 	vsIndirect.SetDescriptorBufferLayoutVS(
-		descBuffers, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
+		descBuffersVS, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
 	);
+	vsIndirect.SetDescriptorBufferLayoutCS(descBuffersCS, Constants::csSetLayoutIndex);
 
-	for (auto& descBuffer : descBuffers)
+	for (auto& descBuffer : descBuffersVS)
+		descBuffer.CreateBuffer();
+	for (auto& descBuffer : descBuffersCS)
 		descBuffer.CreateBuffer();
 
-	vsIndirect.CreatePipelineLayout(descBuffers.front());
+	vsIndirect.CreatePipelineLayout(descBuffersVS.front());
+	vsIndirect.CreatePipelineCS(descBuffersCS.front());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 
