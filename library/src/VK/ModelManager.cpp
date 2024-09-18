@@ -1093,7 +1093,7 @@ void ModelManagerMS::ConfigureModelBundle(
 
 void ModelManagerMS::ConfigureModelRemove(size_t bundleIndex) noexcept
 {
-	const auto& modelBundle  = m_modelBundles.at(bundleIndex);
+	const auto& modelBundle  = m_modelBundles[bundleIndex];
 
 	const auto& modelIndices = modelBundle.GetIndices();
 
@@ -1232,7 +1232,9 @@ void ModelManagerMS::SetDescriptorBufferOfMeshes(
 
 void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 {
-	auto previousPSOIndex = std::numeric_limits<size_t>::max();
+	auto previousPSOIndex     = std::numeric_limits<size_t>::max();
+
+	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
 	for (const auto& modelBundle : m_modelBundles)
 	{
@@ -1245,8 +1247,6 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 			constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
 
 			const MeshManagerMeshShader::MeshDetails meshDetails = meshBundle.GetMeshDetails();
-
-			VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
 			vkCmdPushConstants(
 				cmdBuffer, m_graphicsPipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
