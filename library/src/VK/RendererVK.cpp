@@ -80,6 +80,8 @@ std::uint32_t RendererVK::BindTexture(size_t index)
 
 void RendererVK::RemoveTexture(size_t index)
 {
+	WaitForGPUToFinish();
+
 	m_terra.GetRenderEngine().RemoveTexture(index);
 }
 

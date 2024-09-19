@@ -203,9 +203,6 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 
 void RenderEngine::RemoveTexture(size_t index)
 {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	// Could be either an only texture descriptor or multiple combined ones. Unbind all.
 	const auto u32Index = static_cast<std::uint32_t>(index);
 
