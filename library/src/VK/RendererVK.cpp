@@ -73,6 +73,8 @@ void RendererVK::UnbindTexture(size_t index)
 
 std::uint32_t RendererVK::BindTexture(size_t index)
 {
+	WaitForGPUToFinish();
+
 	return m_terra.GetRenderEngine().BindCombinedTexture(index);
 }
 

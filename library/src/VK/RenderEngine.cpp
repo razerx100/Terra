@@ -151,9 +151,6 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t index)
 
 std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 {
-	// Should wait for the current frames to be rendered before modifying the data.
-	m_graphicsQueue.WaitForQueueToFinish();
-
 	static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
 
