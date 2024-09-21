@@ -121,10 +121,12 @@ DebugLayerManager& DebugLayerManager::AddValidationLayer(ValidationLayer layer) 
 std::string VKAPI_CALL DebugLayerManager::GenerateMessageType(std::uint32_t typeFlag) noexcept
 {
 	std::string messageTypeDescription{};
+
+	const auto messageTypeSize             = static_cast<std::uint32_t>(std::size(messageTypes));
 	// Size -1 because the last entry is the invalid entry.
-	const std::uint32_t messageTypeCount   = std::size(messageTypes) - 1u;
+	const auto messageTypeCount            = messageTypeSize - 1u;
 	// This would be 1 more than the value if all of bits were on for the max valid flag.
-	const std::uint32_t maxMessageBitValue = 1u << std::size(messageTypes);
+	const std::uint32_t maxMessageBitValue = 1u << messageTypeSize;
 
 	for (std::uint32_t index = 0u; index < messageTypeCount; ++index)
 	{
