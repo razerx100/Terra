@@ -21,7 +21,6 @@ public:
 	void Render();
 	void WaitForGPUToFinish();
 
-	// Instead of creating useless wrapper functions, let's just return a reference to the RenderEngine.
 	[[nodiscard]]
 	RenderEngine& GetRenderEngine() noexcept { return *m_renderEngine; }
 	[[nodiscard]]
@@ -45,12 +44,47 @@ private:
 	std::unique_ptr<SurfaceManager>   m_surfaceManager;
 	VkDeviceManager                   m_deviceManager;
 	std::unique_ptr<DisplayManager>   m_displayManager;
+	// Swapchain is a unique_ptr because its ctor requires a valid device.
+	// Which is created later.
 	std::unique_ptr<SwapchainManager> m_swapchain;
 	std::unique_ptr<RenderEngine>     m_renderEngine;
 	std::uint32_t                     m_windowWidth;
 	std::uint32_t                     m_windowHeight;
 
 	static constexpr CoreVersion s_coreVersion = CoreVersion::V1_3;
+
+public:
+	// Wrappers for Render Engine functions which requires waiting for the GPU to finish first.
+	[[nodiscard]]
+	size_t AddTextureAsCombined(STexture&& texture);
+	[[nodiscard]]
+	std::uint32_t BindCombinedTexture(size_t index);
+
+	void RemoveTexture(size_t index);
+
+	[[nodiscard]]
+	size_t AddMaterial(std::shared_ptr<Material> material);
+	[[nodiscard]]
+	std::vector<size_t> AddMaterials(std::vector<std::shared_ptr<Material>>&& materials);
+
+	template<typename ModelBundle_t>
+	[[nodiscard]]
+	std::uint32_t AddModelBundle(
+		std::shared_ptr<ModelBundle_t>&& modelBundle, const ShaderName& fragmentShader
+	) {
+		WaitForGPUToFinish();
+
+		return m_renderEngine->AddModelBundle(std::move(modelBundle), fragmentShader);
+	}
+
+	template<typename MeshBundle_t>
+	[[nodiscard]]
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundle_t> meshBundle)
+	{
+		WaitForGPUToFinish();
+
+		return m_renderEngine->AddMeshBundle(std::move(meshBundle));
+	}
 
 public:
 	Terra(const Terra&) = delete;

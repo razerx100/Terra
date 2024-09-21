@@ -119,6 +119,8 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 	// Only recreate these if the new resolution is different.
 	if (m_windowWidth != width || m_windowHeight != height)
 	{
+		WaitForGPUToFinish();
+
 		// Must recreate the swapchain first.
 		m_swapchain->CreateSwapchain(
 			m_deviceManager.GetPhysicalDevice(), *m_surfaceManager, width, height
@@ -175,4 +177,41 @@ void Terra::WaitForGPUToFinish()
 DisplayManager::Resolution Terra::GetFirstDisplayCoordinates() const
 {
 	return m_displayManager->GetDisplayResolution(m_deviceManager.GetPhysicalDevice(), 0u);
+}
+
+size_t Terra::AddTextureAsCombined(STexture&& texture)
+{
+	WaitForGPUToFinish();
+
+	return m_renderEngine->AddTextureAsCombined(std::move(texture));
+}
+
+std::uint32_t Terra::BindCombinedTexture(size_t index)
+{
+	WaitForGPUToFinish();
+
+	return m_renderEngine->BindCombinedTexture(index);
+}
+
+void Terra::RemoveTexture(size_t index)
+{
+	WaitForGPUToFinish();
+
+	m_renderEngine->RemoveTexture(index);
+}
+
+[[nodiscard]]
+size_t Terra::AddMaterial(std::shared_ptr<Material> material)
+{
+	WaitForGPUToFinish();
+
+	return m_renderEngine->AddMaterial(std::move(material));
+}
+
+[[nodiscard]]
+std::vector<size_t> Terra::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
+{
+	WaitForGPUToFinish();
+
+	return m_renderEngine->AddMaterials(std::move(materials));
 }

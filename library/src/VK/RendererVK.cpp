@@ -61,9 +61,7 @@ void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName
 
 size_t RendererVK::AddTexture(STexture&& texture)
 {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddTextureAsCombined(std::move(texture));
+	return m_terra.AddTextureAsCombined(std::move(texture));
 }
 
 void RendererVK::UnbindTexture(size_t index)
@@ -73,32 +71,24 @@ void RendererVK::UnbindTexture(size_t index)
 
 std::uint32_t RendererVK::BindTexture(size_t index)
 {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().BindCombinedTexture(index);
+	return m_terra.BindCombinedTexture(index);
 }
 
 void RendererVK::RemoveTexture(size_t index)
 {
-	WaitForGPUToFinish();
-
-	m_terra.GetRenderEngine().RemoveTexture(index);
+	m_terra.RemoveTexture(index);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
 	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
+	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 std::uint32_t RendererVK::AddModelBundle(
 	std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddModelBundle(std::move(modelBundle), fragmentShader);
+	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
 }
 
 void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept
@@ -108,16 +98,12 @@ void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept
 
 std::uint32_t RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
 {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddMeshBundle(std::move(meshBundle));
+	return m_terra.AddMeshBundle(std::move(meshBundle));
 }
 
 std::uint32_t RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
 {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddMeshBundle(std::move(meshBundle));
+	return m_terra.AddMeshBundle(std::move(meshBundle));
 }
 
 void RendererVK::RemoveMeshBundle(std::uint32_t bundleIndex) noexcept
@@ -127,16 +113,12 @@ void RendererVK::RemoveMeshBundle(std::uint32_t bundleIndex) noexcept
 
 size_t RendererVK::AddMaterial(std::shared_ptr<Material> material)
 {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddMaterial(std::move(material));
+	return m_terra.AddMaterial(std::move(material));
 }
 
 std::vector<size_t> RendererVK::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
 {
-	WaitForGPUToFinish();
-
-	return m_terra.GetRenderEngine().AddMaterials(std::move(materials));
+	return m_terra.AddMaterials(std::move(materials));
 }
 
 void RendererVK::UpdateMaterial(size_t index) const noexcept
