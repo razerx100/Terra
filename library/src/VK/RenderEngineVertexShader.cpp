@@ -42,8 +42,8 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 	std::uint32_t frameCount
 ) {
 	return ModelManagerVSIndividual{
-		deviceManager.GetLogicalDevice(), memoryManager, deviceManager.GetQueueFamilyManager().GetAllIndices(),
-		frameCount
+		deviceManager.GetLogicalDevice(), memoryManager,
+		deviceManager.GetQueueFamilyManager().GetAllIndices(), frameCount
 	};
 }
 

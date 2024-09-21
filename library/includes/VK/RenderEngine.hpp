@@ -129,14 +129,6 @@ public:
 protected:
 	[[nodiscard]]
 	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
-	[[nodiscard]]
-	virtual std::uint32_t GetMaterialBindingSlot() const noexcept = 0;
-	[[nodiscard]]
-	virtual std::uint32_t GetCombinedTextureBindingSlot() const noexcept = 0;
-	[[nodiscard]]
-	virtual std::uint32_t GetSampledTextureBindingSlot() const noexcept = 0;
-	[[nodiscard]]
-	virtual std::uint32_t GetSamplerBindingSlot() const noexcept = 0;
 
 	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlagBits cameraShaderStage) noexcept;
 
@@ -239,8 +231,8 @@ public:
 	{
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
-				descriptorBuffer, GetCombinedTextureBindingSlot(), GetSampledTextureBindingSlot(),
-				GetSamplerBindingSlot(), s_fragmentShaderSetLayoutIndex
+				descriptorBuffer, s_combinedTextureBindingSlot, s_sampledTextureBindingSlot,
+				s_samplerBindingSlot, s_fragmentShaderSetLayoutIndex
 			);
 	}
 
@@ -297,26 +289,6 @@ public:
 	std::uint32_t GetCameraBindingSlot() const noexcept override
 	{
 		return Derived::s_cameraBindingSlot;
-	}
-	[[nodiscard]]
-	std::uint32_t GetMaterialBindingSlot() const noexcept override
-	{
-		return Derived::s_materialBindingSlot;
-	}
-	[[nodiscard]]
-	std::uint32_t GetCombinedTextureBindingSlot() const noexcept override
-	{
-		return Derived::s_combinedTextureBindingSlot;
-	}
-	[[nodiscard]]
-	std::uint32_t GetSampledTextureBindingSlot() const noexcept override
-	{
-		return Derived::s_sampledTextureBindingSlot;
-	}
-	[[nodiscard]]
-	std::uint32_t GetSamplerBindingSlot() const noexcept override
-	{
-		return Derived::s_samplerBindingSlot;
 	}
 
 	[[nodiscard]]
