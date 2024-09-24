@@ -21,8 +21,12 @@ RenderEngineMS::RenderEngineMS(
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
+	ModelManagerMS::SetGraphicsConstantRange(m_graphicsPipelineLayout);
+
 	if (!std::empty(m_graphicsDescriptorBuffers))
-		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+		m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
+
+	m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
 
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
 	m_cameraManager.SetDescriptorBufferGraphics(
@@ -141,7 +145,7 @@ VkSemaphore RenderEngineMS::DrawingStage(
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_graphicsDescriptorBuffers[frameIndex], graphicsCmdBufferScope,
-			VK_PIPELINE_BIND_POINT_GRAPHICS, m_modelManager.GetGraphicsPipelineLayout()
+			VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout
 		);
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);

@@ -379,7 +379,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		logicalDevice, &memoryManager, queueManager.GetAllIndices(),
 		Constants::frameCount
 	};
-	vsIndividual.SetRenderPass(&renderPass);
+	vsIndividual.SetRenderPass(renderPass.Get());
 
 	std::vector<VkDescriptorBuffer> descBuffers{};
 
@@ -395,7 +395,11 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	for (auto& descBuffer : descBuffers)
 		descBuffer.CreateBuffer();
 
-	vsIndividual.CreatePipelineLayout(descBuffers.front());
+	PipelineLayout graphicsPipelineLayout{ logicalDevice };
+
+	ModelManagerVSIndividual::SetGraphicsConstantRange(graphicsPipelineLayout);
+
+	graphicsPipelineLayout.Create(descBuffers.front().GetLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 
@@ -489,7 +493,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices(),
 		Constants::frameCount
 	};
-	vsIndirect.SetRenderPass(&renderPass);
+	vsIndirect.SetRenderPass(renderPass.Get());
 
 	std::vector<VkDescriptorBuffer> descBuffersVS{};
 	std::vector<VkDescriptorBuffer> descBuffersCS{};
@@ -514,8 +518,17 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	for (auto& descBuffer : descBuffersCS)
 		descBuffer.CreateBuffer();
 
-	vsIndirect.CreatePipelineLayout(descBuffersVS.front());
-	vsIndirect.CreatePipelineCS(descBuffersCS.front());
+	PipelineLayout graphicsPipelineLayout{ logicalDevice };
+
+	ModelManagerVSIndirect::SetGraphicsConstantRange(graphicsPipelineLayout);
+
+	graphicsPipelineLayout.Create(descBuffersVS.front().GetLayouts());
+
+	PipelineLayout computePipelineLayout{ logicalDevice };
+
+	ModelManagerVSIndirect::SetComputeConstantRange(computePipelineLayout);
+
+	computePipelineLayout.Create(descBuffersCS.front().GetLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 
@@ -633,7 +646,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices(),
 		Constants::frameCount
 	};
-	managerMS.SetRenderPass(&renderPass);
+	managerMS.SetRenderPass(renderPass.Get());
 
 	std::vector<VkDescriptorBuffer> descBuffers{};
 
@@ -649,7 +662,11 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	for (auto& descBuffer : descBuffers)
 		descBuffer.CreateBuffer();
 
-	managerMS.CreatePipelineLayout(descBuffers.front());
+	PipelineLayout graphicsPipelineLayout{ logicalDevice };
+
+	ModelManagerMS::SetGraphicsConstantRange(graphicsPipelineLayout);
+
+	graphicsPipelineLayout.Create(descBuffers.front().GetLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 

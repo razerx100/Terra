@@ -155,6 +155,7 @@ protected:
 	std::vector<VKSemaphore>        m_transferWait;
 	StagingBufferManager            m_stagingManager;
 	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
+	PipelineLayout                  m_graphicsPipelineLayout;
 	TextureStorage                  m_textureStorage;
 	TextureManager                  m_textureManager;
 	MaterialBuffers                 m_materialBuffers;
@@ -179,6 +180,7 @@ public:
 		m_transferWait{ std::move(other.m_transferWait) },
 		m_stagingManager{ std::move(other.m_stagingManager) },
 		m_graphicsDescriptorBuffers{ std::move(other.m_graphicsDescriptorBuffers) },
+		m_graphicsPipelineLayout{ std::move(other.m_graphicsPipelineLayout) },
 		m_textureStorage{ std::move(other.m_textureStorage) },
 		m_textureManager{ std::move(other.m_textureManager) },
 		m_materialBuffers{ std::move(other.m_materialBuffers) },
@@ -200,6 +202,7 @@ public:
 		m_transferWait              = std::move(other.m_transferWait);
 		m_stagingManager            = std::move(other.m_stagingManager);
 		m_graphicsDescriptorBuffers = std::move(other.m_graphicsDescriptorBuffers);
+		m_graphicsPipelineLayout    = std::move(other.m_graphicsPipelineLayout);
 		m_textureStorage            = std::move(other.m_textureStorage);
 		m_textureManager            = std::move(other.m_textureManager);
 		m_materialBuffers           = std::move(other.m_materialBuffers);
@@ -279,7 +282,7 @@ public:
 			// changed, I will have to recreate all the PSOs as well. But the swapchain format
 			// doesn't usually change, so it is not a major issue. But I should do it at some
 			// point.
-			m_modelManager.SetRenderPass(&m_renderPass);
+			m_modelManager.SetRenderPass(m_renderPass.Get());
 		}
 
 		m_viewportAndScissors.Resize(width, height);

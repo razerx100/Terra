@@ -14,8 +14,12 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
+	ModelManagerVSIndividual::SetGraphicsConstantRange(m_graphicsPipelineLayout);
+
 	if (!std::empty(m_graphicsDescriptorBuffers))
-		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+		m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
+
+	m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
 
 	// This descriptor shouldn't change, so it should be fine to set it here.
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
@@ -141,7 +145,7 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_graphicsDescriptorBuffers[frameIndex], graphicsCmdBufferScope,
-			VK_PIPELINE_BIND_POINT_GRAPHICS, m_modelManager.GetGraphicsPipelineLayout()
+			VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout
 		);
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
@@ -180,7 +184,8 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 		deviceManager.GetLogicalDevice(),
 		deviceManager.GetQueueFamilyManager().GetQueue(QueueType::ComputeQueue),
 		deviceManager.GetQueueFamilyManager().GetIndex(QueueType::ComputeQueue)
-	}, m_computeWait{}, m_computeDescriptorBuffers{}
+	}, m_computeWait{}, m_computeDescriptorBuffers{},
+	m_computePipelineLayout{ deviceManager.GetLogicalDevice() }
 {
 	// Graphics Descriptors.
 	// The layout shouldn't change throughout the runtime.
@@ -192,8 +197,12 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
+	ModelManagerVSIndirect::SetGraphicsConstantRange(m_graphicsPipelineLayout);
+
 	if (!std::empty(m_graphicsDescriptorBuffers))
-		m_modelManager.CreatePipelineLayout(m_graphicsDescriptorBuffers.front());
+		m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
+
+	m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
 
 	m_cameraManager.CreateBuffer(
 		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices(),
@@ -228,8 +237,12 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	for (auto& descriptorBuffer : m_computeDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
+	ModelManagerVSIndirect::SetComputeConstantRange(m_computePipelineLayout);
+
 	if (!std::empty(m_computeDescriptorBuffers))
-		m_modelManager.CreatePipelineCS(m_computeDescriptorBuffers.front());
+		m_computePipelineLayout.Create(m_computeDescriptorBuffers.front().GetLayouts());
+
+	m_modelManager.SetComputePipelineLayout(m_computePipelineLayout.Get());
 
 	// This descriptor shouldn't change, so it should be fine to set it here.
 	m_cameraManager.SetDescriptorBufferCompute(
@@ -358,7 +371,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_computeDescriptorBuffers[frameIndex], computeCmdBufferScope,
-			VK_PIPELINE_BIND_POINT_COMPUTE, m_modelManager.GetComputePipelineLayout()
+			VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout
 		);
 
 		m_modelManager.Dispatch(computeCmdBufferScope);
@@ -402,7 +415,7 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_graphicsDescriptorBuffers[frameIndex], graphicsCmdBufferScope,
-			VK_PIPELINE_BIND_POINT_GRAPHICS, m_modelManager.GetGraphicsPipelineLayout()
+			VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout
 		);
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);

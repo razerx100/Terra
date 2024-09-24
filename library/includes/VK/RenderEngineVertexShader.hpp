@@ -124,6 +124,7 @@ private:
 	VkCommandQueue                  m_computeQueue;
 	std::vector<VKSemaphore>        m_computeWait;
 	std::vector<VkDescriptorBuffer> m_computeDescriptorBuffers;
+	PipelineLayout                  m_computePipelineLayout;
 
 public:
 	RenderEngineVSIndirect(const RenderEngineVSIndirect&) = delete;
@@ -133,7 +134,8 @@ public:
 		: RenderEngineCommon{ std::move(other) },
 		m_computeQueue{ std::move(other.m_computeQueue) },
 		m_computeWait{ std::move(other.m_computeWait) },
-		m_computeDescriptorBuffers{ std::move(other.m_computeDescriptorBuffers) }
+		m_computeDescriptorBuffers{ std::move(other.m_computeDescriptorBuffers) },
+		m_computePipelineLayout{ std::move(other.m_computePipelineLayout) }
 	{}
 	RenderEngineVSIndirect& operator=(RenderEngineVSIndirect&& other) noexcept
 	{
@@ -141,6 +143,7 @@ public:
 		m_computeQueue             = std::move(other.m_computeQueue);
 		m_computeWait              = std::move(other.m_computeWait);
 		m_computeDescriptorBuffers = std::move(other.m_computeDescriptorBuffers);
+		m_computePipelineLayout    = std::move(other.m_computePipelineLayout);
 
 		return *this;
 	}

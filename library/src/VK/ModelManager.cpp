@@ -60,7 +60,7 @@ void ModelBundleMSIndividual::SetModelBundle(
 }
 
 void ModelBundleMSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
+	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 
@@ -83,7 +83,7 @@ void ModelBundleMSIndividual::Draw(
 		constexpr std::uint32_t offset = MeshManagerMeshShader::GetConstantBufferSize();
 
 		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, offset,
+			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, offset,
 			pushConstantSize, &msConstants
 		);
 
@@ -414,13 +414,12 @@ ModelManagerVSIndividual::ModelManagerVSIndividual(
 	}
 {}
 
-void ModelManagerVSIndividual::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
+void ModelManagerVSIndividual::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
 	constexpr std::uint32_t pushConstantSize = ModelBundleVSIndividual::GetConstantBufferSize();
 
-	m_graphicsPipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
-	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
+	layout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 }
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
@@ -573,8 +572,8 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	}, m_meshBoundsBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
-	}, m_pipelineLayoutCS{ device }, m_computePipeline{}, m_queueIndices3{ queueIndices3 },
-	m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
+	}, m_pipelineLayoutCS{ VK_NULL_HANDLE }, m_computePipeline{},
+	m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
@@ -606,23 +605,24 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	}
 }
 
-void ModelManagerVSIndirect::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
+void ModelManagerVSIndirect::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
 	constexpr auto pushConstantSize = ModelBundleVSIndirect::GetConstantBufferSize();
 
-	m_graphicsPipelineLayout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
-
-	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
+	layout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 }
 
-void ModelManagerVSIndirect::CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer)
+void ModelManagerVSIndirect::SetComputePipelineLayout(VkPipelineLayout layout) noexcept
+{
+	m_pipelineLayoutCS = layout;
+}
+
+void ModelManagerVSIndirect::SetComputeConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
 	constexpr auto pushConstantSize = GetConstantBufferSize();
 
-	m_pipelineLayoutCS.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
-
-	m_pipelineLayoutCS.Create(descriptorBuffer.GetLayouts());
+	layout.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
 }
 
 void ModelManagerVSIndirect::ShaderPathSet()
@@ -963,7 +963,7 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 		};
 
 		vkCmdPushConstants(
-			cmdBuffer, m_pipelineLayoutCS.Get(), VK_SHADER_STAGE_COMPUTE_BIT, 0u,
+			cmdBuffer, m_pipelineLayoutCS, VK_SHADER_STAGE_COMPUTE_BIT, 0u,
 			pushConstantSize, &constantData
 		);
 	}
@@ -984,7 +984,7 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 		BindMesh(modelBundle, graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(frameIndex, graphicsBuffer, m_graphicsPipelineLayout.Get());
+		modelBundle.Draw(frameIndex, graphicsBuffer, m_graphicsPipelineLayout);
 	}
 }
 
@@ -1130,16 +1130,15 @@ void ModelManagerMS::ConfigureMeshBundle(
 	);
 }
 
-void ModelManagerMS::CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer)
+void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
 	constexpr std::uint32_t meshConstantSize  = MeshManagerMeshShader::GetConstantBufferSize();
 	constexpr std::uint32_t modelConstantSize = ModelBundleMSIndividual::GetConstantBufferSize();
 
-	m_graphicsPipelineLayout.AddPushConstantRange(
+	layout.AddPushConstantRange(
 		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
 	);
-	m_graphicsPipelineLayout.Create(descriptorBuffer.GetLayouts());
 }
 
 void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
@@ -1249,7 +1248,7 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 			const MeshManagerMeshShader::MeshDetails meshDetails = meshBundle.GetMeshDetails();
 
 			vkCmdPushConstants(
-				cmdBuffer, m_graphicsPipelineLayout.Get(), VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
+				cmdBuffer, m_graphicsPipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
 				constBufferSize, &meshDetails
 			);
 		}

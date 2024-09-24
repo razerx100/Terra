@@ -66,11 +66,6 @@ public:
 		std::shared_ptr<ModelBundleVS> bundle, std::vector<std::uint32_t> modelBufferIndices
 	) noexcept;
 	void Draw(const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout) const noexcept;
-	void Draw(
-		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
-	) const noexcept {
-		Draw(graphicsBuffer, pipelineLayout.Get());
-	}
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
@@ -132,7 +127,7 @@ public:
 	) noexcept;
 
 	void Draw(
-		const VKCommandBuffer& graphicsBuffer, const PipelineLayout& pipelineLayout
+		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 	) const noexcept;
 
 	[[nodiscard]]
@@ -487,21 +482,19 @@ public:
 	ModelManager(
 		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices, std::uint32_t frameCount
 	) : m_device{ device }, m_memoryManager{ memoryManager },
-		m_graphicsPipelineLayout{ device }, m_renderPass{ nullptr }, m_shaderPath{},
+		m_graphicsPipelineLayout{ VK_NULL_HANDLE }, m_renderPass{ VK_NULL_HANDLE }, m_shaderPath{},
 		m_modelBuffers{ Derived::ConstructModelBuffers(device, memoryManager, frameCount, queueIndices) },
 		m_graphicsPipelines{}, m_meshBundles{}, m_modelBundles{}, m_tempCopyNecessary{ true }
 	{}
 
-	// The layout should be the same across the multiple descriptors for each frame.
-	void CreatePipelineLayout(const VkDescriptorBuffer& descriptorBuffer)
+	static void SetGraphicsConstantRange(PipelineLayout& layout) noexcept
 	{
-		static_cast<Derived*>(this)->CreatePipelineLayoutImpl(descriptorBuffer);
+		Derived::_setGraphicsConstantRange(layout);
 	}
 
-	[[nodiscard]]
-	const PipelineLayout& GetGraphicsPipelineLayout() const noexcept
+	void SetGraphicsPipelineLayout(VkPipelineLayout layout) noexcept
 	{
-		return m_graphicsPipelineLayout;
+		m_graphicsPipelineLayout = layout;
 	}
 
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
@@ -511,7 +504,7 @@ public:
 		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 	}
 
-	void SetRenderPass(VKRenderPass* renderPass) noexcept
+	void SetRenderPass(VkRenderPass renderPass) noexcept
 	{
 		m_renderPass = renderPass;
 	}
@@ -667,7 +660,7 @@ protected:
 			Pipeline pipeline = static_cast<Derived*>(this)->CreatePipelineObject();
 
 			pipeline.Create(
-				m_device, m_graphicsPipelineLayout, *m_renderPass, m_shaderPath, fragmentShader
+				m_device, m_graphicsPipelineLayout, m_renderPass, m_shaderPath, fragmentShader
 			);
 
 			m_graphicsPipelines.emplace_back(std::move(pipeline));
@@ -737,8 +730,8 @@ private:
 protected:
 	VkDevice                     m_device;
 	MemoryManager*               m_memoryManager;
-	PipelineLayout               m_graphicsPipelineLayout;
-	VKRenderPass*                m_renderPass;
+	VkPipelineLayout             m_graphicsPipelineLayout;
+	VkRenderPass                 m_renderPass;
 	std::wstring                 m_shaderPath;
 	ModelBuffers                 m_modelBuffers;
 	std::vector<Pipeline>        m_graphicsPipelines;
@@ -757,7 +750,7 @@ public:
 	ModelManager(ModelManager&& other) noexcept
 		: m_device{ other.m_device },
 		m_memoryManager{ other.m_memoryManager },
-		m_graphicsPipelineLayout{ std::move(other.m_graphicsPipelineLayout) },
+		m_graphicsPipelineLayout{ other.m_graphicsPipelineLayout },
 		m_renderPass{ other.m_renderPass },
 		m_shaderPath{ std::move(other.m_shaderPath) },
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
@@ -770,7 +763,7 @@ public:
 	{
 		m_device                 = other.m_device;
 		m_memoryManager          = other.m_memoryManager;
-		m_graphicsPipelineLayout = std::move(other.m_graphicsPipelineLayout);
+		m_graphicsPipelineLayout = other.m_graphicsPipelineLayout;
 		m_renderPass             = other.m_renderPass;
 		m_shaderPath             = std::move(other.m_shaderPath);
 		m_modelBuffers           = std::move(other.m_modelBuffers);
@@ -821,7 +814,7 @@ public:
 	void CopyTempData(const VKCommandBuffer& transferCmdBuffer) noexcept;
 
 private:
-	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
+	static void _setGraphicsConstantRange(PipelineLayout& layout) noexcept;
 
 	void ConfigureModelBundle(
 		ModelBundleVSIndividual& modelBundleObj,
@@ -905,13 +898,9 @@ public:
 
 	void ResetCounterBuffer(const VKCommandBuffer& computeCmdBuffer, size_t frameIndex) const noexcept;
 
-	void CreatePipelineCS(const VkDescriptorBuffer& descriptorBuffer);
+	void SetComputePipelineLayout(VkPipelineLayout layout) noexcept;
 
-	[[nodiscard]]
-	const PipelineLayout& GetComputePipelineLayout() const noexcept
-	{
-		return m_pipelineLayoutCS;
-	}
+	static void SetComputeConstantRange(PipelineLayout& layout) noexcept;
 
 	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
@@ -937,7 +926,7 @@ public:
 	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
 
 private:
-	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
+	static void _setGraphicsConstantRange(PipelineLayout& layout) noexcept;
 
 	void ConfigureModelBundle(
 		ModelBundleVSIndirect& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
@@ -991,7 +980,7 @@ private:
 	SharedBufferGPU                       m_indexBuffer;
 	SharedBufferGPU                       m_modelBundleIndexBuffer;
 	SharedBufferGPU                       m_meshBoundsBuffer;
-	PipelineLayout                        m_pipelineLayoutCS;
+	VkPipelineLayout                      m_pipelineLayoutCS;
 	ComputePipeline                       m_computePipeline;
 	QueueIndices3                         m_queueIndices3;
 	std::uint32_t                         m_dispatchXCount;
@@ -1045,7 +1034,7 @@ public:
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
 		m_modelBundleIndexBuffer{ std::move(other.m_modelBundleIndexBuffer) },
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
-		m_pipelineLayoutCS{ std::move(other.m_pipelineLayoutCS) },
+		m_pipelineLayoutCS{ other.m_pipelineLayoutCS },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
@@ -1069,7 +1058,7 @@ public:
 		m_indexBuffer            = std::move(other.m_indexBuffer);
 		m_modelBundleIndexBuffer = std::move(other.m_modelBundleIndexBuffer);
 		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
-		m_pipelineLayoutCS       = std::move(other.m_pipelineLayoutCS);
+		m_pipelineLayoutCS       = other.m_pipelineLayoutCS;
 		m_computePipeline        = std::move(other.m_computePipeline);
 		m_queueIndices3          = other.m_queueIndices3;
 		m_dispatchXCount         = other.m_dispatchXCount;
@@ -1122,7 +1111,8 @@ public:
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
 private:
-	void CreatePipelineLayoutImpl(const VkDescriptorBuffer& descriptorBuffer);
+	static void _setGraphicsConstantRange(PipelineLayout& layout) noexcept;
+
 	void ConfigureModelBundle(
 		ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
 		std::shared_ptr<ModelBundleMS>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
