@@ -375,7 +375,7 @@ public:
 class VkPipelineObject
 {
 public:
-	VkPipelineObject(VkDevice device) noexcept : m_device{ device }, m_pipeline{ VK_NULL_HANDLE } {}
+	VkPipelineObject(VkDevice device) : m_device{ device }, m_pipeline{ VK_NULL_HANDLE } {}
 	~VkPipelineObject() noexcept;
 
 	void CreateGraphicsPipeline(const GraphicsPipelineBuilder& builder);

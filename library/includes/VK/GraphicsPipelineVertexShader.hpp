@@ -10,7 +10,7 @@ namespace GraphicsPipelineVertexShader
 		ShaderType binaryType, const std::wstring& shaderPath,
 		const ShaderName& fragmentShader, const ShaderName& vertexShader
 	);
-};
+}
 
 class GraphicsPipelineIndirectDraw : public GraphicsPipelineBase<GraphicsPipelineIndirectDraw>
 {

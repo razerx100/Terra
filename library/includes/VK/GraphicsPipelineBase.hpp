@@ -19,7 +19,7 @@ public:
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) {
-		m_fragmentShader = fragmentShader;
+		m_fragmentShader   = fragmentShader;
 
 		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
 			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
@@ -31,6 +31,22 @@ public:
 		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) {
 		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath, fragmentShader);
+	}
+
+	void Recreate(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath
+	) {
+		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
+			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
+		);
+	}
+
+	void Recreate(
+		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
+		const std::wstring& shaderPath
+	) {
+		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath);
 	}
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
