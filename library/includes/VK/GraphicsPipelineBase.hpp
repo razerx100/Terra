@@ -46,7 +46,7 @@ public:
 		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
 		const std::wstring& shaderPath
 	) {
-		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath);
+		Recreate(device, graphicsLayout.Get(), renderPass.Get(), shaderPath);
 	}
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
