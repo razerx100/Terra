@@ -2,27 +2,28 @@
 #define GRAPHICS_PIPELINE_MESH_SHADER_HPP_
 #include <GraphicsPipelineBase.hpp>
 
-class GraphicsPipelineMeshShader : public GraphicsPipelineBase
+class GraphicsPipelineMeshShader : public GraphicsPipelineBase<GraphicsPipelineMeshShader>
 {
+	friend class GraphicsPipelineBase<GraphicsPipelineMeshShader>;
+
 public:
 	GraphicsPipelineMeshShader(bool useTaskShader = true)
 		: GraphicsPipelineBase{}, m_useTaskShader{ useTaskShader }
 	{}
 
-	void Create(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) final;
-
-	using GraphicsPipelineBase::Create;
-
 private:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineMS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader,
+		ShaderType binaryType, const std::wstring& shaderPath, const ShaderName& fragmentShader,
 		const ShaderName& meshShader, const ShaderName& taskShader = {}
 	);
+
+	[[nodiscard]]
+	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
+	) const;
 
 private:
 	bool m_useTaskShader;

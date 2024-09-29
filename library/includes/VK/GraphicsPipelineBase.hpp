@@ -9,15 +9,22 @@
 #include <PipelineLayout.hpp>
 #include <Shader.hpp>
 
+template<typename Derived>
 class GraphicsPipelineBase
 {
 public:
 	GraphicsPipelineBase() : m_graphicsPipeline{}, m_fragmentShader{} {}
 
-	virtual void Create(
+	void Create(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) = 0;
+	) {
+		m_fragmentShader = fragmentShader;
+
+		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
+			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
+		);
+	}
 
 	void Create(
 		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
@@ -26,7 +33,12 @@ public:
 		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath, fragmentShader);
 	}
 
-	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
+	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
+	{
+		VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
+
+		vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline->Get());
+	}
 
 	[[nodiscard]]
 	ShaderName GetFragmentShader() const noexcept { return m_fragmentShader; }

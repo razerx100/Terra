@@ -2,39 +2,38 @@
 #define GRAPHICS_PIPELINE_VERTEX_SHADER_HPP_
 #include <GraphicsPipelineBase.hpp>
 
-class GraphicsPipelineVertexShader : public GraphicsPipelineBase
+namespace GraphicsPipelineVertexShader
 {
-public:
-	GraphicsPipelineVertexShader() : GraphicsPipelineBase{} {}
-
-	void Create(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) final;
-
-	using GraphicsPipelineBase::Create;
-
-protected:
 	[[nodiscard]]
-	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
+	std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader,
-		const ShaderName& vertexShader
+		ShaderType binaryType, const std::wstring& shaderPath,
+		const ShaderName& fragmentShader, const ShaderName& vertexShader
 	);
-	[[nodiscard]]
-	virtual std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) const = 0;
+};
+
+class GraphicsPipelineIndirectDraw : public GraphicsPipelineBase<GraphicsPipelineIndirectDraw>
+{
+	friend class GraphicsPipelineBase<GraphicsPipelineIndirectDraw>;
 
 public:
-	GraphicsPipelineVertexShader(const GraphicsPipelineVertexShader&) = delete;
-	GraphicsPipelineVertexShader& operator=(const GraphicsPipelineVertexShader&) = delete;
+	GraphicsPipelineIndirectDraw() : GraphicsPipelineBase{} {}
 
-	GraphicsPipelineVertexShader(GraphicsPipelineVertexShader&& other) noexcept
+private:
+	[[nodiscard]]
+	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
+		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		const std::wstring& shaderPath, const ShaderName& fragmentShader
+	) const;
+
+public:
+	GraphicsPipelineIndirectDraw(const GraphicsPipelineIndirectDraw&) = delete;
+	GraphicsPipelineIndirectDraw& operator=(const GraphicsPipelineIndirectDraw&) = delete;
+
+	GraphicsPipelineIndirectDraw(GraphicsPipelineIndirectDraw&& other) noexcept
 		: GraphicsPipelineBase{ std::move(other) }
 	{}
-	GraphicsPipelineVertexShader& operator=(GraphicsPipelineVertexShader&& other) noexcept
+	GraphicsPipelineIndirectDraw& operator=(GraphicsPipelineIndirectDraw&& other) noexcept
 	{
 		GraphicsPipelineBase::operator=(std::move(other));
 
@@ -42,55 +41,30 @@ public:
 	}
 };
 
-class GraphicsPipelineIndirectDraw : public GraphicsPipelineVertexShader
+class GraphicsPipelineIndividualDraw : public GraphicsPipelineBase<GraphicsPipelineIndividualDraw>
 {
+	friend class GraphicsPipelineBase<GraphicsPipelineIndividualDraw>;
+
 public:
-	GraphicsPipelineIndirectDraw() : GraphicsPipelineVertexShader{} {}
+	GraphicsPipelineIndividualDraw() : GraphicsPipelineBase{} {}
 
 private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) const final;
-
-public:
-	GraphicsPipelineIndirectDraw(const GraphicsPipelineIndirectDraw&) = delete;
-	GraphicsPipelineIndirectDraw& operator=(const GraphicsPipelineIndirectDraw&) = delete;
-
-	GraphicsPipelineIndirectDraw(GraphicsPipelineIndirectDraw&& other) noexcept
-		: GraphicsPipelineVertexShader{ std::move(other) }
-	{}
-	GraphicsPipelineIndirectDraw& operator=(GraphicsPipelineIndirectDraw&& other) noexcept
-	{
-		GraphicsPipelineVertexShader::operator=(std::move(other));
-
-		return *this;
-	}
-};
-
-class GraphicsPipelineIndividualDraw : public GraphicsPipelineVertexShader
-{
-public:
-	GraphicsPipelineIndividualDraw() : GraphicsPipelineVertexShader{} {}
-
-private:
-	[[nodiscard]]
-	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) const final;
+	) const;
 
 public:
 	GraphicsPipelineIndividualDraw(const GraphicsPipelineIndividualDraw&) = delete;
 	GraphicsPipelineIndividualDraw& operator=(const GraphicsPipelineIndividualDraw&) = delete;
 
 	GraphicsPipelineIndividualDraw(GraphicsPipelineIndividualDraw&& other) noexcept
-		: GraphicsPipelineVertexShader{ std::move(other) }
+		: GraphicsPipelineBase{ std::move(other) }
 	{}
 	GraphicsPipelineIndividualDraw& operator=(GraphicsPipelineIndividualDraw&& other) noexcept
 	{
-		GraphicsPipelineVertexShader::operator=(std::move(other));
+		GraphicsPipelineBase::operator=(std::move(other));
 
 		return *this;
 	}

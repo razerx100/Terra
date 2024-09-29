@@ -1,40 +1,38 @@
 #include <GraphicsPipelineMeshShader.hpp>
 #include <VkShader.hpp>
 
-void GraphicsPipelineMeshShader::Create(
+std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
 	const std::wstring& shaderPath, const ShaderName& fragmentShader
-) {
-	m_fragmentShader = fragmentShader;
-
+) const {
 	constexpr const wchar_t* meshShaderName = L"MeshShaderIndividual";
 	constexpr const wchar_t* taskShaderName = L"MeshShaderTSIndividual";
 
 	if (m_useTaskShader)
-		m_graphicsPipeline = CreateGraphicsPipelineMS(
-			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
+		return CreateGraphicsPipelineMS(
+			device, graphicsLayout, renderPass, s_shaderBytecodeType, shaderPath, fragmentShader,
 			meshShaderName, taskShaderName
 		);
 	else
-		m_graphicsPipeline = CreateGraphicsPipelineMS(
-			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader,
+		return CreateGraphicsPipelineMS(
+			device, graphicsLayout, renderPass, s_shaderBytecodeType, shaderPath, fragmentShader,
 			meshShaderName
 		);
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipelineMS(
 	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
-	const std::wstring& shaderPath, const ShaderName& fragmentShader,
+	ShaderType binaryType, const std::wstring& shaderPath, const ShaderName& fragmentShader,
 	const ShaderName& meshShader, const ShaderName& taskShader /* = {} */
 ) {
 	auto ms              = std::make_unique<VkShader>(device);
 	const bool msSuccess = ms->Create(
-		shaderPath + meshShader.GetNameWithExtension(s_shaderBytecodeType)
+		shaderPath + meshShader.GetNameWithExtension(binaryType)
 	);
 
 	auto fs              = std::make_unique<VkShader>(device);
 	const bool fsSuccess = fs->Create(
-		shaderPath + fragmentShader.GetNameWithExtension(s_shaderBytecodeType)
+		shaderPath + fragmentShader.GetNameWithExtension(binaryType)
 	);
 
 	GraphicsPipelineBuilder builder{ graphicsLayout, renderPass };
@@ -45,7 +43,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMeshShader::CreateGraphicsPipe
 	{
 		auto ts   = std::make_unique<VkShader>(device);
 		tsSuccess = ts->Create(
-			shaderPath + taskShader.GetNameWithExtension(s_shaderBytecodeType)
+			shaderPath + taskShader.GetNameWithExtension(binaryType)
 		);
 
 		if (tsSuccess)
