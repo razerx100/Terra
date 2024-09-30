@@ -279,10 +279,9 @@ public:
 			);
 
 			// The model manager uses the render pass to create PSOs. So, if the renderPass is
-			// changed, I will have to recreate all the PSOs as well. But the swapchain format
-			// doesn't usually change, so it is not a major issue. But I should do it at some
-			// point.
+			// changed, I will have to recreate all the PSOs as well.
 			m_modelManager.SetRenderPass(m_renderPass.Get());
+			m_modelManager.RecreateGraphicsPipelines();
 		}
 
 		m_viewportAndScissors.Resize(width, height);

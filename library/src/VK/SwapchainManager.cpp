@@ -17,8 +17,8 @@ void VkSwapchain::Create(
 	std::uint32_t width, std::uint32_t height
 ) {
 	// Create the swapchain.
-	const VkPresentModeKHR swapPresentMode = surface.GetPresentMode(physicalDevice);
-	const VkSurfaceFormatKHR surfaceFormat = surface.GetSurfaceFormat(physicalDevice);
+	const VkPresentModeKHR swapPresentMode             = surface.GetPresentMode(physicalDevice);
+	const VkSurfaceFormatKHR surfaceFormat             = surface.GetSurfaceFormat(physicalDevice);
 	const VkSurfaceCapabilitiesKHR surfaceCapabilities = surface.GetSurfaceCapabilities(
 		physicalDevice
 	);
