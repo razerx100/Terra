@@ -324,6 +324,19 @@ public:
 		}
 	}
 
+	template<TextureDescType DescType>
+	size_t GetTotalDescriptorCount() noexcept
+	{
+		if constexpr (DescType == TextureDescType::CombinedTexture)
+			return std::size(m_availableIndicesCombinedTextures);
+		else if constexpr (DescType == TextureDescType::SampledTexture)
+			return std::size(m_availableIndicesSampledTextures);
+		else if constexpr (DescType == TextureDescType::Sampler)
+			return std::size(m_availableIndicesSamplers);
+		else
+			return 0u;
+	}
+
 	template<VkDescriptorType type>
 	void RemoveLocalDescriptor(std::uint32_t resourceIndex) noexcept
 	{

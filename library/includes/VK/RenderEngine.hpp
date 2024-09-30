@@ -129,6 +129,7 @@ public:
 protected:
 	[[nodiscard]]
 	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
+	virtual void ResetGraphicsPipeline() = 0;
 
 	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlagBits cameraShaderStage) noexcept;
 
@@ -324,6 +325,21 @@ protected:
 		RenderEngine::Update(frameIndex);
 
 		m_modelManager.UpdatePerFrame(frameIndex);
+	}
+
+	void CreateGraphicsPipelineLayout()
+	{
+		if (!std::empty(m_graphicsDescriptorBuffers))
+			m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
+
+		m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
+	}
+
+	void ResetGraphicsPipeline() override
+	{
+		CreateGraphicsPipelineLayout();
+
+		m_modelManager.RecreateGraphicsPipelines();
 	}
 
 	using PipelineSignature = VkSemaphore (Derived::*)(

@@ -23,10 +23,7 @@ RenderEngineMS::RenderEngineMS(
 
 	ModelManagerMS::SetGraphicsConstantRange(m_graphicsPipelineLayout);
 
-	if (!std::empty(m_graphicsDescriptorBuffers))
-		m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
-
-	m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
+	CreateGraphicsPipelineLayout();
 
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
 	m_cameraManager.SetDescriptorBufferGraphics(

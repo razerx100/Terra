@@ -16,10 +16,7 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 	ModelManagerVSIndividual::SetGraphicsConstantRange(m_graphicsPipelineLayout);
 
-	if (!std::empty(m_graphicsDescriptorBuffers))
-		m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
-
-	m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
+	CreateGraphicsPipelineLayout();
 
 	// This descriptor shouldn't change, so it should be fine to set it here.
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
@@ -199,10 +196,7 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 
 	ModelManagerVSIndirect::SetGraphicsConstantRange(m_graphicsPipelineLayout);
 
-	if (!std::empty(m_graphicsDescriptorBuffers))
-		m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
-
-	m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
+	CreateGraphicsPipelineLayout();
 
 	m_cameraManager.CreateBuffer(
 		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices(),
