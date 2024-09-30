@@ -706,6 +706,12 @@ protected:
 		);
 	}
 
+	void RecreateGraphicsPipelines()
+	{
+		for (auto& graphicsPipeline : m_graphicsPipelines)
+			graphicsPipeline.Recreate(m_device, m_graphicsPipelineLayout, m_renderPass, m_shaderPath);
+	}
+
 private:
 	void AddModelBundle(ModelBundleType&& modelBundle) noexcept
 	{
