@@ -37,6 +37,8 @@ public:
 	{
 		return m_setLayouts;
 	}
+	[[nodiscard]]
+	bool IsCreated() const noexcept { return m_descriptorBuffer.Get() != VK_NULL_HANDLE; }
 
 	static void BindDescriptorBuffer(
 		const VkDescriptorBuffer& descriptorBuffer, const VKCommandBuffer& cmdBuffer,

@@ -112,7 +112,7 @@ void TextureManager::SetDescriptorBufferLayout(
 		std::size(m_availableIndicesCombinedTextures)
 	);
 
-	if(combinedDescCount)
+	if (combinedDescCount)
 		descriptorBuffer.AddBinding(
 			combinedTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT

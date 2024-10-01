@@ -419,9 +419,12 @@ public:
 
 			// Add binding will add a new binding to the Layout and we use the layout size to
 			// create the buffer. So, we don't need to pass a size.
-			m_localDescBuffer.IncreaseDescriptorCount(
-				localBindingSlot, 0u, type, localDescCount - s_localDescriptorCount, localDescCount
-			);
+			if (m_localDescBuffer.IsCreated())
+				m_localDescBuffer.IncreaseDescriptorCount(
+					localBindingSlot, 0u, type, localDescCount - s_localDescriptorCount, localDescCount
+				);
+			else
+				m_localDescBuffer.CreateBuffer();
 		}
 
 		m_localDescBuffer.SetDescriptor<type>(descriptor, localBindingSlot, 0u, localDescIndex);
