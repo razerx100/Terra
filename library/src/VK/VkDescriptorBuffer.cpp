@@ -21,7 +21,7 @@ VkDescriptorBuffer& VkDescriptorBuffer::AddBinding(
 	std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type, std::uint32_t descriptorCount,
 	VkShaderStageFlags shaderFlags, VkDescriptorBindingFlags bindingFlags /* = 0u */
 ) noexcept {
-	m_setLayouts.at(setLayoutIndex).UpdateBinding(
+	m_setLayouts[setLayoutIndex].UpdateBinding(
 		bindingIndex, type, descriptorCount, shaderFlags, bindingFlags
 	);
 
@@ -190,7 +190,7 @@ VkDeviceSize VkDescriptorBuffer::GetBindingOffset(
 	VkDeviceSize offset = 0u;
 
 	DescBuffer::vkGetDescriptorSetLayoutBindingOffsetEXT(
-		m_device, m_setLayouts.at(setLayoutIndex).Get(), binding, &offset
+		m_device, m_setLayouts[setLayoutIndex].Get(), binding, &offset
 	);
 
 	return offset;
@@ -200,7 +200,7 @@ VkDeviceSize VkDescriptorBuffer::GetDescriptorOffset(
 	std::uint32_t bindingIndex, size_t setLayoutIndex, size_t descriptorSize,
 	std::uint32_t descriptorIndex
 ) const noexcept {
-	return m_layoutOffsets.at(setLayoutIndex) +
+	return m_layoutOffsets[setLayoutIndex] +
 		+ GetBindingOffset(bindingIndex, setLayoutIndex) + (descriptorIndex * descriptorSize);
 }
 

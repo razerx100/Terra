@@ -35,6 +35,9 @@ void PipelineLayout::Create(
 		.pPushConstantRanges    = std::data(m_pushRanges)
 	};
 
+	if (m_pipelineLayout != VK_NULL_HANDLE)
+		SelfDestruct();
+
 	vkCreatePipelineLayout(m_device, &createInfo, nullptr, &m_pipelineLayout);
 }
 
@@ -44,7 +47,7 @@ void PipelineLayout::Create(const std::vector<DescriptorSetLayout>& setLayouts)
 	std::vector<VkDescriptorSetLayout> vkSetLayouts{ layoutCount, VK_NULL_HANDLE };
 
 	for (size_t index = 0u; index < layoutCount; ++index)
-		vkSetLayouts.at(index) = setLayouts.at(index).Get();
+		vkSetLayouts[index] = setLayouts[index].Get();
 
 	Create(std::data(vkSetLayouts), static_cast<std::uint32_t>(layoutCount));
 }
