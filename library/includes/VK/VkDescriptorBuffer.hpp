@@ -24,9 +24,9 @@ public:
 
 	void CreateBuffer(const std::vector<std::uint32_t>& queueFamilyIndices = {});
 
-	void IncreaseDescriptorCount(
-		std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type,
-		std::uint32_t oldDescriptorCount, std::uint32_t newDescriptorCount,
+	// This will recreate the Descriptor Buffer as well and retain all the old descriptors.
+	void RecreateSetLayout(
+		size_t setLayoutIndex, const std::vector<VkDescriptorSetLayoutBinding>& oldSetLayoutBindings,
 		const std::vector<std::uint32_t>& queueFamilyIndices = {}
 	);
 
@@ -36,6 +36,11 @@ public:
 	const std::vector<DescriptorSetLayout>& GetLayouts() const noexcept
 	{
 		return m_setLayouts;
+	}
+	[[nodiscard]]
+	const DescriptorSetLayout& GetLayout(size_t index) const noexcept
+	{
+		return m_setLayouts[index];
 	}
 	[[nodiscard]]
 	bool IsCreated() const noexcept { return m_descriptorBuffer.Get() != VK_NULL_HANDLE; }

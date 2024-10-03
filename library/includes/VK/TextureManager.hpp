@@ -413,16 +413,19 @@ public:
 		{
 			localDescCount += s_localDescriptorCount;
 
+			constexpr size_t setLayoutIndex = 0u;
+
+			const std::vector<VkDescriptorSetLayoutBinding> oldSetLayoutBindings
+				= m_localDescBuffer.GetLayout(setLayoutIndex).GetBindings();
+
 			m_localDescBuffer.AddBinding(
-				localBindingSlot, 0u, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
+				localBindingSlot, setLayoutIndex, type, localDescCount, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
 
 			// Add binding will add a new binding to the Layout and we use the layout size to
 			// create the buffer. So, we don't need to pass a size.
 			if (m_localDescBuffer.IsCreated())
-				m_localDescBuffer.IncreaseDescriptorCount(
-					localBindingSlot, 0u, type, localDescCount - s_localDescriptorCount, localDescCount
-				);
+				m_localDescBuffer.RecreateSetLayout(setLayoutIndex, oldSetLayoutBindings);
 			else
 				m_localDescBuffer.CreateBuffer();
 		}

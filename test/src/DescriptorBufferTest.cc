@@ -277,19 +277,23 @@ TEST_F(DescriptorBufferTest, DescriptorBufferRecreationTest)
 
 			descBuffer.CreateBuffer();
 
+			const std::vector<VkDescriptorSetLayoutBinding> oldSetLayoutBindings1
+				= descBuffer.GetLayout(1u).GetBindings();
+
 			descBuffer.AddBinding(
 				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 85u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
-			descBuffer.IncreaseDescriptorCount(
-				0u, 1u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, 85u
-			);
+
+			descBuffer.RecreateSetLayout(1u, oldSetLayoutBindings1);
+
+			const std::vector<VkDescriptorSetLayoutBinding> oldSetLayoutBindings2
+				= descBuffer.GetLayout(2u).GetBindings();
 
 			descBuffer.AddBinding(
 				0u, 2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000u, VK_SHADER_STAGE_FRAGMENT_BIT
 			);
-			descBuffer.IncreaseDescriptorCount(
-				0u, 2u, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 65u, 1000u
-			);
+
+			descBuffer.RecreateSetLayout(2u, oldSetLayoutBindings2);
 		}
 	}
 }

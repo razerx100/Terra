@@ -56,10 +56,9 @@ void VkDescriptorBuffer::CreateBuffer(const std::vector<std::uint32_t>& queueFam
 	_createBuffer(m_descriptorBuffer, queueFamilyIndices);
 }
 
-void VkDescriptorBuffer::IncreaseDescriptorCount(
-	std::uint32_t bindingIndex, size_t setLayoutIndex, VkDescriptorType type,
-	std::uint32_t oldDescriptorCount, std::uint32_t newDescriptorCount,
-	const std::vector<std::uint32_t>& queueFamilyIndices /* = {} */
+void VkDescriptorBuffer::RecreateSetLayout(
+	size_t setLayoutIndex, const std::vector<VkDescriptorSetLayoutBinding>& oldSetLayoutBindings,
+	const std::vector<std::uint32_t>& queueFamilyIndices/* = {} */
 ) {
 	// Skip if this is called before the descriptorBuffer has been created.
 	if (m_descriptorBuffer.Get() == VK_NULL_HANDLE)
@@ -67,20 +66,22 @@ void VkDescriptorBuffer::IncreaseDescriptorCount(
 
 	Buffer newBuffer{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
 
-	const VkDeviceSize oldDescriptorOffset = GetDescriptorOffset(
-		bindingIndex, setLayoutIndex, GetDescriptorSize(type), oldDescriptorCount
-	);
-
 	const std::vector<VkDeviceSize> oldLayoutOffsets = m_layoutOffsets;
+
+	const size_t oldBindingCount = std::size(oldSetLayoutBindings);
+
+	// Store the old binding offsets to know where to copy from.
+	std::vector<VkDeviceSize> oldLayoutBindingOffsets(oldBindingCount, 0u);
+
+	for (size_t index = 0u; index < oldBindingCount; ++index)
+	{
+		const VkDescriptorSetLayoutBinding& oldLayoutBinding = oldSetLayoutBindings[index];
+
+		oldLayoutBindingOffsets[index] = GetBindingOffset(oldLayoutBinding.binding, setLayoutIndex);
+	}
 
 	_createBuffer(newBuffer, queueFamilyIndices);
 
-	const VkDeviceSize newDescriptorOffset = GetDescriptorOffset(
-		bindingIndex, setLayoutIndex, GetDescriptorSize(type), newDescriptorCount
-	);
-
-	// Usually we should only recreate when have added more layout bindings, which should cause the
-	// size to increase.
 	// It would be kinda useless to recreate when nothing was added or removed and the size is the
 	// same.
 	// But the copying can't be done if we change a layout to have less items, as the size will
@@ -93,7 +94,7 @@ void VkDescriptorBuffer::IncreaseDescriptorCount(
 
 	{
 		// Copy the other SetLayouts first, as they should be unchanged.
-		const size_t layoutCount = std::size(oldLayoutOffsets);
+		const size_t layoutCount = std::size(m_setLayouts);
 
 		for (size_t index = 0u; index < layoutCount; ++index)
 		{
@@ -110,42 +111,32 @@ void VkDescriptorBuffer::IncreaseDescriptorCount(
 			// For the changed Layout.
 			if (index == setLayoutIndex)
 			{
-				// The first unchanged part.
-				const auto firstUnchangedPartSize
-					= static_cast<size_t>(oldDescriptorOffset - oldLayoutStart);
+				// Since the bindings don't follow their binding order in memory, we must query
+				// every binding and copy them individually.
 
-				memcpy(
-					newBuffer.CPUHandle() + newLayoutStart,
-					m_descriptorBuffer.CPUHandle() + oldLayoutStart,
-					firstUnchangedPartSize
-				);
+				// We only need to copy the old bindings. As the new ones won't have any data in yet,
+				// hopefully.
+				for (size_t bindingIndex = 0u; bindingIndex < oldBindingCount; ++bindingIndex)
+				{
+					const VkDescriptorSetLayoutBinding& oldLayoutBinding
+						= oldSetLayoutBindings[bindingIndex];
 
-				size_t newLayoutSize = 0u;
+					// Since I haven't added any Remove Binding functions, it shouldn't be possible
+					// to remove a binding and the old binding should still exist in the new Layout.
+					const VkDeviceSize newBindingOffset = GetBindingOffset(
+						oldLayoutBinding.binding, setLayoutIndex
+					);
+					const VkDeviceSize oldBindingOffset = oldLayoutBindingOffsets[bindingIndex];
 
-				if (difference > 1u)
-					newLayoutSize = static_cast<size_t>(m_layoutOffsets[index + 1] - newLayoutStart);
-				else
-					newLayoutSize = static_cast<size_t>(newBuffer.BufferSize() - newLayoutStart);
+					const VkDeviceSize descriptorSize   = GetDescriptorSize(oldLayoutBinding.descriptorType);
+					const VkDeviceSize oldTotalDescSize = descriptorSize * oldLayoutBinding.descriptorCount;
 
-				//The second unchanged part.
-				// The layout size might be bigger than the actual size held by the bindings.
-				// So, can't just copy the oldLastPart.
-				const auto oldLayoutLastPartSize = static_cast<size_t>(
-					oldLayoutStart + layoutSize - oldDescriptorOffset
-				);
-				const auto newLayoutLastPartSize = static_cast<size_t>(
-					newLayoutStart + newLayoutSize - newDescriptorOffset
-				);
-
-				const size_t secondUnchangedPartSize = std::min(
-					oldLayoutLastPartSize, newLayoutLastPartSize
-				);
-
-				memcpy(
-					newBuffer.CPUHandle() + newDescriptorOffset,
-					m_descriptorBuffer.CPUHandle() + oldDescriptorOffset,
-					secondUnchangedPartSize
-				);
+					memcpy(
+						newBuffer.CPUHandle() + newLayoutStart + newBindingOffset,
+						m_descriptorBuffer.CPUHandle() + oldLayoutStart + oldBindingOffset,
+						oldTotalDescSize
+					);
+				}
 			}
 			else
 				memcpy(

@@ -164,24 +164,19 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	// have 65535 bound textures at once. There could be more textures.
 	if (!oFreeGlobalDescIndex)
 	{
-		const size_t oldDescriptorCount = m_textureManager.GetTotalDescriptorCount<TexDescType>();
-
 		m_textureManager.IncreaseAvailableIndices<TexDescType>();
-
-		const size_t newDescriptorCount = m_textureManager.GetTotalDescriptorCount<TexDescType>();
 
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		{
+			const std::vector<VkDescriptorSetLayoutBinding> oldSetLayoutBindings
+				= descriptorBuffer.GetLayout(s_fragmentShaderSetLayoutIndex).GetBindings();
+
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, s_combinedTextureBindingSlot, s_sampledTextureBindingSlot,
 				s_samplerBindingSlot, s_fragmentShaderSetLayoutIndex
 			);
 
-			descriptorBuffer.IncreaseDescriptorCount(
-				s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, DescType,
-				static_cast<std::uint32_t>(oldDescriptorCount),
-				static_cast<std::uint32_t>(newDescriptorCount)
-			);
+			descriptorBuffer.RecreateSetLayout(s_fragmentShaderSetLayoutIndex, oldSetLayoutBindings);
 		}
 
 		oFreeGlobalDescIndex = m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
