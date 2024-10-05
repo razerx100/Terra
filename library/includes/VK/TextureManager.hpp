@@ -256,6 +256,7 @@ private:
 	}
 
 	template<VkDescriptorType type>
+	[[nodiscard]]
 	const std::vector<bool>& GetAvailableIndices() const noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
@@ -267,6 +268,7 @@ private:
 	}
 
 	template<VkDescriptorType type>
+	[[nodiscard]]
 	std::vector<bool>& GetAvailableIndices() noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
@@ -278,6 +280,7 @@ private:
 	}
 
 	template<VkDescriptorType type>
+	[[nodiscard]]
 	auto& GetInactiveDetails() noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
@@ -289,6 +292,7 @@ private:
 	}
 
 	template<VkDescriptorType type>
+	[[nodiscard]]
 	std::uint32_t& GetLocalDescCount() noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
