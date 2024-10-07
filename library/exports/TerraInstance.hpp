@@ -10,9 +10,8 @@
 #define TERRA_DLL __declspec(dllimport)
 #endif
 
-TERRA_DLL std::shared_ptr<Renderer> CreateTerraInstance(
-	const char* appName,
-	void* windowHandle, void* moduleHandle,
+TERRA_DLL std::unique_ptr<Renderer> CreateTerraInstance(
+	const char* appName, void* windowHandle, void* moduleHandle,
 	std::uint32_t width, std::uint32_t height, std::shared_ptr<ThreadPool> threadPool,
 	RenderEngineType engineType, std::uint32_t bufferCount = 2u
 );
