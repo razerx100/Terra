@@ -956,10 +956,17 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
-		constexpr ConstantData constantData{
+		constexpr Bounds maxBounds
+		{
 			.maxXBounds = XBOUNDS,
 			.maxYBounds = YBOUNDS,
 			.maxZBounds = ZBOUNDS
+		};
+
+		const ConstantData constantData
+		{
+			.maxBounds  = maxBounds,
+			.modelCount = m_argumentCount
 		};
 
 		vkCmdPushConstants(
