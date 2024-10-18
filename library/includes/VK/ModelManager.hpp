@@ -115,7 +115,7 @@ class ModelBundleMSIndividual : public ModelBundle
 public:
 	struct ModelDetails
 	{
-		std::uint32_t meshletOffset;
+		MeshDetailsMS meshDetails;
 		std::uint32_t modelBufferIndex;
 	};
 
@@ -143,14 +143,8 @@ public:
 		else
 			return std::numeric_limits<std::uint32_t>::max();
 	}
-
 	[[nodiscard]]
-	static consteval std::uint32_t GetTSConstantBufferSize() noexcept
-	{
-		return static_cast<std::uint32_t>(sizeof(std::uint32_t));
-	}
-	[[nodiscard]]
-	static consteval std::uint32_t GetMSConstantBufferSize() noexcept
+	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
 		return static_cast<std::uint32_t>(sizeof(ModelDetails));
 	}
