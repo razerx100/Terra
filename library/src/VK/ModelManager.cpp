@@ -71,26 +71,37 @@ void ModelBundleMSIndividual::Draw(
 	{
 		const auto& model = models[index];
 
-		constexpr auto pushConstantSize = GetConstantBufferSize();
-		const MeshDetailsMS meshDetails = model->GetMeshDetailsMS();
+		constexpr auto pushConstantSizeTS = GetTSConstantBufferSize();
+		constexpr auto pushConstantSizeMS = GetMSConstantBufferSize();
 
-		const ModelDetails msConstants
-		{
-			.modelBufferIndex = m_modelBufferIndices[index],
-			.meshletOffset    = meshDetails.meshletOffset
-		};
-
-		constexpr std::uint32_t offset = MeshManagerMeshShader::GetConstantBufferSize();
+		const MeshDetailsMS meshDetails   = model->GetMeshDetailsMS();
 
 		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, offset,
-			pushConstantSize, &msConstants
+			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_TASK_BIT_EXT, 0u,
+			pushConstantSizeTS, &meshDetails.meshletCount
 		);
 
-		// Unlike the Compute Shader where we process the data of a model with a thread, here
-		// each group handles a Meshlet and its threads handle the vertices and primitives.
-		// So, we need a thread group for each Meshlet.
-		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, meshDetails.meshletCount, 1u, 1u);
+		const ModelDetails msOnlyConstants
+		{
+			.meshletOffset    = meshDetails.meshletOffset,
+			.modelBufferIndex = m_modelBufferIndices[index]
+		};
+
+		vkCmdPushConstants(
+			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, pushConstantSizeTS,
+			pushConstantSizeMS, &msOnlyConstants
+		);
+
+		// If we have a Task shader, this will launch a Task global workGroup. We would want
+		// each Task shader invocation to process a meshlet and launch the necessary
+		// Mesh Shader workGroups. On Nvdia we can have a maximum of 32 invocation active
+		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
+		// meshlets concurrently.
+		const std::uint32_t taskGroupCount = DivRoundUp(
+			meshDetails.meshletCount, s_taskInvocationCount
+		);
+
+		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, taskGroupCount, 1u, 1u);
 		// It might be worth checking if we are reaching the Group Count Limit and if needed
 		// launch more Groups. Could achieve that by passing a GroupLaunch index.
 	}
@@ -529,11 +540,6 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 		// Model
 		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
 	}
-}
-
-GraphicsPipelineIndividualDraw ModelManagerVSIndividual::CreatePipelineObject()
-{
-	return GraphicsPipelineIndividualDraw{};
 }
 
 ModelBuffers ModelManagerVSIndividual::ConstructModelBuffers(
@@ -1056,11 +1062,6 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 	}
 }
 
-GraphicsPipelineIndirectDraw ModelManagerVSIndirect::CreatePipelineObject()
-{
-	return GraphicsPipelineIndirectDraw{};
-}
-
 ModelBuffers ModelManagerVSIndirect::ConstructModelBuffers(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
 ) {
@@ -1140,11 +1141,16 @@ void ModelManagerMS::ConfigureMeshBundle(
 void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
-	constexpr std::uint32_t meshConstantSize  = MeshManagerMeshShader::GetConstantBufferSize();
-	constexpr std::uint32_t modelConstantSize = ModelBundleMSIndividual::GetConstantBufferSize();
+	constexpr std::uint32_t modelTSConstantSize = ModelBundleMSIndividual::GetTSConstantBufferSize();
+
+	constexpr std::uint32_t meshConstantSize    = MeshManagerMeshShader::GetConstantBufferSize();
+	constexpr std::uint32_t modelMSConstantSize = ModelBundleMSIndividual::GetMSConstantBufferSize();
 
 	layout.AddPushConstantRange(
-		VK_SHADER_STAGE_MESH_BIT_EXT, meshConstantSize + modelConstantSize
+		VK_SHADER_STAGE_TASK_BIT_EXT, modelTSConstantSize
+	);
+	layout.AddPushConstantRange(
+		VK_SHADER_STAGE_MESH_BIT_EXT, modelMSConstantSize + meshConstantSize
 	);
 }
 
@@ -1250,12 +1256,17 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		{
 			const size_t meshIndex                  = modelBundle.GetMeshIndex();
 			const MeshManagerMeshShader& meshBundle = m_meshBundles.at(meshIndex);
+
+			constexpr std::uint32_t constBufferOffset
+				= ModelBundleMSIndividual::GetTSConstantBufferSize()
+				+ ModelBundleMSIndividual::GetMSConstantBufferSize();
+
 			constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
 
 			const MeshManagerMeshShader::MeshDetails meshDetails = meshBundle.GetMeshDetails();
 
 			vkCmdPushConstants(
-				cmdBuffer, m_graphicsPipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, 0u,
+				cmdBuffer, m_graphicsPipelineLayout, VK_SHADER_STAGE_MESH_BIT_EXT, constBufferOffset,
 				constBufferSize, &meshDetails
 			);
 		}
@@ -1263,11 +1274,6 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		// Model
 		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
 	}
-}
-
-GraphicsPipelineMeshShader ModelManagerMS::CreatePipelineObject()
-{
-	return GraphicsPipelineMeshShader{ false };
 }
 
 ModelBuffers ModelManagerMS::ConstructModelBuffers(

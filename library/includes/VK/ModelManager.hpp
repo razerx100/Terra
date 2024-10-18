@@ -115,8 +115,8 @@ class ModelBundleMSIndividual : public ModelBundle
 public:
 	struct ModelDetails
 	{
-		std::uint32_t modelBufferIndex;
 		std::uint32_t meshletOffset;
+		std::uint32_t modelBufferIndex;
 	};
 
 public:
@@ -129,12 +129,6 @@ public:
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 	) const noexcept;
-
-	[[nodiscard]]
-	static consteval std::uint32_t GetConstantBufferSize() noexcept
-	{
-		return static_cast<std::uint32_t>(sizeof(ModelDetails));
-	}
 
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetIndices() const noexcept { return m_modelBufferIndices; }
@@ -150,9 +144,28 @@ public:
 			return std::numeric_limits<std::uint32_t>::max();
 	}
 
+	[[nodiscard]]
+	static consteval std::uint32_t GetTSConstantBufferSize() noexcept
+	{
+		return static_cast<std::uint32_t>(sizeof(std::uint32_t));
+	}
+	[[nodiscard]]
+	static consteval std::uint32_t GetMSConstantBufferSize() noexcept
+	{
+		return static_cast<std::uint32_t>(sizeof(ModelDetails));
+	}
+
+private:
+	static std::uint32_t DivRoundUp(std::uint32_t num, std::uint32_t den) noexcept
+	{
+		return (num + den - 1) / den;
+	}
+
 private:
 	std::shared_ptr<ModelBundleMS> m_modelBundle;
 	std::vector<std::uint32_t>     m_modelBufferIndices;
+
+	static constexpr std::uint32_t s_taskInvocationCount = 32u;
 
 	static constexpr std::array s_requiredExtensions
 	{
@@ -663,7 +676,7 @@ protected:
 		{
 			psoIndex = static_cast<std::uint32_t>(std::size(m_graphicsPipelines));
 
-			Pipeline pipeline = static_cast<Derived*>(this)->CreatePipelineObject();
+			Pipeline pipeline{};
 
 			pipeline.Create(
 				m_device, m_graphicsPipelineLayout, m_renderPass, m_shaderPath, fragmentShader
@@ -841,9 +854,6 @@ private:
 	void ShaderPathSet() {}
 
 	[[nodiscard]]
-	static GraphicsPipelineIndividualDraw CreatePipelineObject();
-
-	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
 		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
 	);
@@ -959,9 +969,6 @@ private:
 
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
-
-	[[nodiscard]]
-	GraphicsPipelineIndirectDraw CreatePipelineObject();
 
 	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
@@ -1139,9 +1146,6 @@ private:
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 	// To create compute shader pipelines.
 	void ShaderPathSet() {}
-
-	[[nodiscard]]
-	GraphicsPipelineMeshShader CreatePipelineObject();
 
 	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
