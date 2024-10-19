@@ -86,7 +86,7 @@ void ModelBundleMSIndividual::Draw(
 
 		// If we have a Task shader, this will launch a Task global workGroup. We would want
 		// each Task shader invocation to process a meshlet and launch the necessary
-		// Mesh Shader workGroups. On Nvdia we can have a maximum of 32 invocation active
+		// Mesh Shader workGroups. On Nvdia we can have a maximum of 32 invocations active
 		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
 		// meshlets concurrently.
 		const std::uint32_t taskGroupCount = DivRoundUp(

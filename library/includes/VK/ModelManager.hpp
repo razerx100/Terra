@@ -150,6 +150,7 @@ public:
 	}
 
 private:
+	[[nodiscard]]
 	static std::uint32_t DivRoundUp(std::uint32_t num, std::uint32_t den) noexcept
 	{
 		return (num + den - 1) / den;
