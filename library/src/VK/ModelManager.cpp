@@ -3,15 +3,13 @@
 #include <VkResourceBarriers2.hpp>
 
 // Model Bundle
-VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
-	const std::shared_ptr<ModelVS>& model
+VkDrawIndexedIndirectCommand ModelBundleBase::GetDrawIndexedIndirectCommand(
+	const MeshDetails& meshDetails
 ) noexcept {
-	MeshDetailsVS meshDetails = model->GetMeshDetailsVS();
-
 	const VkDrawIndexedIndirectCommand indirectCommand{
-		.indexCount    = meshDetails.indexCount,
+		.indexCount    = meshDetails.elementCount,
 		.instanceCount = 1u,
-		.firstIndex    = meshDetails.indexOffset,
+		.firstIndex    = meshDetails.elementOffset,
 		.vertexOffset  = 0,
 		.firstInstance = 0u
 	};
@@ -21,14 +19,15 @@ VkDrawIndexedIndirectCommand ModelBundle::GetDrawIndexedIndirectCommand(
 
 // Model Bundle VS Individual
 void ModelBundleVSIndividual::SetModelBundle(
-	std::shared_ptr<ModelBundleVS> bundle, std::vector<std::uint32_t> modelBufferIndices
+	std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
 ) noexcept {
 	m_modelBufferIndices = std::move(modelBufferIndices);
 	m_modelBundle        = std::move(bundle);
 }
 
 void ModelBundleVSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
+	const MeshManagerVertexShader& meshBundle
 ) const noexcept {
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 	const auto& models        = m_modelBundle->GetModels();
@@ -42,7 +41,10 @@ void ModelBundleVSIndividual::Draw(
 			pushConstantSize, &m_modelBufferIndices[index]
 		);
 
-		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(models[index]);
+		const std::shared_ptr<Model>& model = models[index];
+
+		const MeshDetails& meshDetails              = meshBundle.GetMeshDetails(model->GetMeshIndex());
+		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(meshDetails);
 
 		vkCmdDrawIndexed(
 			cmdBuffer, meshArgs.indexCount, meshArgs.instanceCount,
@@ -53,14 +55,15 @@ void ModelBundleVSIndividual::Draw(
 
 // Model Bundle MS
 void ModelBundleMSIndividual::SetModelBundle(
-	std::shared_ptr<ModelBundleMS> bundle, std::vector<std::uint32_t> modelBufferIndices
+	std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
 ) noexcept {
 	m_modelBundle        = std::move(bundle);
 	m_modelBufferIndices = std::move(modelBufferIndices);
 }
 
 void ModelBundleMSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
+	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
+	const MeshManagerMeshShader& meshBundle
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 
@@ -73,9 +76,10 @@ void ModelBundleMSIndividual::Draw(
 
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
+
 		const ModelDetails modelConstants
 		{
-			.meshDetails      = model->GetMeshDetailsMS(),
+			.meshDetails      = meshBundle.GetMeshDetails(model->GetMeshIndex()),
 			.modelBufferIndex = m_modelBufferIndices[index]
 		};
 
@@ -90,7 +94,7 @@ void ModelBundleMSIndividual::Draw(
 		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
 		// meshlets concurrently.
 		const std::uint32_t taskGroupCount = DivRoundUp(
-			modelConstants.meshDetails.meshletCount, s_taskInvocationCount
+			modelConstants.meshDetails.elementCount, s_taskInvocationCount
 		);
 
 		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, taskGroupCount, 1u, 1u);
@@ -101,12 +105,12 @@ void ModelBundleMSIndividual::Draw(
 
 // Model Bundle VS Indirect
 ModelBundleVSIndirect::ModelBundleVSIndirect()
-	: ModelBundle{}, m_modelOffset{ 0u }, m_modelBundle {}, m_argumentOutputSharedData{},
+	: ModelBundleBase{}, m_modelOffset{ 0u }, m_modelBundle {}, m_argumentOutputSharedData{},
 	m_counterSharedData{}, m_modelIndicesSharedData{}, m_modelIndices{}
 {}
 
 void ModelBundleVSIndirect::SetModelBundle(
-	std::shared_ptr<ModelBundleVS> bundle, std::vector<std::uint32_t> modelBufferIndices
+	std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
 ) noexcept {
 	m_modelBundle  = std::move(bundle);
 	m_modelIndices = std::move(modelBufferIndices);
@@ -204,7 +208,7 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 	}, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
-void ModelBundleCSIndirect::SetModelBundle(std::shared_ptr<ModelBundleVS> bundle) noexcept
+void ModelBundleCSIndirect::SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept
 {
 	m_modelBundle = std::move(bundle);
 }
@@ -279,8 +283,9 @@ void ModelBundleCSIndirect::CreateBuffers(
 	);
 }
 
-void ModelBundleCSIndirect::Update(size_t bufferIndex) const noexcept
-{
+void ModelBundleCSIndirect::Update(
+	size_t bufferIndex, const MeshManagerVertexShader& meshBundle
+) const noexcept {
 	const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[bufferIndex];
 
 	std::uint8_t* argumentInputStart
@@ -292,7 +297,10 @@ void ModelBundleCSIndirect::Update(size_t bufferIndex) const noexcept
 
 	for (const auto& model : models)
 	{
-		const VkDrawIndexedIndirectCommand meshArgs = ModelBundle::GetDrawIndexedIndirectCommand(model);
+		const MeshDetails& meshDetails              = meshBundle.GetMeshDetails(model->GetMeshIndex());
+		const VkDrawIndexedIndirectCommand meshArgs = ModelBundleBase::GetDrawIndexedIndirectCommand(
+			meshDetails
+		);
 
 		memcpy(argumentInputStart + modelOffset, &meshArgs, argumentStride);
 
@@ -427,7 +435,7 @@ void ModelManagerVSIndividual::_setGraphicsConstantRange(PipelineLayout& layout)
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
 	ModelBundleVSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundleVS>&& modelBundle, TemporaryDataBufferGPU&// Not needed in this system.
+	std::shared_ptr<ModelBundle>&& modelBundle, TemporaryDataBufferGPU&// Not needed in this system.
 ) const noexcept {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
 }
@@ -527,10 +535,13 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
 		// Mesh
-		BindMesh(modelBundle, graphicsBuffer);
+		const MeshManagerVertexShader& meshBundle = m_meshBundles.at(
+			static_cast<size_t>(modelBundle.GetMeshBundleIndex())
+		);
+		meshBundle.Bind(graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
+		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout, meshBundle);
 	}
 }
 
@@ -642,7 +653,7 @@ void ModelManagerVSIndirect::UpdateDispatchX() noexcept
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
 	ModelBundleVSIndirect& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundleVS>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
 	ModelBundleCSIndirect modelBundleCS{};
 
@@ -782,14 +793,19 @@ void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noex
 	// are cpu data which is reset every frame.
 	for (const ModelBundleCSIndirect& bundle : m_modelBundlesCS)
 	{
-		bundle.Update(static_cast<size_t>(frameIndex));
+		const std::uint32_t meshBundleIndex  = bundle.GetMeshBundleIndex();
 
-		const std::uint32_t meshIndex        = bundle.GetMeshIndex();
+		const MeshManagerVertexShader& meshBundle = m_meshBundles.at(
+			static_cast<size_t>(meshBundleIndex)
+		);
+
+		bundle.Update(static_cast<size_t>(frameIndex), meshBundle);
+
 		const std::uint32_t modelBundleIndex = bundle.GetModelBundleIndex();
 
 		bufferOffset = strideSize * modelBundleIndex;
 
-		memcpy(bufferOffsetPtr + bufferOffset, &meshIndex, strideSize);
+		memcpy(bufferOffsetPtr + bufferOffset, &meshBundleIndex, strideSize);
 	}
 }
 
@@ -986,7 +1002,11 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
 		// Mesh
-		BindMesh(modelBundle, graphicsBuffer);
+		const MeshManagerVertexShader& meshBundle = m_meshBundles.at(
+			static_cast<size_t>(modelBundle.GetMeshBundleIndex())
+		);
+		meshBundle.Bind(graphicsBuffer);
+
 
 		// Model
 		modelBundle.Draw(frameIndex, graphicsBuffer, m_graphicsPipelineLayout);
@@ -1086,7 +1106,7 @@ ModelManagerMS::ModelManagerMS(
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundleMS>&& modelBundle, [[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle, [[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
 ) {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
 }
@@ -1241,26 +1261,26 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		// Pipeline Object.
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
-		{
-			const size_t meshIndex                  = modelBundle.GetMeshIndex();
-			const MeshManagerMeshShader& meshBundle = m_meshBundles.at(meshIndex);
+		const auto meshBundleIndex = static_cast<size_t>(
+			modelBundle.GetMeshBundleIndex()
+		);
+		const MeshManagerMeshShader& meshBundle = m_meshBundles.at(meshBundleIndex);
 
-			constexpr std::uint32_t constantBufferOffset
-				= ModelBundleMSIndividual::GetConstantBufferSize();
+		constexpr std::uint32_t constantBufferOffset
+			= ModelBundleMSIndividual::GetConstantBufferSize();
 
-			constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
+		constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
 
-			const MeshManagerMeshShader::MeshDetails meshDetails = meshBundle.GetMeshDetails();
+		const MeshManagerMeshShader::MeshDetailsMS meshDetails = meshBundle.GetMeshDetailsMS();
 
-			vkCmdPushConstants(
-				cmdBuffer, m_graphicsPipelineLayout,
-				VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-				constantBufferOffset, constBufferSize, &meshDetails
-			);
-		}
+		vkCmdPushConstants(
+			cmdBuffer, m_graphicsPipelineLayout,
+			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
+			constantBufferOffset, constBufferSize, &meshDetails
+		);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout);
+		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout, meshBundle);
 	}
 }
 

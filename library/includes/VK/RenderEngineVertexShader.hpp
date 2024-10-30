@@ -18,7 +18,7 @@ public:
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
+		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
 	[[nodiscard]]
@@ -78,7 +78,7 @@ public:
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
+		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
 	[[nodiscard]]

@@ -44,7 +44,7 @@ void RenderEngineMS::SetupPipelineStages()
 }
 
 std::uint32_t RenderEngineMS::AddModelBundle(
-	std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
+	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer

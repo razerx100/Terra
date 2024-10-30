@@ -23,7 +23,7 @@ public:
 
 	// The offset should be enough to identify the mesh. We wouldn't really need the size
 	// as the meshlets should already have that data.
-	struct MeshDetails
+	struct MeshDetailsMS
 	{
 		std::uint32_t vertexOffset;
 		std::uint32_t vertexIndicesOffset;
@@ -79,7 +79,12 @@ public:
 	BoundsDetails GetBoundsDetails() const noexcept;
 
 	[[nodiscard]]
-	MeshDetails GetMeshDetails() const noexcept { return m_meshDetails; }
+	MeshDetailsMS GetMeshDetailsMS() const noexcept { return m_meshDetails; }
+	[[nodiscard]]
+	const MeshDetails& GetMeshDetails(size_t index) const noexcept
+	{
+		return m_bundleDetails.meshDetails[index];
+	}
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
@@ -92,12 +97,13 @@ private:
 	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
 
 private:
-	SharedBufferData m_vertexBufferSharedData;
-	SharedBufferData m_vertexIndicesBufferSharedData;
-	SharedBufferData m_primIndicesBufferSharedData;
-	SharedBufferData m_meshletBufferSharedData;
-	SharedBufferData m_meshBoundsSharedData;
-	MeshDetails      m_meshDetails;
+	SharedBufferData  m_vertexBufferSharedData;
+	SharedBufferData  m_vertexIndicesBufferSharedData;
+	SharedBufferData  m_primIndicesBufferSharedData;
+	SharedBufferData  m_meshletBufferSharedData;
+	SharedBufferData  m_meshBoundsSharedData;
+	MeshDetailsMS     m_meshDetails;
+	MeshBundleDetails m_bundleDetails;
 
 public:
 	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;
@@ -109,7 +115,8 @@ public:
 		m_primIndicesBufferSharedData{ other.m_primIndicesBufferSharedData },
 		m_meshletBufferSharedData{ other.m_meshletBufferSharedData },
 		m_meshBoundsSharedData{ other.m_meshBoundsSharedData },
-		m_meshDetails{ other.m_meshDetails }
+		m_meshDetails{ other.m_meshDetails },
+		m_bundleDetails{ std::move(other.m_bundleDetails) }
 	{}
 
 	MeshManagerMeshShader& operator=(MeshManagerMeshShader&& other) noexcept
@@ -120,6 +127,7 @@ public:
 		m_meshletBufferSharedData       = other.m_meshletBufferSharedData;
 		m_meshBoundsSharedData          = other.m_meshBoundsSharedData;
 		m_meshDetails                   = other.m_meshDetails;
+		m_bundleDetails                 = std::move(other.m_bundleDetails);
 
 		return *this;
 	}

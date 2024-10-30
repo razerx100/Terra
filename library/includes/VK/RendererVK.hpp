@@ -39,11 +39,7 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
-	) override;
-	[[nodiscard]]
-	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
+		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 	void RemoveModelBundle(std::uint32_t bundleID) noexcept override;
 

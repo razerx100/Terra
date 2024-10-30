@@ -49,7 +49,7 @@ ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
-	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
+	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
@@ -268,7 +268,7 @@ ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
 }
 
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
-	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
+	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer

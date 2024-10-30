@@ -80,13 +80,7 @@ void RendererVK::RemoveTexture(size_t index)
 }
 
 std::uint32_t RendererVK::AddModelBundle(
-	std::shared_ptr<ModelBundleVS>&& modelBundle, const ShaderName& fragmentShader
-) {
-	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
-}
-
-std::uint32_t RendererVK::AddModelBundle(
-	std::shared_ptr<ModelBundleMS>&& modelBundle, const ShaderName& fragmentShader
+	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
 }
