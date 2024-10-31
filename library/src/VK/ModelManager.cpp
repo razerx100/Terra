@@ -76,10 +76,12 @@ void ModelBundleMSIndividual::Draw(
 
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
+		const MeshDetails meshDetails   = meshBundle.GetMeshDetails(model->GetMeshIndex());
 
 		const ModelDetails modelConstants
 		{
-			.meshDetails      = meshBundle.GetMeshDetails(model->GetMeshIndex()),
+			.meshletCount     = meshDetails.elementCount,
+			.meshletOffset    = meshDetails.elementOffset,
 			.modelBufferIndex = m_modelBufferIndices[index]
 		};
 
@@ -94,7 +96,7 @@ void ModelBundleMSIndividual::Draw(
 		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
 		// meshlets concurrently.
 		const std::uint32_t taskGroupCount = DivRoundUp(
-			modelConstants.meshDetails.elementCount, s_taskInvocationCount
+			modelConstants.meshletCount, s_taskInvocationCount
 		);
 
 		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, taskGroupCount, 1u, 1u);
@@ -1271,12 +1273,12 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 
 		constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
 
-		const MeshManagerMeshShader::MeshDetailsMS meshDetails = meshBundle.GetMeshDetailsMS();
+		const MeshManagerMeshShader::MeshDetailsMS meshDetailsMS = meshBundle.GetMeshDetailsMS();
 
 		vkCmdPushConstants(
 			cmdBuffer, m_graphicsPipelineLayout,
 			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-			constantBufferOffset, constBufferSize, &meshDetails
+			constantBufferOffset, constBufferSize, &meshDetailsMS
 		);
 
 		// Model

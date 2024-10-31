@@ -118,7 +118,8 @@ class ModelBundleMSIndividual : public ModelBundleBase
 public:
 	struct ModelDetails
 	{
-		MeshDetails   meshDetails;
+		std::uint32_t meshletCount;
+		std::uint32_t meshletOffset;
 		std::uint32_t modelBufferIndex;
 	};
 
