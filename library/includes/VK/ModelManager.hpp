@@ -970,8 +970,6 @@ private:
 		return static_cast<std::uint32_t>(sizeof(ConstantData));
 	}
 
-	using BoundsDetails =  MeshManagerVertexShader::BoundsDetails;
-
 private:
 	StagingBufferManager*                 m_stagingBufferMan;
 	std::vector<SharedBufferCPU>          m_argumentInputBuffers;
@@ -981,7 +979,6 @@ private:
 	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshIndexBuffer;
-	ReusableCPUBuffer<BoundsDetails>      m_meshDetailsBuffer;
 	SharedBufferGPU                       m_modelIndicesCSBuffer;
 	SharedBufferGPU                       m_vertexBuffer;
 	SharedBufferGPU                       m_indexBuffer;
@@ -1009,9 +1006,8 @@ private:
 	static constexpr std::uint32_t s_modelBundleIndexBindingSlot    = 6u;
 	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 7u;
 	static constexpr std::uint32_t s_meshIndexBindingSlot           = 8u;
-	static constexpr std::uint32_t s_meshDetailsBindingSlot         = 9u;
 	// To write the model indices of the not culled models.
-	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 10u;
+	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 9u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -1035,7 +1031,6 @@ public:
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_meshIndexBuffer{ std::move(other.m_meshIndexBuffer) },
-		m_meshDetailsBuffer{ std::move(other.m_meshDetailsBuffer) },
 		m_modelIndicesCSBuffer{ std::move(other.m_modelIndicesCSBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
@@ -1059,7 +1054,6 @@ public:
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
 		m_meshIndexBuffer        = std::move(other.m_meshIndexBuffer);
-		m_meshDetailsBuffer      = std::move(other.m_meshDetailsBuffer);
 		m_modelIndicesCSBuffer   = std::move(other.m_modelIndicesCSBuffer);
 		m_vertexBuffer           = std::move(other.m_vertexBuffer);
 		m_indexBuffer            = std::move(other.m_indexBuffer);

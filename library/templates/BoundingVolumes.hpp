@@ -8,11 +8,9 @@ struct SphereBoundingVolume
 	DirectX::XMFLOAT4 sphere;
 };
 
-// These need to be updated when the model is rotated. Need to add that functionality. So, it must be
-// bounded to the model.
 struct AxisAlignedBoundingBox
 {
-	DirectX::XMFLOAT3 maxAxes;
-	DirectX::XMFLOAT3 minAxes;
+	DirectX::XMFLOAT4 maxAxes;
+	DirectX::XMFLOAT4 minAxes;
 };
 #endif

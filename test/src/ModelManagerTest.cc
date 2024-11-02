@@ -102,17 +102,11 @@ public:
 
 class MeshDummyVS : public MeshBundleVS
 {
-	std::vector<MeshBound>     m_bounds   = { MeshBound{} };
 	std::vector<Vertex>        m_vertices = { Vertex{} };
 	std::vector<std::uint32_t> m_indices  = { 0u, 1u, 2u };
-	MeshBundleDetails          m_bundleDetails{};
+	MeshBundleDetails          m_bundleDetails{ .meshDetails = { MeshDetails{} } };
 
 public:
-	[[nodiscard]]
-	const std::vector<MeshBound>& GetBounds() const noexcept override
-	{
-		return m_bounds;
-	}
 	[[nodiscard]]
 	const std::vector<Vertex>& GetVertices() const noexcept override
 	{
@@ -135,23 +129,22 @@ public:
 	{
 		return std::move(m_bundleDetails);
 	}
+	[[nodiscard]]
+	const MeshBundleDetails& GetBundleDetails() const noexcept override
+	{
+		return m_bundleDetails;
+	}
 };
 
 class MeshDummyMS : public MeshBundleMS
 {
 	std::vector<Meshlet>       m_meshlets      = { Meshlet{}, Meshlet{} };
-	std::vector<MeshBound>     m_bounds        = { MeshBound{} };
 	std::vector<Vertex>        m_vertices      = { Vertex{} };
 	std::vector<std::uint32_t> m_vertexIndices = { 0u, 1u, 2u };
 	std::vector<std::uint32_t> m_primIndices   = { 0u };
-	MeshBundleDetails          m_bundleDetails{};
+	MeshBundleDetails          m_bundleDetails{ .meshDetails = { MeshDetails{} } };
 
 public:
-	[[nodiscard]]
-	const std::vector<MeshBound>& GetBounds() const noexcept override
-	{
-		return m_bounds;
-	}
 	[[nodiscard]]
 	const std::vector<Vertex>& GetVertices() const noexcept override
 	{
@@ -178,11 +171,15 @@ public:
 	{
 		return m_meshlets;
 	}
-
 	[[nodiscard]]
 	MeshBundleDetails&& GetBundleDetails() noexcept override
 	{
 		return std::move(m_bundleDetails);
+	}
+	[[nodiscard]]
+	const MeshBundleDetails& GetBundleDetails() const noexcept override
+	{
+		return m_bundleDetails;
 	}
 };
 

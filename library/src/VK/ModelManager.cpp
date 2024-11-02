@@ -567,7 +567,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_meshIndexBuffer{ device, memoryManager, frameCount }, m_meshDetailsBuffer{ device, memoryManager },
+	m_meshIndexBuffer{ device, memoryManager, frameCount },
 	m_modelIndicesCSBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
@@ -771,14 +771,6 @@ void ModelManagerVSIndirect::ConfigureMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_meshBoundsBuffer,
 		tempBuffer
 	);
-
-	// This function is also used by the the Add function. Calling it early
-	// here should make it so it won't be called again the in Add function.
-	// But the returned value should be the same.
-	const size_t meshIndex = m_meshBundles.GetNextFreeIndex();
-
-	BoundsDetails details = meshManager.GetBoundsDetails();
-	m_meshDetailsBuffer.Add(meshIndex, details);
 }
 
 void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
@@ -903,10 +895,6 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_meshDetailsBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_COMPUTE_BIT
-		);
-		descriptorBuffer.AddBinding(
 			s_modelIndicesVSCSBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
@@ -950,7 +938,6 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 		);
 
 		m_meshIndexBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshIndexBindingSlot, csSetLayoutIndex);
-		m_meshDetailsBuffer.SetDescriptorBuffer(descriptorBuffer, s_meshDetailsBindingSlot, csSetLayoutIndex);
 	}
 }
 
