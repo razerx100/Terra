@@ -50,7 +50,18 @@ void CameraManager::Update(VkDeviceSize index) const noexcept
 
 		memcpy(bufferAddress, &view, matrixSize);
 
-		activeCamera->GetProjectionMatrix(bufferAddress + matrixSize);
+		// Projection matrix's address
+		bufferAddress += matrixSize;
+
+		activeCamera->GetProjectionMatrix(bufferAddress);
+
+		// Frustum's address
+		bufferAddress += matrixSize;
+
+		// In the clip space.
+		const Frustum viewFrustum = activeCamera->GetViewFrustum(view);
+
+		memcpy(bufferAddress, &viewFrustum, sizeof(Frustum));
 	}
 }
 
@@ -80,7 +91,7 @@ void CameraManager::SetDescriptorBufferGraphics(
 	size_t setLayoutIndex
 ) const {
 	for (size_t index = 0u; index < std::size(descriptorBuffers); ++index)
-		descriptorBuffers.at(index).SetUniformBufferDescriptor(
+		descriptorBuffers[index].SetUniformBufferDescriptor(
 			m_cameraBuffer, cameraBindingSlot, setLayoutIndex, 0u,
 			index * m_cameraBufferInstanceSize, m_cameraBufferInstanceSize
 		);
@@ -91,7 +102,7 @@ void CameraManager::SetDescriptorBufferCompute(
 	size_t setLayoutIndex
 ) const {
 	for (size_t index = 0u; index < std::size(descriptorBuffers); ++index)
-		descriptorBuffers.at(index).SetUniformBufferDescriptor(
+		descriptorBuffers[index].SetUniformBufferDescriptor(
 			m_cameraBuffer, cameraBindingSlot, setLayoutIndex, 0u,
 			index * m_cameraBufferInstanceSize, m_cameraBufferInstanceSize
 		);
