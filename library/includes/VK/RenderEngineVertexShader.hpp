@@ -118,7 +118,7 @@ private:
 	static constexpr std::uint32_t s_computePipelineSetLayoutCount = 1u;
 	static constexpr std::uint32_t s_computeShaderSetLayoutIndex   = 0u;
 
-	static constexpr std::uint32_t s_cameraComputeBindingSlot = 11u;
+	static constexpr std::uint32_t s_cameraComputeBindingSlot = 9u;
 
 private:
 	VkCommandQueue                  m_computeQueue;

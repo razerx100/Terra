@@ -206,6 +206,12 @@ public:
 		std::uint32_t commandOffset;// Next Vec2 starts at 8bytes offset
 	};
 
+	struct PerModelData
+	{
+		std::uint32_t bundleIndex;
+		std::uint32_t modelIndex;
+	};
+
 public:
 	ModelBundleCSIndirect();
 
@@ -213,9 +219,8 @@ public:
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
-		SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& modelBundleIndexSharedBuffer,
-		SharedBufferGPU& modelIndicesBuffer, const std::vector<std::uint32_t>& modelIndices,
-		TemporaryDataBufferGPU& tempBuffer
+		SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& perModelDataCSBuffer,
+		const std::vector<std::uint32_t>& modelIndices, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
@@ -242,20 +247,14 @@ public:
 	[[nodiscard]]
 	const SharedBufferData& GetCullingSharedData() const noexcept { return m_cullingSharedData; }
 	[[nodiscard]]
-	const SharedBufferData& GetModelBundleIndexSharedData() const noexcept
+	const SharedBufferData& GetPerModelDataCSSharedData() const noexcept
 	{
-		return m_modelBundleIndexSharedData;
-	}
-	[[nodiscard]]
-	const SharedBufferData& GetModelIndicesSharedData() const noexcept
-	{
-		return m_modelIndicesSharedData;
+		return m_perModelDataCSSharedData;
 	}
 
 private:
-	SharedBufferData               m_modelBundleIndexSharedData;
 	SharedBufferData               m_cullingSharedData;
-	SharedBufferData               m_modelIndicesSharedData;
+	SharedBufferData               m_perModelDataCSSharedData;
 	std::vector<SharedBufferData>  m_argumentInputSharedData;
 	std::shared_ptr<ModelBundle>   m_modelBundle;
 	std::unique_ptr<CullingData>   m_cullingData;
@@ -266,9 +265,8 @@ public:
 	ModelBundleCSIndirect& operator=(const ModelBundleCSIndirect&) = delete;
 
 	ModelBundleCSIndirect(ModelBundleCSIndirect&& other) noexcept
-		: m_modelBundleIndexSharedData{ other.m_modelBundleIndexSharedData },
-		m_cullingSharedData{ other.m_cullingSharedData },
-		m_modelIndicesSharedData{ other.m_modelIndicesSharedData },
+		: m_cullingSharedData{ other.m_cullingSharedData },
+		m_perModelDataCSSharedData{ other.m_perModelDataCSSharedData },
 		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) },
 		m_modelBundle{ std::move(other.m_modelBundle) },
 		m_cullingData{ std::move(other.m_cullingData) },
@@ -276,13 +274,12 @@ public:
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
-		m_modelBundleIndexSharedData = other.m_modelBundleIndexSharedData;
-		m_cullingSharedData          = other.m_cullingSharedData;
-		m_modelIndicesSharedData     = other.m_modelIndicesSharedData;
-		m_argumentInputSharedData    = std::move(other.m_argumentInputSharedData);
-		m_modelBundle                = std::move(other.m_modelBundle);
-		m_cullingData                = std::move(other.m_cullingData);
-		m_bundleID                   = other.m_bundleID;
+		m_cullingSharedData        = other.m_cullingSharedData;
+		m_perModelDataCSSharedData = other.m_perModelDataCSSharedData;
+		m_argumentInputSharedData  = std::move(other.m_argumentInputSharedData);
+		m_modelBundle              = std::move(other.m_modelBundle);
+		m_cullingData              = std::move(other.m_cullingData);
+		m_bundleID                 = other.m_bundleID;
 
 		return *this;
 	}
@@ -978,11 +975,10 @@ private:
 	SharedBufferGPU                       m_cullingDataBuffer;
 	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
-	MultiInstanceCPUBuffer<std::uint32_t> m_meshIndexBuffer;
-	SharedBufferGPU                       m_modelIndicesCSBuffer;
+	MultiInstanceCPUBuffer<std::uint32_t> m_meshBundleIndexBuffer;
+	SharedBufferGPU                       m_perModelDataCSBuffer;
 	SharedBufferGPU                       m_vertexBuffer;
 	SharedBufferGPU                       m_indexBuffer;
-	SharedBufferGPU                       m_modelBundleIndexBuffer;
 	SharedBufferGPU                       m_meshBoundsBuffer;
 	VkPipelineLayout                      m_pipelineLayoutCS;
 	ComputePipeline                       m_computePipeline;
@@ -998,16 +994,15 @@ private:
 
 	// Compute Shader ones
 	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
-	static constexpr std::uint32_t s_modelIndicesCSBindingSlot      = 1u;
+	static constexpr std::uint32_t s_perModelDataCSBindingSlot      = 1u;
 	static constexpr std::uint32_t s_argumentInputBufferBindingSlot = 2u;
 	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 3u;
 	static constexpr std::uint32_t s_argumenOutputBindingSlot       = 4u;
 	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
-	static constexpr std::uint32_t s_modelBundleIndexBindingSlot    = 6u;
-	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 7u;
-	static constexpr std::uint32_t s_meshIndexBindingSlot           = 8u;
+	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 6u;
+	static constexpr std::uint32_t s_meshBundleIndexBindingSlot     = 7u;
 	// To write the model indices of the not culled models.
-	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 9u;
+	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 8u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -1030,11 +1025,10 @@ public:
 		m_cullingDataBuffer{ std::move(other.m_cullingDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
-		m_meshIndexBuffer{ std::move(other.m_meshIndexBuffer) },
-		m_modelIndicesCSBuffer{ std::move(other.m_modelIndicesCSBuffer) },
+		m_meshBundleIndexBuffer{ std::move(other.m_meshBundleIndexBuffer) },
+		m_perModelDataCSBuffer{ std::move(other.m_perModelDataCSBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
-		m_modelBundleIndexBuffer{ std::move(other.m_modelBundleIndexBuffer) },
 		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
 		m_pipelineLayoutCS{ other.m_pipelineLayoutCS },
 		m_computePipeline{ std::move(other.m_computePipeline) },
@@ -1053,11 +1047,10 @@ public:
 		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
-		m_meshIndexBuffer        = std::move(other.m_meshIndexBuffer);
-		m_modelIndicesCSBuffer   = std::move(other.m_modelIndicesCSBuffer);
+		m_meshBundleIndexBuffer  = std::move(other.m_meshBundleIndexBuffer);
+		m_perModelDataCSBuffer   = std::move(other.m_perModelDataCSBuffer);
 		m_vertexBuffer           = std::move(other.m_vertexBuffer);
 		m_indexBuffer            = std::move(other.m_indexBuffer);
-		m_modelBundleIndexBuffer = std::move(other.m_modelBundleIndexBuffer);
 		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
 		m_pipelineLayoutCS       = other.m_pipelineLayoutCS;
 		m_computePipeline        = std::move(other.m_computePipeline);
