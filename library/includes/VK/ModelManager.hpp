@@ -424,6 +424,8 @@ private:
 		DirectX::XMFLOAT3 modelOffset;
 		// GLSL vec3 is actually vec4, so the materialIndex must be grabbed from the z component.
 		std::uint32_t     materialIndex;
+		std::uint32_t     meshIndex;
+		std::uint32_t     padding;
 	};
 
 	struct ModelFragmentData
@@ -885,15 +887,8 @@ class ModelManagerVSIndirect : public
 		>;
 	friend class ModelManagerVSIndirectTest;
 
-	struct Bounds
-	{
-		DirectX::XMFLOAT2 maxXBounds;
-		DirectX::XMFLOAT2 maxYBounds;
-		DirectX::XMFLOAT2 maxZBounds;
-	};
 	struct ConstantData
 	{
-		Bounds        maxBounds;
 		std::uint32_t modelCount;
 	};
 
@@ -979,7 +974,8 @@ private:
 	SharedBufferGPU                       m_perModelDataCSBuffer;
 	SharedBufferGPU                       m_vertexBuffer;
 	SharedBufferGPU                       m_indexBuffer;
-	SharedBufferGPU                       m_meshBoundsBuffer;
+	SharedBufferGPU                       m_perMeshDataBuffer;
+	SharedBufferGPU                       m_perMeshBundleDataBuffer;
 	VkPipelineLayout                      m_pipelineLayoutCS;
 	ComputePipeline                       m_computePipeline;
 	QueueIndices3                         m_queueIndices3;
@@ -999,10 +995,11 @@ private:
 	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 3u;
 	static constexpr std::uint32_t s_argumenOutputBindingSlot       = 4u;
 	static constexpr std::uint32_t s_counterBindingSlot             = 5u;
-	static constexpr std::uint32_t s_meshBoundingBindingSlot        = 6u;
-	static constexpr std::uint32_t s_meshBundleIndexBindingSlot     = 7u;
+	static constexpr std::uint32_t s_perMeshDataBindingSlot         = 6u;
+	static constexpr std::uint32_t s_perMeshBundleDataBindingSlot   = 7u;
+	static constexpr std::uint32_t s_meshBundleIndexBindingSlot     = 8u;
 	// To write the model indices of the not culled models.
-	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 8u;
+	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot    = 9u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -1029,7 +1026,8 @@ public:
 		m_perModelDataCSBuffer{ std::move(other.m_perModelDataCSBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_indexBuffer{ std::move(other.m_indexBuffer) },
-		m_meshBoundsBuffer{ std::move(other.m_meshBoundsBuffer) },
+		m_perMeshDataBuffer{ std::move(other.m_perMeshDataBuffer) },
+		m_perMeshBundleDataBuffer{ std::move(other.m_perMeshBundleDataBuffer) },
 		m_pipelineLayoutCS{ other.m_pipelineLayoutCS },
 		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
@@ -1040,24 +1038,25 @@ public:
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
-		m_stagingBufferMan       = other.m_stagingBufferMan;
-		m_argumentInputBuffers   = std::move(other.m_argumentInputBuffers);
-		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
-		m_modelIndicesVSBuffers  = std::move(other.m_modelIndicesVSBuffers);
-		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
-		m_counterBuffers         = std::move(other.m_counterBuffers);
-		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
-		m_meshBundleIndexBuffer  = std::move(other.m_meshBundleIndexBuffer);
-		m_perModelDataCSBuffer   = std::move(other.m_perModelDataCSBuffer);
-		m_vertexBuffer           = std::move(other.m_vertexBuffer);
-		m_indexBuffer            = std::move(other.m_indexBuffer);
-		m_meshBoundsBuffer       = std::move(other.m_meshBoundsBuffer);
-		m_pipelineLayoutCS       = other.m_pipelineLayoutCS;
-		m_computePipeline        = std::move(other.m_computePipeline);
-		m_queueIndices3          = other.m_queueIndices3;
-		m_dispatchXCount         = other.m_dispatchXCount;
-		m_argumentCount          = other.m_argumentCount;
-		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
+		m_stagingBufferMan        = other.m_stagingBufferMan;
+		m_argumentInputBuffers    = std::move(other.m_argumentInputBuffers);
+		m_argumentOutputBuffers   = std::move(other.m_argumentOutputBuffers);
+		m_modelIndicesVSBuffers   = std::move(other.m_modelIndicesVSBuffers);
+		m_cullingDataBuffer       = std::move(other.m_cullingDataBuffer);
+		m_counterBuffers          = std::move(other.m_counterBuffers);
+		m_counterResetBuffer      = std::move(other.m_counterResetBuffer);
+		m_meshBundleIndexBuffer   = std::move(other.m_meshBundleIndexBuffer);
+		m_perModelDataCSBuffer    = std::move(other.m_perModelDataCSBuffer);
+		m_vertexBuffer            = std::move(other.m_vertexBuffer);
+		m_indexBuffer             = std::move(other.m_indexBuffer);
+		m_perMeshDataBuffer       = std::move(other.m_perMeshDataBuffer);
+		m_perMeshBundleDataBuffer = std::move(other.m_perMeshBundleDataBuffer);
+		m_pipelineLayoutCS        = other.m_pipelineLayoutCS;
+		m_computePipeline         = std::move(other.m_computePipeline);
+		m_queueIndices3           = other.m_queueIndices3;
+		m_dispatchXCount          = other.m_dispatchXCount;
+		m_argumentCount           = other.m_argumentCount;
+		m_modelBundlesCS          = std::move(other.m_modelBundlesCS);
 
 		return *this;
 	}
