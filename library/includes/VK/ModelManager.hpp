@@ -253,12 +253,12 @@ public:
 	}
 
 private:
-	SharedBufferData               m_cullingSharedData;
-	SharedBufferData               m_perModelDataCSSharedData;
-	std::vector<SharedBufferData>  m_argumentInputSharedData;
-	std::shared_ptr<ModelBundle>   m_modelBundle;
-	std::unique_ptr<CullingData>   m_cullingData;
-	std::uint32_t                  m_bundleID;
+	SharedBufferData              m_cullingSharedData;
+	SharedBufferData              m_perModelDataCSSharedData;
+	std::vector<SharedBufferData> m_argumentInputSharedData;
+	std::shared_ptr<ModelBundle>  m_modelBundle;
+	std::unique_ptr<CullingData>  m_cullingData;
+	std::uint32_t                 m_bundleID;
 
 public:
 	ModelBundleCSIndirect(const ModelBundleCSIndirect&) = delete;
@@ -350,16 +350,16 @@ public:
 	}
 
 private:
-	std::uint32_t                  m_modelOffset;
-	std::shared_ptr<ModelBundle>   m_modelBundle;
-	std::vector<SharedBufferData>  m_argumentOutputSharedData;
-	std::vector<SharedBufferData>  m_counterSharedData;
-	std::vector<SharedBufferData>  m_modelIndicesSharedData;
+	std::uint32_t                 m_modelOffset;
+	std::shared_ptr<ModelBundle>  m_modelBundle;
+	std::vector<SharedBufferData> m_argumentOutputSharedData;
+	std::vector<SharedBufferData> m_counterSharedData;
+	std::vector<SharedBufferData> m_modelIndicesSharedData;
 
 	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
 	// to index into this buffer and that will give us the actual model index.
 	// Should replace this with a better alternative one day.
-	std::vector<std::uint32_t>     m_modelIndices;
+	std::vector<std::uint32_t>    m_modelIndices;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
@@ -425,7 +425,10 @@ private:
 		// GLSL vec3 is actually vec4, so the materialIndex must be grabbed from the z component.
 		std::uint32_t     materialIndex;
 		std::uint32_t     meshIndex;
-		std::uint32_t     padding;
+		// This struct is 16 bytes aligned thanks to the Matrix. So, putting the correct
+		// amount of padding. Just to make it more obvious though, as it would have been
+		// put anyway.
+		std::uint32_t     padding[3];
 	};
 
 	struct ModelFragmentData
