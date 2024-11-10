@@ -255,7 +255,7 @@ public:
 
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size)
+	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size, bool copyOldBuffer = false)
 	{
 		auto availableAllocIndex = m_allocator.GetAvailableAllocInfo(size);
 		SharedBufferAllocator::AllocInfo allocInfo{ .offset = 0u, .size = 0u };
@@ -263,7 +263,7 @@ public:
 		if (!availableAllocIndex)
 		{
 			allocInfo.size   = size;
-			allocInfo.offset = ExtendBuffer(size);
+			allocInfo.offset = ExtendBuffer(size, copyOldBuffer);
 		}
 		else
 			allocInfo = m_allocator.GetAndRemoveAllocInfo(*availableAllocIndex);
@@ -281,13 +281,8 @@ public:
 	}
 
 private:
-	void CreateBuffer(VkDeviceSize size)
-	{
-		m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
-	}
-
 	[[nodiscard]]
-	VkDeviceSize ExtendBuffer(VkDeviceSize size)
+	VkDeviceSize ExtendBuffer(VkDeviceSize size, bool copyOldBuffer)
 	{
 		// I probably don't need to worry about aligning here, since it's all inside a single buffer?
 		const VkDeviceSize oldSize = m_buffer.BufferSize();
@@ -299,7 +294,16 @@ private:
 		// the offset would be correct, but the buffer would be unnecessarily recreated, even though
 		// it is not necessary. So, putting a check here.
 		if (newSize > oldSize)
-			CreateBuffer(newSize);
+		{
+			Buffer newBuffer{ m_device, m_memoryManager, MemoryType };
+
+			newBuffer.Create(newSize, m_usageFlags, m_queueFamilyIndices);
+
+			if (copyOldBuffer)
+				memcpy(newBuffer.CPUHandle(), m_buffer.CPUHandle(), static_cast<size_t>(oldSize));
+
+			m_buffer = std::move(newBuffer);
+		}
 
 		return offset;
 	}
