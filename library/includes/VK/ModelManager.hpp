@@ -214,7 +214,6 @@ public:
 
 public:
 	ModelBundleCSIndirect();
-	~ModelBundleCSIndirect() noexcept;
 
 	void SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept;
 	void CreateBuffers(
@@ -225,6 +224,7 @@ public:
 	);
 
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
+	void ResetCullingData() const noexcept;
 
 	void Update(size_t bufferIndex, const MeshManagerVertexShader& meshBundle) const noexcept;
 

@@ -202,7 +202,7 @@ ModelBundleCSIndirect::ModelBundleCSIndirect()
 	, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
-ModelBundleCSIndirect::~ModelBundleCSIndirect() noexcept
+void ModelBundleCSIndirect::ResetCullingData() const noexcept
 {
 	// Before destroying an object the command count needs to be set to 0,
 	// so the model isn't processed in the compute shader anymore.
@@ -763,6 +763,8 @@ void ModelManagerVSIndirect::ConfigureModelRemove(size_t bundleIndex) noexcept
 					for (size_t index = 0u; index < std::size(argumentInputs); ++index)
 						argumentInputs[index].RelinquishMemory(argumentInputSharedData[index]);
 				}
+
+				bundle.ResetCullingData();
 
 				cullingData.RelinquishMemory(bundle.GetCullingSharedData());
 				perModelDataCS.RelinquishMemory(bundle.GetPerModelDataCSSharedData());
