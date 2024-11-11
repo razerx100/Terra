@@ -214,12 +214,13 @@ public:
 
 public:
 	ModelBundleCSIndirect();
+	~ModelBundleCSIndirect() noexcept;
 
 	void SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept;
 	void CreateBuffers(
 		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
-		SharedBufferGPU& cullingSharedBuffer, SharedBufferGPU& perModelDataCSBuffer,
+		SharedBufferCPU& cullingSharedBuffer, SharedBufferGPU& perModelDataCSBuffer,
 		const std::vector<std::uint32_t>& modelIndices, TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -257,7 +258,6 @@ private:
 	SharedBufferData              m_perModelDataCSSharedData;
 	std::vector<SharedBufferData> m_argumentInputSharedData;
 	std::shared_ptr<ModelBundle>  m_modelBundle;
-	std::unique_ptr<CullingData>  m_cullingData;
 	std::uint32_t                 m_bundleID;
 
 public:
@@ -269,7 +269,6 @@ public:
 		m_perModelDataCSSharedData{ other.m_perModelDataCSSharedData },
 		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) },
 		m_modelBundle{ std::move(other.m_modelBundle) },
-		m_cullingData{ std::move(other.m_cullingData) },
 		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
@@ -278,7 +277,6 @@ public:
 		m_perModelDataCSSharedData = other.m_perModelDataCSSharedData;
 		m_argumentInputSharedData  = std::move(other.m_argumentInputSharedData);
 		m_modelBundle              = std::move(other.m_modelBundle);
-		m_cullingData              = std::move(other.m_cullingData);
 		m_bundleID                 = other.m_bundleID;
 
 		return *this;
@@ -970,7 +968,7 @@ private:
 	std::vector<SharedBufferCPU>          m_argumentInputBuffers;
 	std::vector<SharedBufferGPUWriteOnly> m_argumentOutputBuffers;
 	std::vector<SharedBufferGPUWriteOnly> m_modelIndicesVSBuffers;
-	SharedBufferGPU                       m_cullingDataBuffer;
+	SharedBufferCPU                       m_cullingDataBuffer;
 	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshBundleIndexBuffer;
