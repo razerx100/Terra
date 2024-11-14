@@ -273,7 +273,7 @@ void ModelBundleCSIndirect::CreateBuffers(
 		);
 	}
 
-	m_perModelDataCSSharedData   = perModelDataCSBuffer.AllocateAndGetSharedData(
+	m_perModelDataCSSharedData = perModelDataCSBuffer.AllocateAndGetSharedData(
 		perModelDataSize, tempBuffer
 	);
 
