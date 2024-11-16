@@ -1107,7 +1107,7 @@ ModelManagerMS::ModelManagerMS(
 	QueueIndices3 queueIndices3, std::uint32_t frameCount
 ) : ModelManager{ device, memoryManager, queueIndices3, frameCount },
 	m_stagingBufferMan{ stagingBufferMan },
-	m_meshletBuffer{
+	m_perMeshletDataBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
 	}, m_vertexBuffer{
@@ -1153,8 +1153,8 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 		const SharedBufferData& primIndicesSharedData   = meshManager.GetPrimIndicesSharedData();
 		m_primIndicesBuffer.RelinquishMemory(primIndicesSharedData);
 
-		const SharedBufferData& meshletSharedData       = meshManager.GetMeshletSharedData();
-		m_meshletBuffer.RelinquishMemory(meshletSharedData);
+		const SharedBufferData& perMeshletSharedData    = meshManager.GetPerMeshletSharedData();
+		m_perMeshletDataBuffer.RelinquishMemory(perMeshletSharedData);
 	}
 }
 
@@ -1164,7 +1164,7 @@ void ModelManagerMS::ConfigureMeshBundle(
 ) {
 	meshManager.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
-		m_primIndicesBuffer, m_meshletBuffer, tempBuffer
+		m_primIndicesBuffer, m_perMeshletDataBuffer, tempBuffer
 	);
 }
 
@@ -1184,7 +1184,7 @@ void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noex
 {
 	if (m_tempCopyNecessary)
 	{
-		m_meshletBuffer.CopyOldBuffer(transferBuffer);
+		m_perMeshletDataBuffer.CopyOldBuffer(transferBuffer);
 		m_vertexBuffer.CopyOldBuffer(transferBuffer);
 		m_vertexIndicesBuffer.CopyOldBuffer(transferBuffer);
 		m_primIndicesBuffer.CopyOldBuffer(transferBuffer);
@@ -1263,7 +1263,7 @@ void ModelManagerMS::SetDescriptorBufferOfMeshes(
 			m_primIndicesBuffer.GetBuffer(), s_primIndicesBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_meshletBuffer.GetBuffer(), s_meshletBufferBindingSlot, msSetLayoutIndex, 0u
+			m_perMeshletDataBuffer.GetBuffer(), s_meshletBufferBindingSlot, msSetLayoutIndex, 0u
 		);
 	}
 }

@@ -4,14 +4,14 @@
 MeshManagerMeshShader::MeshManagerMeshShader()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
-	m_meshletBufferSharedData{ nullptr, 0u, 0u }, m_perMeshSharedData{ nullptr, 0u, 0u },
+	m_perMeshletBufferSharedData{ nullptr, 0u, 0u }, m_perMeshSharedData{ nullptr, 0u, 0u },
 	m_perMeshBundleSharedData{ nullptr, 0u, 0u }, m_meshDetails{ 0u, 0u, 0u }, m_bundleDetails{}
 {}
 
 void MeshManagerMeshShader::SetMeshBundle(
 	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
@@ -56,7 +56,7 @@ void MeshManagerMeshShader::SetMeshBundle(
 		m_meshDetails.primIndicesOffset, tempBuffer
 	);
 	ConfigureBuffer(
-		meshletDetails, stagingBufferMan, meshletSharedBuffer, m_meshletBufferSharedData,
+		meshletDetails, stagingBufferMan, perMeshletSharedBuffer, m_perMeshletBufferSharedData,
 		m_meshDetails.meshletOffset, tempBuffer
 	);
 

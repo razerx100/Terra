@@ -1125,7 +1125,7 @@ private:
 
 private:
 	StagingBufferManager* m_stagingBufferMan;
-	SharedBufferGPU       m_meshletBuffer;
+	SharedBufferGPU       m_perMeshletDataBuffer;
 	SharedBufferGPU       m_vertexBuffer;
 	SharedBufferGPU       m_vertexIndicesBuffer;
 	SharedBufferGPU       m_primIndicesBuffer;
@@ -1142,7 +1142,7 @@ public:
 	ModelManagerMS(ModelManagerMS&& other) noexcept
 		: ModelManager{ std::move(other) },
 		m_stagingBufferMan{ other.m_stagingBufferMan },
-		m_meshletBuffer{ std::move(other.m_meshletBuffer) },
+		m_perMeshletDataBuffer{ std::move(other.m_perMeshletDataBuffer) },
 		m_vertexBuffer{ std::move(other.m_vertexBuffer) },
 		m_vertexIndicesBuffer{ std::move(other.m_vertexIndicesBuffer) },
 		m_primIndicesBuffer{ std::move(other.m_primIndicesBuffer) }
@@ -1150,11 +1150,11 @@ public:
 	ModelManagerMS& operator=(ModelManagerMS&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
-		m_stagingBufferMan    = other.m_stagingBufferMan;
-		m_meshletBuffer       = std::move(other.m_meshletBuffer);
-		m_vertexBuffer        = std::move(other.m_vertexBuffer);
-		m_vertexIndicesBuffer = std::move(other.m_vertexIndicesBuffer);
-		m_primIndicesBuffer   = std::move(other.m_primIndicesBuffer);
+		m_stagingBufferMan     = other.m_stagingBufferMan;
+		m_perMeshletDataBuffer = std::move(other.m_perMeshletDataBuffer);
+		m_vertexBuffer         = std::move(other.m_vertexBuffer);
+		m_vertexIndicesBuffer  = std::move(other.m_vertexIndicesBuffer);
+		m_primIndicesBuffer    = std::move(other.m_primIndicesBuffer);
 
 		return *this;
 	}

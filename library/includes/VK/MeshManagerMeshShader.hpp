@@ -42,13 +42,13 @@ public:
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
-		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& meshletSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
@@ -66,9 +66,9 @@ public:
 		return m_primIndicesBufferSharedData;
 	}
 	[[nodiscard]]
-	const SharedBufferData& GetMeshletSharedData() const noexcept
+	const SharedBufferData& GetPerMeshletSharedData() const noexcept
 	{
-		return m_meshletBufferSharedData;
+		return m_perMeshletBufferSharedData;
 	}
 	[[nodiscard]]
 	const SharedBufferData& GetPerMeshSharedData() const noexcept { return m_perMeshSharedData; }
@@ -100,7 +100,7 @@ private:
 	SharedBufferData  m_vertexBufferSharedData;
 	SharedBufferData  m_vertexIndicesBufferSharedData;
 	SharedBufferData  m_primIndicesBufferSharedData;
-	SharedBufferData  m_meshletBufferSharedData;
+	SharedBufferData  m_perMeshletBufferSharedData;
 	SharedBufferData  m_perMeshSharedData;
 	SharedBufferData  m_perMeshBundleSharedData;
 	MeshDetailsMS     m_meshDetails;
@@ -114,7 +114,7 @@ public:
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_vertexIndicesBufferSharedData{ other.m_vertexIndicesBufferSharedData },
 		m_primIndicesBufferSharedData{ other.m_primIndicesBufferSharedData },
-		m_meshletBufferSharedData{ other.m_meshletBufferSharedData },
+		m_perMeshletBufferSharedData{ other.m_perMeshletBufferSharedData },
 		m_perMeshSharedData{ other.m_perMeshSharedData },
 		m_perMeshBundleSharedData{ other.m_perMeshBundleSharedData },
 		m_meshDetails{ other.m_meshDetails },
@@ -126,7 +126,7 @@ public:
 		m_vertexBufferSharedData        = other.m_vertexBufferSharedData;
 		m_vertexIndicesBufferSharedData = other.m_vertexIndicesBufferSharedData;
 		m_primIndicesBufferSharedData   = other.m_primIndicesBufferSharedData;
-		m_meshletBufferSharedData       = other.m_meshletBufferSharedData;
+		m_perMeshletBufferSharedData    = other.m_perMeshletBufferSharedData;
 		m_perMeshSharedData             = other.m_perMeshSharedData;
 		m_perMeshBundleSharedData       = other.m_perMeshBundleSharedData;
 		m_meshDetails                   = other.m_meshDetails;
