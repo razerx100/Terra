@@ -11,14 +11,16 @@
 class MeshManagerMeshShader
 {
 public:
+	// In GLSL, vec3 are actually vec4. So, whether it is a vec3 or vec4, it would
+	// take as much space as a vec4. And it is necessary here because this data
+	// will be passed in a Storage Buffer.
+	// Also, not really using this struct to hold data. Only to get the correct size.
 	struct GLSLVertex
 	{
-		DirectX::XMFLOAT3 position;
-		float padding0;
-		DirectX::XMFLOAT3 normal;
-		float padding1;
+		DirectX::XMFLOAT4 position;
+		DirectX::XMFLOAT4 normal;
 		DirectX::XMFLOAT2 uv;
-		float padding3[2];
+		float             padding[2];
 	};
 
 	// The offset should be enough to identify the mesh. We wouldn't really need the size
@@ -93,8 +95,11 @@ public:
 	}
 
 private:
-	[[nodiscard]]
-	static std::vector<GLSLVertex> TransformVertices(const std::vector<Vertex>& vertices) noexcept;
+	static void ConfigureVertices(
+		const std::vector<Vertex>& vertices, StagingBufferManager& stagingBufferMan,
+		SharedBufferGPU& verticesSharedBuffer, SharedBufferData& verticesSharedData,
+		std::uint32_t& verticesDetailOffset, TemporaryDataBufferGPU& tempBuffer
+	) noexcept;
 
 private:
 	SharedBufferData  m_vertexBufferSharedData;

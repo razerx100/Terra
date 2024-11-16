@@ -16,8 +16,6 @@ void MeshManagerMeshShader::SetMeshBundle(
 ) {
 	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
 
-	std::vector<GLSLVertex> glslVertices = TransformVertices(vertices);
-
 	auto ConfigureBuffer = []<typename T>
 		(
 			const std::vector<T>& elements, StagingBufferManager& stagingBufferMan,
@@ -43,8 +41,8 @@ void MeshManagerMeshShader::SetMeshBundle(
 	const std::vector<std::uint32_t>& primIndices     = meshBundle->GetPrimIndices();
 	const std::vector<MeshletDetails>& meshletDetails = meshBundle->GetMeshletDetails();
 
-	ConfigureBuffer(
-		glslVertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
+	ConfigureVertices(
+		vertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
 		m_meshDetails.vertexOffset, tempBuffer
 	);
 	ConfigureBuffer(
@@ -130,17 +128,58 @@ void MeshManagerMeshShader::SetMeshBundle(
 	);
 }
 
-std::vector<MeshManagerMeshShader::GLSLVertex> MeshManagerMeshShader::TransformVertices(
-	const std::vector<Vertex>& vertices
+void MeshManagerMeshShader::ConfigureVertices(
+	const std::vector<Vertex>& vertices, StagingBufferManager& stagingBufferMan,
+	SharedBufferGPU& verticesSharedBuffer, SharedBufferData& verticesSharedData,
+	std::uint32_t& verticesDetailOffset, TemporaryDataBufferGPU& tempBuffer
 ) noexcept {
-	std::vector<GLSLVertex> glslVertices{ std::size(vertices) };
+	constexpr auto vertexStride = static_cast<VkDeviceSize>(sizeof(GLSLVertex));
+	const size_t vertexCount    = std::size(vertices);
+	const auto vertexBufferSize = static_cast<VkDeviceSize>(vertexStride * vertexCount);
 
-	for (size_t index = 0u; index < std::size(vertices); ++index)
+	verticesSharedData   = verticesSharedBuffer.AllocateAndGetSharedData(vertexBufferSize, tempBuffer);
+	verticesDetailOffset = static_cast<std::uint32_t>(verticesSharedData.offset / vertexStride);
+
+	auto verticesTempDataBuffer = std::make_shared<std::uint8_t[]>(vertexBufferSize);
+
 	{
-		glslVertices[index].position = vertices[index].position;
-		glslVertices[index].normal   = vertices[index].normal;
-		glslVertices[index].uv       = vertices[index].uv;
+		std::uint8_t* bufferStart = verticesTempDataBuffer.get();
+		size_t bufferOffset       = 0u;
+
+		for (size_t index = 0u; index < vertexCount; ++index)
+		{
+			// In GLSL storage buffer, when multiple variables are laid out in the same structure,
+			// the vec3 would actually be vec4. So, the next member would start after 16bytes.
+			// This is not needed in the Vertex shader since we pass the vertices through the
+			// Input Assembler but necessary in the Mesh Shader, as we pass the vertices as
+			// Storage Buffer.
+			constexpr size_t vec4GLSLOffsetSize = sizeof(DirectX::XMFLOAT4);
+
+			const Vertex& vertex = vertices[index];
+
+			// Position
+			memcpy(
+				bufferStart + bufferOffset, &vertex.position, sizeof(DirectX::XMFLOAT3)
+			);
+
+			// Normal
+			memcpy(
+				bufferStart + bufferOffset + vec4GLSLOffsetSize,
+				&vertex.normal, sizeof(DirectX::XMFLOAT3)
+			);
+
+			// UV
+			memcpy(
+				bufferStart + bufferOffset + vec4GLSLOffsetSize + vec4GLSLOffsetSize,
+				&vertex.uv, sizeof(DirectX::XMFLOAT2)
+			);
+
+			bufferOffset += vertexStride;
+		}
 	}
 
-	return glslVertices;
+	stagingBufferMan.AddBuffer(
+		std::move(verticesTempDataBuffer), vertexBufferSize, verticesSharedData.bufferData,
+		verticesSharedData.offset, tempBuffer
+	);
 }
