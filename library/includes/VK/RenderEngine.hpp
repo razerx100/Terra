@@ -126,7 +126,7 @@ protected:
 	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
 	virtual void ResetGraphicsPipeline() = 0;
 
-	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlagBits cameraShaderStage) noexcept;
+	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlags cameraShaderStage) noexcept;
 
 	virtual void Update(VkDeviceSize frameIndex) const noexcept;
 

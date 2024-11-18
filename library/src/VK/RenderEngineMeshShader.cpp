@@ -16,7 +16,7 @@ RenderEngineMS::RenderEngineMS(
 	m_modelManager.SetDescriptorBufferLayout(
 		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
 	);
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_MESH_BIT_EXT);
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT);
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();

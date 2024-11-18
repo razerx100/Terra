@@ -67,7 +67,7 @@ void CameraManager::Update(VkDeviceSize index) const noexcept
 
 void CameraManager::SetDescriptorBufferLayoutGraphics(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
-	size_t setLayoutIndex, VkShaderStageFlagBits shaderStage
+	size_t setLayoutIndex, VkShaderStageFlags shaderStage
 ) const noexcept {
 	for (auto& descriptorBuffer : descriptorBuffers)
 		descriptorBuffer.AddBinding(

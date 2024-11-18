@@ -1204,7 +1204,7 @@ void ModelManagerMS::SetDescriptorBufferLayout(
 
 		descriptorBuffer.AddBinding(
 			s_modelBuffersGraphicsBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_MESH_BIT_EXT
+			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
 			s_modelBuffersFragmentBindingSlot, fsSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
@@ -1212,7 +1212,7 @@ void ModelManagerMS::SetDescriptorBufferLayout(
 		);
 		descriptorBuffer.AddBinding(
 			s_perMeshletBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_MESH_BIT_EXT
+			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT
 		);
 		descriptorBuffer.AddBinding(
 			s_vertexBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,

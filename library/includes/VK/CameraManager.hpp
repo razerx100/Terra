@@ -29,7 +29,7 @@ public:
 
 	void SetDescriptorBufferLayoutGraphics(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
-		size_t setLayoutIndex, VkShaderStageFlagBits shaderStage
+		size_t setLayoutIndex, VkShaderStageFlags shaderStage
 	) const noexcept;
 	void SetDescriptorBufferLayoutCompute(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,

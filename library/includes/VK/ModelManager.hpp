@@ -984,7 +984,7 @@ private:
 	std::uint32_t                         m_argumentCount;
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
-	std::vector<ModelBundleCSIndirect>   m_modelBundlesCS;
+	std::vector<ModelBundleCSIndirect>    m_modelBundlesCS;
 
 	// Vertex Shader ones
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;

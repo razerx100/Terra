@@ -254,10 +254,11 @@ void RenderEngine::Update(VkDeviceSize frameIndex) const noexcept
 }
 
 void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
-	VkShaderStageFlagBits cameraShaderStage
+	VkShaderStageFlags cameraShaderStage
 ) noexcept {
 	m_cameraManager.SetDescriptorBufferLayoutGraphics(
-		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), s_vertexShaderSetLayoutIndex, cameraShaderStage
+		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), s_vertexShaderSetLayoutIndex,
+		cameraShaderStage
 	);
 	m_materialBuffers.SetDescriptorBufferLayout(
 		m_graphicsDescriptorBuffers, s_materialBindingSlot, s_fragmentShaderSetLayoutIndex
