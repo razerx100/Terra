@@ -423,10 +423,11 @@ private:
 		// GLSL vec3 is actually vec4, so the materialIndex must be grabbed from the z component.
 		std::uint32_t     materialIndex;
 		std::uint32_t     meshIndex;
+		float             modelScale;
 		// This struct is 16 bytes aligned thanks to the Matrix. So, putting the correct
 		// amount of padding. Just to make it more obvious though, as it would have been
 		// put anyway.
-		std::uint32_t     padding[3];
+		std::uint32_t     padding[2];
 	};
 
 	struct ModelFragmentData
