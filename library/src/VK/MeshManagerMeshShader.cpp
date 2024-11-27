@@ -53,42 +53,10 @@ void MeshManagerMeshShader::SetMeshBundle(
 		primIndices, stagingBufferMan, primIndicesSharedBuffer, m_primIndicesBufferSharedData,
 		m_meshDetails.primIndicesOffset, tempBuffer
 	);
-
-	{
-		// GLSL meshlet details
-		constexpr auto meshletDetailsStride = static_cast<VkDeviceSize>(sizeof(GLSLMeshletDetails));
-		const size_t meshletDetailsCount    = std::size(meshletDetails);
-		const auto meshletDetailsBufferSize = static_cast<VkDeviceSize>(
-			meshletDetailsStride * meshletDetailsCount
-		);
-
-		m_perMeshletBufferSharedData = perMeshletSharedBuffer.AllocateAndGetSharedData(
-			meshletDetailsBufferSize, tempBuffer
-		);
-		m_meshDetails.meshletOffset  = static_cast<std::uint32_t>(
-			m_perMeshletBufferSharedData.offset / meshletDetailsStride
-		);
-
-		auto meshletDetailsBuffer      = std::make_shared<std::uint8_t[]>(meshletDetailsBufferSize);
-
-		std::uint8_t* meshletDataStart = meshletDetailsBuffer.get();
-		size_t meshletDataOffset       = 0u;
-
-		for (size_t index = 0u; index < meshletDetailsCount; ++index)
-		{
-			memcpy(
-				meshletDataStart + meshletDataOffset, &meshletDetails[index], sizeof(MeshletDetails)
-			);
-
-			meshletDataOffset += meshletDetailsStride;
-		}
-
-		stagingBufferMan.AddBuffer(
-			std::move(meshletDetailsBuffer), meshletDetailsBufferSize,
-			m_perMeshletBufferSharedData.bufferData, m_perMeshletBufferSharedData.offset,
-			tempBuffer
-		);
-	}
+	ConfigureBuffer(
+		meshletDetails, stagingBufferMan, perMeshletSharedBuffer, m_perMeshletBufferSharedData,
+		m_meshDetails.meshletOffset, tempBuffer
+	);
 
 	m_bundleDetails = std::move(meshBundle->GetBundleDetails());
 }

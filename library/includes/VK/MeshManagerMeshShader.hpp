@@ -23,13 +23,6 @@ public:
 		float             padding[2];
 	};
 
-	// For some reason in GLSL, array element needs to be the multiple of a Vec4 or I am missing something.
-	struct GLSLMeshletDetails
-	{
-		MeshletDetails details;
-		std::uint32_t  padding[2];
-	};
-
 	// The offset should be enough to identify the mesh. We wouldn't really need the size
 	// as the meshlets should already have that data.
 	struct MeshDetailsMS
