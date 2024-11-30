@@ -61,7 +61,7 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle)
+std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
 {
 	const std::uint32_t index = m_modelManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer

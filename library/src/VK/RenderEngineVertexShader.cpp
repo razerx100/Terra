@@ -66,7 +66,7 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
+std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
 {
 	m_copyNecessary = true;
 
@@ -286,7 +286,7 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	return index;
 }
 
-std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle)
+std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
 {
 	const std::uint32_t index = m_modelManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer

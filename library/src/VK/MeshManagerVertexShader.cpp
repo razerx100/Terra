@@ -7,8 +7,8 @@ MeshManagerVertexShader::MeshManagerVertexShader()
 	m_bundleDetails {}
 {}
 
-void MeshManagerVertexShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+void MeshManagerVertexShader::_setMeshBundle(
+	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
@@ -33,7 +33,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 	// Index Buffer
 	{
-		const std::vector<std::uint32_t>& indices = meshBundle->GetIndices();
+		const std::vector<std::uint32_t>& indices = meshBundle->GetVertexIndices();
 		const auto indexBufferSize                = sizeof(std::uint32_t) * std::size(indices);
 
 		m_indexBufferSharedData = indexSharedBuffer.AllocateAndGetSharedData(indexBufferSize, tempBuffer);
@@ -51,15 +51,31 @@ void MeshManagerVertexShader::SetMeshBundle(
 }
 
 void MeshManagerVertexShader::SetMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
+	TemporaryDataBufferGPU& tempBuffer
+) {
+	// Init the temp data.
+	meshBundle->GenerateTemporaryData(false);
+
+	_setMeshBundle(
+		std::move(meshBundle), stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer
+	);
+}
+
+void MeshManagerVertexShader::SetMeshBundle(
+	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr auto perMeshStride = sizeof(AxisAlignedBoundingBox);
 
+	// Init the temp data.
+	meshBundle->GenerateTemporaryData(false);
+
 	// Need this or else the overload which returns the R value ref will be called.
-	const MeshBundleVS& meshBundleR             = *meshBundle;
+	const MeshBundleTemporary& meshBundleR      = *meshBundle;
 	const std::vector<MeshDetails>& meshDetails = meshBundleR.GetBundleDetails().meshDetails;
 
 	const size_t meshCount       = std::size(meshDetails);
@@ -111,7 +127,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 		m_perMeshSharedData.bufferData, m_perMeshSharedData.offset, tempBuffer
 	);
 
-	SetMeshBundle(
+	_setMeshBundle(
 		std::move(meshBundle), stagingBufferMan, vertexSharedBuffer, indexSharedBuffer, tempBuffer
 	);
 }

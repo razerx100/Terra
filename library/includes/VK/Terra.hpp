@@ -67,19 +67,17 @@ public:
 	[[nodiscard]]
 	std::vector<size_t> AddMaterials(std::vector<std::shared_ptr<Material>>&& materials);
 
-	template<typename ModelBundle_t>
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle_t>&& modelBundle, const ShaderName& fragmentShader
+		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) {
 		WaitForGPUToFinish();
 
 		return m_renderEngine->AddModelBundle(std::move(modelBundle), fragmentShader);
 	}
 
-	template<typename MeshBundle_t>
 	[[nodiscard]]
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundle_t> meshBundle)
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
 	{
 		WaitForGPUToFinish();
 

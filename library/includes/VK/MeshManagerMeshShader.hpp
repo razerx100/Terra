@@ -42,13 +42,13 @@ public:
 	MeshManagerMeshShader();
 
 	void SetMeshBundle(
-		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		TemporaryDataBufferGPU& tempBuffer
 	);
 	void SetMeshBundle(
-		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
@@ -95,6 +95,13 @@ public:
 	}
 
 private:
+	void _setMeshBundle(
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
+		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
+		TemporaryDataBufferGPU& tempBuffer
+	);
+
 	static void ConfigureVertices(
 		const std::vector<Vertex>& vertices, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& verticesSharedBuffer, SharedBufferData& verticesSharedData,

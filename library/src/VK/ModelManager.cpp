@@ -498,7 +498,7 @@ void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 }
 
 void ModelManagerVSIndividual::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	meshManager.SetMeshBundle(
@@ -796,7 +796,7 @@ void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 }
 
 void ModelManagerVSIndirect::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	meshManager.SetMeshBundle(
@@ -1160,7 +1160,7 @@ void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 }
 
 void ModelManagerMS::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 ) {
 	meshManager.SetMeshBundle(

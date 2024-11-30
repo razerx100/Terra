@@ -486,7 +486,6 @@ template<
 	class Derived,
 	class Pipeline,
 	class MeshManager,
-	class MeshType,
 	class ModelBundleType
 >
 class ModelManager
@@ -618,7 +617,7 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddMeshBundle(
-		std::unique_ptr<MeshType> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		TemporaryDataBufferGPU& tempBuffer
 	) {
 		MeshManager meshManager{};
@@ -790,7 +789,7 @@ class ModelManagerVSIndividual : public
 	<
 		ModelManagerVSIndividual,
 		GraphicsPipelineIndividualDraw,
-		MeshManagerVertexShader, MeshBundleVS,
+		MeshManagerVertexShader,
 		ModelBundleVSIndividual
 	>
 {
@@ -798,7 +797,7 @@ class ModelManagerVSIndividual : public
 		<
 			ModelManagerVSIndividual,
 			GraphicsPipelineIndividualDraw,
-			MeshManagerVertexShader, MeshBundleVS,
+			MeshManagerVertexShader,
 			ModelBundleVSIndividual
 		>;
 	friend class ModelManagerVSIndividualTest;
@@ -835,7 +834,7 @@ private:
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
-		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -876,7 +875,7 @@ class ModelManagerVSIndirect : public
 	<
 		ModelManagerVSIndirect,
 		GraphicsPipelineIndirectDraw,
-		MeshManagerVertexShader, MeshBundleVS,
+		MeshManagerVertexShader,
 		ModelBundleVSIndirect
 	>
 {
@@ -884,7 +883,7 @@ class ModelManagerVSIndirect : public
 		<
 			ModelManagerVSIndirect,
 			GraphicsPipelineIndirectDraw,
-			MeshManagerVertexShader, MeshBundleVS,
+			MeshManagerVertexShader,
 			ModelBundleVSIndirect
 		>;
 	friend class ModelManagerVSIndirectTest;
@@ -941,7 +940,7 @@ private:
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
-		std::unique_ptr<MeshBundleVS> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 
@@ -1064,7 +1063,7 @@ class ModelManagerMS : public
 	<
 		ModelManagerMS,
 		GraphicsPipelineMeshShader,
-		MeshManagerMeshShader, MeshBundleMS,
+		MeshManagerMeshShader,
 		ModelBundleMSIndividual
 	>
 {
@@ -1072,7 +1071,7 @@ class ModelManagerMS : public
 		<
 			ModelManagerMS,
 			GraphicsPipelineMeshShader,
-			MeshManagerMeshShader, MeshBundleMS,
+			MeshManagerMeshShader,
 			ModelBundleMSIndividual
 		>;
 	friend class ModelManagerMSTest;
@@ -1111,7 +1110,7 @@ private:
 	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
-		std::unique_ptr<MeshBundleMS> meshBundle, StagingBufferManager& stagingBufferMan,
+		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
 	);
 

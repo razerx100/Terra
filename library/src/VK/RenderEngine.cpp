@@ -264,20 +264,3 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 		m_graphicsDescriptorBuffers, s_materialBindingSlot, s_fragmentShaderSetLayoutIndex
 	);
 }
-
-std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleVS> meshBundle)
-{
-	return std::numeric_limits<std::uint32_t>::max();
-}
-
-std::uint32_t RenderEngine::AddMeshBundle([[maybe_unused]] std::unique_ptr<MeshBundleMS> meshBundle)
-{
-	return std::numeric_limits<std::uint32_t>::max();
-}
-
-std::uint32_t RenderEngine::AddModelBundle(
-	[[maybe_unused]] std::shared_ptr<ModelBundle>&& modelBundle,
-	[[maybe_unused]] const ShaderName& fragmentShader
-) {
-	return std::numeric_limits<std::uint32_t>::max();
-}

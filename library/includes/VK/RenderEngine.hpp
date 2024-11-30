@@ -103,16 +103,13 @@ public:
 	// Should wait for the device to be idle before calling this.
 	virtual std::uint32_t AddModelBundle(
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-	);
+	) = 0;
 
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle);
-	[[nodiscard]]
-	// Should wait for the device to be idle before calling this.
-	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleMS> meshBundle);
+	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) = 0;
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
 

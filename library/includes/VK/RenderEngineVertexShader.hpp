@@ -23,7 +23,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override;
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
 
 private:
 	[[nodiscard]]
@@ -83,7 +83,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleVS> meshBundle) override;
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
 
 private:
 	[[nodiscard]]

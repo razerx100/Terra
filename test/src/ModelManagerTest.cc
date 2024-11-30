@@ -102,43 +102,7 @@ public:
 	}
 };
 
-class MeshDummyVS : public MeshBundleVS
-{
-	std::vector<Vertex>        m_vertices = { Vertex{} };
-	std::vector<std::uint32_t> m_indices  = { 0u, 1u, 2u };
-	MeshBundleDetails          m_bundleDetails{ .meshDetails = { MeshDetails{} } };
-
-public:
-	[[nodiscard]]
-	const std::vector<Vertex>& GetVertices() const noexcept override
-	{
-		return m_vertices;
-	}
-
-	[[nodiscard]]
-	const std::vector<std::uint32_t>& GetIndices() const noexcept override
-	{
-		return m_indices;
-	}
-
-	void CleanUpVertices() noexcept
-	{
-		m_vertices = std::vector<Vertex>{};
-	}
-
-	[[nodiscard]]
-	MeshBundleDetails&& GetBundleDetails() noexcept override
-	{
-		return std::move(m_bundleDetails);
-	}
-	[[nodiscard]]
-	const MeshBundleDetails& GetBundleDetails() const noexcept override
-	{
-		return m_bundleDetails;
-	}
-};
-
-class MeshDummyMS : public MeshBundleMS
+class MeshBundleTemporaryDummy : public MeshBundleTemporary
 {
 	std::vector<MeshletDetails> m_meshletDetails = { MeshletDetails{}, MeshletDetails{} };
 	std::vector<Vertex>         m_vertices       = { Vertex{} };
@@ -147,22 +111,31 @@ class MeshDummyMS : public MeshBundleMS
 	MeshBundleDetails           m_bundleDetails{ .meshDetails = { MeshDetails{} } };
 
 public:
+	void GenerateTemporaryData(bool) override {}
+
+	// Vertex and Mesh
 	[[nodiscard]]
 	const std::vector<Vertex>& GetVertices() const noexcept override
 	{
 		return m_vertices;
 	}
-
-	void CleanUpVertices() noexcept
-	{
-		m_vertices = std::vector<Vertex>{};
-	}
-
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetVertexIndices() const noexcept override
 	{
 		return m_vertexIndices;
 	}
+	[[nodiscard]]
+	const MeshBundleDetails& GetBundleDetails() const noexcept override
+	{
+		return m_bundleDetails;
+	}
+	[[nodiscard]]
+	MeshBundleDetails&& GetBundleDetails() noexcept override
+	{
+		return std::move(m_bundleDetails);
+	}
+
+	// Mesh only
 	[[nodiscard]]
 	const std::vector<std::uint32_t>& GetPrimIndices() const noexcept override
 	{
@@ -172,16 +145,6 @@ public:
 	const std::vector<MeshletDetails>& GetMeshletDetails() const noexcept override
 	{
 		return m_meshletDetails;
-	}
-	[[nodiscard]]
-	MeshBundleDetails&& GetBundleDetails() noexcept override
-	{
-		return std::move(m_bundleDetails);
-	}
-	[[nodiscard]]
-	const MeshBundleDetails& GetBundleDetails() const noexcept override
-	{
-		return m_bundleDetails;
 	}
 };
 
@@ -345,14 +308,14 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
-		auto meshVS = std::make_unique<MeshDummyVS>();
+		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = vsIndividual.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshVS = std::make_unique<MeshDummyVS>();
+		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = vsIndividual.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -360,7 +323,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	}
 	vsIndividual.RemoveMeshBundle(0u);
 	{
-		auto meshVS = std::make_unique<MeshDummyVS>();
+		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = vsIndividual.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -474,14 +437,14 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
-		auto meshVS = std::make_unique<MeshDummyVS>();
+		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = vsIndirect.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshVS = std::make_unique<MeshDummyVS>();
+		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = vsIndirect.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -489,7 +452,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	}
 	vsIndirect.RemoveMeshBundle(0u);
 	{
-		auto meshVS = std::make_unique<MeshDummyVS>();
+		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = vsIndirect.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -612,14 +575,14 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
-		auto meshMS = std::make_unique<MeshDummyMS>();
+		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = managerMS.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshMS = std::make_unique<MeshDummyMS>();
+		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = managerMS.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
@@ -627,14 +590,14 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	}
 	managerMS.RemoveMeshBundle(0u);
 	{
-		auto meshMS = std::make_unique<MeshDummyMS>();
+		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = managerMS.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshMS = std::make_unique<MeshDummyMS>();
+		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
 		std::uint32_t index = managerMS.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
