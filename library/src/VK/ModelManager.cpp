@@ -101,7 +101,7 @@ void ModelBundleMSIndividual::Draw(
 		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
 		// meshlets concurrently.
 		const std::uint32_t taskGroupCount = DivRoundUp(
-			modelConstants.meshDetails.meshletCount, s_taskInvocationCount
+			meshDetailsMS.meshletCount, s_taskInvocationCount
 		);
 
 		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, taskGroupCount, 1u, 1u);

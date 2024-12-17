@@ -91,7 +91,7 @@ public:
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
-		return static_cast<std::uint32_t>(sizeof(MeshTemporaryDetailsMS));
+		return static_cast<std::uint32_t>(sizeof(MeshBundleDetailsMS));
 	}
 
 private:
