@@ -4,12 +4,12 @@
 
 // Model Bundle
 VkDrawIndexedIndirectCommand ModelBundleBase::GetDrawIndexedIndirectCommand(
-	const MeshDetails& meshDetails
+	const MeshTemporaryDetailsVS& meshDetailsVS
 ) noexcept {
 	const VkDrawIndexedIndirectCommand indirectCommand{
-		.indexCount    = meshDetails.elementCount,
+		.indexCount    = meshDetailsVS.indexCount,
 		.instanceCount = 1u,
-		.firstIndex    = meshDetails.elementOffset,
+		.firstIndex    = meshDetailsVS.indexOffset,
 		.vertexOffset  = 0,
 		.firstInstance = 0u
 	};
@@ -43,8 +43,8 @@ void ModelBundleVSIndividual::Draw(
 
 		const std::shared_ptr<Model>& model = models[index];
 
-		const MeshDetails& meshDetails              = meshBundle.GetMeshDetails(model->GetMeshIndex());
-		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(meshDetails);
+		const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
+		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(meshDetailsVS);
 
 		vkCmdDrawIndexed(
 			cmdBuffer, meshArgs.indexCount, meshArgs.instanceCount,
@@ -76,12 +76,17 @@ void ModelBundleMSIndividual::Draw(
 
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
-		const MeshDetails meshDetails   = meshBundle.GetMeshDetails(model->GetMeshIndex());
+		const MeshTemporaryDetailsMS& meshDetailsMS = meshBundle.GetMeshDetails(model->GetMeshIndex());
 
 		const ModelDetails modelConstants
 		{
-			.meshletCount     = meshDetails.elementCount,
-			.meshletOffset    = meshDetails.elementOffset,
+			.meshDetails      = MeshDetails
+				{
+					.meshletCount  = meshDetailsMS.meshletCount,
+					.meshletOffset = meshDetailsMS.meshletOffset,
+					.primOffset    = meshDetailsMS.primitiveOffset,
+					.vertexOffset  = meshDetailsMS.vertexOffset
+				},
 			.modelBufferIndex = m_modelBufferIndices[index]
 		};
 
@@ -96,7 +101,7 @@ void ModelBundleMSIndividual::Draw(
 		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
 		// meshlets concurrently.
 		const std::uint32_t taskGroupCount = DivRoundUp(
-			modelConstants.meshletCount, s_taskInvocationCount
+			modelConstants.meshDetails.meshletCount, s_taskInvocationCount
 		);
 
 		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, taskGroupCount, 1u, 1u);
@@ -327,9 +332,9 @@ void ModelBundleCSIndirect::Update(
 
 	for (const auto& model : models)
 	{
-		const MeshDetails& meshDetails              = meshBundle.GetMeshDetails(model->GetMeshIndex());
+		const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
 		const VkDrawIndexedIndirectCommand meshArgs = ModelBundleBase::GetDrawIndexedIndirectCommand(
-			meshDetails
+			meshDetailsVS
 		);
 
 		memcpy(argumentInputStart + modelOffset, &meshArgs, argumentStride);
@@ -1290,12 +1295,13 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 
 		constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
 
-		const MeshManagerMeshShader::MeshDetailsMS meshDetailsMS = meshBundle.GetMeshDetailsMS();
+		const MeshManagerMeshShader::MeshBundleDetailsMS meshBundleDetailsMS
+			= meshBundle.GetMeshBundleDetailsMS();
 
 		vkCmdPushConstants(
 			cmdBuffer, m_graphicsPipelineLayout,
 			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-			constantBufferOffset, constBufferSize, &meshDetailsMS
+			constantBufferOffset, constBufferSize, &meshBundleDetailsMS
 		);
 
 		// Model

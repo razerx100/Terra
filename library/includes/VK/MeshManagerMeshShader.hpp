@@ -23,9 +23,9 @@ public:
 		float             padding[2];
 	};
 
-	// The offset should be enough to identify the mesh. We wouldn't really need the size
+	// The offset should be enough to identify the mesh bundle. We wouldn't really need the size
 	// as the meshlets should already have that data.
-	struct MeshDetailsMS
+	struct MeshBundleDetailsMS
 	{
 		std::uint32_t vertexOffset;
 		std::uint32_t vertexIndicesOffset;
@@ -81,17 +81,17 @@ public:
 	}
 
 	[[nodiscard]]
-	MeshDetailsMS GetMeshDetailsMS() const noexcept { return m_meshDetails; }
+	MeshBundleDetailsMS GetMeshBundleDetailsMS() const noexcept { return m_meshBundleDetails; }
 	[[nodiscard]]
-	const MeshDetails& GetMeshDetails(size_t index) const noexcept
+	const MeshTemporaryDetailsMS& GetMeshDetails(size_t index) const noexcept
 	{
-		return m_bundleDetails.meshDetails[index];
+		return m_bundleDetails.meshTemporaryDetailsMS[index];
 	}
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
-		return static_cast<std::uint32_t>(sizeof(MeshDetails));
+		return static_cast<std::uint32_t>(sizeof(MeshTemporaryDetailsMS));
 	}
 
 private:
@@ -109,14 +109,14 @@ private:
 	) noexcept;
 
 private:
-	SharedBufferData  m_vertexBufferSharedData;
-	SharedBufferData  m_vertexIndicesBufferSharedData;
-	SharedBufferData  m_primIndicesBufferSharedData;
-	SharedBufferData  m_perMeshletBufferSharedData;
-	SharedBufferData  m_perMeshSharedData;
-	SharedBufferData  m_perMeshBundleSharedData;
-	MeshDetailsMS     m_meshDetails;
-	MeshBundleDetails m_bundleDetails;
+	SharedBufferData           m_vertexBufferSharedData;
+	SharedBufferData           m_vertexIndicesBufferSharedData;
+	SharedBufferData           m_primIndicesBufferSharedData;
+	SharedBufferData           m_perMeshletBufferSharedData;
+	SharedBufferData           m_perMeshSharedData;
+	SharedBufferData           m_perMeshBundleSharedData;
+	MeshBundleDetailsMS        m_meshBundleDetails;
+	MeshBundleTemporaryDetails m_bundleDetails;
 
 public:
 	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;
@@ -129,7 +129,7 @@ public:
 		m_perMeshletBufferSharedData{ other.m_perMeshletBufferSharedData },
 		m_perMeshSharedData{ other.m_perMeshSharedData },
 		m_perMeshBundleSharedData{ other.m_perMeshBundleSharedData },
-		m_meshDetails{ other.m_meshDetails },
+		m_meshBundleDetails{ other.m_meshBundleDetails },
 		m_bundleDetails{ std::move(other.m_bundleDetails) }
 	{}
 
@@ -141,7 +141,7 @@ public:
 		m_perMeshletBufferSharedData    = other.m_perMeshletBufferSharedData;
 		m_perMeshSharedData             = other.m_perMeshSharedData;
 		m_perMeshBundleSharedData       = other.m_perMeshBundleSharedData;
-		m_meshDetails                   = other.m_meshDetails;
+		m_meshBundleDetails             = other.m_meshBundleDetails;
 		m_bundleDetails                 = std::move(other.m_bundleDetails);
 
 		return *this;

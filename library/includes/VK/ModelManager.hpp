@@ -36,7 +36,7 @@ public:
 
 	[[nodiscard]]
 	static VkDrawIndexedIndirectCommand GetDrawIndexedIndirectCommand(
-		const MeshDetails& meshDetails
+		const MeshTemporaryDetailsVS& meshDetailsVS
 	) noexcept;
 
 protected:
@@ -116,10 +116,16 @@ public:
 class ModelBundleMSIndividual : public ModelBundleBase
 {
 public:
-	struct ModelDetails
+	struct MeshDetails
 	{
 		std::uint32_t meshletCount;
 		std::uint32_t meshletOffset;
+		std::uint32_t primOffset;
+		std::uint32_t vertexOffset;
+	};
+	struct ModelDetails
+	{
+		MeshDetails   meshDetails;
 		std::uint32_t modelBufferIndex;
 	};
 
