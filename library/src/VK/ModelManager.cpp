@@ -84,6 +84,7 @@ void ModelBundleMSIndividual::Draw(
 				{
 					.meshletCount  = meshDetailsMS.meshletCount,
 					.meshletOffset = meshDetailsMS.meshletOffset,
+					.indexOffset   = meshDetailsMS.indexOffset,
 					.primOffset    = meshDetailsMS.primitiveOffset,
 					.vertexOffset  = meshDetailsMS.vertexOffset
 				},
