@@ -513,14 +513,14 @@ void ModelManagerVSIndividual::ConfigureMeshBundle(
 	);
 }
 
-void ModelManagerVSIndividual::CopyTempData(const VKCommandBuffer& transferCmdBuffer) noexcept
+void ModelManagerVSIndividual::CopyOldBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept
 {
-	if (m_tempCopyNecessary)
+	if (m_oldBufferCopyNecessary)
 	{
 		m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
 		m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
 
-		m_tempCopyNecessary = false;
+		m_oldBufferCopyNecessary = false;
 	}
 }
 
@@ -1039,9 +1039,9 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 	}
 }
 
-void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
+void ModelManagerVSIndirect::CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
-	if (m_tempCopyNecessary)
+	if (m_oldBufferCopyNecessary)
 	{
 		m_perModelDataCSBuffer.CopyOldBuffer(transferBuffer);
 		m_vertexBuffer.CopyOldBuffer(transferBuffer);
@@ -1053,7 +1053,7 @@ void ModelManagerVSIndirect::CopyTempBuffers(const VKCommandBuffer& transferBuff
 		// and the counter buffers. As their data will be only
 		// needed on the same frame and not afterwards.
 
-		m_tempCopyNecessary = false;
+		m_oldBufferCopyNecessary = false;
 	}
 }
 
@@ -1187,16 +1187,16 @@ void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 	);
 }
 
-void ModelManagerMS::CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept
+void ModelManagerMS::CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept
 {
-	if (m_tempCopyNecessary)
+	if (m_oldBufferCopyNecessary)
 	{
 		m_perMeshletDataBuffer.CopyOldBuffer(transferBuffer);
 		m_vertexBuffer.CopyOldBuffer(transferBuffer);
 		m_vertexIndicesBuffer.CopyOldBuffer(transferBuffer);
 		m_primIndicesBuffer.CopyOldBuffer(transferBuffer);
 
-		m_tempCopyNecessary = false;
+		m_oldBufferCopyNecessary = false;
 	}
 }
 

@@ -100,7 +100,7 @@ TEST_F(StagingBufferTest, StagingTest)
 		const size_t bufferIndex = 0u;
 		const CommandBufferScope cmdBufferScope{ transferQueue.GetCommandBuffer(bufferIndex) };
 
-		stagingBufferMan.CopyAndClear(cmdBufferScope);
+		stagingBufferMan.CopyAndClearQueuedBuffers(cmdBufferScope);
 	}
 
 	VKFence waitFence{ logicalDevice };

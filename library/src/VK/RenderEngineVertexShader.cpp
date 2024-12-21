@@ -92,8 +92,8 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 		{
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-			m_stagingManager.CopyAndClear(transferCmdBufferScope);
-			m_modelManager.CopyTempData(transferCmdBufferScope);
+			m_modelManager.CopyOldBuffers(transferCmdBufferScope);
+			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
 			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 		}
@@ -316,8 +316,8 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 		{
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-			m_stagingManager.CopyAndClear(transferCmdBufferScope);
-			m_modelManager.CopyTempBuffers(transferCmdBufferScope);
+			m_modelManager.CopyOldBuffers(transferCmdBufferScope);
+			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
 			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 		}

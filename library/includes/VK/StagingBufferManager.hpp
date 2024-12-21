@@ -53,7 +53,7 @@ public:
 		);
 	}
 
-	void CopyAndClear(const VKCommandBuffer& transferCmdBuffer);
+	void CopyAndClearQueuedBuffers(const VKCommandBuffer& transferCmdBuffer);
 	// This function should be run after the Copy function. The ownership transfer is done via a
 	// barrier. So, I shouldn't need any extra syncing.
 	void ReleaseOwnership(

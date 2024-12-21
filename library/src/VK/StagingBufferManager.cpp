@@ -218,7 +218,7 @@ void StagingBufferManager::CopyGPU(const VKCommandBuffer& transferCmdBuffer)
 	}
 }
 
-void StagingBufferManager::CopyAndClear(const VKCommandBuffer& transferCmdBuffer)
+void StagingBufferManager::CopyAndClearQueuedBuffers(const VKCommandBuffer& transferCmdBuffer)
 {
 	// Since these are first copied to temp buffers and those are
 	// copied on the GPU, we don't need any cpu synchronisation.

@@ -202,7 +202,7 @@ public:
 		const std::vector<std::uint32_t>& queueIndices
 	) : SharedBufferBase{
 			device, memoryManager, usageFlags, queueIndices, GetGPUResource<Buffer>(device, memoryManager)
-		}, m_tempBuffer{}
+		}, m_oldBuffer{}
 	{}
 
 	void CopyOldBuffer(const VKCommandBuffer& copyBuffer) noexcept;
@@ -222,7 +222,7 @@ private:
 	VkDeviceSize ExtendBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer);
 
 private:
-	std::shared_ptr<Buffer> m_tempBuffer;
+	std::shared_ptr<Buffer> m_oldBuffer;
 
 public:
 	SharedBufferGPU(const SharedBufferGPU&) = delete;
@@ -230,12 +230,12 @@ public:
 
 	SharedBufferGPU(SharedBufferGPU&& other) noexcept
 		: SharedBufferBase{ std::move(other) },
-		m_tempBuffer{ std::move(other.m_tempBuffer) }
+		m_oldBuffer{ std::move(other.m_oldBuffer) }
 	{}
 	SharedBufferGPU& operator=(SharedBufferGPU&& other) noexcept
 	{
 		SharedBufferBase::operator=(std::move(other));
-		m_tempBuffer = std::move(other.m_tempBuffer);
+		m_oldBuffer = std::move(other.m_oldBuffer);
 
 		return *this;
 	}

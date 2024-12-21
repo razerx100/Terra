@@ -503,7 +503,7 @@ public:
 	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_graphicsPipelineLayout{ VK_NULL_HANDLE }, m_renderPass{ VK_NULL_HANDLE }, m_shaderPath{},
 		m_modelBuffers{ Derived::ConstructModelBuffers(device, memoryManager, frameCount, queueIndices) },
-		m_graphicsPipelines{}, m_meshBundles{}, m_modelBundles{}, m_tempCopyNecessary{ true }
+		m_graphicsPipelines{}, m_meshBundles{}, m_modelBundles{}, m_oldBufferCopyNecessary{ false }
 	{}
 
 	static void SetGraphicsConstantRange(PipelineLayout& layout) noexcept
@@ -575,7 +575,7 @@ public:
 
 			AddModelBundle(std::move(modelBundleObj));
 
-			m_tempCopyNecessary = true;
+			m_oldBufferCopyNecessary = true;
 
 			return bundleID;
 		}
@@ -633,9 +633,9 @@ public:
 			std::move(meshBundle), stagingBufferMan, meshManager, tempBuffer
 		);
 
-		auto meshIndex = m_meshBundles.Add(std::move(meshManager));
+		auto meshIndex           = m_meshBundles.Add(std::move(meshManager));
 
-		m_tempCopyNecessary = true;
+		m_oldBufferCopyNecessary = true;
 
 		return static_cast<std::uint32_t>(meshIndex);
 	}
@@ -752,7 +752,7 @@ protected:
 	std::vector<Pipeline>        m_graphicsPipelines;
 	ReusableVector<MeshManager>  m_meshBundles;
 	std::vector<ModelBundleType> m_modelBundles;
-	bool                         m_tempCopyNecessary;
+	bool                         m_oldBufferCopyNecessary;
 
 	// The fragment and Vertex data are on different sets. So both can be 0u.
 	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
@@ -772,7 +772,7 @@ public:
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_modelBundles{ std::move(other.m_modelBundles) },
-		m_tempCopyNecessary{ other.m_tempCopyNecessary }
+		m_oldBufferCopyNecessary{ other.m_oldBufferCopyNecessary }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
@@ -785,7 +785,7 @@ public:
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_meshBundles            = std::move(other.m_meshBundles);
 		m_modelBundles           = std::move(other.m_modelBundles);
-		m_tempCopyNecessary      = other.m_tempCopyNecessary;
+		m_oldBufferCopyNecessary = other.m_oldBufferCopyNecessary;
 
 		return *this;
 	}
@@ -826,7 +826,7 @@ public:
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
-	void CopyTempData(const VKCommandBuffer& transferCmdBuffer) noexcept;
+	void CopyOldBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept;
 
 private:
 	static void _setGraphicsConstantRange(PipelineLayout& layout) noexcept;
@@ -912,7 +912,7 @@ public:
 
 	static void SetComputeConstantRange(PipelineLayout& layout) noexcept;
 
-	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
+	void CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
 	void SetDescriptorBufferLayoutVS(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
@@ -1102,7 +1102,7 @@ public:
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
 	) const;
 
-	void CopyTempBuffers(const VKCommandBuffer& transferBuffer) noexcept;
+	void CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 

@@ -92,8 +92,8 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 		{
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
-			m_stagingManager.CopyAndClear(transferCmdBufferScope);
-			m_modelManager.CopyTempBuffers(transferCmdBuffer);
+			m_modelManager.CopyOldBuffers(transferCmdBuffer);
+			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
 			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
 		}
