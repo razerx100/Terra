@@ -235,7 +235,13 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 
 	{
 		// If the already available allocators were unable to allocate, then try to allocate new memory.
-		VkDeviceSize newAllocationSize = std::max(bufferSize, GetNewAllocationSize(memoryType));
+		VkDeviceSize newAllocationSize   = GetNewAllocationSize(memoryType);
+
+		// If the newAllocationSize isn't an exponent of 2, the largest block in the
+		// buddy allocator might not be able to house it. So, we have to query the required
+		// size.
+		VkDeviceSize minimumRequiredSize = Buddy::GetMinimumRequiredNewAllocationSizeFor(bufferSize);
+		newAllocationSize                = std::max(newAllocationSize, minimumRequiredSize);
 
 		std::optional<MemoryType> memType = GetMemoryType(newAllocationSize, memoryType);
 
@@ -243,10 +249,12 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 		if (!memType)
 		{
 			const VkDeviceSize availableMemorySize = GetAvailableMemoryOfType(memoryType);
-			newAllocationSize = availableMemorySize;
 
-			if (availableMemorySize >= bufferSize)
-				memType = GetMemoryType(availableMemorySize, memoryType);
+			if (availableMemorySize >= minimumRequiredSize)
+			{
+				memType           = GetMemoryType(availableMemorySize, memoryType);
+				newAllocationSize = availableMemorySize;
+			}
 		}
 
 		if (!memType)
