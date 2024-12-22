@@ -135,8 +135,8 @@ void MeshManagerVertexShader::SetMeshBundle(
 
 void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
-	VkBuffer vertexBuffers[]                  = { m_vertexBufferSharedData.bufferData->Get() };
-	static const VkDeviceSize vertexOffsets[] = { m_vertexBufferSharedData.offset };
+	VkBuffer vertexBuffers[]           = { m_vertexBufferSharedData.bufferData->Get() };
+	const VkDeviceSize vertexOffsets[] = { m_vertexBufferSharedData.offset };
 
 	VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
 

@@ -92,6 +92,8 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 		{
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
+			// Need to copy the old buffers first to avoid empty data being copied over
+			// the queued data.
 			m_modelManager.CopyOldBuffers(transferCmdBuffer);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 

@@ -92,6 +92,8 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 		{
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
+			// Need to copy the old buffers first to avoid empty data being copied over
+			// the queued data.
 			m_modelManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
@@ -316,6 +318,8 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 		{
 			const CommandBufferScope transferCmdBufferScope{ transferCmdBuffer };
 
+			// Need to copy the old buffers first to avoid empty data being copied over
+			// the queued data.
 			m_modelManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
