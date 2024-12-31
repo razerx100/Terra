@@ -449,7 +449,7 @@ private:
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
-	void ConfigureModelBundleRemove(size_t bundleIndex) noexcept;
+	void ConfigureModelBundleRemove(size_t bundleIndex) noexcept override;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
