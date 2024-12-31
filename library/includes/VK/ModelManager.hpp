@@ -73,7 +73,10 @@ public:
 
 		if (!std::empty(models))
 		{
-			std::vector<std::uint32_t> modelIndices = AddModelsToModelBuffer(models, modelBuffers);
+			std::vector<std::shared_ptr<Model>> copyModels = models;
+			std::vector<std::uint32_t> modelIndices        = modelBuffers.AddMultipleRU32(
+				std::move(copyModels)
+			);
 
 			ModelBundleType modelBundleObj{};
 
@@ -167,7 +170,7 @@ public:
 
 	void RecreateGraphicsPipelines()
 	{
-		for (auto& graphicsPipeline : m_graphicsPipelines)
+		for (Pipeline& graphicsPipeline : m_graphicsPipelines)
 			graphicsPipeline.Recreate(m_device, m_graphicsPipelineLayout, m_renderPass, m_shaderPath);
 	}
 
@@ -192,7 +195,7 @@ protected:
 	{
 		std::uint32_t psoIndex = 0u;
 
-		auto oPSOIndex = TryToGetPSOIndex(fragmentShader);
+		std::optional<std::uint32_t> oPSOIndex = TryToGetPSOIndex(fragmentShader);
 
 		if (!oPSOIndex)
 		{
@@ -258,22 +261,6 @@ private:
 		// insert at the back. Otherwise, insert at the end of the range of the same indices.
 		// Insert works for the end iterator, so no need to emplace_back.
 		m_modelBundles.insert(result, std::move(modelBundle));
-	}
-
-	[[nodiscard]]
-	// Not taking models as a ref, since we need a copy.
-	static std::vector<std::uint32_t> AddModelsToModelBuffer(
-		std::vector<std::shared_ptr<Model>> models, ModelBuffers& modelBuffers
-	) {
-		const std::vector<size_t> modelIndices = modelBuffers.AddMultiple(std::move(models));
-		const size_t modelIndexCount           = std::size(modelIndices);
-
-		std::vector<std::uint32_t> modelIndicesU32(modelIndexCount, 0u);
-
-		for (size_t index = 0u; index < modelIndexCount; ++index)
-			modelIndicesU32[index] = static_cast<std::uint32_t>(modelIndices[index]);
-
-		return modelIndicesU32;
 	}
 
 	static void RemoveModelsFromModelBuffer(

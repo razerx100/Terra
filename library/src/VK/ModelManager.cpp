@@ -32,7 +32,7 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 
 void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
-	auto& meshManager = m_meshBundles.at(bundleIndex);
+	MeshManagerVertexShader& meshManager = m_meshBundles.at(bundleIndex);
 
 	{
 		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
@@ -68,7 +68,7 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 {
 	auto previousPSOIndex = std::numeric_limits<size_t>::max();
 
-	for (const auto& modelBundle : m_modelBundles)
+	for (const ModelBundleVSIndividual& modelBundle : m_modelBundles)
 	{
 		// Pipeline Object.
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
@@ -147,7 +147,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 
 void ModelManagerVSIndirect::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
-	constexpr auto pushConstantSize = ModelBundleVSIndirect::GetConstantBufferSize();
+	constexpr std::uint32_t pushConstantSize = ModelBundleVSIndirect::GetConstantBufferSize();
 
 	layout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 }
@@ -160,7 +160,7 @@ void ModelManagerVSIndirect::SetComputePipelineLayout(VkPipelineLayout layout) n
 void ModelManagerVSIndirect::SetComputeConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
-	constexpr auto pushConstantSize = GetConstantBufferSize();
+	constexpr std::uint32_t pushConstantSize = GetConstantBufferSize();
 
 	layout.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
 }
@@ -269,7 +269,7 @@ void ModelManagerVSIndirect::ConfigureModelBundleRemove(size_t bundleIndex) noex
 
 void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
-	auto& meshManager = m_meshBundles.at(bundleIndex);
+	MeshManagerVertexShader& meshManager = m_meshBundles.at(bundleIndex);
 
 	{
 		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
@@ -339,7 +339,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 void ModelManagerVSIndirect::SetDescriptorBufferVS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 ) const {
-	const auto frameCount = std::size(descriptorBuffers);
+	const size_t frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
@@ -398,7 +398,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
-	const auto frameCount = std::size(descriptorBuffers);
+	const size_t frameCount = std::size(descriptorBuffers);
 
 	for (size_t index = 0u; index < frameCount; ++index)
 	{
@@ -435,7 +435,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 void ModelManagerVSIndirect::SetDescriptorBufferCSOfMeshes(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
-	for (auto& descriptorBuffer : descriptorBuffers)
+	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
 	{
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_perMeshDataBuffer.GetBuffer(), s_perMeshDataBindingSlot, csSetLayoutIndex, 0u
@@ -474,7 +474,7 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 {
 	auto previousPSOIndex = std::numeric_limits<size_t>::max();
 
-	for (const auto& modelBundle : m_modelBundles)
+	for (const ModelBundleVSIndirect& modelBundle : m_modelBundles)
 	{
 		// Pipeline Object.
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
@@ -580,7 +580,7 @@ void ModelManagerMS::ConfigureModelBundle(
 
 void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
-	auto& meshManager = m_meshBundles.at(bundleIndex);
+	MeshManagerMeshShader& meshManager = m_meshBundles.at(bundleIndex);
 
 	{
 		const SharedBufferData& vertexSharedData        = meshManager.GetVertexSharedData();
@@ -682,7 +682,7 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 
-	for (const auto& modelBundle : m_modelBundles)
+	for (const ModelBundleMSIndividual& modelBundle : m_modelBundles)
 	{
 		// Pipeline Object.
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
