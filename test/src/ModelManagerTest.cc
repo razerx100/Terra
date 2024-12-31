@@ -279,33 +279,12 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
 
-	ModelManagerVSIndividual vsIndividual{
-		logicalDevice, &memoryManager, queueManager.GetAllIndices(),
-		Constants::frameCount
-	};
+	ModelManagerVSIndividual vsIndividual{ logicalDevice, &memoryManager, queueManager.GetAllIndices() };
 	vsIndividual.SetRenderPass(renderPass.Get());
 
-	std::vector<VkDescriptorBuffer> descBuffers{};
-
-	for (size_t _ = 0u; _ < Constants::frameCount; ++_)
-		descBuffers.emplace_back(
-			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
-		);
-
-	vsIndividual.SetDescriptorBufferLayout(
-		descBuffers, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
-	);
-
-	for (auto& descBuffer : descBuffers)
-		descBuffer.CreateBuffer();
-
-	PipelineLayout graphicsPipelineLayout{ logicalDevice };
-
-	ModelManagerVSIndividual::SetGraphicsConstantRange(graphicsPipelineLayout);
-
-	graphicsPipelineLayout.Create(descBuffers.front().GetLayouts());
-
 	TemporaryDataBufferGPU tempDataBuffer{};
+
+	ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 	{
 		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
@@ -337,7 +316,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = vsIndividual.AddModelBundle(
-			std::move(modelBundle), L"", tempDataBuffer
+			std::move(modelBundle), L"", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
@@ -348,7 +327,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = vsIndividual.AddModelBundle(
-			std::move(modelBundle), L"", tempDataBuffer
+			std::move(modelBundle), L"", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
@@ -359,11 +338,11 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 			modelBundle->AddModel(std::make_shared<ModelDummy>());
 
 		std::uint32_t index = vsIndividual.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	vsIndividual.RemoveModelBundle(1u);
+	vsIndividual.RemoveModelBundle(1u, modelBuffers);
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
@@ -371,7 +350,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 			modelBundle->AddModel(std::make_shared<ModelDummy>());
 
 		std::uint32_t index = vsIndividual.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
@@ -412,9 +391,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		);
 	}
 
-	vsIndirect.SetDescriptorBufferLayoutVS(
-		descBuffersVS, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
-	);
+	vsIndirect.SetDescriptorBufferLayoutVS(descBuffersVS, Constants::vsSetLayoutIndex);
 	vsIndirect.SetDescriptorBufferLayoutCS(descBuffersCS, Constants::csSetLayoutIndex);
 
 	for (auto& descBuffer : descBuffersVS)
@@ -435,6 +412,11 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	computePipelineLayout.Create(descBuffersCS.front().GetLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
+
+	ModelBuffers modelBuffers{
+		logicalDevice, &memoryManager, Constants::frameCount,
+		queueManager.GetComputeAndGraphicsIndices().ResolveQueueIndices()
+	};
 
 	{
 		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
@@ -466,7 +448,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelBundle), L"", tempDataBuffer
+			std::move(modelBundle), L"", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
@@ -477,7 +459,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelBundle), L"A", tempDataBuffer
+			std::move(modelBundle), L"A", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
@@ -488,11 +470,11 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 			modelBundle->AddModel(std::make_shared<ModelDummy>());
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	vsIndirect.RemoveModelBundle(1u);
+	vsIndirect.RemoveModelBundle(1u, modelBuffers);
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
@@ -500,7 +482,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 			modelBundle->AddModel(std::make_shared<ModelDummy>());
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 
@@ -513,7 +495,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 13u) << "Index isn't 13.";
 	}
@@ -524,7 +506,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = vsIndirect.AddModelBundle(
-			std::move(modelBundle), L"A", tempDataBuffer
+			std::move(modelBundle), L"A", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 14u) << "Index isn't 14.";
 	}
@@ -547,8 +529,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	renderPass.Create(RenderPassBuilder{});
 
 	ModelManagerMS managerMS{
-		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices(),
-		Constants::frameCount
+		logicalDevice, &memoryManager, &stagingBufferManager, queueManager.GetAllIndices()
 	};
 	managerMS.SetRenderPass(renderPass.Get());
 
@@ -559,9 +540,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 			VkDescriptorBuffer{ logicalDevice, &memoryManager, Constants::descSetLayoutCount }
 		);
 
-	managerMS.SetDescriptorBufferLayout(
-		descBuffers, Constants::vsSetLayoutIndex, Constants::fsSetLayoutIndex
-	);
+	managerMS.SetDescriptorBufferLayout(descBuffers, Constants::vsSetLayoutIndex);
 
 	for (auto& descBuffer : descBuffers)
 		descBuffer.CreateBuffer();
@@ -573,6 +552,8 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	graphicsPipelineLayout.Create(descBuffers.front().GetLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
+
+	ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 	{
 		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
@@ -611,7 +592,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = managerMS.AddModelBundle(
-			std::move(modelBundle), L"", tempDataBuffer
+			std::move(modelBundle), L"", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
@@ -622,7 +603,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 		modelBundle->AddModel(std::move(model));
 
 		std::uint32_t index = managerMS.AddModelBundle(
-			std::move(modelBundle), L"", tempDataBuffer
+			std::move(modelBundle), L"", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
@@ -633,11 +614,11 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 			modelBundle->AddModel(std::make_shared<ModelDummy>());
 
 		std::uint32_t index = managerMS.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	managerMS.RemoveModelBundle(1u);
+	managerMS.RemoveModelBundle(1u, modelBuffers);
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
@@ -645,7 +626,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 			modelBundle->AddModel(std::make_shared<ModelDummy>());
 
 		std::uint32_t index = managerMS.AddModelBundle(
-			std::move(modelBundle), L"H", tempDataBuffer
+			std::move(modelBundle), L"H", modelBuffers, tempDataBuffer
 		);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}

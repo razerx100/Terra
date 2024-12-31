@@ -28,7 +28,7 @@ RenderEngine::RenderEngine(
 		queueFamilyManager->GetQueue(QueueType::GraphicsQueue),
 		queueFamilyManager->GetIndex(QueueType::GraphicsQueue)
 	}, m_graphicsWait{},
-	m_transferQueue {
+	m_transferQueue{
 		logicalDevice,
 		queueFamilyManager->GetQueue(QueueType::TransferQueue),
 		queueFamilyManager->GetIndex(QueueType::TransferQueue)
@@ -41,7 +41,7 @@ RenderEngine::RenderEngine(
 	m_materialBuffers{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
 	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
-	m_backgroundColour{ {0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
+	m_backgroundColour{ { 0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
 	m_temporaryDataBuffer{}, m_copyNecessary{ false }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);

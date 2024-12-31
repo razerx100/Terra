@@ -31,11 +31,9 @@ template<
 class ModelManager
 {
 public:
-	ModelManager(
-		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices, std::uint32_t frameCount
-	) : m_device{ device }, m_memoryManager{ memoryManager },
+	ModelManager(VkDevice device, MemoryManager* memoryManager)
+		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_graphicsPipelineLayout{ VK_NULL_HANDLE }, m_renderPass{ VK_NULL_HANDLE }, m_shaderPath{},
-		m_modelBuffers{ Derived::ConstructModelBuffers(device, memoryManager, frameCount, queueIndices) },
 		m_graphicsPipelines{}, m_meshBundles{}, m_modelBundles{}, m_oldBufferCopyNecessary{ false }
 	{}
 
@@ -51,8 +49,6 @@ public:
 
 	void UpdatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
-		m_modelBuffers.Update(frameIndex);
-
 		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 	}
 
@@ -71,40 +67,25 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader,
-		TemporaryDataBufferGPU& tempBuffer
+		ModelBuffers& modelBuffers,	TemporaryDataBufferGPU& tempBuffer
 	) {
-		const auto& models      = modelBundle->GetModels();
-		const size_t modelCount = std::size(models);
+		const std::vector<std::shared_ptr<Model>>& models = modelBundle->GetModels();
 
-		if (modelCount)
+		if (!std::empty(models))
 		{
-			std::vector<std::shared_ptr<Model>> tempModelBundle{ modelCount, nullptr };
-
-			for (size_t index = 0u; index < modelCount; ++index)
-				tempModelBundle[index] = std::static_pointer_cast<Model>(models[index]);
-
-			const std::vector<size_t> modelIndices
-				= m_modelBuffers.AddMultiple(std::move(tempModelBundle));
-
-			auto dvThis = static_cast<Derived*>(this);
+			std::vector<std::uint32_t> modelIndices = AddModelsToModelBuffer(models, modelBuffers);
 
 			ModelBundleType modelBundleObj{};
 
-			{
-				std::vector<std::uint32_t> modelIndicesU32(std::size(modelIndices), 0u);
-				for (size_t index = 0u; index < std::size(modelIndices); ++index)
-					modelIndicesU32[index] = static_cast<std::uint32_t>(modelIndices[index]);
-
-				dvThis->ConfigureModelBundle(
-					modelBundleObj, std::move(modelIndicesU32), std::move(modelBundle), tempBuffer
-				);
-			}
+			static_cast<Derived*>(this)->ConfigureModelBundle(
+				modelBundleObj, std::move(modelIndices), std::move(modelBundle), tempBuffer
+			);
 
 			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
 			modelBundleObj.SetPSOIndex(psoIndex);
 
-			const auto bundleID = modelBundleObj.GetID();
+			const std::uint32_t bundleID = modelBundleObj.GetID();
 
 			AddModelBundle(std::move(modelBundleObj));
 
@@ -116,7 +97,7 @@ public:
 		return std::numeric_limits<std::uint32_t>::max();
 	}
 
-	void RemoveModelBundle(std::uint32_t bundleID) noexcept
+	void RemoveModelBundle(std::uint32_t bundleID, ModelBuffers& modelBuffers) noexcept
 	{
 		auto result = GetModelBundle(bundleID);
 
@@ -126,7 +107,9 @@ public:
 				std::distance(std::begin(m_modelBundles), result)
 			);
 
-			static_cast<Derived*>(this)->ConfigureModelRemove(modelBundleIndex);
+			RemoveModelsFromModelBuffer(*result, modelBuffers);
+
+			static_cast<Derived*>(this)->ConfigureModelBundleRemove(modelBundleIndex);
 
 			m_modelBundles.erase(result);
 		}
@@ -254,6 +237,8 @@ protected:
 		);
 	}
 
+	virtual void ConfigureModelBundleRemove([[maybe_unused]] size_t modelBundleIndex) noexcept {}
+
 private:
 	void AddModelBundle(ModelBundleType&& modelBundle) noexcept
 	{
@@ -275,21 +260,41 @@ private:
 		m_modelBundles.insert(result, std::move(modelBundle));
 	}
 
+	[[nodiscard]]
+	// Not taking models as a ref, since we need a copy.
+	static std::vector<std::uint32_t> AddModelsToModelBuffer(
+		std::vector<std::shared_ptr<Model>> models, ModelBuffers& modelBuffers
+	) {
+		const std::vector<size_t> modelIndices = modelBuffers.AddMultiple(std::move(models));
+		const size_t modelIndexCount           = std::size(modelIndices);
+
+		std::vector<std::uint32_t> modelIndicesU32(modelIndexCount, 0u);
+
+		for (size_t index = 0u; index < modelIndexCount; ++index)
+			modelIndicesU32[index] = static_cast<std::uint32_t>(modelIndices[index]);
+
+		return modelIndicesU32;
+	}
+
+	static void RemoveModelsFromModelBuffer(
+		const ModelBundleType& modelBundle, ModelBuffers& modelBuffers
+	) {
+		const std::vector<std::uint32_t>& modelIndices = modelBundle.GetModelIndices();
+
+		for (std::uint32_t modelIndex : modelIndices)
+			modelBuffers.Remove(modelIndex);
+	}
+
 protected:
 	VkDevice                     m_device;
 	MemoryManager*               m_memoryManager;
 	VkPipelineLayout             m_graphicsPipelineLayout;
 	VkRenderPass                 m_renderPass;
 	std::wstring                 m_shaderPath;
-	ModelBuffers                 m_modelBuffers;
 	std::vector<Pipeline>        m_graphicsPipelines;
 	ReusableVector<MeshManager>  m_meshBundles;
 	std::vector<ModelBundleType> m_modelBundles;
 	bool                         m_oldBufferCopyNecessary;
-
-	// The fragment and Vertex data are on different sets. So both can be 0u.
-	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
-	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -301,7 +306,6 @@ public:
 		m_graphicsPipelineLayout{ other.m_graphicsPipelineLayout },
 		m_renderPass{ other.m_renderPass },
 		m_shaderPath{ std::move(other.m_shaderPath) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
 		m_meshBundles{ std::move(other.m_meshBundles) },
 		m_modelBundles{ std::move(other.m_modelBundles) },
@@ -314,7 +318,6 @@ public:
 		m_graphicsPipelineLayout = other.m_graphicsPipelineLayout;
 		m_renderPass             = other.m_renderPass;
 		m_shaderPath             = std::move(other.m_shaderPath);
-		m_modelBuffers           = std::move(other.m_modelBuffers);
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_meshBundles            = std::move(other.m_meshBundles);
 		m_modelBundles           = std::move(other.m_modelBundles);
@@ -343,19 +346,7 @@ class ModelManagerVSIndividual : public
 	friend class ModelManagerVSIndividualTest;
 
 public:
-	ModelManagerVSIndividual(
-		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3,
-		std::uint32_t frameCount
-	);
-
-	void SetDescriptorBufferLayout(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers,
-		size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
-	);
-	void SetDescriptorBuffer(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers,
-		size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
-	);
+	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3);
 
 	void Draw(const VKCommandBuffer& graphicsBuffer) const noexcept;
 
@@ -371,7 +362,6 @@ private:
 		TemporaryDataBufferGPU& tempBuffer
 	) const noexcept;
 
-	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
@@ -381,11 +371,6 @@ private:
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 	// To create compute shader pipelines.
 	void ShaderPathSet() {}
-
-	[[nodiscard]]
-	static ModelBuffers ConstructModelBuffers(
-		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-	);
 
 private:
 	SharedBufferGPU m_vertexBuffer;
@@ -448,10 +433,10 @@ public:
 	void CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept;
 
 	void SetDescriptorBufferLayoutVS(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 	) const noexcept;
 	void SetDescriptorBufferVS(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex, size_t fsSetLayoutIndex
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 	) const;
 
 	void SetDescriptorBufferLayoutCS(
@@ -477,7 +462,7 @@ private:
 		TemporaryDataBufferGPU& tempBuffer
 	);
 
-	void ConfigureModelRemove(size_t bundleIndex) noexcept;
+	void ConfigureModelBundleRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
@@ -491,11 +476,6 @@ private:
 
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
-
-	[[nodiscard]]
-	static ModelBuffers ConstructModelBuffers(
-		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-	);
 
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
@@ -530,7 +510,6 @@ private:
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
 
 	// Compute Shader ones
-	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
 	static constexpr std::uint32_t s_perModelDataCSBindingSlot      = 1u;
 	static constexpr std::uint32_t s_argumentInputBufferBindingSlot = 2u;
 	static constexpr std::uint32_t s_cullingDataBufferBindingSlot   = 3u;
@@ -619,20 +598,16 @@ class ModelManagerMS : public
 public:
 	ModelManagerMS(
 		VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-		QueueIndices3 queueIndices3, std::uint32_t frameCount
+		QueueIndices3 queueIndices3
 	);
 
 	void SetDescriptorBufferLayout(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
+		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
 	) const noexcept;
 
 	// Should be called after a new Mesh has been added.
 	void SetDescriptorBufferOfMeshes(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
-	) const;
-	// Should be called after a new Model has been added.
-	void SetDescriptorBufferOfModels(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex, size_t fsSetLayoutIndex
 	) const;
 
 	void CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept;
@@ -647,7 +622,6 @@ private:
 		std::shared_ptr<ModelBundle>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
 	);
 
-	void ConfigureModelRemove(size_t bundleIndex) noexcept;
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
@@ -657,11 +631,6 @@ private:
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 	// To create compute shader pipelines.
 	void ShaderPathSet() {}
-
-	[[nodiscard]]
-	static ModelBuffers ConstructModelBuffers(
-		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount, QueueIndices3 queueIndices
-	);
 
 private:
 	StagingBufferManager* m_stagingBufferMan;

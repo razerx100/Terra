@@ -31,6 +31,10 @@ private:
 		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
 		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
 	);
+	[[nodiscard]]
+	static ModelBuffers ConstructModelBuffers(
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
+	);
 
 	[[nodiscard]]
 	VkSemaphore GenericTransferStage(
@@ -44,6 +48,9 @@ private:
 	);
 
 	void SetupPipelineStages();
+
+	void SetGraphicsDescriptorBufferLayout();
+	void SetGraphicsDescriptors();
 
 private:
 	static constexpr std::uint32_t s_cameraBindingSlot = 1u;
@@ -91,6 +98,10 @@ private:
 		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
 		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
 	);
+	[[nodiscard]]
+	static ModelBuffers ConstructModelBuffers(
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
+	);
 
 	[[nodiscard]]
 	VkSemaphore GenericTransferStage(
@@ -108,6 +119,12 @@ private:
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 
+	void SetGraphicsDescriptorBufferLayout();
+	void SetGraphicsDescriptors();
+
+	void SetComputeDescriptorBufferLayout();
+	void SetComputeDescriptors();
+
 	void SetupPipelineStages();
 
 private:
@@ -118,7 +135,8 @@ private:
 	static constexpr std::uint32_t s_computePipelineSetLayoutCount = 1u;
 	static constexpr std::uint32_t s_computeShaderSetLayoutIndex   = 0u;
 
-	static constexpr std::uint32_t s_cameraComputeBindingSlot = 10u;
+	static constexpr std::uint32_t s_modelBuffersComputeBindingSlot = 0u;
+	static constexpr std::uint32_t s_cameraComputeBindingSlot       = 10u;
 
 private:
 	VkCommandQueue                  m_computeQueue;

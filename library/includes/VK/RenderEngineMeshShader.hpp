@@ -34,6 +34,10 @@ private:
 		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
 		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
 	);
+	[[nodiscard]]
+	static ModelBuffers ConstructModelBuffers(
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
+	);
 
 	[[nodiscard]]
 	VkSemaphore GenericTransferStage(
@@ -45,6 +49,9 @@ private:
 		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
+
+	void SetGraphicsDescriptorBufferLayout();
+	void SetGraphicsDescriptors();
 
 	void SetupPipelineStages();
 

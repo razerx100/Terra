@@ -5,13 +5,9 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
-	// The layout shouldn't change throughout the runtime.
-	m_modelManager.SetDescriptorBufferLayout(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
+	SetGraphicsDescriptorBufferLayout();
 
-	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
 	ModelManagerVSIndividual::SetGraphicsConstantRange(m_graphicsPipelineLayout);
@@ -27,6 +23,24 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	SetupPipelineStages();
 }
 
+void RenderEngineVSIndividual::SetGraphicsDescriptorBufferLayout()
+{
+	// The layout shouldn't change throughout the runtime.
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
+
+	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
+	{
+		descriptorBuffer.AddBinding(
+			s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT
+		);
+		descriptorBuffer.AddBinding(
+			s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+	}
+}
+
 void RenderEngineVSIndividual::SetupPipelineStages()
 {
 	constexpr size_t stageCount = 2u;
@@ -40,26 +54,50 @@ void RenderEngineVSIndividual::SetupPipelineStages()
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
 	const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
 	[[maybe_unused]] StagingBufferManager* stagingBufferMan,
-	std::uint32_t frameCount
+	[[maybe_unused]] std::uint32_t frameCount
 ) {
-	return ModelManagerVSIndividual{
+	return ModelManagerVSIndividual
+	{
 		deviceManager.GetLogicalDevice(), memoryManager,
-		deviceManager.GetQueueFamilyManager().GetAllIndices(), frameCount
+		deviceManager.GetQueueFamilyManager().GetAllIndices()
 	};
+}
+
+void RenderEngineVSIndividual::SetGraphicsDescriptors()
+{
+	const size_t frameCount = std::size(m_graphicsDescriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = m_graphicsDescriptorBuffers[index];
+		const auto frameIndex                = static_cast<VkDeviceSize>(index);
+
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex
+		);
+		m_modelBuffers.SetFragmentDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex
+		);
+	}
+}
+
+ModelBuffers RenderEngineVSIndividual::ConstructModelBuffers(
+	const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
+) {
+	// Only being accessed from the graphics queue.
+	return ModelBuffers{ deviceManager.GetLogicalDevice(), memoryManager, frameCount, {}};
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
+		std::move(modelBundle), fragmentShader, m_modelBuffers, m_temporaryDataBuffer
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBuffer(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
+	SetGraphicsDescriptors();
 
 	m_copyNecessary = true;
 
@@ -188,10 +226,7 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 {
 	// Graphics Descriptors.
 	// The layout shouldn't change throughout the runtime.
-	m_modelManager.SetDescriptorBufferLayoutVS(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
+	SetGraphicsDescriptorBufferLayout();
 
 	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
@@ -225,10 +260,7 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	m_computeQueue.CreateCommandBuffers(frameCountU32);
 
 	// Compute Descriptors.
-	m_modelManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
-	m_cameraManager.SetDescriptorBufferLayoutCompute(
-		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
-	);
+	SetComputeDescriptorBufferLayout();
 
 	for (auto& descriptorBuffer : m_computeDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
@@ -248,6 +280,41 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	SetupPipelineStages();
 }
 
+void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
+{
+	// The layout shouldn't change throughout the runtime.
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
+
+	m_modelManager.SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+
+	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
+	{
+		descriptorBuffer.AddBinding(
+			s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_VERTEX_BIT
+		);
+		descriptorBuffer.AddBinding(
+			s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+	}
+}
+
+void RenderEngineVSIndirect::SetComputeDescriptorBufferLayout()
+{
+	m_modelManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+
+	m_cameraManager.SetDescriptorBufferLayoutCompute(
+		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
+	);
+
+	for (VkDescriptorBuffer& descriptorBuffer : m_computeDescriptorBuffers)
+		descriptorBuffer.AddBinding(
+			s_modelBuffersComputeBindingSlot, s_computeShaderSetLayoutIndex,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_COMPUTE_BIT
+		);
+}
+
 void RenderEngineVSIndirect::SetupPipelineStages()
 {
 	constexpr size_t stageCount = 3u;
@@ -263,25 +330,76 @@ ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
 	const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
 	StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
 ) {
-	return ModelManagerVSIndirect{
+	return ModelManagerVSIndirect
+	{
 		deviceManager.GetLogicalDevice(), memoryManager, stagingBufferMan,
 		deviceManager.GetQueueFamilyManager().GetAllIndices(), frameCount
 	};
+}
+
+ModelBuffers RenderEngineVSIndirect::ConstructModelBuffers(
+	const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
+) {
+	// Will be accessed from both the Graphics queue and the compute queue.
+	return ModelBuffers
+	{
+		deviceManager.GetLogicalDevice(), memoryManager, frameCount,
+		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices()
+	};
+}
+
+void RenderEngineVSIndirect::SetGraphicsDescriptors()
+{
+	m_modelManager.SetDescriptorBufferVS(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
+	);
+
+	const size_t frameCount = std::size(m_graphicsDescriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = m_graphicsDescriptorBuffers[index];
+		const auto frameIndex                = static_cast<VkDeviceSize>(index);
+
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex
+		);
+		m_modelBuffers.SetFragmentDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex
+		);
+	}
+}
+
+void RenderEngineVSIndirect::SetComputeDescriptors()
+{
+	m_modelManager.SetDescriptorBufferCSOfModels(
+		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
+	);
+
+	const size_t frameCount = std::size(m_computeDescriptorBuffers);
+
+	for (size_t index = 0u; index < frameCount; ++index)
+	{
+		VkDescriptorBuffer& descriptorBuffer = m_computeDescriptorBuffers[index];
+		const auto frameIndex                = static_cast<VkDeviceSize>(index);
+
+		m_modelBuffers.SetDescriptorBuffer(
+			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot, s_computeShaderSetLayoutIndex
+		);
+	}
 }
 
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_temporaryDataBuffer
+		std::move(modelBundle), fragmentShader, m_modelBuffers, m_temporaryDataBuffer
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	m_modelManager.SetDescriptorBufferVS(
-		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex, s_fragmentShaderSetLayoutIndex
-	);
-	m_modelManager.SetDescriptorBufferCSOfModels(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	SetGraphicsDescriptors();
+	SetComputeDescriptors();
 
 	m_copyNecessary = true;
 
