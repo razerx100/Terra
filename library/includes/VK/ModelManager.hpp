@@ -319,7 +319,7 @@ class ModelManagerVSIndividual : public
 	<
 		ModelManagerVSIndividual,
 		GraphicsPipelineIndividualDraw,
-		MeshManagerVertexShader,
+		VkMeshBundleVS,
 		ModelBundleVSIndividual
 	>
 {
@@ -327,7 +327,7 @@ class ModelManagerVSIndividual : public
 		<
 			ModelManagerVSIndividual,
 			GraphicsPipelineIndividualDraw,
-			MeshManagerVertexShader,
+			VkMeshBundleVS,
 			ModelBundleVSIndividual
 		>;
 	friend class ModelManagerVSIndividualTest;
@@ -352,7 +352,7 @@ private:
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
+		VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
@@ -387,7 +387,7 @@ class ModelManagerVSIndirect : public
 	<
 		ModelManagerVSIndirect,
 		GraphicsPipelineIndirectDraw,
-		MeshManagerVertexShader,
+		VkMeshBundleVS,
 		ModelBundleVSIndirect
 	>
 {
@@ -395,7 +395,7 @@ class ModelManagerVSIndirect : public
 		<
 			ModelManagerVSIndirect,
 			GraphicsPipelineIndirectDraw,
-			MeshManagerVertexShader,
+			VkMeshBundleVS,
 			ModelBundleVSIndirect
 		>;
 	friend class ModelManagerVSIndirectTest;
@@ -453,7 +453,7 @@ private:
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
+		VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
@@ -569,7 +569,7 @@ class ModelManagerMS : public
 	<
 		ModelManagerMS,
 		GraphicsPipelineMeshShader,
-		MeshManagerMeshShader,
+		VkMeshBundleMS,
 		ModelBundleMSIndividual
 	>
 {
@@ -577,7 +577,7 @@ class ModelManagerMS : public
 		<
 			ModelManagerMS,
 			GraphicsPipelineMeshShader,
-			MeshManagerMeshShader,
+			VkMeshBundleMS,
 			ModelBundleMSIndividual
 		>;
 	friend class ModelManagerMSTest;
@@ -612,7 +612,7 @@ private:
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
+		VkMeshBundleMS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
 	);
 
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}

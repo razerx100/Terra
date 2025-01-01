@@ -1,5 +1,5 @@
-#ifndef MESH_MANAGER_VERTEX_SHADER_HPP_
-#define MESH_MANAGER_VERTEX_SHADER_HPP_
+#ifndef VK_MESH_BUNDLE_VS_HPP_
+#define VK_MESH_BUNDLE_VS_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <VkResources.hpp>
@@ -9,7 +9,7 @@
 
 #include <MeshBundle.hpp>
 
-class MeshManagerVertexShader
+class VkMeshBundleVS
 {
 	struct PerMeshBundleData
 	{
@@ -17,7 +17,7 @@ class MeshManagerVertexShader
 	};
 
 public:
-	MeshManagerVertexShader();
+	VkMeshBundleVS();
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
@@ -66,17 +66,17 @@ private:
 	MeshBundleTemporaryDetails m_bundleDetails;
 
 public:
-	MeshManagerVertexShader(const MeshManagerVertexShader&) = delete;
-	MeshManagerVertexShader& operator=(const MeshManagerVertexShader&) = delete;
+	VkMeshBundleVS(const VkMeshBundleVS&) = delete;
+	VkMeshBundleVS& operator=(const VkMeshBundleVS&) = delete;
 
-	MeshManagerVertexShader(MeshManagerVertexShader&& other) noexcept
+	VkMeshBundleVS(VkMeshBundleVS&& other) noexcept
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_indexBufferSharedData{ other.m_indexBufferSharedData },
 		m_perMeshSharedData{ other.m_perMeshSharedData },
 		m_perMeshBundleSharedData{ other.m_perMeshBundleSharedData },
 		m_bundleDetails{ std::move(other.m_bundleDetails) }
 	{}
-	MeshManagerVertexShader& operator=(MeshManagerVertexShader&& other) noexcept
+	VkMeshBundleVS& operator=(VkMeshBundleVS&& other) noexcept
 	{
 		m_vertexBufferSharedData  = other.m_vertexBufferSharedData;
 		m_indexBufferSharedData   = other.m_indexBufferSharedData;

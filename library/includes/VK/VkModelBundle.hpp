@@ -6,8 +6,8 @@
 #include <Model.hpp>
 #include <PipelineLayout.hpp>
 #include <VkCommandQueue.hpp>
-#include <MeshManagerMeshShader.hpp>
-#include <MeshManagerVertexShader.hpp>
+#include <VkMeshBundleMS.hpp>
+#include <VkMeshBundleVS.hpp>
 
 class ModelBundleBase
 {
@@ -52,7 +52,7 @@ public:
 	) noexcept;
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const MeshManagerVertexShader& meshBundle
+		const VkMeshBundleVS& meshBundle
 	) const noexcept;
 
 	[[nodiscard]]
@@ -124,7 +124,7 @@ public:
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const MeshManagerMeshShader& meshBundle
+		const VkMeshBundleMS& meshBundle
 	) const noexcept;
 
 	[[nodiscard]]
@@ -218,7 +218,7 @@ public:
 	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
 	void ResetCullingData() const noexcept;
 
-	void Update(size_t bufferIndex, const MeshManagerVertexShader& meshBundle) const noexcept;
+	void Update(size_t bufferIndex, const VkMeshBundleVS& meshBundle) const noexcept;
 
 	[[nodiscard]]
 	std::uint32_t GetID() const noexcept { return m_bundleID; }

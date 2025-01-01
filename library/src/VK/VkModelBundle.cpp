@@ -25,7 +25,7 @@ void ModelBundleVSIndividual::SetModelBundle(
 
 void ModelBundleVSIndividual::Draw(
 	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const MeshManagerVertexShader& meshBundle
+	const VkMeshBundleVS& meshBundle
 ) const noexcept {
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
 	const auto& models        = m_modelBundle->GetModels();
@@ -61,7 +61,7 @@ void ModelBundleMSIndividual::SetModelBundle(
 
 void ModelBundleMSIndividual::Draw(
 	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const MeshManagerMeshShader& meshBundle
+	const VkMeshBundleMS& meshBundle
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 
@@ -228,7 +228,7 @@ void ModelBundleCSIndirect::CreateBuffers(
 }
 
 void ModelBundleCSIndirect::Update(
-	size_t bufferIndex, const MeshManagerVertexShader& meshBundle
+	size_t bufferIndex, const VkMeshBundleVS& meshBundle
 ) const noexcept {
 	const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[bufferIndex];
 

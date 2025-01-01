@@ -32,22 +32,22 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 
 void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
-	MeshManagerVertexShader& meshManager = m_meshBundles.at(bundleIndex);
+	VkMeshBundleVS& vkMeshBundle = m_meshBundles.at(bundleIndex);
 
 	{
-		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
+		const SharedBufferData& vertexSharedData = vkMeshBundle.GetVertexSharedData();
 		m_vertexBuffer.RelinquishMemory(vertexSharedData);
 
-		const SharedBufferData& indexSharedData = meshManager.GetIndexSharedData();
+		const SharedBufferData& indexSharedData = vkMeshBundle.GetIndexSharedData();
 		m_indexBuffer.RelinquishMemory(indexSharedData);
 	}
 }
 
 void ModelManagerVSIndividual::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
+	VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
-	meshManager.SetMeshBundle(
+	vkMeshBundle.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
 		tempBuffer
 	);
@@ -74,7 +74,7 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
 		// Mesh
-		const MeshManagerVertexShader& meshBundle = m_meshBundles.at(
+		const VkMeshBundleVS& meshBundle = m_meshBundles.at(
 			static_cast<size_t>(modelBundle.GetMeshBundleIndex())
 		);
 		meshBundle.Bind(graphicsBuffer);
@@ -269,28 +269,28 @@ void ModelManagerVSIndirect::ConfigureModelBundleRemove(size_t bundleIndex) noex
 
 void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
-	MeshManagerVertexShader& meshManager = m_meshBundles.at(bundleIndex);
+	VkMeshBundleVS& vkMeshBundle = m_meshBundles.at(bundleIndex);
 
 	{
-		const SharedBufferData& vertexSharedData = meshManager.GetVertexSharedData();
+		const SharedBufferData& vertexSharedData        = vkMeshBundle.GetVertexSharedData();
 		m_vertexBuffer.RelinquishMemory(vertexSharedData);
 
-		const SharedBufferData& indexSharedData = meshManager.GetIndexSharedData();
+		const SharedBufferData& indexSharedData         = vkMeshBundle.GetIndexSharedData();
 		m_indexBuffer.RelinquishMemory(indexSharedData);
 
-		const SharedBufferData& perMeshSharedData = meshManager.GetPerMeshSharedData();
+		const SharedBufferData& perMeshSharedData       = vkMeshBundle.GetPerMeshSharedData();
 		m_perMeshDataBuffer.RelinquishMemory(perMeshSharedData);
 
-		const SharedBufferData& perMeshBundleSharedData = meshManager.GetPerMeshBundleSharedData();
+		const SharedBufferData& perMeshBundleSharedData = vkMeshBundle.GetPerMeshBundleSharedData();
 		m_perMeshBundleDataBuffer.RelinquishMemory(perMeshBundleSharedData);
 	}
 }
 
 void ModelManagerVSIndirect::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerVertexShader& meshManager, TemporaryDataBufferGPU& tempBuffer
+	VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
-	meshManager.SetMeshBundle(
+	vkMeshBundle.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_perMeshDataBuffer,
 		m_perMeshBundleDataBuffer, tempBuffer
 	);
@@ -312,7 +312,7 @@ void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noex
 	{
 		const std::uint32_t meshBundleIndex  = bundle.GetMeshBundleIndex();
 
-		const MeshManagerVertexShader& meshBundle = m_meshBundles.at(
+		const VkMeshBundleVS& meshBundle = m_meshBundles.at(
 			static_cast<size_t>(meshBundleIndex)
 		);
 
@@ -480,7 +480,7 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
 		// Mesh
-		const MeshManagerVertexShader& meshBundle = m_meshBundles.at(
+		const VkMeshBundleVS& meshBundle = m_meshBundles.at(
 			static_cast<size_t>(modelBundle.GetMeshBundleIndex())
 		);
 		meshBundle.Bind(graphicsBuffer);
@@ -580,28 +580,28 @@ void ModelManagerMS::ConfigureModelBundle(
 
 void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
 {
-	MeshManagerMeshShader& meshManager = m_meshBundles.at(bundleIndex);
+	VkMeshBundleMS& vkMeshBundle = m_meshBundles.at(bundleIndex);
 
 	{
-		const SharedBufferData& vertexSharedData        = meshManager.GetVertexSharedData();
+		const SharedBufferData& vertexSharedData        = vkMeshBundle.GetVertexSharedData();
 		m_vertexBuffer.RelinquishMemory(vertexSharedData);
 
-		const SharedBufferData& vertexIndicesSharedData = meshManager.GetVertexIndicesSharedData();
+		const SharedBufferData& vertexIndicesSharedData = vkMeshBundle.GetVertexIndicesSharedData();
 		m_vertexIndicesBuffer.RelinquishMemory(vertexIndicesSharedData);
 
-		const SharedBufferData& primIndicesSharedData   = meshManager.GetPrimIndicesSharedData();
+		const SharedBufferData& primIndicesSharedData   = vkMeshBundle.GetPrimIndicesSharedData();
 		m_primIndicesBuffer.RelinquishMemory(primIndicesSharedData);
 
-		const SharedBufferData& perMeshletSharedData    = meshManager.GetPerMeshletSharedData();
+		const SharedBufferData& perMeshletSharedData    = vkMeshBundle.GetPerMeshletSharedData();
 		m_perMeshletDataBuffer.RelinquishMemory(perMeshletSharedData);
 	}
 }
 
 void ModelManagerMS::ConfigureMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-	MeshManagerMeshShader& meshManager, TemporaryDataBufferGPU& tempBuffer
+	VkMeshBundleMS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
 ) {
-	meshManager.SetMeshBundle(
+	vkMeshBundle.SetMeshBundle(
 		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
 		m_primIndicesBuffer, m_perMeshletDataBuffer, tempBuffer
 	);
@@ -611,7 +611,7 @@ void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
 	constexpr std::uint32_t modelConstantSize = ModelBundleMSIndividual::GetConstantBufferSize();
-	constexpr std::uint32_t meshConstantSize  = MeshManagerMeshShader::GetConstantBufferSize();
+	constexpr std::uint32_t meshConstantSize  = VkMeshBundleMS::GetConstantBufferSize();
 
 	layout.AddPushConstantRange(
 		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
@@ -690,14 +690,14 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		const auto meshBundleIndex = static_cast<size_t>(
 			modelBundle.GetMeshBundleIndex()
 		);
-		const MeshManagerMeshShader& meshBundle = m_meshBundles.at(meshBundleIndex);
+		const VkMeshBundleMS& meshBundle = m_meshBundles.at(meshBundleIndex);
 
 		constexpr std::uint32_t constantBufferOffset
 			= ModelBundleMSIndividual::GetConstantBufferSize();
 
-		constexpr std::uint32_t constBufferSize = MeshManagerMeshShader::GetConstantBufferSize();
+		constexpr std::uint32_t constBufferSize = VkMeshBundleMS::GetConstantBufferSize();
 
-		const MeshManagerMeshShader::MeshBundleDetailsMS meshBundleDetailsMS
+		const VkMeshBundleMS::MeshBundleDetailsMS meshBundleDetailsMS
 			= meshBundle.GetMeshBundleDetailsMS();
 
 		vkCmdPushConstants(

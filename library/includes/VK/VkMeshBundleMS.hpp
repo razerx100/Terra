@@ -1,5 +1,5 @@
-#ifndef MESH_MANAGER_MESH_SHADER_HPP_
-#define MESH_MANAGER_MESH_SHADER_HPP_
+#ifndef VK_MESH_BUNDLE_MS_HPP_
+#define VK_MESH_BUNDLE_MS_HPP_
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <VkResources.hpp>
@@ -8,7 +8,7 @@
 
 #include <MeshBundle.hpp>
 
-class MeshManagerMeshShader
+class VkMeshBundleMS
 {
 public:
 	// In GLSL, vec3 are actually vec4. So, whether it is a vec3 or vec4, it would
@@ -39,7 +39,7 @@ public:
 	};
 
 public:
-	MeshManagerMeshShader();
+	VkMeshBundleMS();
 
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
@@ -119,10 +119,10 @@ private:
 	MeshBundleTemporaryDetails m_bundleDetails;
 
 public:
-	MeshManagerMeshShader(const MeshManagerMeshShader&) = delete;
-	MeshManagerMeshShader& operator=(const MeshManagerMeshShader&) = delete;
+	VkMeshBundleMS(const VkMeshBundleMS&) = delete;
+	VkMeshBundleMS& operator=(const VkMeshBundleMS&) = delete;
 
-	MeshManagerMeshShader(MeshManagerMeshShader&& other) noexcept
+	VkMeshBundleMS(VkMeshBundleMS&& other) noexcept
 		: m_vertexBufferSharedData{ other.m_vertexBufferSharedData },
 		m_vertexIndicesBufferSharedData{ other.m_vertexIndicesBufferSharedData },
 		m_primIndicesBufferSharedData{ other.m_primIndicesBufferSharedData },
@@ -133,7 +133,7 @@ public:
 		m_bundleDetails{ std::move(other.m_bundleDetails) }
 	{}
 
-	MeshManagerMeshShader& operator=(MeshManagerMeshShader&& other) noexcept
+	VkMeshBundleMS& operator=(VkMeshBundleMS&& other) noexcept
 	{
 		m_vertexBufferSharedData        = other.m_vertexBufferSharedData;
 		m_vertexIndicesBufferSharedData = other.m_vertexIndicesBufferSharedData;

@@ -1,13 +1,13 @@
-#include <MeshManagerVertexShader.hpp>
+#include <VkMeshBundleVS.hpp>
 #include <VectorToSharedPtr.hpp>
 
-MeshManagerVertexShader::MeshManagerVertexShader()
+VkMeshBundleVS::VkMeshBundleVS()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u }, m_indexBufferSharedData{ nullptr, 0u, 0u },
 	m_perMeshSharedData{ nullptr, 0u, 0u }, m_perMeshBundleSharedData{ nullptr, 0u, 0u },
 	m_bundleDetails {}
 {}
 
-void MeshManagerVertexShader::_setMeshBundle(
+void VkMeshBundleVS::_setMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
@@ -50,7 +50,7 @@ void MeshManagerVertexShader::_setMeshBundle(
 	m_bundleDetails = std::move(meshBundle->GetTemporaryBundleDetails());
 }
 
-void MeshManagerVertexShader::SetMeshBundle(
+void VkMeshBundleVS::SetMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	TemporaryDataBufferGPU& tempBuffer
@@ -63,7 +63,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 	);
 }
 
-void MeshManagerVertexShader::SetMeshBundle(
+void VkMeshBundleVS::SetMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& indexSharedBuffer,
 	SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
@@ -133,7 +133,7 @@ void MeshManagerVertexShader::SetMeshBundle(
 	);
 }
 
-void MeshManagerVertexShader::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
+void VkMeshBundleVS::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
 	VkBuffer vertexBuffers[]           = { m_vertexBufferSharedData.bufferData->Get() };
 	const VkDeviceSize vertexOffsets[] = { m_vertexBufferSharedData.offset };
