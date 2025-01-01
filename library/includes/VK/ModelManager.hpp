@@ -13,8 +13,8 @@
 #include <deque>
 #include <mutex>
 #include <ReusableVkBuffer.hpp>
-#include <GraphicsPipelineVertexShader.hpp>
-#include <GraphicsPipelineMeshShader.hpp>
+#include <GraphicsPipelineVS.hpp>
+#include <GraphicsPipelineMS.hpp>
 #include <ComputePipeline.hpp>
 #include <TemporaryDataBuffer.hpp>
 
@@ -318,7 +318,7 @@ class ModelManagerVSIndividual : public
 	ModelManager
 	<
 		ModelManagerVSIndividual,
-		GraphicsPipelineIndividualDraw,
+		GraphicsPipelineVSIndividualDraw,
 		VkMeshBundleVS,
 		ModelBundleVSIndividual
 	>
@@ -326,7 +326,7 @@ class ModelManagerVSIndividual : public
 	friend class ModelManager
 		<
 			ModelManagerVSIndividual,
-			GraphicsPipelineIndividualDraw,
+			GraphicsPipelineVSIndividualDraw,
 			VkMeshBundleVS,
 			ModelBundleVSIndividual
 		>;
@@ -386,7 +386,7 @@ class ModelManagerVSIndirect : public
 	ModelManager
 	<
 		ModelManagerVSIndirect,
-		GraphicsPipelineIndirectDraw,
+		GraphicsPipelineVSIndirectDraw,
 		VkMeshBundleVS,
 		ModelBundleVSIndirect
 	>
@@ -394,7 +394,7 @@ class ModelManagerVSIndirect : public
 	friend class ModelManager
 		<
 			ModelManagerVSIndirect,
-			GraphicsPipelineIndirectDraw,
+			GraphicsPipelineVSIndirectDraw,
 			VkMeshBundleVS,
 			ModelBundleVSIndirect
 		>;
@@ -568,7 +568,7 @@ class ModelManagerMS : public
 	ModelManager
 	<
 		ModelManagerMS,
-		GraphicsPipelineMeshShader,
+		GraphicsPipelineMS,
 		VkMeshBundleMS,
 		ModelBundleMSIndividual
 	>
@@ -576,7 +576,7 @@ class ModelManagerMS : public
 	friend class ModelManager
 		<
 			ModelManagerMS,
-			GraphicsPipelineMeshShader,
+			GraphicsPipelineMS,
 			VkMeshBundleMS,
 			ModelBundleMSIndividual
 		>;
