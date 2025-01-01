@@ -6,8 +6,8 @@
 #endif
 
 #include <Terra.hpp>
-#include <RenderEngineVertexShader.hpp>
-#include <RenderEngineMeshShader.hpp>
+#include <RenderEngineVS.hpp>
+#include <RenderEngineMS.hpp>
 
 Terra::Terra(
 	std::string_view appName,

@@ -3,8 +3,8 @@
 
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
-#include <RenderEngineVertexShader.hpp>
-#include <RenderEngineMeshShader.hpp>
+#include <RenderEngineVS.hpp>
+#include <RenderEngineMS.hpp>
 
 namespace Constants
 {
