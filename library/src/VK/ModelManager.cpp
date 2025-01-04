@@ -61,7 +61,8 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_pipelineLayoutCS{ VK_NULL_HANDLE }, m_computePipeline{},
-	m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{}
+	m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{},
+	m_oldBufferCopyNecessary{ false }
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
@@ -158,6 +159,8 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	m_modelBundlesCS.emplace_back(std::move(modelBundleCS));
 
 	m_argumentCount += modelBundleObj.GetModelCount();
+
+	m_oldBufferCopyNecessary = true;
 
 	UpdateDispatchX();
 }

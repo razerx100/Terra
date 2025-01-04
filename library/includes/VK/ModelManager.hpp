@@ -34,7 +34,7 @@ public:
 	ModelManager(VkDevice device, MemoryManager* memoryManager)
 		: m_device{ device }, m_memoryManager{ memoryManager },
 		m_graphicsPipelineLayout{ VK_NULL_HANDLE }, m_renderPass{ VK_NULL_HANDLE }, m_shaderPath{},
-		m_graphicsPipelines{}, m_modelBundles{}, m_oldBufferCopyNecessary{ false }
+		m_graphicsPipelines{}, m_modelBundles{}
 	{}
 
 	static void SetGraphicsConstantRange(PipelineLayout& layout) noexcept
@@ -88,8 +88,6 @@ public:
 			const std::uint32_t bundleID = modelBundleObj.GetID();
 
 			AddModelBundle(std::move(modelBundleObj));
-
-			m_oldBufferCopyNecessary = true;
 
 			return bundleID;
 		}
@@ -250,7 +248,6 @@ protected:
 	std::wstring                 m_shaderPath;
 	std::vector<Pipeline>        m_graphicsPipelines;
 	std::vector<ModelBundleType> m_modelBundles;
-	bool                         m_oldBufferCopyNecessary;
 
 public:
 	ModelManager(const ModelManager&) = delete;
@@ -263,8 +260,7 @@ public:
 		m_renderPass{ other.m_renderPass },
 		m_shaderPath{ std::move(other.m_shaderPath) },
 		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
-		m_modelBundles{ std::move(other.m_modelBundles) },
-		m_oldBufferCopyNecessary{ other.m_oldBufferCopyNecessary }
+		m_modelBundles{ std::move(other.m_modelBundles) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
@@ -275,7 +271,6 @@ public:
 		m_shaderPath             = std::move(other.m_shaderPath);
 		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
 		m_modelBundles           = std::move(other.m_modelBundles);
-		m_oldBufferCopyNecessary = other.m_oldBufferCopyNecessary;
 
 		return *this;
 	}
@@ -433,6 +428,7 @@ private:
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect>    m_modelBundlesCS;
+	bool                                  m_oldBufferCopyNecessary;
 
 	// Vertex Shader ones
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
@@ -469,25 +465,27 @@ public:
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
-		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
+		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) },
+		m_oldBufferCopyNecessary{ other.m_oldBufferCopyNecessary }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
 		ModelManager::operator=(std::move(other));
-		m_argumentInputBuffers  = std::move(other.m_argumentInputBuffers);
-		m_argumentOutputBuffers = std::move(other.m_argumentOutputBuffers);
-		m_modelIndicesVSBuffers = std::move(other.m_modelIndicesVSBuffers);
-		m_cullingDataBuffer     = std::move(other.m_cullingDataBuffer);
-		m_counterBuffers        = std::move(other.m_counterBuffers);
-		m_counterResetBuffer    = std::move(other.m_counterResetBuffer);
-		m_meshBundleIndexBuffer = std::move(other.m_meshBundleIndexBuffer);
-		m_perModelDataCSBuffer  = std::move(other.m_perModelDataCSBuffer);
-		m_pipelineLayoutCS      = other.m_pipelineLayoutCS;
-		m_computePipeline       = std::move(other.m_computePipeline);
-		m_queueIndices3         = other.m_queueIndices3;
-		m_dispatchXCount        = other.m_dispatchXCount;
-		m_argumentCount         = other.m_argumentCount;
-		m_modelBundlesCS        = std::move(other.m_modelBundlesCS);
+		m_argumentInputBuffers   = std::move(other.m_argumentInputBuffers);
+		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
+		m_modelIndicesVSBuffers  = std::move(other.m_modelIndicesVSBuffers);
+		m_cullingDataBuffer      = std::move(other.m_cullingDataBuffer);
+		m_counterBuffers         = std::move(other.m_counterBuffers);
+		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
+		m_meshBundleIndexBuffer  = std::move(other.m_meshBundleIndexBuffer);
+		m_perModelDataCSBuffer   = std::move(other.m_perModelDataCSBuffer);
+		m_pipelineLayoutCS       = other.m_pipelineLayoutCS;
+		m_computePipeline        = std::move(other.m_computePipeline);
+		m_queueIndices3          = other.m_queueIndices3;
+		m_dispatchXCount         = other.m_dispatchXCount;
+		m_argumentCount          = other.m_argumentCount;
+		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
+		m_oldBufferCopyNecessary = other.m_oldBufferCopyNecessary;
 
 		return *this;
 	}
