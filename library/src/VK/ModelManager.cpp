@@ -3,16 +3,8 @@
 #include <VkResourceBarriers2.hpp>
 
 // Model Manager VS Individual
-ModelManagerVSIndividual::ModelManagerVSIndividual(
-	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3
-) : ModelManager{ device, memoryManager },
-	m_vertexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}, m_indexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}
+ModelManagerVSIndividual::ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager)
+	: ModelManager{ device, memoryManager }
 {}
 
 void ModelManagerVSIndividual::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
@@ -25,47 +17,16 @@ void ModelManagerVSIndividual::_setGraphicsConstantRange(PipelineLayout& layout)
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
 	ModelBundleVSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundle>&& modelBundle, TemporaryDataBufferGPU&// Not needed in this system.
+	std::shared_ptr<ModelBundle>&& modelBundle,
+	[[maybe_unused]] StagingBufferManager& stagingBufferMan,
+	[[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
 ) const noexcept {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
 }
 
-void ModelManagerVSIndividual::ConfigureRemoveMesh(size_t bundleIndex) noexcept
-{
-	VkMeshBundleVS& vkMeshBundle = m_meshBundles.at(bundleIndex);
-
-	{
-		const SharedBufferData& vertexSharedData = vkMeshBundle.GetVertexSharedData();
-		m_vertexBuffer.RelinquishMemory(vertexSharedData);
-
-		const SharedBufferData& indexSharedData = vkMeshBundle.GetIndexSharedData();
-		m_indexBuffer.RelinquishMemory(indexSharedData);
-	}
-}
-
-void ModelManagerVSIndividual::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-	VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
-) {
-	vkMeshBundle.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer,
-		tempBuffer
-	);
-}
-
-void ModelManagerVSIndividual::CopyOldBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept
-{
-	if (m_oldBufferCopyNecessary)
-	{
-		m_indexBuffer.CopyOldBuffer(transferCmdBuffer);
-		m_vertexBuffer.CopyOldBuffer(transferCmdBuffer);
-
-		m_oldBufferCopyNecessary = false;
-	}
-}
-
-void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
-{
+void ModelManagerVSIndividual::Draw(
+	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager
+) const noexcept {
 	auto previousPSOIndex = std::numeric_limits<size_t>::max();
 
 	for (const ModelBundleVSIndividual& modelBundle : m_modelBundles)
@@ -74,7 +35,7 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
 		// Mesh
-		const VkMeshBundleVS& meshBundle = m_meshBundles.at(
+		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(
 			static_cast<size_t>(modelBundle.GetMeshBundleIndex())
 		);
 		meshBundle.Bind(graphicsBuffer);
@@ -86,10 +47,9 @@ void ModelManagerVSIndividual::Draw(const VKCommandBuffer& graphicsBuffer) const
 
 // Model Manager VS Indirect.
 ModelManagerVSIndirect::ModelManagerVSIndirect(
-	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-	QueueIndices3 queueIndices3, std::uint32_t frameCount
-) : ModelManager{ device, memoryManager },
-	m_stagingBufferMan{ stagingBufferMan }, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
+	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3,
+	std::uint32_t frameCount
+) : ModelManager{ device, memoryManager }, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
 	m_modelIndicesVSBuffers{},
 	m_cullingDataBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -98,18 +58,6 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_meshBundleIndexBuffer{ device, memoryManager, frameCount },
 	m_perModelDataCSBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
-	}, m_vertexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}, m_indexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}, m_perMeshDataBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
-	}, m_perMeshBundleDataBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_pipelineLayoutCS{ VK_NULL_HANDLE }, m_computePipeline{},
@@ -184,7 +132,8 @@ void ModelManagerVSIndirect::UpdateDispatchX() noexcept
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
 	ModelBundleVSIndirect& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundle>&& modelBundle, TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle, StagingBufferManager& stagingBufferMan,
+	TemporaryDataBufferGPU& tempBuffer
 ) {
 	ModelBundleCSIndirect modelBundleCS{};
 
@@ -198,7 +147,7 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	UpdateCounterResetValues();
 
 	modelBundleCS.CreateBuffers(
-		*m_stagingBufferMan, m_argumentInputBuffers, m_cullingDataBuffer,
+		stagingBufferMan, m_argumentInputBuffers, m_cullingDataBuffer,
 		m_perModelDataCSBuffer, modelBundleObj.GetModelIndices(), tempBuffer
 	);
 
@@ -267,37 +216,9 @@ void ModelManagerVSIndirect::ConfigureModelBundleRemove(size_t bundleIndex) noex
 	);
 }
 
-void ModelManagerVSIndirect::ConfigureRemoveMesh(size_t bundleIndex) noexcept
-{
-	VkMeshBundleVS& vkMeshBundle = m_meshBundles.at(bundleIndex);
-
-	{
-		const SharedBufferData& vertexSharedData        = vkMeshBundle.GetVertexSharedData();
-		m_vertexBuffer.RelinquishMemory(vertexSharedData);
-
-		const SharedBufferData& indexSharedData         = vkMeshBundle.GetIndexSharedData();
-		m_indexBuffer.RelinquishMemory(indexSharedData);
-
-		const SharedBufferData& perMeshSharedData       = vkMeshBundle.GetPerMeshSharedData();
-		m_perMeshDataBuffer.RelinquishMemory(perMeshSharedData);
-
-		const SharedBufferData& perMeshBundleSharedData = vkMeshBundle.GetPerMeshBundleSharedData();
-		m_perMeshBundleDataBuffer.RelinquishMemory(perMeshBundleSharedData);
-	}
-}
-
-void ModelManagerVSIndirect::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-	VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
-) {
-	vkMeshBundle.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_indexBuffer, m_perMeshDataBuffer,
-		m_perMeshBundleDataBuffer, tempBuffer
-	);
-}
-
-void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
-{
+void ModelManagerVSIndirect::UpdatePerFrame(
+	VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
+) const noexcept {
 	std::uint8_t* bufferOffsetPtr = m_meshBundleIndexBuffer.GetInstancePtr(frameIndex);
 	constexpr size_t strideSize   = sizeof(std::uint32_t);
 	VkDeviceSize bufferOffset     = 0u;
@@ -312,7 +233,7 @@ void ModelManagerVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noex
 	{
 		const std::uint32_t meshBundleIndex  = bundle.GetMeshBundleIndex();
 
-		const VkMeshBundleVS& meshBundle = m_meshBundles.at(
+		const VkMeshBundleVS& meshBundle     = meshManager.GetBundle(
 			static_cast<size_t>(meshBundleIndex)
 		);
 
@@ -377,14 +298,6 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_perMeshDataBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_COMPUTE_BIT
-		);
-		descriptorBuffer.AddBinding(
-			s_perMeshBundleDataBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_COMPUTE_BIT
-		);
-		descriptorBuffer.AddBinding(
 			s_meshBundleIndexBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
@@ -395,7 +308,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 	}
 }
 
-void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
+void ModelManagerVSIndirect::SetDescriptorBufferCS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
 	const size_t frameCount = std::size(descriptorBuffers);
@@ -432,21 +345,6 @@ void ModelManagerVSIndirect::SetDescriptorBufferCSOfModels(
 	}
 }
 
-void ModelManagerVSIndirect::SetDescriptorBufferCSOfMeshes(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
-) const {
-	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
-	{
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_perMeshDataBuffer.GetBuffer(), s_perMeshDataBindingSlot, csSetLayoutIndex, 0u
-		);
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_perMeshBundleDataBuffer.GetBuffer(), s_perMeshBundleDataBindingSlot, csSetLayoutIndex,
-			0u
-		);
-	}
-}
-
 void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
 {
 	VkCommandBuffer cmdBuffer = computeBuffer.Get();
@@ -470,8 +368,9 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
 
-void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& graphicsBuffer) const noexcept
-{
+void ModelManagerVSIndirect::Draw(
+	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager
+) const noexcept {
 	auto previousPSOIndex = std::numeric_limits<size_t>::max();
 
 	for (const ModelBundleVSIndirect& modelBundle : m_modelBundles)
@@ -480,7 +379,7 @@ void ModelManagerVSIndirect::Draw(size_t frameIndex, const VKCommandBuffer& grap
 		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
 
 		// Mesh
-		const VkMeshBundleVS& meshBundle = m_meshBundles.at(
+		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(
 			static_cast<size_t>(modelBundle.GetMeshBundleIndex())
 		);
 		meshBundle.Bind(graphicsBuffer);
@@ -495,11 +394,6 @@ void ModelManagerVSIndirect::CopyOldBuffers(const VKCommandBuffer& transferBuffe
 	if (m_oldBufferCopyNecessary)
 	{
 		m_perModelDataCSBuffer.CopyOldBuffer(transferBuffer);
-		m_vertexBuffer.CopyOldBuffer(transferBuffer);
-		m_indexBuffer.CopyOldBuffer(transferBuffer);
-		m_perMeshDataBuffer.CopyOldBuffer(transferBuffer);
-		m_perMeshBundleDataBuffer.CopyOldBuffer(transferBuffer);
-
 		// I don't think copying is needed for the Output Argument
 		// and the counter buffers. As their data will be only
 		// needed on the same frame and not afterwards.
@@ -551,60 +445,17 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 }
 
 // Model Manager MS.
-ModelManagerMS::ModelManagerMS(
-	VkDevice device, MemoryManager* memoryManager, StagingBufferManager* stagingBufferMan,
-	QueueIndices3 queueIndices3
-) : ModelManager{ device, memoryManager },
-	m_stagingBufferMan{ stagingBufferMan },
-	m_perMeshletDataBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}, m_vertexBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}, m_vertexIndicesBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}, m_primIndicesBuffer{
-		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		queueIndices3.ResolveQueueIndices<QueueIndicesTG>()
-	}
+ModelManagerMS::ModelManagerMS(VkDevice device, MemoryManager* memoryManager)
+	: ModelManager{ device, memoryManager }
 {}
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundle>&& modelBundle, [[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle,
+	[[maybe_unused]] StagingBufferManager& stagingBufferMan,
+	[[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
 ) {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
-}
-
-void ModelManagerMS::ConfigureRemoveMesh(size_t bundleIndex) noexcept
-{
-	VkMeshBundleMS& vkMeshBundle = m_meshBundles.at(bundleIndex);
-
-	{
-		const SharedBufferData& vertexSharedData        = vkMeshBundle.GetVertexSharedData();
-		m_vertexBuffer.RelinquishMemory(vertexSharedData);
-
-		const SharedBufferData& vertexIndicesSharedData = vkMeshBundle.GetVertexIndicesSharedData();
-		m_vertexIndicesBuffer.RelinquishMemory(vertexIndicesSharedData);
-
-		const SharedBufferData& primIndicesSharedData   = vkMeshBundle.GetPrimIndicesSharedData();
-		m_primIndicesBuffer.RelinquishMemory(primIndicesSharedData);
-
-		const SharedBufferData& perMeshletSharedData    = vkMeshBundle.GetPerMeshletSharedData();
-		m_perMeshletDataBuffer.RelinquishMemory(perMeshletSharedData);
-	}
-}
-
-void ModelManagerMS::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-	VkMeshBundleMS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
-) {
-	vkMeshBundle.SetMeshBundle(
-		std::move(meshBundle), stagingBufferMan, m_vertexBuffer, m_vertexIndicesBuffer,
-		m_primIndicesBuffer, m_perMeshletDataBuffer, tempBuffer
-	);
 }
 
 void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
@@ -619,65 +470,9 @@ void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 	);
 }
 
-void ModelManagerMS::CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept
-{
-	if (m_oldBufferCopyNecessary)
-	{
-		m_perMeshletDataBuffer.CopyOldBuffer(transferBuffer);
-		m_vertexBuffer.CopyOldBuffer(transferBuffer);
-		m_vertexIndicesBuffer.CopyOldBuffer(transferBuffer);
-		m_primIndicesBuffer.CopyOldBuffer(transferBuffer);
-
-		m_oldBufferCopyNecessary = false;
-	}
-}
-
-void ModelManagerMS::SetDescriptorBufferLayout(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
+void ModelManagerMS::Draw(
+	const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager
 ) const noexcept {
-	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
-	{
-		descriptorBuffer.AddBinding(
-			s_perMeshletBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT
-		);
-		descriptorBuffer.AddBinding(
-			s_vertexBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_MESH_BIT_EXT
-		);
-		descriptorBuffer.AddBinding(
-			s_vertexIndicesBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_MESH_BIT_EXT
-		);
-		descriptorBuffer.AddBinding(
-			s_primIndicesBufferBindingSlot, msSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
-			VK_SHADER_STAGE_MESH_BIT_EXT
-		);
-	}
-}
-
-void ModelManagerMS::SetDescriptorBufferOfMeshes(
-	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
-) const {
-	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
-	{
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_vertexBuffer.GetBuffer(), s_vertexBufferBindingSlot, msSetLayoutIndex, 0u
-		);
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_vertexIndicesBuffer.GetBuffer(), s_vertexIndicesBufferBindingSlot, msSetLayoutIndex, 0u
-		);
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_primIndicesBuffer.GetBuffer(), s_primIndicesBufferBindingSlot, msSetLayoutIndex, 0u
-		);
-		descriptorBuffer.SetStorageBufferDescriptor(
-			m_perMeshletDataBuffer.GetBuffer(), s_perMeshletBufferBindingSlot, msSetLayoutIndex, 0u
-		);
-	}
-}
-
-void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
-{
 	auto previousPSOIndex     = std::numeric_limits<size_t>::max();
 
 	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
@@ -690,7 +485,7 @@ void ModelManagerMS::Draw(const VKCommandBuffer& graphicsBuffer) const noexcept
 		const auto meshBundleIndex = static_cast<size_t>(
 			modelBundle.GetMeshBundleIndex()
 		);
-		const VkMeshBundleMS& meshBundle = m_meshBundles.at(meshBundleIndex);
+		const VkMeshBundleMS& meshBundle = meshManager.GetBundle(meshBundleIndex);
 
 		constexpr std::uint32_t constantBufferOffset
 			= ModelBundleMSIndividual::GetConstantBufferSize();

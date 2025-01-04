@@ -5,10 +5,20 @@
 
 class RenderEngineVSIndividualDeviceExtension : public RenderEngineDeviceExtension {};
 
-class RenderEngineVSIndividual
-	: public RenderEngineCommon<ModelManagerVSIndividual, RenderEngineVSIndividual>
+class RenderEngineVSIndividual : public
+	RenderEngineCommon
+	<
+		ModelManagerVSIndividual,
+		MeshManagerVSIndividual,
+		RenderEngineVSIndividual
+	>
 {
-	friend class RenderEngineCommon<ModelManagerVSIndividual, RenderEngineVSIndividual>;
+	friend class RenderEngineCommon
+		<
+			ModelManagerVSIndividual,
+			MeshManagerVSIndividual,
+			RenderEngineVSIndividual
+		>;
 
 public:
 	RenderEngineVSIndividual(
@@ -28,8 +38,7 @@ public:
 private:
 	[[nodiscard]]
 	static ModelManagerVSIndividual GetModelManager(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
-		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
 	);
 	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
@@ -52,6 +61,8 @@ private:
 	void SetGraphicsDescriptorBufferLayout();
 	void SetGraphicsDescriptors();
 
+	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
+
 private:
 	static constexpr std::uint32_t s_cameraBindingSlot = 1u;
 
@@ -72,10 +83,20 @@ public:
 
 class RenderEngineVSIndirectDeviceExtension : public RenderEngineDeviceExtension {};
 
-class RenderEngineVSIndirect
-	: public RenderEngineCommon<ModelManagerVSIndirect, RenderEngineVSIndirect>
+class RenderEngineVSIndirect : public
+	RenderEngineCommon
+	<
+		ModelManagerVSIndirect,
+		MeshManagerVSIndirect,
+		RenderEngineVSIndirect
+	>
 {
-	friend class RenderEngineCommon<ModelManagerVSIndirect, RenderEngineVSIndirect>;
+	friend class RenderEngineCommon
+		<
+			ModelManagerVSIndirect,
+			MeshManagerVSIndirect,
+			RenderEngineVSIndirect
+		>;
 
 public:
 	RenderEngineVSIndirect(
@@ -95,8 +116,7 @@ public:
 private:
 	[[nodiscard]]
 	static ModelManagerVSIndirect GetModelManager(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
-		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
 	);
 	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
@@ -120,16 +140,18 @@ private:
 	);
 
 	void SetGraphicsDescriptorBufferLayout();
-	void SetGraphicsDescriptors();
+	void SetModelGraphicsDescriptors();
 
 	void SetComputeDescriptorBufferLayout();
-	void SetComputeDescriptors();
+	void SetModelComputeDescriptors();
 
 	void SetupPipelineStages();
 
+	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
+
 private:
 	// Graphics
-	static constexpr std::uint32_t s_cameraBindingSlot        = 2u;
+	static constexpr std::uint32_t s_cameraBindingSlot = 2u;
 
 	// Compute
 	static constexpr std::uint32_t s_computePipelineSetLayoutCount = 1u;

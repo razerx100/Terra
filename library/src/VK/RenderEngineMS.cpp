@@ -32,7 +32,7 @@ RenderEngineMS::RenderEngineMS(
 void RenderEngineMS::SetGraphicsDescriptorBufferLayout()
 {
 	// The layout shouldn't change throughout the runtime.
-	m_modelManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+	m_meshManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
@@ -59,7 +59,7 @@ void RenderEngineMS::SetupPipelineStages()
 	m_pipelineStages.emplace_back(&RenderEngineMS::DrawingStage);
 }
 
-void RenderEngineMS::SetGraphicsDescriptors()
+void RenderEngineMS::SetModelGraphicsDescriptors()
 {
 	const auto frameCount = std::size(m_graphicsDescriptorBuffers);
 
@@ -81,12 +81,12 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
 	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_modelBuffers, m_temporaryDataBuffer
+		std::move(modelBundle), fragmentShader, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
-	SetGraphicsDescriptors();
+	SetModelGraphicsDescriptors();
 
 	m_copyNecessary = true;
 
@@ -95,11 +95,11 @@ std::uint32_t RenderEngineMS::AddModelBundle(
 
 std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
 {
-	const std::uint32_t index = m_modelManager.AddMeshBundle(
+	const std::uint32_t index = m_meshManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_modelManager.SetDescriptorBufferOfMeshes(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+	m_meshManager.SetDescriptorBuffer(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
 	m_copyNecessary = true;
 
@@ -126,7 +126,7 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_modelManager.CopyOldBuffers(transferCmdBuffer);
+			m_meshManager.CopyOldBuffers(transferCmdBuffer);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
 			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
@@ -181,7 +181,7 @@ VkSemaphore RenderEngineMS::DrawingStage(
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
-		m_modelManager.Draw(graphicsCmdBufferScope);
+		m_modelManager.Draw(graphicsCmdBufferScope, m_meshManager);
 
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}
@@ -209,13 +209,9 @@ VkSemaphore RenderEngineMS::DrawingStage(
 
 ModelManagerMS RenderEngineMS::GetModelManager(
 	const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
-	StagingBufferManager* stagingBufferMan, [[maybe_unused]] std::uint32_t frameCount
+	[[maybe_unused]] std::uint32_t frameCount
 ) {
-	return ModelManagerMS
-	{
-		deviceManager.GetLogicalDevice(), memoryManager, stagingBufferMan,
-		deviceManager.GetQueueFamilyManager().GetAllIndices()
-	};
+	return ModelManagerMS{ deviceManager.GetLogicalDevice(), memoryManager };
 }
 
 ModelBuffers RenderEngineMS::ConstructModelBuffers(

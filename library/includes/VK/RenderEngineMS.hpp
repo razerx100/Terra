@@ -9,9 +9,20 @@ public:
 	void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept override;
 };
 
-class RenderEngineMS : public RenderEngineCommon<ModelManagerMS, RenderEngineMS>
+class RenderEngineMS : public
+	RenderEngineCommon
+	<
+		ModelManagerMS,
+		MeshManagerMS,
+		RenderEngineMS
+	>
 {
-	friend class RenderEngineCommon<ModelManagerMS, RenderEngineMS>;
+	friend class RenderEngineCommon
+		<
+			ModelManagerMS,
+			MeshManagerMS,
+			RenderEngineMS
+		>;
 
 public:
 	RenderEngineMS(
@@ -31,8 +42,7 @@ public:
 private:
 	[[nodiscard]]
 	static ModelManagerMS GetModelManager(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
-		StagingBufferManager* stagingBufferMan, std::uint32_t frameCount
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
 	);
 	[[nodiscard]]
 	static ModelBuffers ConstructModelBuffers(
@@ -51,9 +61,11 @@ private:
 	);
 
 	void SetGraphicsDescriptorBufferLayout();
-	void SetGraphicsDescriptors();
+	void SetModelGraphicsDescriptors();
 
 	void SetupPipelineStages();
+
+	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 
 private:
 	// Graphics
