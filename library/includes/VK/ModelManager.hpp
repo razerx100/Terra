@@ -18,50 +18,26 @@
 #include <ComputePipeline.hpp>
 #include <TemporaryDataBuffer.hpp>
 #include <MeshManager.hpp>
+#include <PipelineManager.hpp>
 
 #include <VkModelBuffer.hpp>
 #include <VkModelBundle.hpp>
 #include <Shader.hpp>
 
-template<
-	class Derived,
-	class Pipeline,
-	class ModelBundleType
->
+template<class Derived, class ModelBundleType>
 class ModelManager
 {
 public:
-	ModelManager(VkDevice device, MemoryManager* memoryManager)
-		: m_device{ device }, m_memoryManager{ memoryManager },
-		m_graphicsPipelineLayout{ VK_NULL_HANDLE }, m_renderPass{ VK_NULL_HANDLE }, m_shaderPath{},
-		m_graphicsPipelines{}, m_modelBundles{}
-	{}
+	ModelManager(MemoryManager* memoryManager) : m_memoryManager{ memoryManager }, m_modelBundles{} {}
 
 	static void SetGraphicsConstantRange(PipelineLayout& layout) noexcept
 	{
 		Derived::_setGraphicsConstantRange(layout);
 	}
 
-	void SetGraphicsPipelineLayout(VkPipelineLayout layout) noexcept
-	{
-		m_graphicsPipelineLayout = layout;
-	}
-
-	void SetRenderPass(VkRenderPass renderPass) noexcept
-	{
-		m_renderPass = renderPass;
-	}
-
-	void SetShaderPath(std::wstring shaderPath)
-	{
-		m_shaderPath = std::move(shaderPath);
-
-		static_cast<Derived*>(this)->ShaderPathSet();
-	}
-
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader,
+		std::shared_ptr<ModelBundle>&& modelBundle, std::uint32_t psoIndex,
 		ModelBuffers& modelBuffers, StagingBufferManager& stagingBufferMan,
 		TemporaryDataBufferGPU& tempBuffer
 	) {
@@ -80,8 +56,6 @@ public:
 				modelBundleObj, std::move(modelIndices), std::move(modelBundle),
 				stagingBufferMan, tempBuffer
 			);
-
-			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
 
 			modelBundleObj.SetPSOIndex(psoIndex);
 
@@ -113,19 +87,12 @@ public:
 		}
 	}
 
-	void AddPSO(const ShaderName& fragmentShader)
-	{
-		GetPSOIndex(fragmentShader);
-	}
-
-	void ChangePSO(std::uint32_t bundleID, const ShaderName& fragmentShader)
+	void ChangePSO(std::uint32_t bundleID, std::uint32_t psoIndex)
 	{
 		auto modelBundle = GetModelBundle(bundleID);
 
 		if (modelBundle != std::end(m_modelBundles))
 		{
-			const std::uint32_t psoIndex = GetPSOIndex(fragmentShader);
-
 			modelBundle->SetPSOIndex(psoIndex);
 
 			ModelBundleType modelBundleObj = std::move(*modelBundle);
@@ -136,56 +103,11 @@ public:
 		}
 	}
 
-	void RecreateGraphicsPipelines()
-	{
-		for (Pipeline& graphicsPipeline : m_graphicsPipelines)
-			graphicsPipeline.Recreate(m_device, m_graphicsPipelineLayout, m_renderPass, m_shaderPath);
-	}
-
 protected:
-	[[nodiscard]]
-	std::optional<std::uint32_t> TryToGetPSOIndex(const ShaderName& fragmentShader) const noexcept
-	{
-		auto result = std::ranges::find_if(m_graphicsPipelines,
-			[&fragmentShader](const Pipeline& pipeline)
-			{
-				return fragmentShader == pipeline.GetFragmentShader();
-			});
-
-		if (result != std::end(m_graphicsPipelines))
-			return static_cast<std::uint32_t>(std::distance(std::begin(m_graphicsPipelines), result));
-		else
-			return {};
-	}
-
-	// Adds a new PSO, if one can't be found.
-	std::uint32_t GetPSOIndex(const ShaderName& fragmentShader)
-	{
-		std::uint32_t psoIndex = 0u;
-
-		std::optional<std::uint32_t> oPSOIndex = TryToGetPSOIndex(fragmentShader);
-
-		if (!oPSOIndex)
-		{
-			psoIndex = static_cast<std::uint32_t>(std::size(m_graphicsPipelines));
-
-			Pipeline pipeline{};
-
-			pipeline.Create(
-				m_device, m_graphicsPipelineLayout, m_renderPass, m_shaderPath, fragmentShader
-			);
-
-			m_graphicsPipelines.emplace_back(std::move(pipeline));
-		}
-		else
-			psoIndex = oPSOIndex.value();
-
-		return psoIndex;
-	}
-
+	template<typename Pipeline>
 	void BindPipeline(
 		const ModelBundleType& modelBundle, const VKCommandBuffer& graphicsBuffer,
-		size_t& previousPSOIndex
+		const PipelineManager<Pipeline>& pipelineManager, size_t& previousPSOIndex
 	) const noexcept {
 		// PSO is more costly to bind, so the modelBundles are added in a way so they are sorted
 		// by their PSO indices. And we only bind a new PSO, if the previous one was different.
@@ -193,7 +115,7 @@ protected:
 
 		if (modelPSOIndex != previousPSOIndex)
 		{
-			m_graphicsPipelines[modelPSOIndex].Bind(graphicsBuffer);
+			pipelineManager.BindPipeline(modelPSOIndex, graphicsBuffer);
 
 			previousPSOIndex = modelPSOIndex;
 		}
@@ -241,12 +163,7 @@ private:
 	}
 
 protected:
-	VkDevice                     m_device;
 	MemoryManager*               m_memoryManager;
-	VkPipelineLayout             m_graphicsPipelineLayout;
-	VkRenderPass                 m_renderPass;
-	std::wstring                 m_shaderPath;
-	std::vector<Pipeline>        m_graphicsPipelines;
 	std::vector<ModelBundleType> m_modelBundles;
 
 public:
@@ -254,49 +171,30 @@ public:
 	ModelManager& operator=(const ModelManager&) = delete;
 
 	ModelManager(ModelManager&& other) noexcept
-		: m_device{ other.m_device },
-		m_memoryManager{ other.m_memoryManager },
-		m_graphicsPipelineLayout{ other.m_graphicsPipelineLayout },
-		m_renderPass{ other.m_renderPass },
-		m_shaderPath{ std::move(other.m_shaderPath) },
-		m_graphicsPipelines{ std::move(other.m_graphicsPipelines) },
+		: m_memoryManager{ other.m_memoryManager },
 		m_modelBundles{ std::move(other.m_modelBundles) }
 	{}
 	ModelManager& operator=(ModelManager&& other) noexcept
 	{
-		m_device                 = other.m_device;
-		m_memoryManager          = other.m_memoryManager;
-		m_graphicsPipelineLayout = other.m_graphicsPipelineLayout;
-		m_renderPass             = other.m_renderPass;
-		m_shaderPath             = std::move(other.m_shaderPath);
-		m_graphicsPipelines      = std::move(other.m_graphicsPipelines);
-		m_modelBundles           = std::move(other.m_modelBundles);
+		m_memoryManager = other.m_memoryManager;
+		m_modelBundles  = std::move(other.m_modelBundles);
 
 		return *this;
 	}
 };
 
-class ModelManagerVSIndividual : public
-	ModelManager
-	<
-		ModelManagerVSIndividual,
-		GraphicsPipelineVSIndividualDraw,
-		ModelBundleVSIndividual
-	>
+class ModelManagerVSIndividual : public ModelManager<ModelManagerVSIndividual, ModelBundleVSIndividual>
 {
-	friend class ModelManager
-		<
-			ModelManagerVSIndividual,
-			GraphicsPipelineVSIndividualDraw,
-			ModelBundleVSIndividual
-		>;
-	friend class ModelManagerVSIndividualTest;
+	friend class ModelManager<ModelManagerVSIndividual, ModelBundleVSIndividual>;
+
+	using Pipeline_t = GraphicsPipelineVSIndividualDraw;
 
 public:
-	ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager);
+	ModelManagerVSIndividual(MemoryManager* memoryManager);
 
 	void Draw(
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager
+		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
+		const PipelineManager<Pipeline_t>& pipelineManager
 	) const noexcept;
 
 private:
@@ -309,9 +207,6 @@ private:
 		StagingBufferManager& stagingBufferMan,
 		TemporaryDataBufferGPU& tempBuffer
 	) const noexcept;
-
-	// To create compute shader pipelines.
-	void ShaderPathSet() {}
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -328,21 +223,12 @@ public:
 	}
 };
 
-class ModelManagerVSIndirect : public
-	ModelManager
-	<
-		ModelManagerVSIndirect,
-		GraphicsPipelineVSIndirectDraw,
-		ModelBundleVSIndirect
-	>
+class ModelManagerVSIndirect : public ModelManager<ModelManagerVSIndirect, ModelBundleVSIndirect>
 {
-	friend class ModelManager
-		<
-			ModelManagerVSIndirect,
-			GraphicsPipelineVSIndirectDraw,
-			ModelBundleVSIndirect
-		>;
-	friend class ModelManagerVSIndirectTest;
+	friend class ModelManager<ModelManagerVSIndirect, ModelBundleVSIndirect>;
+
+	using GraphicsPipeline_t = GraphicsPipelineVSIndirectDraw;
+	using ComputePipeline_t  = ComputePipeline;
 
 	struct ConstantData
 	{
@@ -356,8 +242,6 @@ public:
 	);
 
 	void ResetCounterBuffer(const VKCommandBuffer& computeCmdBuffer, size_t frameIndex) const noexcept;
-
-	void SetComputePipelineLayout(VkPipelineLayout layout) noexcept;
 
 	static void SetComputeConstantRange(PipelineLayout& layout) noexcept;
 
@@ -380,9 +264,12 @@ public:
 
 	void Draw(
 		size_t frameIndex, const VKCommandBuffer& graphicsBuffer,
-		const MeshManagerVSIndirect& meshManager
+		const MeshManagerVSIndirect& meshManager,
+		const PipelineManager<GraphicsPipeline_t>& pipelineManager
 	) const noexcept;
-	void Dispatch(const VKCommandBuffer& computeBuffer) const noexcept;
+	void Dispatch(
+		const VKCommandBuffer& computeBuffer, const PipelineManager<ComputePipeline_t>& pipelineManager
+	) const noexcept;
 
 	void UpdatePerFrame(
 		VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
@@ -398,9 +285,6 @@ private:
 	);
 
 	void ConfigureModelBundleRemove(size_t bundleIndex) noexcept override;
-
-	// To create compute shader pipelines.
-	void ShaderPathSet();
 
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
@@ -420,8 +304,6 @@ private:
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshBundleIndexBuffer;
 	SharedBufferGPU                       m_perModelDataCSBuffer;
-	VkPipelineLayout                      m_pipelineLayoutCS;
-	ComputePipeline                       m_computePipeline;
 	QueueIndices3                         m_queueIndices3;
 	std::uint32_t                         m_dispatchXCount;
 	std::uint32_t                         m_argumentCount;
@@ -460,8 +342,6 @@ public:
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_meshBundleIndexBuffer{ std::move(other.m_meshBundleIndexBuffer) },
 		m_perModelDataCSBuffer{ std::move(other.m_perModelDataCSBuffer) },
-		m_pipelineLayoutCS{ other.m_pipelineLayoutCS },
-		m_computePipeline{ std::move(other.m_computePipeline) },
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
@@ -479,8 +359,6 @@ public:
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
 		m_meshBundleIndexBuffer  = std::move(other.m_meshBundleIndexBuffer);
 		m_perModelDataCSBuffer   = std::move(other.m_perModelDataCSBuffer);
-		m_pipelineLayoutCS       = other.m_pipelineLayoutCS;
-		m_computePipeline        = std::move(other.m_computePipeline);
 		m_queueIndices3          = other.m_queueIndices3;
 		m_dispatchXCount         = other.m_dispatchXCount;
 		m_argumentCount          = other.m_argumentCount;
@@ -491,27 +369,18 @@ public:
 	}
 };
 
-class ModelManagerMS : public
-	ModelManager
-	<
-		ModelManagerMS,
-		GraphicsPipelineMS,
-		ModelBundleMSIndividual
-	>
+class ModelManagerMS : public ModelManager<ModelManagerMS, ModelBundleMSIndividual>
 {
-	friend class ModelManager
-		<
-			ModelManagerMS,
-			GraphicsPipelineMS,
-			ModelBundleMSIndividual
-		>;
-	friend class ModelManagerMSTest;
+	friend class ModelManager<ModelManagerMS, ModelBundleMSIndividual>;
+
+	using Pipeline_t = GraphicsPipelineMS;
 
 public:
-	ModelManagerMS(VkDevice device, MemoryManager* memoryManager);
+	ModelManagerMS(MemoryManager* memoryManager);
 
 	void Draw(
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager
+		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
+		const PipelineManager<Pipeline_t>& pipelineManager
 	) const noexcept;
 
 private:
@@ -522,9 +391,6 @@ private:
 		std::shared_ptr<ModelBundle>&& modelBundle, StagingBufferManager& stagingBufferMan,
 		TemporaryDataBufferGPU& tempBuffer
 	);
-
-	// To create compute shader pipelines.
-	void ShaderPathSet() {}
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;

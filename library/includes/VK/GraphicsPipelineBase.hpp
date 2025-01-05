@@ -57,7 +57,7 @@ public:
 	}
 
 	[[nodiscard]]
-	ShaderName GetFragmentShader() const noexcept { return m_fragmentShader; }
+	ShaderName GetShaderName() const noexcept { return m_fragmentShader; }
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;

@@ -5,7 +5,15 @@ void ComputePipeline::Create(
 	VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
 	const std::wstring& shaderPath
 ) {
+	m_computeShader   = computeShader;
+
 	m_computePipeline = _createComputePipeline(device, computeLayout, computeShader, shaderPath);
+}
+
+void ComputePipeline::Recreate(
+	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
+) {
+	m_computePipeline = _createComputePipeline(device, computeLayout, m_computeShader, shaderPath);
 }
 
 std::unique_ptr<VkPipelineObject> ComputePipeline::_createComputePipeline(

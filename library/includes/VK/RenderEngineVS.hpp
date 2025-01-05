@@ -10,6 +10,7 @@ class RenderEngineVSIndividual : public
 	<
 		ModelManagerVSIndividual,
 		MeshManagerVSIndividual,
+		GraphicsPipelineVSIndividualDraw,
 		RenderEngineVSIndividual
 	>
 {
@@ -17,6 +18,7 @@ class RenderEngineVSIndividual : public
 		<
 			ModelManagerVSIndividual,
 			MeshManagerVSIndividual,
+			GraphicsPipelineVSIndividualDraw,
 			RenderEngineVSIndividual
 		>;
 
@@ -88,6 +90,7 @@ class RenderEngineVSIndirect : public
 	<
 		ModelManagerVSIndirect,
 		MeshManagerVSIndirect,
+		GraphicsPipelineVSIndirectDraw,
 		RenderEngineVSIndirect
 	>
 {
@@ -95,8 +98,11 @@ class RenderEngineVSIndirect : public
 		<
 			ModelManagerVSIndirect,
 			MeshManagerVSIndirect,
+			GraphicsPipelineVSIndirectDraw,
 			RenderEngineVSIndirect
 		>;
+
+	using ComputePipeline_t = ComputePipeline;
 
 public:
 	RenderEngineVSIndirect(
@@ -112,6 +118,8 @@ public:
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
+
+	void SetShaderPath(const std::wstring& shaderPath) override;
 
 private:
 	[[nodiscard]]
@@ -161,10 +169,11 @@ private:
 	static constexpr std::uint32_t s_cameraComputeBindingSlot       = 10u;
 
 private:
-	VkCommandQueue                  m_computeQueue;
-	std::vector<VKSemaphore>        m_computeWait;
-	std::vector<VkDescriptorBuffer> m_computeDescriptorBuffers;
-	PipelineLayout                  m_computePipelineLayout;
+	VkCommandQueue                     m_computeQueue;
+	std::vector<VKSemaphore>           m_computeWait;
+	std::vector<VkDescriptorBuffer>    m_computeDescriptorBuffers;
+	PipelineManager<ComputePipeline_t> m_computePipelineManager;
+	PipelineLayout                     m_computePipelineLayout;
 
 public:
 	RenderEngineVSIndirect(const RenderEngineVSIndirect&) = delete;
@@ -175,6 +184,7 @@ public:
 		m_computeQueue{ std::move(other.m_computeQueue) },
 		m_computeWait{ std::move(other.m_computeWait) },
 		m_computeDescriptorBuffers{ std::move(other.m_computeDescriptorBuffers) },
+		m_computePipelineManager{ std::move(other.m_computePipelineManager) },
 		m_computePipelineLayout{ std::move(other.m_computePipelineLayout) }
 	{}
 	RenderEngineVSIndirect& operator=(RenderEngineVSIndirect&& other) noexcept
@@ -183,6 +193,7 @@ public:
 		m_computeQueue             = std::move(other.m_computeQueue);
 		m_computeWait              = std::move(other.m_computeWait);
 		m_computeDescriptorBuffers = std::move(other.m_computeDescriptorBuffers);
+		m_computePipelineManager   = std::move(other.m_computePipelineManager);
 		m_computePipelineLayout    = std::move(other.m_computePipelineLayout);
 
 		return *this;

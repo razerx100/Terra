@@ -3,8 +3,8 @@
 #include <VkResourceBarriers2.hpp>
 
 // Model Manager VS Individual
-ModelManagerVSIndividual::ModelManagerVSIndividual(VkDevice device, MemoryManager* memoryManager)
-	: ModelManager{ device, memoryManager }
+ModelManagerVSIndividual::ModelManagerVSIndividual(MemoryManager* memoryManager)
+	: ModelManager{ memoryManager }
 {}
 
 void ModelManagerVSIndividual::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
@@ -25,14 +25,16 @@ void ModelManagerVSIndividual::ConfigureModelBundle(
 }
 
 void ModelManagerVSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager
+	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
+	const PipelineManager<Pipeline_t>& pipelineManager
 ) const noexcept {
-	auto previousPSOIndex = std::numeric_limits<size_t>::max();
+	auto previousPSOIndex           = std::numeric_limits<size_t>::max();
+	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
 	for (const ModelBundleVSIndividual& modelBundle : m_modelBundles)
 	{
 		// Pipeline Object.
-		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
+		BindPipeline(modelBundle, graphicsBuffer, pipelineManager, previousPSOIndex);
 
 		// Mesh
 		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(
@@ -41,7 +43,7 @@ void ModelManagerVSIndividual::Draw(
 		meshBundle.Bind(graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout, meshBundle);
+		modelBundle.Draw(graphicsBuffer, pipelineLayout, meshBundle);
 	}
 }
 
@@ -49,7 +51,7 @@ void ModelManagerVSIndividual::Draw(
 ModelManagerVSIndirect::ModelManagerVSIndirect(
 	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3,
 	std::uint32_t frameCount
-) : ModelManager{ device, memoryManager }, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
+) : ModelManager{ memoryManager }, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
 	m_modelIndicesVSBuffers{},
 	m_cullingDataBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -60,19 +62,18 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	m_perModelDataCSBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
-	}, m_pipelineLayoutCS{ VK_NULL_HANDLE }, m_computePipeline{},
-	m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_argumentCount{ 0u }, m_modelBundlesCS{},
-	m_oldBufferCopyNecessary{ false }
+	}, m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_argumentCount{ 0u },
+	m_modelBundlesCS{}, m_oldBufferCopyNecessary{ false }
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
 		// Only getting written and read on the Compute Queue, so should be exclusive resource.
 		m_argumentInputBuffers.emplace_back(
-			SharedBufferCPU{ m_device, m_memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {} }
+			SharedBufferCPU{ device, m_memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {} }
 		);
 		m_argumentOutputBuffers.emplace_back(
 			SharedBufferGPUWriteOnly{
-				m_device, m_memoryManager,
+				device, m_memoryManager,
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
@@ -80,14 +81,14 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		// Doing the resetting on the Compute queue, so CG should be fine.
 		m_counterBuffers.emplace_back(
 			SharedBufferGPUWriteOnly{
-				m_device, m_memoryManager,
+				device, m_memoryManager,
 				VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
 		m_modelIndicesVSBuffers.emplace_back(
 			SharedBufferGPUWriteOnly{
-				m_device, m_memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+				device, m_memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
@@ -101,25 +102,12 @@ void ModelManagerVSIndirect::_setGraphicsConstantRange(PipelineLayout& layout) n
 	layout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 }
 
-void ModelManagerVSIndirect::SetComputePipelineLayout(VkPipelineLayout layout) noexcept
-{
-	m_pipelineLayoutCS = layout;
-}
-
 void ModelManagerVSIndirect::SetComputeConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
 	constexpr std::uint32_t pushConstantSize = GetConstantBufferSize();
 
 	layout.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
-}
-
-void ModelManagerVSIndirect::ShaderPathSet()
-{
-	// Must create the pipeline object after the shader path has been set.
-	m_computePipeline.Create(
-		m_device, m_pipelineLayoutCS, L"VertexShaderCSIndirect", m_shaderPath
-	);
 }
 
 void ModelManagerVSIndirect::UpdateDispatchX() noexcept
@@ -348,11 +336,17 @@ void ModelManagerVSIndirect::SetDescriptorBuffersCS(
 	}
 }
 
-void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) const noexcept
-{
-	VkCommandBuffer cmdBuffer = computeBuffer.Get();
+void ModelManagerVSIndirect::Dispatch(
+	const VKCommandBuffer& computeBuffer, const PipelineManager<ComputePipeline_t>& pipelineManager
+) const noexcept {
+	VkCommandBuffer cmdBuffer       = computeBuffer.Get();
 
-	m_computePipeline.Bind(computeBuffer);
+	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
+
+	// There should be a single one for now.
+	static constexpr size_t computePSOIndex = 0u;
+
+	pipelineManager.BindPipeline(computePSOIndex, computeBuffer);
 
 	{
 		constexpr auto pushConstantSize = GetConstantBufferSize();
@@ -363,7 +357,7 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 		};
 
 		vkCmdPushConstants(
-			cmdBuffer, m_pipelineLayoutCS, VK_SHADER_STAGE_COMPUTE_BIT, 0u,
+			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0u,
 			pushConstantSize, &constantData
 		);
 	}
@@ -372,14 +366,16 @@ void ModelManagerVSIndirect::Dispatch(const VKCommandBuffer& computeBuffer) cons
 }
 
 void ModelManagerVSIndirect::Draw(
-	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager
+	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager,
+	const PipelineManager<GraphicsPipeline_t>& pipelineManager
 ) const noexcept {
-	auto previousPSOIndex = std::numeric_limits<size_t>::max();
+	auto previousPSOIndex           = std::numeric_limits<size_t>::max();
+	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
 	for (const ModelBundleVSIndirect& modelBundle : m_modelBundles)
 	{
 		// Pipeline Object.
-		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
+		BindPipeline(modelBundle, graphicsBuffer, pipelineManager, previousPSOIndex);
 
 		// Mesh
 		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(
@@ -388,7 +384,7 @@ void ModelManagerVSIndirect::Draw(
 		meshBundle.Bind(graphicsBuffer);
 
 		// Model
-		modelBundle.Draw(frameIndex, graphicsBuffer, m_graphicsPipelineLayout);
+		modelBundle.Draw(frameIndex, graphicsBuffer, pipelineLayout);
 	}
 }
 
@@ -448,9 +444,7 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 }
 
 // Model Manager MS.
-ModelManagerMS::ModelManagerMS(VkDevice device, MemoryManager* memoryManager)
-	: ModelManager{ device, memoryManager }
-{}
+ModelManagerMS::ModelManagerMS(MemoryManager* memoryManager) : ModelManager{ memoryManager } {}
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
@@ -474,16 +468,18 @@ void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept
 }
 
 void ModelManagerMS::Draw(
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager
+	const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
+	const PipelineManager<Pipeline_t>& pipelineManager
 ) const noexcept {
-	auto previousPSOIndex     = std::numeric_limits<size_t>::max();
+	auto previousPSOIndex           = std::numeric_limits<size_t>::max();
 
-	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
+	VkCommandBuffer cmdBuffer       = graphicsBuffer.Get();
 
 	for (const ModelBundleMSIndividual& modelBundle : m_modelBundles)
 	{
 		// Pipeline Object.
-		BindPipeline(modelBundle, graphicsBuffer, previousPSOIndex);
+		BindPipeline(modelBundle, graphicsBuffer, pipelineManager, previousPSOIndex);
 
 		const auto meshBundleIndex = static_cast<size_t>(
 			modelBundle.GetMeshBundleIndex()
@@ -499,12 +495,12 @@ void ModelManagerMS::Draw(
 			= meshBundle.GetMeshBundleDetailsMS();
 
 		vkCmdPushConstants(
-			cmdBuffer, m_graphicsPipelineLayout,
+			cmdBuffer, pipelineLayout,
 			VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
 			constantBufferOffset, constBufferSize, &meshBundleDetailsMS
 		);
 
 		// Model
-		modelBundle.Draw(graphicsBuffer, m_graphicsPipelineLayout, meshBundle);
+		modelBundle.Draw(graphicsBuffer, pipelineLayout, meshBundle);
 	}
 }

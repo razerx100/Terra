@@ -80,8 +80,10 @@ void RenderEngineMS::SetModelGraphicsDescriptors()
 std::uint32_t RenderEngineMS::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
+	const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+
+	const std::uint32_t index    = m_modelManager.AddModelBundle(
+		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
@@ -181,7 +183,7 @@ VkSemaphore RenderEngineMS::DrawingStage(
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
-		m_modelManager.Draw(graphicsCmdBufferScope, m_meshManager);
+		m_modelManager.Draw(graphicsCmdBufferScope, m_meshManager, m_graphicsPipelineManager);
 
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}
@@ -208,10 +210,11 @@ VkSemaphore RenderEngineMS::DrawingStage(
 }
 
 ModelManagerMS RenderEngineMS::GetModelManager(
-	const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
+	[[maybe_unused]] const VkDeviceManager& deviceManager,
+	MemoryManager* memoryManager,
 	[[maybe_unused]] std::uint32_t frameCount
 ) {
-	return ModelManagerMS{ deviceManager.GetLogicalDevice(), memoryManager };
+	return ModelManagerMS{ memoryManager };
 }
 
 ModelBuffers RenderEngineMS::ConstructModelBuffers(

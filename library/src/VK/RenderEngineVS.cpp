@@ -52,10 +52,11 @@ void RenderEngineVSIndividual::SetupPipelineStages()
 }
 
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
-	const VkDeviceManager& deviceManager, MemoryManager* memoryManager,
+	[[maybe_unused]] const VkDeviceManager& deviceManager,
+	MemoryManager* memoryManager,
 	[[maybe_unused]] std::uint32_t frameCount
 ) {
-	return ModelManagerVSIndividual{ deviceManager.GetLogicalDevice(), memoryManager };
+	return ModelManagerVSIndividual{ memoryManager };
 }
 
 void RenderEngineVSIndividual::SetGraphicsDescriptors()
@@ -86,8 +87,10 @@ ModelBuffers RenderEngineVSIndividual::ConstructModelBuffers(
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
+	const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+
+	const std::uint32_t index    = m_modelManager.AddModelBundle(
+		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -180,7 +183,7 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
-		m_modelManager.Draw(graphicsCmdBufferScope, m_meshManager);
+		m_modelManager.Draw(graphicsCmdBufferScope, m_meshManager, m_graphicsPipelineManager);
 
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}
@@ -215,6 +218,7 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 		deviceManager.GetQueueFamilyManager().GetQueue(QueueType::ComputeQueue),
 		deviceManager.GetQueueFamilyManager().GetIndex(QueueType::ComputeQueue)
 	}, m_computeWait{}, m_computeDescriptorBuffers{},
+	m_computePipelineManager{ deviceManager.GetLogicalDevice() },
 	m_computePipelineLayout{ deviceManager.GetLogicalDevice() }
 {
 	// Graphics Descriptors.
@@ -263,7 +267,7 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	if (!std::empty(m_computeDescriptorBuffers))
 		m_computePipelineLayout.Create(m_computeDescriptorBuffers.front().GetLayouts());
 
-	m_modelManager.SetComputePipelineLayout(m_computePipelineLayout.Get());
+	m_computePipelineManager.SetPipelineLayout(m_computePipelineLayout.Get());
 
 	// This descriptor shouldn't change, so it should be fine to set it here.
 	m_cameraManager.SetDescriptorBufferCompute(
@@ -385,11 +389,23 @@ void RenderEngineVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noex
 	m_modelManager.UpdatePerFrame(frameIndex, m_meshManager);
 }
 
+void RenderEngineVSIndirect::SetShaderPath(const std::wstring& shaderPath)
+{
+	RenderEngineCommon::SetShaderPath(shaderPath);
+
+	m_computePipelineManager.SetShaderPath(shaderPath);
+
+	// Also add the single PSO.
+	m_computePipelineManager.AddComputePipeline(L"VertexShaderCSIndirect");
+}
+
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), fragmentShader, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
+	const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+
+	const std::uint32_t index    = m_modelManager.AddModelBundle(
+		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -487,7 +503,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 			VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout
 		);
 
-		m_modelManager.Dispatch(computeCmdBufferScope);
+		m_modelManager.Dispatch(computeCmdBufferScope, m_computePipelineManager);
 	}
 
 	const VKSemaphore& computeWaitSemaphore = m_computeWait[frameIndex];
@@ -533,7 +549,7 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 
 		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
 
-		m_modelManager.Draw(frameIndex, graphicsCmdBufferScope, m_meshManager);
+		m_modelManager.Draw(frameIndex, graphicsCmdBufferScope, m_meshManager, m_graphicsPipelineManager);
 
 		m_renderPass.EndPass(graphicsCmdBuffer.Get());
 	}

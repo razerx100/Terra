@@ -17,6 +17,7 @@
 #include <TemporaryDataBuffer.hpp>
 #include <Texture.hpp>
 #include <VkModelBuffer.hpp>
+#include <PipelineManager.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
 // first. And these extensions must be added before the device is created. Each implemention may
@@ -219,6 +220,7 @@ public:
 template<
 	typename ModelManager_t,
 	typename MeshManager_t,
+	typename GraphicsPipeline_t,
 	typename Derived
 >
 class RenderEngineCommon : public RenderEngine
@@ -236,6 +238,7 @@ public:
 			deviceManager.GetLogicalDevice(), &m_memoryManager,
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
 		},
+		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() },
 		m_modelBuffers{
 			Derived::ConstructModelBuffers(
 				deviceManager, &m_memoryManager, static_cast<std::uint32_t>(frameCount)
@@ -252,16 +255,18 @@ public:
 
 	void SetShaderPath(const std::wstring& shaderPath) override
 	{
-		m_modelManager.SetShaderPath(shaderPath);
+		m_graphicsPipelineManager.SetShaderPath(shaderPath);
 	}
 	void AddFragmentShader(const ShaderName& fragmentShader) override
 	{
-		m_modelManager.AddPSO(fragmentShader);
+		m_graphicsPipelineManager.AddGraphicsPipeline(fragmentShader, m_renderPass.Get());
 	}
 	void ChangeFragmentShader(
 		std::uint32_t modelBundleID, const ShaderName& fragmentShader
 	) override {
-		m_modelManager.ChangePSO(modelBundleID, fragmentShader);
+		const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+
+		m_modelManager.ChangePSO(modelBundleID, psoIndex);
 	}
 
 	void RemoveModelBundle(std::uint32_t bundleID) noexcept override
@@ -289,10 +294,7 @@ public:
 				.Build()
 			);
 
-			// The model manager uses the render pass to create PSOs. So, if the renderPass is
-			// changed, I will have to recreate all the PSOs as well.
-			m_modelManager.SetRenderPass(m_renderPass.Get());
-			m_modelManager.RecreateGraphicsPipelines();
+			m_graphicsPipelineManager.RecreateAllGraphicsPipelines(m_renderPass.Get());
 		}
 
 		m_viewportAndScissors.Resize(width, height);
@@ -343,14 +345,31 @@ protected:
 		if (!std::empty(m_graphicsDescriptorBuffers))
 			m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
 
-		m_modelManager.SetGraphicsPipelineLayout(m_graphicsPipelineLayout.Get());
+		m_graphicsPipelineManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
 	}
 
 	void ResetGraphicsPipeline() override
 	{
 		CreateGraphicsPipelineLayout();
 
-		m_modelManager.RecreateGraphicsPipelines();
+		m_graphicsPipelineManager.RecreateAllGraphicsPipelines(m_renderPass.Get());
+	}
+
+	[[nodiscard]]
+	std::uint32_t GetGraphicsPSOIndex(const ShaderName& fragmentShader)
+	{
+		std::optional<std::uint32_t> oPSOIndex = m_graphicsPipelineManager.TryToGetPSOIndex(
+			fragmentShader
+		);
+
+		auto psoIndex = std::numeric_limits<std::uint32_t>::max();
+
+		if (!oPSOIndex)
+			psoIndex = m_graphicsPipelineManager.AddGraphicsPipeline(fragmentShader, m_renderPass.Get());
+		else
+			psoIndex = oPSOIndex.value();
+
+		return psoIndex;
 	}
 
 	using PipelineSignature = VkSemaphore (Derived::*)(
@@ -358,10 +377,11 @@ protected:
 	);
 
 protected:
-	ModelManager_t                 m_modelManager;
-	MeshManager_t                  m_meshManager;
-	ModelBuffers                   m_modelBuffers;
-	std::vector<PipelineSignature> m_pipelineStages;
+	ModelManager_t                      m_modelManager;
+	MeshManager_t                       m_meshManager;
+	PipelineManager<GraphicsPipeline_t> m_graphicsPipelineManager;
+	ModelBuffers                        m_modelBuffers;
+	std::vector<PipelineSignature>      m_pipelineStages;
 
 public:
 	RenderEngineCommon(const RenderEngineCommon&) = delete;
@@ -371,16 +391,18 @@ public:
 		: RenderEngine{ std::move(other) },
 		m_modelManager{ std::move(other.m_modelManager) },
 		m_meshManager{ std::move(other.m_meshManager) },
+		m_graphicsPipelineManager{ std::move(other.m_graphicsPipelineManager) },
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_pipelineStages{ std::move(other.m_pipelineStages) }
 	{}
 	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
 	{
 		RenderEngine::operator=(std::move(other));
-		m_modelManager        = std::move(other.m_modelManager);
-		m_meshManager         = std::move(other.m_meshManager);
-		m_modelBuffers        = std::move(other.m_modelBuffers);
-		m_pipelineStages      = std::move(other.m_pipelineStages);
+		m_modelManager            = std::move(other.m_modelManager);
+		m_meshManager             = std::move(other.m_meshManager);
+		m_graphicsPipelineManager = std::move(other.m_graphicsPipelineManager);
+		m_modelBuffers            = std::move(other.m_modelBuffers);
+		m_pipelineStages          = std::move(other.m_pipelineStages);
 
 		return *this;
 	}

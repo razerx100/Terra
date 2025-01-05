@@ -11,7 +11,7 @@
 class ComputePipeline
 {
 public:
-	ComputePipeline() : m_computePipeline{} {}
+	ComputePipeline() : m_computePipeline{}, m_computeShader{} {}
 
 	void Create(
 		VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
@@ -23,8 +23,12 @@ public:
 	) {
 		Create(device, computeLayout.Get(), computeShader, shaderPath);
 	}
+	void Recreate(VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath);
 
 	void Bind(const VKCommandBuffer& computeBuffer) const noexcept;
+
+	[[nodiscard]]
+	ShaderName GetShaderName() const noexcept { return m_computeShader; }
 
 private:
 	[[nodiscard]]
@@ -35,6 +39,7 @@ private:
 
 private:
 	std::unique_ptr<VkPipelineObject> m_computePipeline;
+	ShaderName                        m_computeShader;
 
 	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
 
@@ -43,11 +48,13 @@ public:
 	ComputePipeline& operator=(const ComputePipeline&) = delete;
 
 	ComputePipeline(ComputePipeline&& other) noexcept
-		: m_computePipeline{ std::move(other.m_computePipeline) }
+		: m_computePipeline{ std::move(other.m_computePipeline) },
+		m_computeShader{ std::move(other.m_computeShader) }
 	{}
 	ComputePipeline& operator=(ComputePipeline&& other) noexcept
 	{
 		m_computePipeline = std::move(other.m_computePipeline);
+		m_computeShader   = std::move(other.m_computeShader);
 
 		return *this;
 	}
