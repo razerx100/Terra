@@ -99,7 +99,7 @@ std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleTemporary>
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_meshManager.SetDescriptorBuffer(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+	m_meshManager.SetDescriptorBuffers(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
 	m_copyNecessary = true;
 

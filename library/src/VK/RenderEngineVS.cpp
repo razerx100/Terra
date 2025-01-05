@@ -343,7 +343,7 @@ ModelBuffers RenderEngineVSIndirect::ConstructModelBuffers(
 
 void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 {
-	m_modelManager.SetDescriptorBufferVS(
+	m_modelManager.SetDescriptorBuffersVS(
 		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
 	);
 
@@ -365,7 +365,7 @@ void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 
 void RenderEngineVSIndirect::SetModelComputeDescriptors()
 {
-	m_modelManager.SetDescriptorBufferCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_modelManager.SetDescriptorBuffersCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	const size_t frameCount = std::size(m_computeDescriptorBuffers);
 
@@ -408,7 +408,7 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleTe
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_meshManager.SetDescriptorBufferCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_meshManager.SetDescriptorBuffersCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	m_copyNecessary = true;
 

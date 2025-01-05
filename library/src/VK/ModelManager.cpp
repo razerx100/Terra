@@ -260,7 +260,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 		);
 }
 
-void ModelManagerVSIndirect::SetDescriptorBufferVS(
+void ModelManagerVSIndirect::SetDescriptorBuffersVS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 ) const {
 	const size_t frameCount = std::size(descriptorBuffers);
@@ -311,7 +311,7 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 	}
 }
 
-void ModelManagerVSIndirect::SetDescriptorBufferCS(
+void ModelManagerVSIndirect::SetDescriptorBuffersCS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
 	const size_t frameCount = std::size(descriptorBuffers);

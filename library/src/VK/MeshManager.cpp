@@ -123,7 +123,7 @@ void MeshManagerVSIndirect::SetDescriptorBufferLayoutCS(
 	}
 }
 
-void MeshManagerVSIndirect::SetDescriptorBufferCS(
+void MeshManagerVSIndirect::SetDescriptorBuffersCS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 ) const {
 	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
@@ -210,7 +210,7 @@ void MeshManagerMS::SetDescriptorBufferLayout(
 	}
 }
 
-void MeshManagerMS::SetDescriptorBuffer(
+void MeshManagerMS::SetDescriptorBuffers(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
 ) const {
 	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)

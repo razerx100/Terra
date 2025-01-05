@@ -28,7 +28,7 @@ public:
 			std::move(meshBundle), stagingBufferMan, vkMeshBundle, tempBuffer
 		);
 
-		auto meshIndex           = m_meshBundles.Add(std::move(vkMeshBundle));
+		const size_t meshIndex   = m_meshBundles.Add(std::move(vkMeshBundle));
 
 		m_oldBufferCopyNecessary = true;
 
@@ -121,7 +121,7 @@ public:
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 	) const noexcept;
 
-	void SetDescriptorBufferCS(
+	void SetDescriptorBuffersCS(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 	) const;
 
@@ -176,7 +176,7 @@ public:
 	) const noexcept;
 
 	// Should be called after a new Mesh has been added.
-	void SetDescriptorBuffer(
+	void SetDescriptorBuffers(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t msSetLayoutIndex
 	) const;
 

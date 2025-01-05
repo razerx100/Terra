@@ -366,7 +366,7 @@ public:
 	void SetDescriptorBufferLayoutVS(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 	) const noexcept;
-	void SetDescriptorBufferVS(
+	void SetDescriptorBuffersVS(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 	) const;
 
@@ -374,7 +374,7 @@ public:
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 	) const noexcept;
 
-	void SetDescriptorBufferCS(
+	void SetDescriptorBuffersCS(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t csSetLayoutIndex
 	) const;
 
