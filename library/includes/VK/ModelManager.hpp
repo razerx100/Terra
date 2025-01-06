@@ -43,6 +43,8 @@ public:
 	) {
 		const std::vector<std::shared_ptr<Model>>& models = modelBundle->GetModels();
 
+		auto bundleID = std::numeric_limits<std::uint32_t>::max();
+
 		if (!std::empty(models))
 		{
 			std::vector<std::shared_ptr<Model>> copyModels = models;
@@ -59,14 +61,12 @@ public:
 
 			modelBundleObj.SetPSOIndex(psoIndex);
 
-			const std::uint32_t bundleID = modelBundleObj.GetID();
+			bundleID = modelBundleObj.GetID();
 
 			AddModelBundle(std::move(modelBundleObj));
-
-			return bundleID;
 		}
 
-		return std::numeric_limits<std::uint32_t>::max();
+		return bundleID;
 	}
 
 	void RemoveModelBundle(std::uint32_t bundleID, ModelBuffers& modelBuffers) noexcept

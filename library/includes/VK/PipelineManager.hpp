@@ -35,6 +35,8 @@ public:
 	[[nodiscard]]
 	std::optional<std::uint32_t> TryToGetPSOIndex(const ShaderName& shaderName) const noexcept
 	{
+		std::optional<std::uint32_t> oPSOIndex{};
+
 		auto result = std::ranges::find_if(m_pipelines,
 			[&shaderName](const Pipeline& pipeline)
 			{
@@ -42,15 +44,15 @@ public:
 			});
 
 		if (result != std::end(m_pipelines))
-			return static_cast<std::uint32_t>(std::distance(std::begin(m_pipelines), result));
-		else
-			return {};
+			oPSOIndex = static_cast<std::uint32_t>(std::distance(std::begin(m_pipelines), result));
+
+		return oPSOIndex;
 	}
 
 	std::uint32_t AddGraphicsPipeline(const ShaderName& fragmentShader, VkRenderPass renderPass)
 		requires !std::is_same_v<Pipeline, ComputePipeline>
 	{
-		std::uint32_t psoIndex = static_cast<std::uint32_t>(std::size(m_pipelines));
+		const auto psoIndex = static_cast<std::uint32_t>(std::size(m_pipelines));
 
 		Pipeline pipeline{};
 
@@ -64,7 +66,7 @@ public:
 	std::uint32_t AddComputePipeline(const ShaderName& computeShader)
 		requires std::is_same_v<Pipeline, ComputePipeline>
 	{
-		std::uint32_t psoIndex = static_cast<std::uint32_t>(std::size(m_pipelines));
+		const auto psoIndex = static_cast<std::uint32_t>(std::size(m_pipelines));
 
 		Pipeline pipeline{};
 
