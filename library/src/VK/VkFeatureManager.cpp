@@ -38,9 +38,15 @@ void VkFeatureManager::SetBaseCoreFeatures() noexcept
 {
 	VkPhysicalDeviceFeatures baseFeatures{};
 
-	AddMember(m_feature1Members, &VkPhysicalDeviceFeatures::multiDrawIndirect, baseFeatures);
-	AddMember(m_feature1Members, &VkPhysicalDeviceFeatures::drawIndirectFirstInstance, baseFeatures);
-	AddMember(m_feature1Members, &VkPhysicalDeviceFeatures::samplerAnisotropy, baseFeatures);
+	AddMember(
+		m_feature1Members, offsetof(VkPhysicalDeviceFeatures, multiDrawIndirect), baseFeatures
+	);
+	AddMember(
+		m_feature1Members, offsetof(VkPhysicalDeviceFeatures, drawIndirectFirstInstance), baseFeatures
+	);
+	AddMember(
+		m_feature1Members, offsetof(VkPhysicalDeviceFeatures, samplerAnisotropy), baseFeatures
+	);
 
 	m_deviceFeatures2.Get().features = baseFeatures;
 }
@@ -50,13 +56,13 @@ void VkFeatureManager::Set1_1CoreFeatures() noexcept
 	auto pV1_1Features = std::make_shared<VkPhysicalDeviceVulkan11Features>();
 	VkPhysicalDeviceVulkan11Features& v1_1Features = *pV1_1Features;
 
-	v1_1Features.sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	v1_1Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 
 	{
 		MembersType core1_1Type{};
 
 		AddMember(
-			core1_1Type, &VkPhysicalDeviceVulkan11Features::shaderDrawParameters, v1_1Features
+			core1_1Type, offsetof(VkPhysicalDeviceVulkan11Features, shaderDrawParameters), v1_1Features
 		);
 
 		m_chainStructMembers.emplace_back(std::move(core1_1Type));
@@ -76,42 +82,43 @@ void VkFeatureManager::Set1_2CoreFeatures() noexcept
 		MembersType core1_2Type{};
 
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::drawIndirectCount, v1_2Features
+			core1_2Type, offsetof(VkPhysicalDeviceVulkan12Features, drawIndirectCount), v1_2Features
 		);
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::descriptorIndexing, v1_2Features
+			core1_2Type, offsetof(VkPhysicalDeviceVulkan12Features, descriptorIndexing), v1_2Features
 		);
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::shaderSampledImageArrayNonUniformIndexing,
+			core1_2Type,
+			offsetof(VkPhysicalDeviceVulkan12Features, shaderSampledImageArrayNonUniformIndexing),
 			v1_2Features
 		);
 		AddMember(
 			core1_2Type,
-			&VkPhysicalDeviceVulkan12Features::descriptorBindingUniformBufferUpdateAfterBind,
+			offsetof(VkPhysicalDeviceVulkan12Features, descriptorBindingUniformBufferUpdateAfterBind),
 			v1_2Features
 		);
 		AddMember(
 			core1_2Type,
-			&VkPhysicalDeviceVulkan12Features::descriptorBindingSampledImageUpdateAfterBind,
+			offsetof(VkPhysicalDeviceVulkan12Features, descriptorBindingSampledImageUpdateAfterBind),
 			v1_2Features
 		);
 		AddMember(
 			core1_2Type,
-			&VkPhysicalDeviceVulkan12Features::descriptorBindingStorageBufferUpdateAfterBind,
+			offsetof(VkPhysicalDeviceVulkan12Features, descriptorBindingStorageBufferUpdateAfterBind),
 			v1_2Features
 		);
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::descriptorBindingPartiallyBound,
+			core1_2Type, offsetof(VkPhysicalDeviceVulkan12Features, descriptorBindingPartiallyBound),
 			v1_2Features
 		);
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::runtimeDescriptorArray, v1_2Features
+			core1_2Type, offsetof(VkPhysicalDeviceVulkan12Features, runtimeDescriptorArray), v1_2Features
 		);
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::bufferDeviceAddress, v1_2Features
+			core1_2Type, offsetof(VkPhysicalDeviceVulkan12Features, bufferDeviceAddress), v1_2Features
 		);
 		AddMember(
-			core1_2Type, &VkPhysicalDeviceVulkan12Features::timelineSemaphore, v1_2Features
+			core1_2Type, offsetof(VkPhysicalDeviceVulkan12Features, timelineSemaphore), v1_2Features
 		);
 
 		m_chainStructMembers.emplace_back(std::move(core1_2Type));
@@ -131,7 +138,10 @@ void VkFeatureManager::Set1_3CoreFeatures() noexcept
 		MembersType core1_3Type{};
 
 		AddMember(
-			core1_3Type, &VkPhysicalDeviceVulkan13Features::synchronization2, v1_3Features
+			core1_3Type, offsetof(VkPhysicalDeviceVulkan13Features, synchronization2), v1_3Features
+		);
+		AddMember(
+			core1_3Type, offsetof(VkPhysicalDeviceVulkan13Features, dynamicRendering), v1_3Features
 		);
 
 		m_chainStructMembers.emplace_back(std::move(core1_3Type));
@@ -151,10 +161,12 @@ void VkFeatureManager::SetVkExtMeshShaderFeatures() noexcept
 		MembersType meshShaderType{};
 
 		AddMember(
-			meshShaderType, &VkPhysicalDeviceMeshShaderFeaturesEXT::meshShader, vkExtMeshShaderFeatures
+			meshShaderType, offsetof(VkPhysicalDeviceMeshShaderFeaturesEXT, meshShader),
+			vkExtMeshShaderFeatures
 		);
 		AddMember(
-			meshShaderType, &VkPhysicalDeviceMeshShaderFeaturesEXT::taskShader, vkExtMeshShaderFeatures
+			meshShaderType, offsetof(VkPhysicalDeviceMeshShaderFeaturesEXT, taskShader),
+			vkExtMeshShaderFeatures
 		);
 
 		m_chainStructMembers.emplace_back(std::move(meshShaderType));
@@ -177,7 +189,7 @@ void VkFeatureManager::SetVkExtDescriptorBufferFeatures() noexcept
 		MembersType descriptorBufferType{};
 
 		AddMember(
-			descriptorBufferType, &VkPhysicalDeviceDescriptorBufferFeaturesEXT::descriptorBuffer,
+			descriptorBufferType, offsetof(VkPhysicalDeviceDescriptorBufferFeaturesEXT, descriptorBuffer),
 			vkExtDescriptorBufferFeatures
 		);
 
@@ -217,33 +229,33 @@ bool VkFeatureManager::CheckFeatureSupportRecursive(
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT:
 		{
 			auto structObj = reinterpret_cast<VkPhysicalDeviceDescriptorBufferFeaturesEXT*>(structPtr);
-			result        &= CheckMembers(chainMembers.at(memberIndex), *structObj);
+			result        &= CheckMembers(chainMembers[memberIndex], *structObj);
 			break;
 		}
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
 		{
 			auto structObj = reinterpret_cast<VkPhysicalDeviceMeshShaderFeaturesEXT*>(structPtr);
-			result        &= CheckMembers(chainMembers.at(memberIndex), *structObj);
+			result        &= CheckMembers(chainMembers[memberIndex], *structObj);
 			break;
 		}
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES:
 		{
 			auto structObj = reinterpret_cast<VkPhysicalDeviceVulkan13Features*>(structPtr);
-			result        &= CheckMembers(chainMembers.at(memberIndex), *structObj);
+			result        &= CheckMembers(chainMembers[memberIndex], *structObj);
 			break;
 
 		}
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES:
 		{
 			auto structObj = reinterpret_cast<VkPhysicalDeviceVulkan12Features*>(structPtr);
-			result        &= CheckMembers(chainMembers.at(memberIndex), *structObj);
+			result        &= CheckMembers(chainMembers[memberIndex], *structObj);
 			break;
 
 		}
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES:
 		{
 			auto structObj = reinterpret_cast<VkPhysicalDeviceVulkan11Features*>(structPtr);
-			result        &= CheckMembers(chainMembers.at(memberIndex), *structObj);
+			result        &= CheckMembers(chainMembers[memberIndex], *structObj);
 			break;
 		}
 		}

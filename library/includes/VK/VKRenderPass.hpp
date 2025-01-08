@@ -15,10 +15,8 @@ public:
 		m_subpassDependency{
 			.srcSubpass    = VK_SUBPASS_EXTERNAL,
 			.dstSubpass    = 0u,
-			.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-							| VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-			.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-							| VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			.srcStageMask  = 0u,
+			.dstStageMask  = 0u,
 			.srcAccessMask = 0u
 		},
 		m_depthAttachmentRefs{}, m_colourAttachmentRefs{}, m_attachments{},

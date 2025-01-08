@@ -4,6 +4,7 @@
 #include <VkExtensionManager.hpp>
 #include <VkStructChain.hpp>
 #include <vector>
+#include <cstring>
 
 enum class CoreVersion
 {
@@ -41,7 +42,7 @@ private:
 	void SetVkExtDescriptorBufferFeatures() noexcept;
 
 private:
-	using MembersType = std::vector<void*>;
+	using MembersType = std::vector<size_t>;
 
 private:
 	VkStructChain<VkPhysicalDeviceFeatures2> m_deviceFeatures2;
@@ -50,34 +51,38 @@ private:
 
 private:
 	template<typename T>
-	union MemberUnion
-	{
-		VkBool32 T::* pMember;
-		void*         pVoid;
-	};
-
-	template<typename T>
 	[[nodiscard]]
-	static bool CheckMembers(const std::vector<void*>& members, T& object) noexcept
+	static bool CheckMembers(const std::vector<size_t>& members, const T& object) noexcept
 	{
 		bool allFeaturesSupported = true;
-		for (void* member : members)
+
+		for (size_t memberOffset : members)
 		{
-			MemberUnion<T> memberUnion{ .pVoid = member };
-			auto actualMember     = memberUnion.pMember;
-			allFeaturesSupported &= static_cast<bool>(std::invoke(actualMember, object));
+			// All of these members we are checking should be VkBool32.
+			VkBool32 member{ 0u };
+
+			auto objectStart = reinterpret_cast<std::uint8_t const*>(&object);
+
+			memcpy(&member, objectStart + memberOffset, sizeof(VkBool32));
+
+			allFeaturesSupported &= (member == VK_TRUE);
 		}
 
 		return allFeaturesSupported;
 	}
 
 	template<typename T>
-	static void AddMember(std::vector<void*>& members, VkBool32 T::* memberPtr, T& object) noexcept
+	static void AddMember(std::vector<size_t>& members, size_t memberOffset, T& object) noexcept
 	{
-		MemberUnion<T> member{ .pMember = memberPtr };
-		members.emplace_back(member.pVoid);
+		members.emplace_back(memberOffset);
 
-		object.*memberPtr = VK_TRUE;
+		// The member at the offset should be a VkBool32. The next statement looks bad, but should
+		// be fine and not be UB as long as the member at the offset is a VkBool32.
+		VkBool32& member = *reinterpret_cast<VkBool32*>(
+			reinterpret_cast<std::uint8_t*>(&object) + memberOffset
+		);
+
+		member = VK_TRUE;
 	}
 
 	[[nodiscard]]

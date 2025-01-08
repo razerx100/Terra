@@ -15,6 +15,10 @@ RenderPassBuilder& RenderPassBuilder::AddColourAttachment(VkFormat format) noexc
 
 	m_subpassDependency.dstAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+	// Src is also output here, because the second pass would start from the colour output bit.
+	m_subpassDependency.srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	m_subpassDependency.dstStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
 	return *this;
 }
 
@@ -29,6 +33,10 @@ RenderPassBuilder& RenderPassBuilder::AddDepthAttachment(VkFormat format) noexce
 	m_attachments.emplace_back(GetDepthAttachment(format));
 
 	m_subpassDependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	// Dst is also Early Fragement, since Depth Write would be done on the start of the second pass.
+	m_subpassDependency.srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	m_subpassDependency.dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 
 	return *this;
 }
@@ -108,11 +116,12 @@ void VKRenderPass::BeginPass(
 	VkCommandBuffer graphicsCmdBuffer, VkFramebuffer frameBuffer, VkExtent2D swapchainExtent,
 	std::span<VkClearValue> clearValues
 ) {
-	VkRenderPassBeginInfo renderPassInfo{
+	VkRenderPassBeginInfo renderPassInfo
+	{
 		.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 		.renderPass      = m_renderPass,
 		.framebuffer     = frameBuffer,
-		.renderArea      = { VkOffset2D{ 0, 0 }, swapchainExtent },
+		.renderArea      = VkRect2D{ .offset = VkOffset2D{ 0, 0 }, .extent = swapchainExtent },
 		.clearValueCount = static_cast<std::uint32_t>(std::size(clearValues)),
 		.pClearValues    = std::data(clearValues)
 	};
