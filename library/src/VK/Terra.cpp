@@ -137,11 +137,6 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 			m_swapchain->HasSwapchainFormatChanged(), m_swapchain->GetSwapchainFormat()
 		);
 
-		// Lastly the frame buffers.
-		m_swapchain->CreateFramebuffers(
-			m_renderEngine->GetRenderPass(), m_renderEngine->GetDepthBuffer()
-		);
-
 		m_windowWidth  = width;
 		m_windowHeight = height;
 	}
@@ -162,7 +157,7 @@ void Terra::Render()
 	const size_t nextImageIndex           = nextImageIndexU32;
 
 	VkSemaphore renderFinishedSemaphore = m_renderEngine->Render(
-		nextImageIndex, m_swapchain->GetFramebuffer(nextImageIndex),
+		nextImageIndex, m_swapchain->GetColourAttachment(nextImageIndex),
 		m_swapchain->GetCurrentSwapchainExtent(), semaphoreCounter, nextImageSemaphore
 	);
 

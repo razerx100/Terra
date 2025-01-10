@@ -9,7 +9,6 @@
 #include <CommonBuffers.hpp>
 #include <CameraManager.hpp>
 #include <DepthBuffer.hpp>
-#include <VKRenderPass.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <Model.hpp>
 #include <VkFramebuffer.hpp>
@@ -17,7 +16,7 @@
 #include <TemporaryDataBuffer.hpp>
 #include <Texture.hpp>
 #include <VkModelBuffer.hpp>
-#include <PipelineManager.hpp>
+#include <VkRenderPassManager.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
 // first. And these extensions must be added before the device is created. Each implemention may
@@ -86,14 +85,10 @@ public:
 		std::uint32_t modelBundleID, const ShaderName& fragmentShader
 	) = 0;
 
-	void BeginRenderPass(
-		const VKCommandBuffer& graphicsCmdBuffer, const VKFramebuffer& frameBuffer,
-		VkExtent2D renderArea
-	);
 	[[nodiscard]]
 	// Returned semaphore will be signalled when the rendering is finished.
 	virtual VkSemaphore Render(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
 	) = 0;
 	virtual void Resize(
@@ -114,11 +109,6 @@ public:
 	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) = 0;
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
-
-	[[nodiscard]]
-	const VKRenderPass& GetRenderPass() const noexcept { return m_renderPass; }
-	[[nodiscard]]
-	const DepthBuffer& GetDepthBuffer() const noexcept { return m_depthBuffer; }
 
 protected:
 	[[nodiscard]]
@@ -159,8 +149,6 @@ protected:
 	TextureManager                  m_textureManager;
 	MaterialBuffers                 m_materialBuffers;
 	CameraManager                   m_cameraManager;
-	DepthBuffer                     m_depthBuffer;
-	VKRenderPass                    m_renderPass;
 	VkClearColorValue               m_backgroundColour;
 	ViewportAndScissorManager       m_viewportAndScissors;
 	TemporaryDataBufferGPU          m_temporaryDataBuffer;
@@ -184,8 +172,6 @@ public:
 		m_textureManager{ std::move(other.m_textureManager) },
 		m_materialBuffers{ std::move(other.m_materialBuffers) },
 		m_cameraManager{ std::move(other.m_cameraManager) },
-		m_depthBuffer{ std::move(other.m_depthBuffer) },
-		m_renderPass{ std::move(other.m_renderPass) },
 		m_backgroundColour{ other.m_backgroundColour },
 		m_viewportAndScissors{ other.m_viewportAndScissors },
 		m_temporaryDataBuffer{ std::move(other.m_temporaryDataBuffer) },
@@ -206,8 +192,6 @@ public:
 		m_textureManager            = std::move(other.m_textureManager);
 		m_materialBuffers           = std::move(other.m_materialBuffers);
 		m_cameraManager             = std::move(other.m_cameraManager);
-		m_depthBuffer               = std::move(other.m_depthBuffer);
-		m_renderPass                = std::move(other.m_renderPass);
 		m_backgroundColour          = other.m_backgroundColour;
 		m_viewportAndScissors       = other.m_viewportAndScissors;
 		m_temporaryDataBuffer       = std::move(other.m_temporaryDataBuffer);
@@ -238,14 +222,15 @@ public:
 			deviceManager.GetLogicalDevice(), &m_memoryManager,
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
 		},
-		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() },
+		m_renderPassManager{ deviceManager.GetLogicalDevice() },
 		m_modelBuffers{
 			Derived::ConstructModelBuffers(
 				deviceManager, &m_memoryManager, static_cast<std::uint32_t>(frameCount)
 			)
-		},
-		m_pipelineStages{}
+		}
 	{
+		m_renderPassManager.SetDepthTesting(deviceManager.GetLogicalDevice(), &m_memoryManager);
+
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, s_combinedTextureBindingSlot, s_sampledTextureBindingSlot,
@@ -255,16 +240,16 @@ public:
 
 	void SetShaderPath(const std::wstring& shaderPath) override
 	{
-		m_graphicsPipelineManager.SetShaderPath(shaderPath);
+		m_renderPassManager.SetShaderPath(shaderPath);
 	}
 	void AddFragmentShader(const ShaderName& fragmentShader) override
 	{
-		m_graphicsPipelineManager.AddGraphicsPipeline(fragmentShader, m_renderPass.Get());
+		m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 	}
 	void ChangeFragmentShader(
 		std::uint32_t modelBundleID, const ShaderName& fragmentShader
 	) override {
-		const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+		const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
 		m_modelManager.ChangePSO(modelBundleID, psoIndex);
 	}
@@ -283,18 +268,12 @@ public:
 		std::uint32_t width, std::uint32_t height,
 		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
 	) override {
-		m_depthBuffer.Create(width, height);
+		m_renderPassManager.ResizeDepthBuffer(width, height);
 
 		if (hasSwapchainFormatChanged)
 		{
-			m_renderPass.Create(
-				RenderPassBuilder{}
-				.AddColourAttachment(swapchainFormat)
-				.AddDepthAttachment(m_depthBuffer.GetFormat())
-				.Build()
-			);
-
-			m_graphicsPipelineManager.RecreateAllGraphicsPipelines(m_renderPass.Get());
+			m_renderPassManager.SetColourAttachmentFormat(swapchainFormat);
+			m_renderPassManager.RecreatePipelines();
 		}
 
 		m_viewportAndScissors.Resize(width, height);
@@ -308,7 +287,7 @@ public:
 
 	[[nodiscard]]
 	VkSemaphore Render(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
 	) final {
 		// Wait for the previous Graphics command buffer to finish.
@@ -323,10 +302,9 @@ public:
 
 		VkSemaphore waitSemaphore = imageWaitSemaphore.Get();
 
-		for (auto pipelineStage : m_pipelineStages)
-			waitSemaphore = (static_cast<Derived*>(this)->*pipelineStage)(
-				frameIndex, frameBuffer, renderArea, semaphoreCounter, waitSemaphore
-			);
+		waitSemaphore = static_cast<Derived*>(this)->ExecutePipelineStages(
+			frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore
+		);
 
 		return waitSemaphore;
 	}
@@ -345,43 +323,21 @@ protected:
 		if (!std::empty(m_graphicsDescriptorBuffers))
 			m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
 
-		m_graphicsPipelineManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
+		m_renderPassManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
 	}
 
 	void ResetGraphicsPipeline() override
 	{
 		CreateGraphicsPipelineLayout();
 
-		m_graphicsPipelineManager.RecreateAllGraphicsPipelines(m_renderPass.Get());
+		m_renderPassManager.RecreatePipelines();
 	}
-
-	[[nodiscard]]
-	std::uint32_t GetGraphicsPSOIndex(const ShaderName& fragmentShader)
-	{
-		std::optional<std::uint32_t> oPSOIndex = m_graphicsPipelineManager.TryToGetPSOIndex(
-			fragmentShader
-		);
-
-		auto psoIndex = std::numeric_limits<std::uint32_t>::max();
-
-		if (!oPSOIndex)
-			psoIndex = m_graphicsPipelineManager.AddGraphicsPipeline(fragmentShader, m_renderPass.Get());
-		else
-			psoIndex = oPSOIndex.value();
-
-		return psoIndex;
-	}
-
-	using PipelineSignature = VkSemaphore (Derived::*)(
-		size_t, const VKFramebuffer&, VkExtent2D, std::uint64_t&, VkSemaphore
-	);
 
 protected:
-	ModelManager_t                      m_modelManager;
-	MeshManager_t                       m_meshManager;
-	PipelineManager<GraphicsPipeline_t> m_graphicsPipelineManager;
-	ModelBuffers                        m_modelBuffers;
-	std::vector<PipelineSignature>      m_pipelineStages;
+	ModelManager_t                          m_modelManager;
+	MeshManager_t                           m_meshManager;
+	VkRenderPassManager<GraphicsPipeline_t> m_renderPassManager;
+	ModelBuffers                            m_modelBuffers;
 
 public:
 	RenderEngineCommon(const RenderEngineCommon&) = delete;
@@ -391,18 +347,16 @@ public:
 		: RenderEngine{ std::move(other) },
 		m_modelManager{ std::move(other.m_modelManager) },
 		m_meshManager{ std::move(other.m_meshManager) },
-		m_graphicsPipelineManager{ std::move(other.m_graphicsPipelineManager) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) },
-		m_pipelineStages{ std::move(other.m_pipelineStages) }
+		m_renderPassManager{ std::move(other.m_renderPassManager) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) }
 	{}
 	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
 	{
 		RenderEngine::operator=(std::move(other));
-		m_modelManager            = std::move(other.m_modelManager);
-		m_meshManager             = std::move(other.m_meshManager);
-		m_graphicsPipelineManager = std::move(other.m_graphicsPipelineManager);
-		m_modelBuffers            = std::move(other.m_modelBuffers);
-		m_pipelineStages          = std::move(other.m_pipelineStages);
+		m_modelManager      = std::move(other.m_modelManager);
+		m_meshManager       = std::move(other.m_meshManager);
+		m_renderPassManager = std::move(other.m_renderPassManager);
+		m_modelBuffers      = std::move(other.m_modelBuffers);
 
 		return *this;
 	}

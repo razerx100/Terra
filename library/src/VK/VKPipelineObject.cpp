@@ -69,9 +69,26 @@ void GraphicsPipelineBuilder::UpdateShaderStages() noexcept
 }
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthStencilState(
-	const DepthStencilStateBuilder& depthStencilBuilder
+	const DepthStencilStateBuilder& depthStencilBuilder, VkFormat depthFormat, VkFormat stencilFormat
 ) noexcept {
 	m_depthStencilStateInfo = depthStencilBuilder.Get();
+
+	m_pipelineRenderingInfo.depthAttachmentFormat   = depthFormat;
+	m_pipelineRenderingInfo.stencilAttachmentFormat = stencilFormat;
+
+	return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColourAttachment(VkFormat colourFormat) noexcept
+{
+	m_colourAttachmentStates.emplace_back(GetColourBlendState());
+	m_colourAttachmentFormats.emplace_back(colourFormat);
+
+	++m_colourStateInfo.attachmentCount;
+	++m_pipelineRenderingInfo.colorAttachmentCount;
+
+	m_colourStateInfo.pAttachments                  = std::data(m_colourAttachmentStates);
+	m_pipelineRenderingInfo.pColorAttachmentFormats = std::data(m_colourAttachmentFormats);
 
 	return *this;
 }
@@ -108,18 +125,20 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetTaskStage(VkShaderModule ta
 
 void GraphicsPipelineBuilder::UpdatePointers(bool inputAssembler) noexcept
 {
-	m_colourStateInfo.pAttachments           = &m_colourAttachmentState;
-	m_dynamicStateInfo.pDynamicStates        = std::data(m_dynamicStates);
-	m_pipelineCreateInfo.pViewportState      = &m_viewportInfo;
-	m_pipelineCreateInfo.pRasterizationState = &m_rasterizationInfo;
-	m_pipelineCreateInfo.pMultisampleState   = &m_multisampleInfo;
-	m_pipelineCreateInfo.pDepthStencilState  = &m_depthStencilStateInfo;
-	m_pipelineCreateInfo.pColorBlendState    = &m_colourStateInfo;
-	m_pipelineCreateInfo.pDynamicState       = &m_dynamicStateInfo;
+	m_pipelineCreateInfo.pNext                      = &m_pipelineRenderingInfo;
+	m_pipelineRenderingInfo.pColorAttachmentFormats = std::data(m_colourAttachmentFormats);
+	m_colourStateInfo.pAttachments                  = std::data(m_colourAttachmentStates);
+	m_dynamicStateInfo.pDynamicStates               = std::data(m_dynamicStates);
+	m_pipelineCreateInfo.pViewportState             = &m_viewportInfo;
+	m_pipelineCreateInfo.pRasterizationState        = &m_rasterizationInfo;
+	m_pipelineCreateInfo.pMultisampleState          = &m_multisampleInfo;
+	m_pipelineCreateInfo.pDepthStencilState         = &m_depthStencilStateInfo;
+	m_pipelineCreateInfo.pColorBlendState           = &m_colourStateInfo;
+	m_pipelineCreateInfo.pDynamicState              = &m_dynamicStateInfo;
 
 	if (inputAssembler)
 	{
-		m_pipelineCreateInfo.pVertexInputState = m_vertexLayout.GetRef();
+		m_pipelineCreateInfo.pVertexInputState   = m_vertexLayout.GetRef();
 		m_pipelineCreateInfo.pInputAssemblyState = &m_inputAssemblerInfo;
 	}
 
@@ -133,4 +152,22 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(VkDynamicState
 	m_dynamicStateInfo.dynamicStateCount = static_cast<std::uint32_t>(std::size(m_dynamicStates));
 
 	return *this;
+}
+
+VkPipelineColorBlendAttachmentState GraphicsPipelineBuilder::GetColourBlendState() noexcept
+{
+	VkPipelineColorBlendAttachmentState blendAttachmentState
+	{
+		.blendEnable         = VK_FALSE,
+		.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+		.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+		.colorBlendOp        = VK_BLEND_OP_ADD,
+		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+		.alphaBlendOp        = VK_BLEND_OP_ADD,
+		.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+			| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+	};
+
+	return blendAttachmentState;
 }

@@ -40,7 +40,6 @@ RenderEngine::RenderEngine(
 	m_textureManager{ logicalDevice, &m_memoryManager },
 	m_materialBuffers{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
-	m_depthBuffer{ logicalDevice, &m_memoryManager }, m_renderPass{ logicalDevice },
 	m_backgroundColour{ { 0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
 	m_temporaryDataBuffer{}, m_copyNecessary{ false }
 {
@@ -233,19 +232,6 @@ void RenderEngine::RemoveTexture(size_t index)
 	);
 
 	m_textureStorage.RemoveTexture(index);
-}
-
-void RenderEngine::BeginRenderPass(
-	const VKCommandBuffer& graphicsCmdBuffer, const VKFramebuffer& frameBuffer,
-	VkExtent2D renderArea
-) {
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color        = m_backgroundColour;
-	clearValues[1].depthStencil = m_depthBuffer.GetClearValues();
-
-	VkCommandBuffer cmdBuffer   = graphicsCmdBuffer.Get();
-
-	m_renderPass.BeginPass(cmdBuffer, frameBuffer.Get(), renderArea, clearValues);
 }
 
 void RenderEngine::Update(VkDeviceSize frameIndex) const noexcept

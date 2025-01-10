@@ -109,6 +109,7 @@ void VKImageView::CreateView(
 
 	vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView);
 
+	m_image         = image;
 	m_imageAspect   = aspectFlags;
 	m_mipBaseLevel  = mipBaseLevel;
 	m_mipLevelCount = mipLevelCount;

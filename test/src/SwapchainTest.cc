@@ -141,7 +141,6 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 		);
 	}
 
-	swapchain.CreateFramebuffers(renderPass, depthBuffer);
 
 	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
 
@@ -161,8 +160,6 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 			.Build()
 		);
 	}
-
-	swapchain.CreateFramebuffers(renderPass, depthBuffer);
 
 	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain re-creation failed.";
 }

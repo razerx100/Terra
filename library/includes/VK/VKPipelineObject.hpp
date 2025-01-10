@@ -71,8 +71,8 @@ public:
 	DepthStencilStateBuilder()
 		: m_depthStencilStateInfo{
 			.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-			.depthTestEnable       = VK_TRUE,
-			.depthWriteEnable      = VK_TRUE,
+			.depthTestEnable       = VK_FALSE,
+			.depthWriteEnable      = VK_FALSE,
 			.depthCompareOp        = VK_COMPARE_OP_LESS,
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable     = VK_FALSE,
@@ -133,7 +133,7 @@ private:
 class GraphicsPipelineBuilder : private PipelineBuilderBase
 {
 public:
-	GraphicsPipelineBuilder(VkPipelineLayout graphicsLayout, VkRenderPass renderPass)
+	GraphicsPipelineBuilder(VkPipelineLayout graphicsLayout)
 		: m_vertexLayout{},
 		m_inputAssemblerInfo{
 			.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -165,22 +165,12 @@ public:
 			.pSampleMask           = nullptr,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable      = VK_FALSE
-		}, m_colourAttachmentState{
-			.blendEnable         = VK_FALSE,
-			.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-			.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-			.colorBlendOp        = VK_BLEND_OP_ADD,
-			.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-			.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-			.alphaBlendOp        = VK_BLEND_OP_ADD,
-			.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
-				| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-		}, m_colourStateInfo{
+		}, m_colourAttachmentStates{},
+		m_colourStateInfo{
 			.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 			.logicOpEnable   = VK_FALSE,
 			.logicOp         = VK_LOGIC_OP_COPY,
-			.attachmentCount = 1u,
-			.pAttachments    = &m_colourAttachmentState,
+			.attachmentCount = 0u,
 			.blendConstants  = { 0.f, 0.f, 0.f, 0.f }
 		}, m_dynamicStates{
 			{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR }
@@ -189,7 +179,12 @@ public:
 			.dynamicStateCount = static_cast<std::uint32_t>(std::size(m_dynamicStates)),
 			.pDynamicStates    = std::data(m_dynamicStates)
 		}, m_depthStencilStateInfo{ DepthStencilStateBuilder{}.Get() },
-		m_pipelineCreateInfo{
+		m_colourAttachmentFormats{},
+		m_pipelineRenderingInfo{
+			.sType                = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+			.pNext                = nullptr,
+			.colorAttachmentCount = 0u
+		}, m_pipelineCreateInfo{
 			.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			.flags               = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
 			.pViewportState      = &m_viewportInfo,
@@ -199,7 +194,7 @@ public:
 			.pColorBlendState    = &m_colourStateInfo,
 			.pDynamicState       = &m_dynamicStateInfo,
 			.layout              = graphicsLayout,
-			.renderPass          = renderPass,
+			.renderPass          = VK_NULL_HANDLE,
 			.subpass             = 0u,
 			.basePipelineHandle  = VK_NULL_HANDLE,
 			.basePipelineIndex   = -1
@@ -217,8 +212,10 @@ public:
 	) noexcept;
 
 	GraphicsPipelineBuilder& SetDepthStencilState(
-		const DepthStencilStateBuilder& depthStencilBuilder
+		const DepthStencilStateBuilder& depthStencilBuilder, VkFormat depthFormat, VkFormat stencilFormat
 	) noexcept;
+
+	GraphicsPipelineBuilder& AddColourAttachment(VkFormat colourFormat) noexcept;
 
 	// Can only be set on a Mesh Shader based Pipeline.
 	GraphicsPipelineBuilder& SetMeshStage(
@@ -235,6 +232,9 @@ public:
 	[[nodiscard]]
 	VkGraphicsPipelineCreateInfo Get() const noexcept { return m_pipelineCreateInfo; }
 
+	[[nodiscard]]
+	static VkPipelineColorBlendAttachmentState GetColourBlendState() noexcept;
+
 private:
 	void UpdateShaderStages() noexcept;
 	// Since the Mesh Shader pipeline can't have an Input Assembler, can't add those
@@ -242,18 +242,20 @@ private:
 	void UpdatePointers(bool inputAssembler) noexcept;
 
 private:
-	VertexLayout                                 m_vertexLayout;
-	VkPipelineInputAssemblyStateCreateInfo       m_inputAssemblerInfo;
-	VkPipelineViewportStateCreateInfo            m_viewportInfo;
-	VkPipelineRasterizationStateCreateInfo       m_rasterizationInfo;
-	VkPipelineMultisampleStateCreateInfo         m_multisampleInfo;
-	VkPipelineColorBlendAttachmentState          m_colourAttachmentState;
-	VkPipelineColorBlendStateCreateInfo          m_colourStateInfo;
-	std::vector<VkDynamicState>                  m_dynamicStates;
-	VkPipelineDynamicStateCreateInfo             m_dynamicStateInfo;
-	std::vector<VkPipelineShaderStageCreateInfo> m_shaderStagesInfo;
-	VkPipelineDepthStencilStateCreateInfo        m_depthStencilStateInfo;
-	VkGraphicsPipelineCreateInfo                 m_pipelineCreateInfo;
+	VertexLayout                                     m_vertexLayout;
+	VkPipelineInputAssemblyStateCreateInfo           m_inputAssemblerInfo;
+	VkPipelineViewportStateCreateInfo                m_viewportInfo;
+	VkPipelineRasterizationStateCreateInfo           m_rasterizationInfo;
+	VkPipelineMultisampleStateCreateInfo             m_multisampleInfo;
+	std::vector<VkPipelineColorBlendAttachmentState> m_colourAttachmentStates;
+	VkPipelineColorBlendStateCreateInfo              m_colourStateInfo;
+	std::vector<VkDynamicState>                      m_dynamicStates;
+	VkPipelineDynamicStateCreateInfo                 m_dynamicStateInfo;
+	std::vector<VkPipelineShaderStageCreateInfo>     m_shaderStagesInfo;
+	VkPipelineDepthStencilStateCreateInfo            m_depthStencilStateInfo;
+	std::vector<VkFormat>                            m_colourAttachmentFormats;
+	VkPipelineRenderingCreateInfo                    m_pipelineRenderingInfo;
+	VkGraphicsPipelineCreateInfo                     m_pipelineCreateInfo;
 
 public:
 	GraphicsPipelineBuilder(const GraphicsPipelineBuilder& other) noexcept
@@ -262,30 +264,34 @@ public:
 		m_viewportInfo{ other.m_viewportInfo },
 		m_rasterizationInfo{ other.m_rasterizationInfo },
 		m_multisampleInfo{ other.m_multisampleInfo },
-		m_colourAttachmentState{ other.m_colourAttachmentState },
+		m_colourAttachmentStates{ other.m_colourAttachmentStates },
 		m_colourStateInfo{ other.m_colourStateInfo },
 		m_dynamicStates{ other.m_dynamicStates },
 		m_dynamicStateInfo{ other.m_dynamicStateInfo },
 		m_shaderStagesInfo{ other.m_shaderStagesInfo },
 		m_depthStencilStateInfo{ other.m_depthStencilStateInfo },
+		m_colourAttachmentFormats{ other.m_colourAttachmentFormats },
+		m_pipelineRenderingInfo{ other.m_pipelineRenderingInfo },
 		m_pipelineCreateInfo{ other.m_pipelineCreateInfo }
 	{
 		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
 	}
 	GraphicsPipelineBuilder& operator=(const GraphicsPipelineBuilder& other) noexcept
 	{
-		m_vertexLayout          = other.m_vertexLayout;
-		m_inputAssemblerInfo    = other.m_inputAssemblerInfo;
-		m_viewportInfo          = other.m_viewportInfo;
-		m_rasterizationInfo     = other.m_rasterizationInfo;
-		m_multisampleInfo       = other.m_multisampleInfo;
-		m_colourAttachmentState = other.m_colourAttachmentState;
-		m_colourStateInfo       = other.m_colourStateInfo;
-		m_dynamicStates         = other.m_dynamicStates;
-		m_dynamicStateInfo      = other.m_dynamicStateInfo;
-		m_shaderStagesInfo      = other.m_shaderStagesInfo;
-		m_depthStencilStateInfo = other.m_depthStencilStateInfo;
-		m_pipelineCreateInfo    = other.m_pipelineCreateInfo;
+		m_vertexLayout            = other.m_vertexLayout;
+		m_inputAssemblerInfo      = other.m_inputAssemblerInfo;
+		m_viewportInfo            = other.m_viewportInfo;
+		m_rasterizationInfo       = other.m_rasterizationInfo;
+		m_multisampleInfo         = other.m_multisampleInfo;
+		m_colourAttachmentStates  = other.m_colourAttachmentStates;
+		m_colourStateInfo         = other.m_colourStateInfo;
+		m_dynamicStates           = other.m_dynamicStates;
+		m_dynamicStateInfo        = other.m_dynamicStateInfo;
+		m_shaderStagesInfo        = other.m_shaderStagesInfo;
+		m_depthStencilStateInfo   = other.m_depthStencilStateInfo;
+		m_colourAttachmentFormats = other.m_colourAttachmentFormats;
+		m_pipelineRenderingInfo   = other.m_pipelineRenderingInfo;
+		m_pipelineCreateInfo      = other.m_pipelineCreateInfo;
 
 		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
 
@@ -297,30 +303,34 @@ public:
 		m_viewportInfo{ other.m_viewportInfo },
 		m_rasterizationInfo{ other.m_rasterizationInfo },
 		m_multisampleInfo{ other.m_multisampleInfo },
-		m_colourAttachmentState{ other.m_colourAttachmentState },
+		m_colourAttachmentStates{ std::move(other.m_colourAttachmentStates) },
 		m_colourStateInfo{ other.m_colourStateInfo },
 		m_dynamicStates{ std::move(other.m_dynamicStates) },
 		m_dynamicStateInfo{ other.m_dynamicStateInfo },
 		m_shaderStagesInfo{ std::move(other.m_shaderStagesInfo) },
 		m_depthStencilStateInfo{ other.m_depthStencilStateInfo },
+		m_colourAttachmentFormats{ std::move(other.m_colourAttachmentFormats) },
+		m_pipelineRenderingInfo{ other.m_pipelineRenderingInfo },
 		m_pipelineCreateInfo{ other.m_pipelineCreateInfo }
 	{
 		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
 	}
 	GraphicsPipelineBuilder& operator=(GraphicsPipelineBuilder&& other) noexcept
 	{
-		m_vertexLayout          = other.m_vertexLayout;
-		m_inputAssemblerInfo    = other.m_inputAssemblerInfo;
-		m_viewportInfo          = other.m_viewportInfo;
-		m_rasterizationInfo     = other.m_rasterizationInfo;
-		m_multisampleInfo       = other.m_multisampleInfo;
-		m_colourAttachmentState = other.m_colourAttachmentState;
-		m_colourStateInfo       = other.m_colourStateInfo;
-		m_dynamicStates         = std::move(other.m_dynamicStates);
-		m_dynamicStateInfo      = other.m_dynamicStateInfo;
-		m_shaderStagesInfo      = std::move(other.m_shaderStagesInfo);
-		m_depthStencilStateInfo = other.m_depthStencilStateInfo;
-		m_pipelineCreateInfo    = other.m_pipelineCreateInfo;
+		m_vertexLayout            = other.m_vertexLayout;
+		m_inputAssemblerInfo      = other.m_inputAssemblerInfo;
+		m_viewportInfo            = other.m_viewportInfo;
+		m_rasterizationInfo       = other.m_rasterizationInfo;
+		m_multisampleInfo         = other.m_multisampleInfo;
+		m_colourAttachmentStates  = std::move(other.m_colourAttachmentStates);
+		m_colourStateInfo         = other.m_colourStateInfo;
+		m_dynamicStates           = std::move(other.m_dynamicStates);
+		m_dynamicStateInfo        = other.m_dynamicStateInfo;
+		m_shaderStagesInfo        = std::move(other.m_shaderStagesInfo);
+		m_depthStencilStateInfo   = other.m_depthStencilStateInfo;
+		m_colourAttachmentFormats = std::move(other.m_colourAttachmentFormats);
+		m_pipelineRenderingInfo   = other.m_pipelineRenderingInfo;
+		m_pipelineCreateInfo      = other.m_pipelineCreateInfo;
 
 		UpdatePointers(other.m_pipelineCreateInfo.pInputAssemblyState);
 

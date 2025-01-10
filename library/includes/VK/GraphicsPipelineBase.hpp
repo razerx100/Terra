@@ -9,6 +9,12 @@
 #include <PipelineLayout.hpp>
 #include <Shader.hpp>
 
+struct DepthStencilFormat
+{
+	VkFormat depthFormat;
+	VkFormat stencilFormat;
+};
+
 template<typename Derived>
 class GraphicsPipelineBase
 {
@@ -16,37 +22,25 @@ public:
 	GraphicsPipelineBase() : m_graphicsPipeline{}, m_fragmentShader{} {}
 
 	void Create(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		VkDevice device, VkPipelineLayout graphicsLayout, VkFormat colourFormat,
+		const DepthStencilFormat& depthStencilFormat,
 		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) {
 		m_fragmentShader   = fragmentShader;
 
 		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
-			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
+			device, graphicsLayout, colourFormat, depthStencilFormat, shaderPath, m_fragmentShader
 		);
 	}
 
-	void Create(
-		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
-	) {
-		Create(device, graphicsLayout.Get(), renderPass.Get(), shaderPath, fragmentShader);
-	}
-
 	void Recreate(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		VkDevice device, VkPipelineLayout graphicsLayout,
+		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
 		const std::wstring& shaderPath
 	) {
 		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
-			device, graphicsLayout, renderPass, shaderPath, m_fragmentShader
+			device, graphicsLayout, colourFormat, depthStencilFormat, shaderPath, m_fragmentShader
 		);
-	}
-
-	void Recreate(
-		VkDevice device, const PipelineLayout& graphicsLayout, const VKRenderPass& renderPass,
-		const std::wstring& shaderPath
-	) {
-		Recreate(device, graphicsLayout.Get(), renderPass.Get(), shaderPath);
 	}
 
 	void Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexcept

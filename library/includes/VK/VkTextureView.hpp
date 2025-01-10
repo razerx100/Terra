@@ -8,8 +8,8 @@ class VKImageView
 {
 public:
 	VKImageView(VkDevice device)
-		: m_device{ device }, m_imageView{ VK_NULL_HANDLE }, m_imageAspect{ 0u },
-		m_mipBaseLevel{ 0u }, m_mipLevelCount{ 1u }
+		: m_device{ device }, m_image{ VK_NULL_HANDLE }, m_imageView{ VK_NULL_HANDLE },
+		m_imageAspect{ 0u }, m_mipBaseLevel{ 0u }, m_mipLevelCount{ 1u }
 	{}
 	~VKImageView() noexcept;
 
@@ -21,7 +21,9 @@ public:
 	void Destroy() noexcept;
 
 	[[nodiscard]]
-	VkImageView Get() const noexcept { return m_imageView; }
+	VkImage GetImage() const noexcept { return m_image; }
+	[[nodiscard]]
+	VkImageView GetView() const noexcept { return m_imageView; }
 	[[nodiscard]]
 	VkImageAspectFlags GetAspect() const noexcept { return m_imageAspect; }
 	[[nodiscard]]
@@ -34,6 +36,7 @@ private:
 
 private:
 	VkDevice           m_device;
+	VkImage            m_image;
 	VkImageView        m_imageView;
 	VkImageAspectFlags m_imageAspect;
 	std::uint32_t      m_mipBaseLevel;
@@ -44,7 +47,9 @@ public:
 	VKImageView& operator=(const VKImageView&) = delete;
 
 	VKImageView(VKImageView&& other) noexcept
-		: m_device{ other.m_device }, m_imageView{ std::exchange(other.m_imageView, VK_NULL_HANDLE) },
+		: m_device{ other.m_device },
+		m_image{ std::exchange(other.m_image, VK_NULL_HANDLE) },
+		m_imageView{ std::exchange(other.m_imageView, VK_NULL_HANDLE) },
 		m_imageAspect{ other.m_imageAspect }, m_mipBaseLevel{ other.m_mipBaseLevel },
 		m_mipLevelCount{ other.m_mipLevelCount }
 	{}
@@ -53,6 +58,7 @@ public:
 		SelfDestruct();
 
 		m_device        = other.m_device;
+		m_image         = std::exchange(other.m_image, VK_NULL_HANDLE);
 		m_imageView     = std::exchange(other.m_imageView, VK_NULL_HANDLE);
 		m_imageAspect   = other.m_imageAspect;
 		m_mipBaseLevel  = other.m_mipBaseLevel;
@@ -94,7 +100,9 @@ public:
 	[[nodiscard]]
 	const Texture& GetTexture() const noexcept { return m_texture; }
 	[[nodiscard]]
-	VkImageView GetView() const noexcept { return m_imageView.Get(); }
+	VkImageView GetVkView() const noexcept { return m_imageView.GetView(); }
+	[[nodiscard]]
+	const VKImageView& GetView() const noexcept { return m_imageView; }
 	[[nodiscard]]
 	VkImageAspectFlags GetAspect() const noexcept { return m_imageView.GetAspect(); }
 	[[nodiscard]]

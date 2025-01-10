@@ -147,7 +147,7 @@ TEST_F(BufferTest, DepthBufferTest)
 
 		depth.Create(1280u, 720u);
 
-		EXPECT_NE(depth.GetView(), VK_NULL_HANDLE) << "DepthView Handle is null.";
+		EXPECT_NE(depth.GetVkView(), VK_NULL_HANDLE) << "DepthView Handle is null.";
 		EXPECT_EQ(depth.GetFormat(), VK_FORMAT_D32_SFLOAT) << "Depth format doesn't match.";
 	}
 	{
@@ -155,6 +155,6 @@ TEST_F(BufferTest, DepthBufferTest)
 
 		depth.Create(1920u, 1080u);
 
-		EXPECT_NE(depth.GetView(), VK_NULL_HANDLE) << "DepthView Handle is null.";
+		EXPECT_NE(depth.GetVkView(), VK_NULL_HANDLE) << "DepthView Handle is null.";
 	}
 }

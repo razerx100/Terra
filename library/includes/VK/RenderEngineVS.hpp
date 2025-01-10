@@ -48,17 +48,20 @@ private:
 	);
 
 	[[nodiscard]]
-	VkSemaphore GenericTransferStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
-	);
-	[[nodiscard]]
-	VkSemaphore DrawingStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	VkSemaphore ExecutePipelineStages(
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 
-	void SetupPipelineStages();
+	[[nodiscard]]
+	VkSemaphore GenericTransferStage(
+		size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	);
+	[[nodiscard]]
+	VkSemaphore DrawingStage(
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
+		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	);
 
 	void SetGraphicsDescriptorBufferLayout();
 	void SetGraphicsDescriptors();
@@ -132,18 +135,22 @@ private:
 	);
 
 	[[nodiscard]]
-	VkSemaphore GenericTransferStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	VkSemaphore ExecutePipelineStages(
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	);
+
+	[[nodiscard]]
+	VkSemaphore GenericTransferStage(
+		size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 	[[nodiscard]]
 	VkSemaphore FrustumCullingStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
-		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+		size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 	[[nodiscard]]
 	VkSemaphore DrawingStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 
@@ -152,8 +159,6 @@ private:
 
 	void SetComputeDescriptorBufferLayout();
 	void SetModelComputeDescriptors();
-
-	void SetupPipelineStages();
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
 

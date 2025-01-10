@@ -12,14 +12,16 @@ public:
 private:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineMS(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		VkDevice device, VkPipelineLayout graphicsLayout,
+		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
 		ShaderType binaryType, const std::wstring& shaderPath, const ShaderName& fragmentShader,
 		const ShaderName& meshShader, const ShaderName& taskShader
 	);
 
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+		VkDevice device, VkPipelineLayout graphicsLayout,
+		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
 		const std::wstring& shaderPath, const ShaderName& fragmentShader
 	) const;
 

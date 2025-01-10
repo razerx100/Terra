@@ -49,14 +49,19 @@ public:
 		return oPSOIndex;
 	}
 
-	std::uint32_t AddGraphicsPipeline(const ShaderName& fragmentShader, VkRenderPass renderPass)
+	std::uint32_t AddGraphicsPipeline(
+		const ShaderName& fragmentShader,
+		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat
+	)
 		requires !std::is_same_v<Pipeline, ComputePipeline>
 	{
 		const auto psoIndex = static_cast<std::uint32_t>(std::size(m_pipelines));
 
 		Pipeline pipeline{};
 
-		pipeline.Create(m_device, m_pipelineLayout, renderPass, m_shaderPath, fragmentShader);
+		pipeline.Create(
+			m_device, m_pipelineLayout, colourFormat, depthStencilFormat, m_shaderPath, fragmentShader
+		);
 
 		m_pipelines.emplace_back(std::move(pipeline));
 
@@ -77,11 +82,13 @@ public:
 		return psoIndex;
 	}
 
-	void RecreateAllGraphicsPipelines(VkRenderPass renderPass)
+	void RecreateAllGraphicsPipelines(
+		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat
+	)
 		requires !std::is_same_v<Pipeline, ComputePipeline>
 	{
 		for (Pipeline& pipeline : m_pipelines)
-			pipeline.Recreate(m_device, m_pipelineLayout, renderPass, m_shaderPath);
+			pipeline.Recreate(m_device, m_pipelineLayout, colourFormat, depthStencilFormat, m_shaderPath);
 	}
 
 	void RecreateAllComputePipelines()

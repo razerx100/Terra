@@ -19,8 +19,17 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	m_cameraManager.SetDescriptorBufferGraphics(
 		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
 	);
+}
 
-	SetupPipelineStages();
+VkSemaphore RenderEngineVSIndividual::ExecutePipelineStages(
+	size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
+	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+) {
+	waitSemaphore = GenericTransferStage(frameIndex, semaphoreCounter, waitSemaphore);
+
+	waitSemaphore = DrawingStage(frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore);
+
+	return waitSemaphore;
 }
 
 void RenderEngineVSIndividual::SetGraphicsDescriptorBufferLayout()
@@ -39,16 +48,6 @@ void RenderEngineVSIndividual::SetGraphicsDescriptorBufferLayout()
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 		);
 	}
-}
-
-void RenderEngineVSIndividual::SetupPipelineStages()
-{
-	constexpr size_t stageCount = 2u;
-
-	m_pipelineStages.reserve(stageCount);
-
-	m_pipelineStages.emplace_back(&RenderEngineVSIndividual::GenericTransferStage);
-	m_pipelineStages.emplace_back(&RenderEngineVSIndividual::DrawingStage);
 }
 
 ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
@@ -87,7 +86,7 @@ ModelBuffers RenderEngineVSIndividual::ConstructModelBuffers(
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+	const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
 	const std::uint32_t index    = m_modelManager.AddModelBundle(
 		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
@@ -110,9 +109,7 @@ std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundle
 }
 
 VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
-	size_t frameIndex,
-	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
-	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Transfer Phase
 
@@ -159,7 +156,7 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 }
 
 VkSemaphore RenderEngineVSIndividual::DrawingStage(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Graphics Phase
@@ -181,11 +178,15 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 			VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout
 		);
 
-		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
+		m_renderPassManager.BeginRenderingWithDepth(
+			graphicsCmdBufferScope, renderArea, renderTarget, m_backgroundColour
+		);
 
-		m_modelManager.Draw(graphicsCmdBufferScope, m_meshManager, m_graphicsPipelineManager);
+		m_modelManager.Draw(
+			graphicsCmdBufferScope, m_meshManager, m_renderPassManager.GetGraphicsPipelineManager()
+		);
 
-		m_renderPass.EndPass(graphicsCmdBuffer.Get());
+		m_renderPassManager.EndRendering(graphicsCmdBufferScope, renderTarget);
 	}
 
 	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait[frameIndex];
@@ -273,8 +274,6 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	m_cameraManager.SetDescriptorBufferCompute(
 		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
 	);
-
-	SetupPipelineStages();
 }
 
 void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
@@ -313,15 +312,17 @@ void RenderEngineVSIndirect::SetComputeDescriptorBufferLayout()
 		);
 }
 
-void RenderEngineVSIndirect::SetupPipelineStages()
-{
-	constexpr size_t stageCount = 3u;
+VkSemaphore RenderEngineVSIndirect::ExecutePipelineStages(
+	size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
+	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+) {
+	waitSemaphore = GenericTransferStage(frameIndex, semaphoreCounter, waitSemaphore);
 
-	m_pipelineStages.reserve(stageCount);
+	waitSemaphore = FrustumCullingStage(frameIndex, semaphoreCounter, waitSemaphore);
 
-	m_pipelineStages.emplace_back(&RenderEngineVSIndirect::GenericTransferStage);
-	m_pipelineStages.emplace_back(&RenderEngineVSIndirect::FrustumCullingStage);
-	m_pipelineStages.emplace_back(&RenderEngineVSIndirect::DrawingStage);
+	waitSemaphore = DrawingStage(frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore);
+
+	return waitSemaphore;
 }
 
 ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
@@ -402,7 +403,7 @@ void RenderEngineVSIndirect::SetShaderPath(const std::wstring& shaderPath)
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t psoIndex = GetGraphicsPSOIndex(fragmentShader);
+	const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
 	const std::uint32_t index    = m_modelManager.AddModelBundle(
 		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
@@ -432,9 +433,7 @@ std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleTe
 }
 
 VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
-	size_t frameIndex,
-	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
-	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Transfer Phase
 
@@ -482,9 +481,7 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 }
 
 VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
-	size_t frameIndex,
-	[[maybe_unused]] const VKFramebuffer& frameBuffer, [[maybe_unused]] VkExtent2D renderArea,
-	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 // Compute Phase
 	const VKCommandBuffer& computeCmdBuffer = m_computeQueue.GetCommandBuffer(frameIndex);
@@ -525,7 +522,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 }
 
 VkSemaphore RenderEngineVSIndirect::DrawingStage(
-	size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 	std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 ) {
 	// Graphics Phase
@@ -547,11 +544,16 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 			VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout
 		);
 
-		BeginRenderPass(graphicsCmdBufferScope, frameBuffer, renderArea);
+		m_renderPassManager.BeginRenderingWithDepth(
+			graphicsCmdBufferScope, renderArea, renderTarget, m_backgroundColour
+		);
 
-		m_modelManager.Draw(frameIndex, graphicsCmdBufferScope, m_meshManager, m_graphicsPipelineManager);
+		m_modelManager.Draw(
+			frameIndex, graphicsCmdBufferScope, m_meshManager,
+			m_renderPassManager.GetGraphicsPipelineManager()
+		);
 
-		m_renderPass.EndPass(graphicsCmdBuffer.Get());
+		m_renderPassManager.EndRendering(graphicsCmdBufferScope, renderTarget);
 	}
 
 	const VKSemaphore& graphicsWaitSemaphore = m_graphicsWait[frameIndex];

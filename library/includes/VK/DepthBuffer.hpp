@@ -11,7 +11,9 @@ public:
 	void Create(std::uint32_t width, std::uint32_t height);
 
 	[[nodiscard]]
-	VkImageView GetView() const noexcept { return m_depthImage.GetView(); }
+	VkImageView GetVkView() const noexcept { return m_depthImage.GetVkView(); }
+	[[nodiscard]]
+	const VKImageView& GetView() const noexcept { return m_depthImage.GetView(); }
 	[[nodiscard]]
 	const Texture& GetTexture() const noexcept { return m_depthImage.GetTexture(); }
 

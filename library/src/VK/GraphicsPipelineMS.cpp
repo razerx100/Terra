@@ -2,20 +2,22 @@
 #include <VkShader.hpp>
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::_createGraphicsPipeline(
-	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	VkDevice device, VkPipelineLayout graphicsLayout,
+	VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
 	const std::wstring& shaderPath, const ShaderName& fragmentShader
 ) const {
 	constexpr const wchar_t* meshShaderName = L"MeshShaderMSIndividual";
 	constexpr const wchar_t* taskShaderName = L"MeshShaderTSIndividual";
 
 	return CreateGraphicsPipelineMS(
-		device, graphicsLayout, renderPass, s_shaderBytecodeType, shaderPath, fragmentShader,
-		meshShaderName, taskShaderName
+		device, graphicsLayout, colourFormat, depthStencilFormat, s_shaderBytecodeType, shaderPath,
+		fragmentShader, meshShaderName, taskShaderName
 	);
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::CreateGraphicsPipelineMS(
-	VkDevice device, VkPipelineLayout graphicsLayout, VkRenderPass renderPass,
+	VkDevice device, VkPipelineLayout graphicsLayout,
+	VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
 	ShaderType binaryType, const std::wstring& shaderPath, const ShaderName& fragmentShader,
 	const ShaderName& meshShader, const ShaderName& taskShader
 ) {
@@ -34,7 +36,16 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::CreateGraphicsPipelineMS(
 		shaderPath + fragmentShader.GetNameWithExtension(binaryType)
 	);
 
-	GraphicsPipelineBuilder builder{ graphicsLayout, renderPass };
+	GraphicsPipelineBuilder builder{ graphicsLayout };
+
+	// Don't think it will be that useful to have multiple colour attachment in the same pass?
+	builder.AddColourAttachment(colourFormat);
+
+	if (depthStencilFormat.depthFormat != VK_FORMAT_UNDEFINED)
+		builder.SetDepthStencilState(
+			DepthStencilStateBuilder{}.Enable(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE),
+			depthStencilFormat.depthFormat, depthStencilFormat.stencilFormat
+		);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
 

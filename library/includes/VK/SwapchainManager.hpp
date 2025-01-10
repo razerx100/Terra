@@ -21,10 +21,6 @@ public:
 		VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
 		std::uint32_t width, std::uint32_t height
 	);
-	void CreateFramebuffers(
-		const VKRenderPass& renderPass, const DepthBuffer& depthBuffer,
-		std::uint32_t width, std::uint32_t height
-	);
 
 	[[nodiscard]]
 	size_t GetImageCount() const noexcept { return std::size(m_swapchainImages); }
@@ -35,22 +31,21 @@ public:
 	[[nodiscard]]
 	VkExtent2D GetExtent() const noexcept { return m_swapchainExtent; }
 	[[nodiscard]]
-	const VKFramebuffer& GetFramebuffer(size_t imageIndex) const noexcept
+	const VKImageView& GetColourAttachment(size_t index) const noexcept
 	{
-		return m_frameBuffers[imageIndex];
+		return m_swapchainImageViews[index];
 	}
 
 private:
 	void SelfDestruct() noexcept;
 
 private:
-	VkDevice                   m_device;
-	VkSwapchainKHR             m_swapchain;
-	VkFormat                   m_swapImageViewFormat;
-	VkExtent2D                 m_swapchainExtent;
-	std::vector<VkImage>       m_swapchainImages;
-	std::vector<VKImageView>   m_swapchainImageViews;
-	std::vector<VKFramebuffer> m_frameBuffers;
+	VkDevice                 m_device;
+	VkSwapchainKHR           m_swapchain;
+	VkFormat                 m_swapImageViewFormat;
+	VkExtent2D               m_swapchainExtent;
+	std::vector<VkImage>     m_swapchainImages;
+	std::vector<VKImageView> m_swapchainImageViews;
 
 public:
 	VkSwapchain(const VkSwapchain&) = delete;
@@ -61,8 +56,7 @@ public:
 		m_swapImageViewFormat{ other.m_swapImageViewFormat },
 		m_swapchainExtent{ other.m_swapchainExtent },
 		m_swapchainImages{ std::move(other.m_swapchainImages) },
-		m_swapchainImageViews{ std::move(other.m_swapchainImageViews) },
-		m_frameBuffers{ std::move(other.m_frameBuffers) }
+		m_swapchainImageViews{ std::move(other.m_swapchainImageViews) }
 	{}
 	VkSwapchain& operator=(VkSwapchain&& other) noexcept
 	{
@@ -74,7 +68,6 @@ public:
 		m_swapchainExtent     = other.m_swapchainExtent;
 		m_swapchainImages     = std::move(other.m_swapchainImages);
 		m_swapchainImageViews = std::move(other.m_swapchainImageViews);
-		m_frameBuffers        = std::move(other.m_frameBuffers);
 
 		return *this;
 	}
@@ -95,8 +88,6 @@ public:
 		VkPhysicalDevice physicalDevice, const SurfaceManager& surface,
 		std::uint32_t width, std::uint32_t height
 	);
-	// Should be created after the swapchain and the renderpass.
-	void CreateFramebuffers(const VKRenderPass& renderPass, const DepthBuffer& depthBuffer);
 	void QueryNextImageIndex(VkDevice device);
 
 	[[nodiscard]]
@@ -115,9 +106,9 @@ public:
 	[[nodiscard]]
 	const VkSwapchain& GetSwapchain() const noexcept { return m_swapchain; }
 	[[nodiscard]]
-	const VKFramebuffer& GetFramebuffer(size_t imageIndex) const noexcept
+	const VKImageView& GetColourAttachment(size_t index) const noexcept
 	{
-		return m_swapchain.GetFramebuffer(imageIndex);
+		return m_swapchain.GetColourAttachment(index);
 	}
 
 private:

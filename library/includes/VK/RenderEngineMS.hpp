@@ -52,20 +52,23 @@ private:
 	);
 
 	[[nodiscard]]
-	VkSemaphore GenericTransferStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+	VkSemaphore ExecutePipelineStages(
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
+	);
+
+	[[nodiscard]]
+	VkSemaphore GenericTransferStage(
+		size_t frameIndex, std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 	[[nodiscard]]
 	VkSemaphore DrawingStage(
-		size_t frameIndex, const VKFramebuffer& frameBuffer, VkExtent2D renderArea,
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, VkSemaphore waitSemaphore
 	);
 
 	void SetGraphicsDescriptorBufferLayout();
 	void SetModelGraphicsDescriptors();
-
-	void SetupPipelineStages();
 
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 

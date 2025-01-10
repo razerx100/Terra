@@ -369,7 +369,7 @@ public:
 		std::uint32_t bindingIndex, size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-			textureView.GetView(), sampler.Get(), imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
+			textureView.GetVkView(), sampler.Get(), imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
 		);
 	}
 	[[nodiscard]]
@@ -378,7 +378,7 @@ public:
 		size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
 		);
 	}
 	[[nodiscard]]
@@ -387,7 +387,7 @@ public:
 		size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
-			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
 		);
 	}
 	[[nodiscard]]
@@ -572,7 +572,7 @@ public:
 		std::uint32_t bindingIndex, size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-			textureView.GetView(), sampler.Get(), imageLayout, bindingIndex, setLayoutIndex,
+			textureView.GetVkView(), sampler.Get(), imageLayout, bindingIndex, setLayoutIndex,
 			descriptorIndex
 		);
 	}
@@ -581,7 +581,7 @@ public:
 		size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
 			descriptorIndex
 		);
 	}
@@ -590,7 +590,7 @@ public:
 		size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		GetImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
-			textureView.GetView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
 			descriptorIndex
 		);
 	}
