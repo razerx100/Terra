@@ -186,6 +186,7 @@ public:
 			.colorAttachmentCount = 0u
 		}, m_pipelineCreateInfo{
 			.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			.pNext               = &m_pipelineRenderingInfo,
 			.flags               = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
 			.pViewportState      = &m_viewportInfo,
 			.pRasterizationState = &m_rasterizationInfo,

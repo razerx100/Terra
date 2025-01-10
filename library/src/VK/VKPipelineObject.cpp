@@ -125,16 +125,18 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetTaskStage(VkShaderModule ta
 
 void GraphicsPipelineBuilder::UpdatePointers(bool inputAssembler) noexcept
 {
-	m_pipelineCreateInfo.pNext                      = &m_pipelineRenderingInfo;
+	m_colourStateInfo.pAttachments    = std::data(m_colourAttachmentStates);
+	m_dynamicStateInfo.pDynamicStates = std::data(m_dynamicStates);
+
 	m_pipelineRenderingInfo.pColorAttachmentFormats = std::data(m_colourAttachmentFormats);
-	m_colourStateInfo.pAttachments                  = std::data(m_colourAttachmentStates);
-	m_dynamicStateInfo.pDynamicStates               = std::data(m_dynamicStates);
-	m_pipelineCreateInfo.pViewportState             = &m_viewportInfo;
-	m_pipelineCreateInfo.pRasterizationState        = &m_rasterizationInfo;
-	m_pipelineCreateInfo.pMultisampleState          = &m_multisampleInfo;
-	m_pipelineCreateInfo.pDepthStencilState         = &m_depthStencilStateInfo;
-	m_pipelineCreateInfo.pColorBlendState           = &m_colourStateInfo;
-	m_pipelineCreateInfo.pDynamicState              = &m_dynamicStateInfo;
+
+	m_pipelineCreateInfo.pNext               = &m_pipelineRenderingInfo;
+	m_pipelineCreateInfo.pViewportState      = &m_viewportInfo;
+	m_pipelineCreateInfo.pRasterizationState = &m_rasterizationInfo;
+	m_pipelineCreateInfo.pMultisampleState   = &m_multisampleInfo;
+	m_pipelineCreateInfo.pDepthStencilState  = &m_depthStencilStateInfo;
+	m_pipelineCreateInfo.pColorBlendState    = &m_colourStateInfo;
+	m_pipelineCreateInfo.pDynamicState       = &m_dynamicStateInfo;
 
 	if (inputAssembler)
 	{
@@ -142,7 +144,7 @@ void GraphicsPipelineBuilder::UpdatePointers(bool inputAssembler) noexcept
 		m_pipelineCreateInfo.pInputAssemblyState = &m_inputAssemblerInfo;
 	}
 
-	m_pipelineCreateInfo.pStages             = std::data(m_shaderStagesInfo);
+	m_pipelineCreateInfo.pStages = std::data(m_shaderStagesInfo);
 }
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(VkDynamicState dynamicState) noexcept
