@@ -26,10 +26,10 @@ static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 		.AddInput(VK_FORMAT_R32G32B32_SFLOAT, 12u)
 		.AddInput(VK_FORMAT_R32G32_SFLOAT, 8u)
 		.InitLayout()
-	).SetVertexStage(vs->Get(), fs->Get());
+	);
 
 	// Don't think it will be that useful to have multiple colour attachment in the same pass?
-	builder.AddColourAttachment(colourFormat);
+	builder.AddColourAttachment(colourFormat).SetCullMode(VK_CULL_MODE_BACK_BIT);
 
 	if (depthStencilFormat.depthFormat != VK_FORMAT_UNDEFINED)
 		builder.SetDepthStencilState(
@@ -40,7 +40,11 @@ static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 	auto pso = std::make_unique<VkPipelineObject>(device);
 
 	if (vsSuccess && fsSuccess)
+	{
+		builder.SetVertexStage(vs->Get(), fs->Get());
+
 		pso->CreateGraphicsPipeline(builder);
+	}
 
 	return pso;
 }

@@ -2,7 +2,6 @@
 #define VK_RENDER_PASS_MANAGER_HPP_
 #include <memory>
 #include <PipelineManager.hpp>
-#include <ModelManager.hpp>
 #include <DepthBuffer.hpp>
 
 // Render Pass Manager but without any actual render passes.
@@ -38,11 +37,7 @@ public:
 	void ResizeDepthBuffer(std::uint32_t width, std::uint32_t height)
 	{
 		if (m_depthBuffer)
-		{
-			DepthBuffer& depthBuffer = *m_depthBuffer;
-
-			depthBuffer.Create(width, height);
-		}
+			m_depthBuffer->Create(width, height);
 	}
 
 	void BeginRenderingWithDepth(

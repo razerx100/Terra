@@ -39,7 +39,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::CreateGraphicsPipelineMS(
 	GraphicsPipelineBuilder builder{ graphicsLayout };
 
 	// Don't think it will be that useful to have multiple colour attachment in the same pass?
-	builder.AddColourAttachment(colourFormat);
+	builder.AddColourAttachment(colourFormat).SetCullMode(VK_CULL_MODE_BACK_BIT);
 
 	if (depthStencilFormat.depthFormat != VK_FORMAT_UNDEFINED)
 		builder.SetDepthStencilState(

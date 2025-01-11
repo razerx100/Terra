@@ -93,6 +93,13 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColourAttachment(VkFormat c
 	return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetCullMode(VkCullModeFlagBits cullMode) noexcept
+{
+	m_rasterizationInfo.cullMode = cullMode;
+
+	return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetVertexStage(
 	VkShaderModule vertexShader, VkShaderModule fragmentShader
 ) noexcept {
@@ -158,7 +165,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(VkDynamicState
 
 VkPipelineColorBlendAttachmentState GraphicsPipelineBuilder::GetColourBlendState() noexcept
 {
-	VkPipelineColorBlendAttachmentState blendAttachmentState
+	return VkPipelineColorBlendAttachmentState
 	{
 		.blendEnable         = VK_FALSE,
 		.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
@@ -170,6 +177,4 @@ VkPipelineColorBlendAttachmentState GraphicsPipelineBuilder::GetColourBlendState
 		.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
 			| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 	};
-
-	return blendAttachmentState;
 }

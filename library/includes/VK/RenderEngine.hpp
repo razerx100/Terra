@@ -8,7 +8,6 @@
 #include <TextureManager.hpp>
 #include <CommonBuffers.hpp>
 #include <CameraManager.hpp>
-#include <DepthBuffer.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <Model.hpp>
 #include <VkFramebuffer.hpp>
