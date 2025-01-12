@@ -101,6 +101,9 @@ public:
 	[[nodiscard]]
 	VkPipelineLayout GetLayout() const noexcept { return m_pipelineLayout; }
 
+	[[nodiscard]]
+	const std::wstring& GetShaderPath() const noexcept { return m_shaderPath; }
+
 private:
 	VkDevice              m_device;
 	VkPipelineLayout      m_pipelineLayout;
