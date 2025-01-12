@@ -7,6 +7,11 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 {
 	SetGraphicsDescriptorBufferLayout();
 
+	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
+}
+
+void RenderEngineVSIndividual::FinaliseInitialisation()
+{
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
@@ -14,8 +19,6 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 	CreateGraphicsPipelineLayout();
 
-	// This descriptor shouldn't change, so it should be fine to set it here.
-	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
 	m_cameraManager.SetDescriptorBufferGraphics(
 		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
 	);
@@ -226,20 +229,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	// The layout shouldn't change throughout the runtime.
 	SetGraphicsDescriptorBufferLayout();
 
-	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
-		descriptorBuffer.CreateBuffer();
-
-	ModelManagerVSIndirect::SetGraphicsConstantRange(m_graphicsPipelineLayout);
-
-	CreateGraphicsPipelineLayout();
-
 	m_cameraManager.CreateBuffer(
 		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices(),
 		static_cast<std::uint32_t>(frameCount)
-	);
-	// This descriptor shouldn't change, so it should be fine to set it here.
-	m_cameraManager.SetDescriptorBufferGraphics(
-		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
 	);
 
 	// Compute stuffs.
@@ -259,18 +251,38 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 
 	// Compute Descriptors.
 	SetComputeDescriptorBufferLayout();
+}
 
-	for (auto& descriptorBuffer : m_computeDescriptorBuffers)
-		descriptorBuffer.CreateBuffer();
-
-	ModelManagerVSIndirect::SetComputeConstantRange(m_computePipelineLayout);
-
+void RenderEngineVSIndirect::CreateComputePipelineLayout()
+{
 	if (!std::empty(m_computeDescriptorBuffers))
 		m_computePipelineLayout.Create(m_computeDescriptorBuffers.front().GetLayouts());
 
 	m_computePipelineManager.SetPipelineLayout(m_computePipelineLayout.Get());
+}
 
-	// This descriptor shouldn't change, so it should be fine to set it here.
+void RenderEngineVSIndirect::FinaliseInitialisation()
+{
+	// Graphics
+	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
+		descriptorBuffer.CreateBuffer();
+
+	ModelManagerVSIndirect::SetGraphicsConstantRange(m_graphicsPipelineLayout);
+
+	CreateGraphicsPipelineLayout();
+
+	m_cameraManager.SetDescriptorBufferGraphics(
+		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
+	);
+
+	// Compute
+	for (VkDescriptorBuffer& descriptorBuffer : m_computeDescriptorBuffers)
+		descriptorBuffer.CreateBuffer();
+
+	ModelManagerVSIndirect::SetComputeConstantRange(m_computePipelineLayout);
+
+	CreateComputePipelineLayout();
+
 	m_cameraManager.SetDescriptorBufferCompute(
 		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
 	);

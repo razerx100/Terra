@@ -14,14 +14,18 @@ RenderEngineMS::RenderEngineMS(
 {
 	SetGraphicsDescriptorBufferLayout();
 
-	for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
+}
+
+void RenderEngineMS::FinaliseInitialisation()
+{
+	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
 	ModelManagerMS::SetGraphicsConstantRange(m_graphicsPipelineLayout);
 
 	CreateGraphicsPipelineLayout();
 
-	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
 	m_cameraManager.SetDescriptorBufferGraphics(
 		m_graphicsDescriptorBuffers, s_cameraBindingSlot, s_vertexShaderSetLayoutIndex
 	);

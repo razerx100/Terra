@@ -17,6 +17,8 @@ public:
 		std::uint32_t bufferCount, std::shared_ptr<ThreadPool> threadPool, RenderEngineType engineType
 	);
 
+	void FinaliseInitialisation();
+
 	void Resize(std::uint32_t width, std::uint32_t height);
 	void Render();
 	void WaitForGPUToFinish();

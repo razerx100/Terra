@@ -34,6 +34,11 @@ Terra::Terra(
 	Resize(width, height);
 }
 
+void Terra::FinaliseInitialisation()
+{
+	m_renderEngine->FinaliseInitialisation();
+}
+
 void Terra::CreateInstance()
 {
 #if _DEBUG

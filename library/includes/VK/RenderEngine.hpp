@@ -45,6 +45,8 @@ public:
 	);
 	virtual ~RenderEngine() = default;
 
+	virtual void FinaliseInitialisation() = 0;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	size_t AddMaterial(std::shared_ptr<Material> material);

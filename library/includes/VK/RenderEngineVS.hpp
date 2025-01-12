@@ -27,6 +27,8 @@ public:
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 	);
 
+	void FinaliseInitialisation() override;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddModelBundle(
@@ -112,6 +114,8 @@ public:
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 	);
 
+	void FinaliseInitialisation() override;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddModelBundle(
@@ -159,6 +163,8 @@ private:
 
 	void SetComputeDescriptorBufferLayout();
 	void SetModelComputeDescriptors();
+
+	void CreateComputePipelineLayout();
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
 
