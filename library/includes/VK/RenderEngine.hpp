@@ -16,6 +16,7 @@
 #include <Texture.hpp>
 #include <VkModelBuffer.hpp>
 #include <VkRenderPassManager.hpp>
+#include <VkExternalResourceManager.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
 // first. And these extensions must be added before the device is created. Each implemention may
@@ -106,6 +107,12 @@ public:
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 
 	[[nodiscard]]
+	ExternalResourceFactory const* GetExternalResourceFactory() const noexcept
+	{
+		return m_externalResourceManager.GetResourceFactory();
+	}
+
+	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) = 0;
 
@@ -144,6 +151,7 @@ protected:
 	VkCommandQueue                  m_transferQueue;
 	std::vector<VKSemaphore>        m_transferWait;
 	StagingBufferManager            m_stagingManager;
+	VkExternalResourceManager       m_externalResourceManager;
 	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
 	PipelineLayout                  m_graphicsPipelineLayout;
 	TextureStorage                  m_textureStorage;
@@ -167,6 +175,7 @@ public:
 		m_transferQueue{ std::move(other.m_transferQueue) },
 		m_transferWait{ std::move(other.m_transferWait) },
 		m_stagingManager{ std::move(other.m_stagingManager) },
+		m_externalResourceManager{ std::move(other.m_externalResourceManager) },
 		m_graphicsDescriptorBuffers{ std::move(other.m_graphicsDescriptorBuffers) },
 		m_graphicsPipelineLayout{ std::move(other.m_graphicsPipelineLayout) },
 		m_textureStorage{ std::move(other.m_textureStorage) },
@@ -187,6 +196,7 @@ public:
 		m_transferQueue             = std::move(other.m_transferQueue);
 		m_transferWait              = std::move(other.m_transferWait);
 		m_stagingManager            = std::move(other.m_stagingManager);
+		m_externalResourceManager   = std::move(other.m_externalResourceManager);
 		m_graphicsDescriptorBuffers = std::move(other.m_graphicsDescriptorBuffers);
 		m_graphicsPipelineLayout    = std::move(other.m_graphicsPipelineLayout);
 		m_textureStorage            = std::move(other.m_textureStorage);

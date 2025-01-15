@@ -139,3 +139,8 @@ void RendererVK::RemoveCamera(std::uint32_t index) noexcept
 {
 	m_terra.GetRenderEngine().RemoveCamera(index);
 }
+
+ExternalResourceFactory const* RendererVK::GetExternalResourceFactory() const noexcept
+{
+	return m_terra.GetRenderEngine().GetExternalResourceFactory();
+}

@@ -34,6 +34,7 @@ RenderEngine::RenderEngine(
 		queueFamilyManager->GetIndex(QueueType::TransferQueue)
 	}, m_transferWait{},
 	m_stagingManager{ logicalDevice, &m_memoryManager, m_threadPool.get(), queueFamilyManager },
+	m_externalResourceManager{ logicalDevice, &m_memoryManager },
 	m_graphicsDescriptorBuffers{},
 	m_graphicsPipelineLayout{ logicalDevice },
 	m_textureStorage{ logicalDevice, &m_memoryManager },
