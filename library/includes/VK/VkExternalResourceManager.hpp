@@ -8,7 +8,7 @@ public:
 	VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager);
 
 	[[nodiscard]]
-	ExternalResourceFactory const* GetResourceFactory() const noexcept { return &m_resourceFactory; }
+	ExternalResourceFactory* GetResourceFactory() noexcept { return &m_resourceFactory; }
 
 private:
 	VkExternalResourceFactory m_resourceFactory;

@@ -28,7 +28,10 @@ public:
 	VkDescriptorSetLayout Get() const noexcept { return m_layout; }
 
 	[[nodiscard]]
-	const std::vector<VkDescriptorSetLayoutBinding>& GetBindings() const noexcept { return m_layoutBindings; }
+	const std::vector<VkDescriptorSetLayoutBinding>& GetBindings() const noexcept
+	{
+		return m_layoutBindings;
+	}
 
 private:
 	void SelfDestruct() noexcept;

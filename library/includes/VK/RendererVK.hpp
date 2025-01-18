@@ -61,7 +61,7 @@ public:
 	void SetCamera(std::uint32_t index) noexcept override;
 	void RemoveCamera(std::uint32_t index) noexcept override;
 	[[nodiscard]]
-	ExternalResourceFactory const* GetExternalResourceFactory() const noexcept override;
+	ExternalResourceFactory* GetExternalResourceFactory() noexcept override;
 
 	void Render() override;
 	void WaitForGPUToFinish() override;
