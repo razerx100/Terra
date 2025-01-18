@@ -332,7 +332,7 @@ protected:
 	void CreateGraphicsPipelineLayout()
 	{
 		if (!std::empty(m_graphicsDescriptorBuffers))
-			m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetLayouts());
+			m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetValidLayouts());
 
 		m_renderPassManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
 	}

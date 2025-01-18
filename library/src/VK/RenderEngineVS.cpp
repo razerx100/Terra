@@ -256,7 +256,7 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 void RenderEngineVSIndirect::CreateComputePipelineLayout()
 {
 	if (!std::empty(m_computeDescriptorBuffers))
-		m_computePipelineLayout.Create(m_computeDescriptorBuffers.front().GetLayouts());
+		m_computePipelineLayout.Create(m_computeDescriptorBuffers.front().GetValidLayouts());
 
 	m_computePipelineManager.SetPipelineLayout(m_computePipelineLayout.Get());
 }

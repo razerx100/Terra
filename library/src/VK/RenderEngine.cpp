@@ -166,7 +166,7 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	{
 		m_textureManager.IncreaseAvailableIndices<TexDescType>();
 
-		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		{
 			const std::vector<VkDescriptorSetLayoutBinding> oldSetLayoutBindings
 				= descriptorBuffer.GetLayout(s_fragmentShaderSetLayoutIndex).GetBindings();

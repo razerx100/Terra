@@ -15,6 +15,7 @@ public:
 	void AddPushConstantRange(VkShaderStageFlags shaderFlag, std::uint32_t rangeSize) noexcept;
 
 	void Create(const std::vector<DescriptorSetLayout>& setLayouts);
+	void Create(const std::vector<VkDescriptorSetLayout>& setLayouts);
 	void Create(const DescriptorSetLayout& setLayout);
 	void Create(VkDescriptorSetLayout const* setLayouts, std::uint32_t layoutCount);
 

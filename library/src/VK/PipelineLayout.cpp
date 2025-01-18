@@ -41,6 +41,11 @@ void PipelineLayout::Create(
 	vkCreatePipelineLayout(m_device, &createInfo, nullptr, &m_pipelineLayout);
 }
 
+void PipelineLayout::Create(const std::vector<VkDescriptorSetLayout>& setLayouts)
+{
+	Create(std::data(setLayouts), static_cast<std::uint32_t>(std::size(setLayouts)));
+}
+
 void PipelineLayout::Create(const std::vector<DescriptorSetLayout>& setLayouts)
 {
 	const size_t layoutCount = std::size(setLayouts);

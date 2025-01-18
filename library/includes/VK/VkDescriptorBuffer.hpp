@@ -33,10 +33,7 @@ public:
 	static void SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept;
 
 	[[nodiscard]]
-	const std::vector<DescriptorSetLayout>& GetLayouts() const noexcept
-	{
-		return m_setLayouts;
-	}
+	std::vector<VkDescriptorSetLayout> GetValidLayouts() const noexcept;
 	[[nodiscard]]
 	const DescriptorSetLayout& GetLayout(size_t index) const noexcept
 	{
@@ -61,16 +58,6 @@ private:
 	{
 		return VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 	}
-	[[nodiscard]]
-	const std::vector<VkDeviceSize>& GetLayoutOffsets() const noexcept
-	{
-		return m_layoutOffsets;
-	}
-	[[nodiscard]]
-	const std::vector<std::uint32_t>& GetBufferIndices() const noexcept
-	{
-		return m_bufferIndices;
-	}
 
 	void _createBuffer(
 		Buffer& descriptorBuffer, const std::vector<std::uint32_t>& queueFamilyIndices
@@ -81,6 +68,7 @@ private:
 	MemoryManager*                   m_memoryManager;
 	std::vector<DescriptorSetLayout> m_setLayouts;
 	std::vector<std::uint32_t>       m_bufferIndices;
+	std::vector<VkDeviceSize>        m_validOffsets;
 	std::vector<VkDeviceSize>        m_layoutOffsets;
 	Buffer                           m_descriptorBuffer;
 
@@ -618,6 +606,7 @@ public:
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
 		m_setLayouts{ std::move(other.m_setLayouts) },
 		m_bufferIndices{ std::move(other.m_bufferIndices) },
+		m_validOffsets{ std::move(other.m_validOffsets) },
 		m_layoutOffsets{ std::move(other.m_layoutOffsets) },
 		m_descriptorBuffer{ std::move(other.m_descriptorBuffer) }
 	{}
@@ -628,6 +617,7 @@ public:
 		m_memoryManager    = other.m_memoryManager;
 		m_setLayouts       = std::move(other.m_setLayouts);
 		m_bufferIndices    = std::move(other.m_bufferIndices);
+		m_validOffsets     = std::move(other.m_validOffsets);
 		m_layoutOffsets    = std::move(other.m_layoutOffsets);
 		m_descriptorBuffer = std::move(other.m_descriptorBuffer);
 

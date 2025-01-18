@@ -8,9 +8,7 @@ VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorIn
 VkDescriptorBuffer::VkDescriptorBuffer(
 	VkDevice device, MemoryManager* memoryManager, std::uint32_t setLayoutCount
 ) : m_device{ device }, m_memoryManager{ memoryManager }, m_setLayouts{},
-	// Since we have all of the SetLayouts in a single buffer, the indices are all the same, 0.
-	m_bufferIndices(setLayoutCount, 0u),
-	m_layoutOffsets(setLayoutCount, 0u),
+	m_bufferIndices{}, m_validOffsets{}, m_layoutOffsets(setLayoutCount, 0u),
 	m_descriptorBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
 {
 	for (size_t index = 0u; index < setLayoutCount; ++index)
@@ -35,18 +33,41 @@ void VkDescriptorBuffer::_createBuffer(
 
 	VkDeviceSize layoutSizeInBytes = 0u;
 
-	for (size_t index = 0u; index < std::size(m_setLayouts); ++index)
+	const size_t layoutCount = std::size(m_setLayouts);
+
+	m_validOffsets.resize(layoutCount, 0u);
+	// Since we have all of the SetLayouts in a single buffer, the indices are all the same, 0.
+	m_bufferIndices.resize(layoutCount, 0u);
+
+	size_t validLayoutCount = 0u;
+
+	for (size_t index = 0u; index < layoutCount; ++index)
 	{
 		DescriptorSetLayout& setLayout = m_setLayouts[index];
+
+		const size_t bindingCount      = std::size(setLayout.GetBindings());
+
 		VkDeviceSize currentLayoutSize = 0u;
 
-		setLayout.Create();
+		if (bindingCount)
+		{
+			setLayout.Create();
 
-		DescBuffer::vkGetDescriptorSetLayoutSizeEXT(m_device, setLayout.Get(), &currentLayoutSize);
+			DescBuffer::vkGetDescriptorSetLayoutSizeEXT(m_device, setLayout.Get(), &currentLayoutSize);
+
+			m_validOffsets[validLayoutCount] = layoutSizeInBytes;
+
+			++validLayoutCount;
+		}
 
 		m_layoutOffsets[index] = layoutSizeInBytes;
 		layoutSizeInBytes     += currentLayoutSize;
 	}
+
+	// Resize the valid offsets and buffer indices, in case all of the setLayouts aren't valid.
+	// Since we can't bind those.
+	m_validOffsets.resize(validLayoutCount);
+	m_bufferIndices.resize(validLayoutCount);
 
 	descriptorBuffer.Create(layoutSizeInBytes, GetFlags(), queueFamilyIndices);
 }
@@ -150,6 +171,19 @@ void VkDescriptorBuffer::RecreateSetLayout(
 	m_descriptorBuffer = std::move(newBuffer);
 }
 
+std::vector<VkDescriptorSetLayout> VkDescriptorBuffer::GetValidLayouts() const noexcept
+{
+	std::vector<VkDescriptorSetLayout> validLayouts{};
+
+	validLayouts.reserve(std::size(m_validOffsets));
+
+	for (const DescriptorSetLayout& setLayout : m_setLayouts)
+		if (VkDescriptorSetLayout vkSetLayout = setLayout.Get(); vkSetLayout != VK_NULL_HANDLE)
+			validLayouts.emplace_back(vkSetLayout);
+
+	return validLayouts;
+}
+
 void VkDescriptorBuffer::SetDescriptorBufferInfo(VkPhysicalDevice physicalDevice) noexcept
 {
 	VkPhysicalDeviceProperties2 physicalDeviceProp2{
@@ -212,7 +246,8 @@ void VkDescriptorBuffer::BindDescriptorBuffer(
 
 	VkCommandBuffer commandBuffer = cmdBuffer.Get();
 
-	VkDescriptorBufferBindingInfoEXT bindingInfo{
+	VkDescriptorBufferBindingInfoEXT bindingInfo
+	{
 		.sType   = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
 		.address = descriptorBuffer.GpuPhysicalAddress(),
 		.usage   = VkDescriptorBuffer::GetFlags()
@@ -221,8 +256,8 @@ void VkDescriptorBuffer::BindDescriptorBuffer(
 	DescBuffer::vkCmdBindDescriptorBuffersEXT(commandBuffer, 1u, &bindingInfo);
 
 	VkPipelineLayout layout                           = pipelineLayout.Get();
-	const std::vector<VkDeviceSize>& setLayoutOffsets = descriptorBuffer.GetLayoutOffsets();
-	const std::vector<std::uint32_t>& bufferIndices   = descriptorBuffer.GetBufferIndices();
+	const std::vector<VkDeviceSize>& setLayoutOffsets = descriptorBuffer.m_validOffsets;
+	const std::vector<std::uint32_t>& bufferIndices   = descriptorBuffer.m_bufferIndices;
 
 	// Since we have all of the SetLayouts in a single buffer, the indices should all be 0.
 	// And also the firstSet should be 0 and should progressively increase, which would be

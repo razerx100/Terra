@@ -406,13 +406,13 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	ModelManagerVSIndirect::SetGraphicsConstantRange(graphicsPipelineLayout);
 
-	graphicsPipelineLayout.Create(descBuffersVS.front().GetLayouts());
+	graphicsPipelineLayout.Create(descBuffersVS.front().GetValidLayouts());
 
 	PipelineLayout computePipelineLayout{ logicalDevice };
 
 	ModelManagerVSIndirect::SetComputeConstantRange(computePipelineLayout);
 
-	computePipelineLayout.Create(descBuffersCS.front().GetLayouts());
+	computePipelineLayout.Create(descBuffersCS.front().GetValidLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 
@@ -551,7 +551,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	ModelManagerMS::SetGraphicsConstantRange(graphicsPipelineLayout);
 
-	graphicsPipelineLayout.Create(descBuffers.front().GetLayouts());
+	graphicsPipelineLayout.Create(descBuffers.front().GetValidLayouts());
 
 	TemporaryDataBufferGPU tempDataBuffer{};
 
