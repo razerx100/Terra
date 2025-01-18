@@ -1,9 +1,7 @@
 #include <VkExternalResourceFactory.hpp>
-#include <VkExternalBuffer.hpp>
 
-std::unique_ptr<ExternalBuffer> VkExternalResourceFactory::CreateExternalBuffer(
-	ExternalBufferType type
-) const {
+size_t VkExternalResourceFactory::CreateExternalBuffer(ExternalBufferType type)
+{
 	VkMemoryPropertyFlagBits memoryType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	VkBufferUsageFlags usageFlags
 			= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -14,5 +12,16 @@ std::unique_ptr<ExternalBuffer> VkExternalResourceFactory::CreateExternalBuffer(
 		usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 	}
 
-	return std::make_unique<VkExternalBuffer>(m_device, m_memoryManager, memoryType, usageFlags);
+	const size_t bufferIndex = std::size(m_externalBuffers);
+
+	m_externalBuffers.emplace_back(
+		std::make_shared<VkExternalBuffer>(m_device, m_memoryManager, memoryType, usageFlags)
+	);
+
+	return bufferIndex;
+}
+
+void VkExternalResourceFactory::RemoveExternalBuffer(size_t index) noexcept
+{
+	m_externalBuffers.erase(std::next(std::begin(m_externalBuffers), index));
 }
