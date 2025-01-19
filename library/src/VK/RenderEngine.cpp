@@ -247,7 +247,15 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), s_vertexShaderSetLayoutIndex,
 		cameraShaderStage
 	);
+
 	m_materialBuffers.SetDescriptorBufferLayout(
 		m_graphicsDescriptorBuffers, s_materialBindingSlot, s_fragmentShaderSetLayoutIndex
 	);
+
+	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+}
+
+void RenderEngine::UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails)
+{
+	m_externalResourceManager.UpdateDescriptor(m_graphicsDescriptorBuffers, bindingDetails);
 }

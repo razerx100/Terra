@@ -140,7 +140,12 @@ void RendererVK::RemoveCamera(std::uint32_t index) noexcept
 	m_terra.GetRenderEngine().RemoveCamera(index);
 }
 
-ExternalResourceFactory* RendererVK::GetExternalResourceFactory() noexcept
+ExternalResourceManager* RendererVK::GetExternalResourceManager() noexcept
 {
-	return m_terra.GetRenderEngine().GetExternalResourceFactory();
+	return m_terra.GetRenderEngine().GetExternalResourceManager();
+}
+
+void RendererVK::UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails)
+{
+	m_terra.GetRenderEngine().UpdateExternalBufferDescriptor(bindingDetails);
 }

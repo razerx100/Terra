@@ -28,6 +28,17 @@ public:
 		return std::static_pointer_cast<ExternalBuffer>(m_externalBuffers[index]);
 	}
 
+	[[nodiscard]]
+	VkExternalBuffer& GetVkExternalBuffer(size_t index) noexcept
+	{
+		return *m_externalBuffers[index];
+	}
+	[[nodiscard]]
+	const VkExternalBuffer& GetVkExternalBuffer(size_t index) const noexcept
+	{
+		return *m_externalBuffers[index];
+	}
+
 	void RemoveExternalBuffer(size_t index) noexcept override;
 
 private:

@@ -107,10 +107,12 @@ public:
 	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
 
 	[[nodiscard]]
-	ExternalResourceFactory* GetExternalResourceFactory() noexcept
+	ExternalResourceManager* GetExternalResourceManager() noexcept
 	{
-		return m_externalResourceManager.GetResourceFactory();
+		return &m_externalResourceManager;
 	}
+
+	void UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails);
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
@@ -130,7 +132,7 @@ protected:
 protected:
 	// These descriptors are bound to the Fragment shader. So, they should be the same across
 	// all of the pipeline types. That's why we are going to bind them to their own setLayout.
-	static constexpr std::uint32_t s_graphicsPipelineSetLayoutCount = 2u;
+	static constexpr std::uint32_t s_graphicsPipelineSetLayoutCount = 3u;
 	static constexpr std::uint32_t s_vertexShaderSetLayoutIndex     = 0u;
 	static constexpr std::uint32_t s_fragmentShaderSetLayoutIndex   = 1u;
 
@@ -326,7 +328,10 @@ protected:
 		RenderEngine::Update(frameIndex);
 
 		m_modelBuffers.Update(frameIndex);
+
 		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
+
+		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
 	}
 
 	void CreateGraphicsPipelineLayout()
