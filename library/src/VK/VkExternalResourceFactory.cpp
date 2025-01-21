@@ -6,10 +6,15 @@ size_t VkExternalResourceFactory::CreateExternalBuffer(ExternalBufferType type)
 	VkBufferUsageFlags usageFlags
 			= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-	if (type == ExternalBufferType::CPUVisible)
+	if (type == ExternalBufferType::CPUVisibleSSBO)
 	{
 		memoryType = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	}
+	else if (type == ExternalBufferType::CPUVisibleUniform)
+	{
+		memoryType = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	}
 
 	const size_t bufferIndex = std::size(m_externalBuffers);

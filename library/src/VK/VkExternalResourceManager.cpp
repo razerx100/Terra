@@ -49,10 +49,16 @@ void VkExternalResourceManager::SetGraphicsDescriptorLayout(
 			{
 				VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
-				descriptorBuffer.AddBinding(
-					details.bindingIndex, s_externalBufferSetLayoutIndex,
-					VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
-				);
+				if (details.type == ExternalBufferType::CPUVisibleUniform)
+					descriptorBuffer.AddBinding(
+						details.bindingIndex, s_externalBufferSetLayoutIndex,
+						VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+					);
+				else
+					descriptorBuffer.AddBinding(
+						details.bindingIndex, s_externalBufferSetLayoutIndex,
+						VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
+					);
 			}
 		}
 	}
@@ -86,9 +92,32 @@ void VkExternalResourceManager::UpdateDescriptor(
 		bindingDetails.externalBufferIndex
 	);
 
-	descriptorBuffer.SetStorageBufferDescriptor(
-		vkBuffer.GetBuffer(), bindingDetails.bindingIndex, s_externalBufferSetLayoutIndex, 0u,
-		static_cast<VkDeviceAddress>(bindingDetails.bufferOffset),
-		static_cast<VkDeviceSize>(bindingDetails.bufferSize)
+	if (bindingDetails.type == ExternalBufferType::CPUVisibleUniform)
+		descriptorBuffer.SetUniformBufferDescriptor(
+			vkBuffer.GetBuffer(), bindingDetails.bindingIndex, s_externalBufferSetLayoutIndex, 0u,
+			static_cast<VkDeviceAddress>(bindingDetails.bufferOffset),
+			static_cast<VkDeviceSize>(bindingDetails.bufferSize)
+		);
+	else
+		descriptorBuffer.SetStorageBufferDescriptor(
+			vkBuffer.GetBuffer(), bindingDetails.bindingIndex, s_externalBufferSetLayoutIndex, 0u,
+			static_cast<VkDeviceAddress>(bindingDetails.bufferOffset),
+			static_cast<VkDeviceSize>(bindingDetails.bufferSize)
+		);
+}
+
+void VkExternalResourceManager::UploadExternalBufferGPUOnlyData(
+	StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempGPUBuffer,
+	std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
+	size_t dstBufferOffset
+) const {
+	stagingBufferManager.AddBuffer(
+		std::move(cpuData),
+		static_cast<VkDeviceSize>(srcDataSizeInBytes),
+		&m_resourceFactory.GetVkExternalBuffer(
+			static_cast<size_t>(externalBufferIndex)
+		).GetBuffer(),
+		static_cast<VkDeviceSize>(dstBufferOffset),
+		tempGPUBuffer
 	);
 }

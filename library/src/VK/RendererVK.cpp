@@ -149,3 +149,12 @@ void RendererVK::UpdateExternalBufferDescriptor(const ExternalBufferBindingDetai
 {
 	m_terra.GetRenderEngine().UpdateExternalBufferDescriptor(bindingDetails);
 }
+
+void RendererVK::UploadExternalBufferGPUOnlyData(
+	std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData,
+	size_t srcDataSizeInBytes, size_t dstBufferOffset
+) {
+	m_terra.GetRenderEngine().UploadExternalBufferGPUOnlyData(
+		externalBufferIndex, std::move(cpuData), srcDataSizeInBytes, dstBufferOffset
+	);
+}

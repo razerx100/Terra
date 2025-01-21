@@ -4,6 +4,7 @@
 #include <ExternalResourceManager.hpp>
 #include <VkExternalResourceFactory.hpp>
 #include <VkDescriptorBuffer.hpp>
+#include <StagingBufferManager.hpp>
 
 class VkExternalResourceManager : public ExternalResourceManager
 {
@@ -17,6 +18,12 @@ public:
 	void UpdateDescriptor(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers,
 		const ExternalBufferBindingDetails& bindingDetails
+	) const;
+
+	void UploadExternalBufferGPUOnlyData(
+		StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempGPUBuffer,
+		std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
+		size_t dstBufferOffset
 	) const;
 
 	void UpdateExtensionData(size_t frameIndex) const noexcept;
