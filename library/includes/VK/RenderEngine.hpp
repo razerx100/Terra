@@ -132,8 +132,6 @@ protected:
 
 	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlags cameraShaderStage) noexcept;
 
-	virtual void Update(VkDeviceSize frameIndex) const noexcept;
-
 protected:
 	// These descriptors are bound to the Fragment shader. So, they should be the same across
 	// all of the pipeline types. That's why we are going to bind them to their own setLayout.
@@ -328,9 +326,9 @@ public:
 	}
 
 protected:
-	void Update(VkDeviceSize frameIndex) const noexcept override
+	void Update(VkDeviceSize frameIndex) const noexcept
 	{
-		RenderEngine::Update(frameIndex);
+		m_cameraManager.Update(frameIndex);
 
 		m_modelBuffers.Update(frameIndex);
 

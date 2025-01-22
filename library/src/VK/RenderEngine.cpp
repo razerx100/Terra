@@ -200,14 +200,14 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	{
 		void const* localDescriptor = localDesc.value();
 
-		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
 				localDescriptor, s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex,
 				freeGlobalDescIndex
 			);
 	}
 	else
-		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
 				*textureView, *defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 				s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, freeGlobalDescIndex
@@ -233,11 +233,6 @@ void RenderEngine::RemoveTexture(size_t index)
 	);
 
 	m_textureStorage.RemoveTexture(index);
-}
-
-void RenderEngine::Update(VkDeviceSize frameIndex) const noexcept
-{
-	m_cameraManager.Update(frameIndex);
 }
 
 void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
