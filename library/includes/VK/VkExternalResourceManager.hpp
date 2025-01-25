@@ -13,7 +13,12 @@ class VkExternalResourceManager : public ExternalResourceManager
 public:
 	VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager);
 
-	void AddGraphicsTechniqueExtension(std::shared_ptr<GraphicsTechniqueExtension> extension) override;
+	[[nodiscard]]
+	std::uint32_t AddGraphicsTechniqueExtension(
+		std::shared_ptr<GraphicsTechniqueExtension> extension
+	) override;
+
+	void RemoveGraphicsTechniqueExtension(std::uint32_t index) noexcept override;
 
 	void UpdateDescriptor(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers,
@@ -43,6 +48,8 @@ public:
 
 private:
 	void OnGfxExtensionAddition(GraphicsTechniqueExtension& gfxExtension);
+	void OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension);
+
 	void UpdateDescriptor(
 		VkDescriptorBuffer& descriptorBuffer, const ExternalBufferBindingDetails& bindingDetails
 	) const;
