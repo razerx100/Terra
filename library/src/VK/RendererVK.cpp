@@ -64,6 +64,11 @@ void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName
 	m_terra.GetRenderEngine().ChangeFragmentShader(modelBundleID, fragmentShader);
 }
 
+void RendererVK::MakePixelShaderRemovable(const ShaderName& fragmentShader) noexcept
+{
+	m_terra.GetRenderEngine().MakeFragmentShaderRemovable(fragmentShader);
+}
+
 size_t RendererVK::AddTexture(STexture&& texture)
 {
 	return m_terra.AddTextureAsCombined(std::move(texture));

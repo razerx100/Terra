@@ -28,6 +28,7 @@ public:
 	void SetShaderPath(const wchar_t* path) override;
 	void AddPixelShader(const ShaderName& fragmentShader) override;
 	void ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader) override;
+	void MakePixelShaderRemovable(const ShaderName& fragmentShader) noexcept override;
 
 	[[nodiscard]]
 	// The returned Index is the texture's ID. Not its index in the shader. It should be

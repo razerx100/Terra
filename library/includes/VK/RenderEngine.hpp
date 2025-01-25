@@ -86,6 +86,7 @@ public:
 	virtual void ChangeFragmentShader(
 		std::uint32_t modelBundleID, const ShaderName& fragmentShader
 	) = 0;
+	virtual void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept = 0;
 
 	[[nodiscard]]
 	// Returned semaphore will be signalled when the rendering is finished.
@@ -268,6 +269,11 @@ public:
 		const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
 		m_modelManager.ChangePSO(modelBundleID, psoIndex);
+	}
+
+	void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept override
+	{
+		m_renderPassManager.SetPSOOverwritable(fragmentShader);
 	}
 
 	void RemoveModelBundle(std::uint32_t bundleID) noexcept override

@@ -34,6 +34,11 @@ public:
 		m_depthBuffer = std::make_unique<DepthBuffer>(device, memoryManager);
 	}
 
+	void SetPSOOverwritable(const ShaderName& fragmentShader) noexcept
+	{
+		m_graphicsPipelineManager.SetOverwritable(fragmentShader);
+	}
+
 	void ResizeDepthBuffer(std::uint32_t width, std::uint32_t height)
 	{
 		if (m_depthBuffer)
@@ -167,7 +172,9 @@ public:
 
 	std::uint32_t AddOrGetGraphicsPipeline(const ShaderName& fragmentShader)
 	{
-		return GetGraphicsPSOIndex(fragmentShader);
+		return m_graphicsPipelineManager.AddOrGetGraphicsPipeline(
+			fragmentShader, m_colourAttachmentFormat, GetDepthStencilFormat()
+		);
 	}
 
 	void RecreatePipelines()
@@ -197,29 +204,6 @@ private:
 			depthStencilFormat.depthFormat = m_depthBuffer->GetFormat();
 
 		return depthStencilFormat;
-	}
-
-	[[nodiscard]]
-	std::uint32_t GetGraphicsPSOIndex(const ShaderName& fragmentShader)
-	{
-		std::optional<std::uint32_t> oPSOIndex = m_graphicsPipelineManager.TryToGetPSOIndex(
-			fragmentShader
-		);
-
-		auto psoIndex = std::numeric_limits<std::uint32_t>::max();
-
-		if (!oPSOIndex)
-		{
-			const DepthStencilFormat depthStencilFormat = GetDepthStencilFormat();
-
-			psoIndex = m_graphicsPipelineManager.AddGraphicsPipeline(
-				fragmentShader, m_colourAttachmentFormat, depthStencilFormat
-			);
-		}
-		else
-			psoIndex = oPSOIndex.value();
-
-		return psoIndex;
 	}
 
 private:
