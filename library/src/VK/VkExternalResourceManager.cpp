@@ -22,11 +22,10 @@ void VkExternalResourceManager::OnGfxExtensionAddition(GraphicsTechniqueExtensio
 
 void VkExternalResourceManager::OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension)
 {
-	const std::vector<ExternalBufferBindingDetails>& bufferBindingDetails
-		= gfxExtension.GetBindingDetails();
+	const std::vector<ExternalBufferDetails>& bufferDetails = gfxExtension.GetBufferDetails();
 
-	for (const ExternalBufferBindingDetails& bindingDetails : bufferBindingDetails)
-		m_resourceFactory.RemoveExternalBuffer(bindingDetails.externalBufferIndex);
+	for (const ExternalBufferDetails& details : bufferDetails)
+		m_resourceFactory.RemoveExternalBuffer(details.externalBufferIndex);
 }
 
 std::uint32_t VkExternalResourceManager::AddGraphicsTechniqueExtension(
@@ -69,14 +68,14 @@ void VkExternalResourceManager::SetGraphicsDescriptorLayout(
 			{
 				VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
-				if (details.type == ExternalBufferType::CPUVisibleUniform)
+				if (details.layoutInfo.type == ExternalBufferType::CPUVisibleUniform)
 					descriptorBuffer.AddBinding(
-						details.bindingIndex, s_externalBufferSetLayoutIndex,
+						details.layoutInfo.bindingIndex, s_externalBufferSetLayoutIndex,
 						VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 					);
 				else
 					descriptorBuffer.AddBinding(
-						details.bindingIndex, s_externalBufferSetLayoutIndex,
+						details.layoutInfo.bindingIndex, s_externalBufferSetLayoutIndex,
 						VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u, VK_SHADER_STAGE_FRAGMENT_BIT
 					);
 			}
@@ -95,8 +94,8 @@ void VkExternalResourceManager::UpdateDescriptor(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 		// If there is no frameIndex. Then we add the buffer to all the frames.
 		const bool isSeparateFrameDescriptor
-			= bindingDetails.frameIndex != std::numeric_limits<std::uint32_t>::max()
-			&& bindingDetails.frameIndex != index;
+			= bindingDetails.descriptorInfo.frameIndex != std::numeric_limits<std::uint32_t>::max()
+			&& bindingDetails.descriptorInfo.frameIndex != index;
 
 		if (isSeparateFrameDescriptor)
 			continue;
@@ -109,20 +108,22 @@ void VkExternalResourceManager::UpdateDescriptor(
 	VkDescriptorBuffer& descriptorBuffer, const ExternalBufferBindingDetails& bindingDetails
 ) const {
 	const VkExternalBuffer& vkBuffer = m_resourceFactory.GetVkExternalBuffer(
-		bindingDetails.externalBufferIndex
+		bindingDetails.descriptorInfo.externalBufferIndex
 	);
 
-	if (bindingDetails.type == ExternalBufferType::CPUVisibleUniform)
+	if (bindingDetails.layoutInfo.type == ExternalBufferType::CPUVisibleUniform)
 		descriptorBuffer.SetUniformBufferDescriptor(
-			vkBuffer.GetBuffer(), bindingDetails.bindingIndex, s_externalBufferSetLayoutIndex, 0u,
-			static_cast<VkDeviceAddress>(bindingDetails.bufferOffset),
-			static_cast<VkDeviceSize>(bindingDetails.bufferSize)
+			vkBuffer.GetBuffer(), bindingDetails.layoutInfo.bindingIndex,
+			s_externalBufferSetLayoutIndex, 0u,
+			static_cast<VkDeviceAddress>(bindingDetails.descriptorInfo.bufferOffset),
+			static_cast<VkDeviceSize>(bindingDetails.descriptorInfo.bufferSize)
 		);
 	else
 		descriptorBuffer.SetStorageBufferDescriptor(
-			vkBuffer.GetBuffer(), bindingDetails.bindingIndex, s_externalBufferSetLayoutIndex, 0u,
-			static_cast<VkDeviceAddress>(bindingDetails.bufferOffset),
-			static_cast<VkDeviceSize>(bindingDetails.bufferSize)
+			vkBuffer.GetBuffer(), bindingDetails.layoutInfo.bindingIndex,
+			s_externalBufferSetLayoutIndex, 0u,
+			static_cast<VkDeviceAddress>(bindingDetails.descriptorInfo.bufferOffset),
+			static_cast<VkDeviceSize>(bindingDetails.descriptorInfo.bufferSize)
 		);
 }
 
