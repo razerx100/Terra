@@ -19,6 +19,8 @@ RenderEngineMS::RenderEngineMS(
 
 void RenderEngineMS::FinaliseInitialisation()
 {
+	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 

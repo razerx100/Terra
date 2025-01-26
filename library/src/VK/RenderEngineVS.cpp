@@ -12,6 +12,8 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 void RenderEngineVSIndividual::FinaliseInitialisation()
 {
+	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
 
@@ -263,6 +265,8 @@ void RenderEngineVSIndirect::CreateComputePipelineLayout()
 
 void RenderEngineVSIndirect::FinaliseInitialisation()
 {
+	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+
 	// Graphics
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
