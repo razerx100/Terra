@@ -163,3 +163,13 @@ void RendererVK::UploadExternalBufferGPUOnlyData(
 		externalBufferIndex, std::move(cpuData), srcDataSizeInBytes, dstBufferOffset
 	);
 }
+
+void RendererVK::QueueExternalBufferGPUCopy(
+	std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
+	size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes
+) {
+	m_terra.GetRenderEngine().QueueExternalBufferGPUCopy(
+		externalBufferSrcIndex, externalBufferDstIndex, dstBufferOffset, srcBufferOffset,
+		srcDataSizeInBytes
+	);
+}

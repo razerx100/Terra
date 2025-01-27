@@ -131,7 +131,8 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_meshManager.CopyOldBuffers(transferCmdBuffer);
+			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
+			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
 			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());

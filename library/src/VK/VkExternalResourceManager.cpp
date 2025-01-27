@@ -2,7 +2,7 @@
 #include <limits>
 
 VkExternalResourceManager::VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager)
-	: m_resourceFactory{ device, memoryManager }, m_gfxExtensions{}
+	: m_resourceFactory{ device, memoryManager }, m_gfxExtensions{}, m_copyQueueDetails{}
 {}
 
 void VkExternalResourceManager::OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension)
@@ -86,20 +86,20 @@ void VkExternalResourceManager::UpdateDescriptor(
 void VkExternalResourceManager::UpdateDescriptor(
 	VkDescriptorBuffer& descriptorBuffer, const ExternalBufferBindingDetails& bindingDetails
 ) const {
-	const VkExternalBuffer& vkBuffer = m_resourceFactory.GetVkExternalBuffer(
+	const Buffer& vkBuffer = m_resourceFactory.GetVkBuffer(
 		bindingDetails.descriptorInfo.externalBufferIndex
 	);
 
 	if (bindingDetails.layoutInfo.type == ExternalBufferType::CPUVisibleUniform)
 		descriptorBuffer.SetUniformBufferDescriptor(
-			vkBuffer.GetBuffer(), bindingDetails.layoutInfo.bindingIndex,
+			vkBuffer, bindingDetails.layoutInfo.bindingIndex,
 			s_externalBufferSetLayoutIndex, 0u,
 			static_cast<VkDeviceAddress>(bindingDetails.descriptorInfo.bufferOffset),
 			static_cast<VkDeviceSize>(bindingDetails.descriptorInfo.bufferSize)
 		);
 	else
 		descriptorBuffer.SetStorageBufferDescriptor(
-			vkBuffer.GetBuffer(), bindingDetails.layoutInfo.bindingIndex,
+			vkBuffer, bindingDetails.layoutInfo.bindingIndex,
 			s_externalBufferSetLayoutIndex, 0u,
 			static_cast<VkDeviceAddress>(bindingDetails.descriptorInfo.bufferOffset),
 			static_cast<VkDeviceSize>(bindingDetails.descriptorInfo.bufferSize)
@@ -114,10 +114,56 @@ void VkExternalResourceManager::UploadExternalBufferGPUOnlyData(
 	stagingBufferManager.AddBuffer(
 		std::move(cpuData),
 		static_cast<VkDeviceSize>(srcDataSizeInBytes),
-		&m_resourceFactory.GetVkExternalBuffer(
-			static_cast<size_t>(externalBufferIndex)
-		).GetBuffer(),
+		&m_resourceFactory.GetVkBuffer(static_cast<size_t>(externalBufferIndex)),
 		static_cast<VkDeviceSize>(dstBufferOffset),
 		tempGPUBuffer
 	);
+}
+
+void VkExternalResourceManager::QueueExternalBufferGPUCopy(
+	std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
+	size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes,
+	TemporaryDataBufferGPU& tempGPUBuffer
+) {
+	auto GetSrcSize = [&resourceFactory = m_resourceFactory]
+		(std::uint32_t srcIndex, size_t srcSize) -> VkDeviceSize
+		{
+			auto vkSrcSize = static_cast<VkDeviceSize>(srcSize);
+
+			if (!vkSrcSize)
+				vkSrcSize = resourceFactory.GetVkBuffer(srcIndex).BufferSize();
+
+			return vkSrcSize;
+		};
+
+	m_copyQueueDetails.emplace_back(
+		GPUCopyDetails
+		{
+			.srcIndex  = externalBufferSrcIndex,
+			.dstIndex  = externalBufferDstIndex,
+			.srcOffset = static_cast<VkDeviceSize>(srcBufferOffset),
+			.srcSize   = GetSrcSize(externalBufferSrcIndex, srcDataSizeInBytes),
+			.dstOffset = static_cast<VkDeviceSize>(dstBufferOffset)
+		}
+	);
+
+	tempGPUBuffer.Add(m_resourceFactory.GetExternalBufferSP(externalBufferSrcIndex));
+}
+
+void VkExternalResourceManager::CopyQueuedBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept
+{
+	if (!std::empty(m_copyQueueDetails))
+	{
+		for (const GPUCopyDetails& copyDetails : m_copyQueueDetails)
+			transferCmdBuffer.Copy(
+				m_resourceFactory.GetVkBuffer(copyDetails.srcIndex),
+				m_resourceFactory.GetVkBuffer(copyDetails.dstIndex),
+				BufferToBufferCopyBuilder{}
+					.SrcOffset(copyDetails.srcOffset)
+					.Size(copyDetails.srcSize)
+					.DstOffset(copyDetails.dstOffset)
+			);
+
+		m_copyQueueDetails.clear();
+	}
 }

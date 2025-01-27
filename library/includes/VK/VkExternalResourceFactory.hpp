@@ -30,14 +30,9 @@ public:
 	}
 
 	[[nodiscard]]
-	VkExternalBuffer& GetVkExternalBuffer(size_t index) noexcept
+	const Buffer& GetVkBuffer(size_t index) const noexcept
 	{
-		return *m_externalBuffers[index];
-	}
-	[[nodiscard]]
-	const VkExternalBuffer& GetVkExternalBuffer(size_t index) const noexcept
-	{
-		return *m_externalBuffers[index];
+		return m_externalBuffers[index]->GetBuffer();
 	}
 
 	void RemoveExternalBuffer(size_t index) noexcept override;

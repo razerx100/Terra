@@ -130,6 +130,7 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
+			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
@@ -469,6 +470,7 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
+			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
 			m_modelManager.CopyOldBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);

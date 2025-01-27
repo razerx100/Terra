@@ -6,6 +6,7 @@
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
 #include <ReusableVector.hpp>
+#include <VkCommandQueue.hpp>
 
 class VkExternalResourceManager : public ExternalResourceManager
 {
@@ -32,6 +33,14 @@ public:
 		size_t dstBufferOffset
 	) const;
 
+	void QueueExternalBufferGPUCopy(
+		std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
+		size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes,
+		TemporaryDataBufferGPU& tempGPUBuffer
+	);
+
+	void CopyQueuedBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept;
+
 	void UpdateExtensionData(size_t frameIndex) const noexcept;
 
 	void SetGraphicsDescriptorLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
@@ -48,6 +57,16 @@ public:
 	}
 
 private:
+	struct GPUCopyDetails
+	{
+		std::uint32_t srcIndex;
+		std::uint32_t dstIndex;
+		VkDeviceSize  srcOffset;
+		VkDeviceSize  srcSize;
+		VkDeviceSize  dstOffset;
+	};
+
+private:
 	void OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension);
 
 	void UpdateDescriptor(
@@ -57,6 +76,7 @@ private:
 private:
 	VkExternalResourceFactory      m_resourceFactory;
 	ReusableVector<GfxExtension_t> m_gfxExtensions;
+	std::vector<GPUCopyDetails>    m_copyQueueDetails;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
 
@@ -66,12 +86,14 @@ public:
 
 	VkExternalResourceManager(VkExternalResourceManager&& other) noexcept
 		: m_resourceFactory{ std::move(other.m_resourceFactory) },
-		m_gfxExtensions{ std::move(other.m_gfxExtensions) }
+		m_gfxExtensions{ std::move(other.m_gfxExtensions) },
+		m_copyQueueDetails{ std::move(other.m_copyQueueDetails) }
 	{}
 	VkExternalResourceManager& operator=(VkExternalResourceManager&& other) noexcept
 	{
-		m_resourceFactory = std::move(other.m_resourceFactory);
-		m_gfxExtensions   = std::move(other.m_gfxExtensions);
+		m_resourceFactory  = std::move(other.m_resourceFactory);
+		m_gfxExtensions    = std::move(other.m_gfxExtensions);
+		m_copyQueueDetails = std::move(other.m_copyQueueDetails);
 
 		return *this;
 	}

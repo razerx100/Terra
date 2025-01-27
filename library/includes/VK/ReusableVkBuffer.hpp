@@ -212,9 +212,9 @@ private:
 
 	void CreateBuffer(size_t elementCount)
 	{
-		constexpr size_t strideSize = GetStride();
-		m_instanceSize              = static_cast<VkDeviceSize>(strideSize * elementCount);
-		const auto buffersSize      = m_instanceSize * m_instanceCount;
+		constexpr size_t strideSize    = GetStride();
+		m_instanceSize                 = static_cast<VkDeviceSize>(strideSize * elementCount);
+		const VkDeviceSize buffersSize = m_instanceSize * m_instanceCount;
 
 		m_buffer.Create(buffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 	}
