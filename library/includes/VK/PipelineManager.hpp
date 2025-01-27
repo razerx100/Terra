@@ -44,8 +44,7 @@ public:
 	std::uint32_t AddOrGetGraphicsPipeline(
 		const ShaderName& fragmentShader, VkFormat colourFormat,
 		const DepthStencilFormat& depthStencilFormat
-	)
-		requires !std::is_same_v<Pipeline, ComputePipeline>
+	) requires !std::is_same_v<Pipeline, ComputePipeline>
 	{
 		auto psoIndex                          = std::numeric_limits<std::uint32_t>::max();
 		std::optional<std::uint32_t> oPSOIndex = TryToGetPSOIndex(fragmentShader);
@@ -88,21 +87,15 @@ public:
 
 	void RecreateAllGraphicsPipelines(
 		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat
-	)
-		requires !std::is_same_v<Pipeline, ComputePipeline>
+	) requires !std::is_same_v<Pipeline, ComputePipeline>
 	{
-		std::vector<Pipeline>& pipelines = m_pipelines.Get();
-
-		for (Pipeline& pipeline : pipelines)
+		for (Pipeline& pipeline : m_pipelines)
 			pipeline.Recreate(m_device, m_pipelineLayout, colourFormat, depthStencilFormat, m_shaderPath);
 	}
 
-	void RecreateAllComputePipelines()
-		requires std::is_same_v<Pipeline, ComputePipeline>
+	void RecreateAllComputePipelines() requires std::is_same_v<Pipeline, ComputePipeline>
 	{
-		std::vector<Pipeline>& pipelines = m_pipelines.Get();
-
-		for (Pipeline& pipeline : pipelines)
+		for (Pipeline& pipeline : m_pipelines)
 			pipeline.Recreate(m_device, m_pipelineLayout, m_shaderPath);
 	}
 

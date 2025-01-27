@@ -5,10 +5,11 @@
 #include <VkExternalResourceFactory.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <StagingBufferManager.hpp>
+#include <ReusableVector.hpp>
 
 class VkExternalResourceManager : public ExternalResourceManager
 {
-	using GfxExtension = std::shared_ptr<GraphicsTechniqueExtension>;
+	using GfxExtension_t = std::shared_ptr<GraphicsTechniqueExtension>;
 
 public:
 	VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager);
@@ -47,7 +48,6 @@ public:
 	}
 
 private:
-	void OnGfxExtensionAddition(GraphicsTechniqueExtension& gfxExtension);
 	void OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension);
 
 	void UpdateDescriptor(
@@ -55,8 +55,8 @@ private:
 	) const;
 
 private:
-	VkExternalResourceFactory m_resourceFactory;
-	std::vector<GfxExtension> m_gfxExtensions;
+	VkExternalResourceFactory      m_resourceFactory;
+	ReusableVector<GfxExtension_t> m_gfxExtensions;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
 

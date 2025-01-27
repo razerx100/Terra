@@ -5,10 +5,11 @@
 #include <ExternalResourceFactory.hpp>
 #include <VkAllocator.hpp>
 #include <VkExternalBuffer.hpp>
+#include <ReusableVector.hpp>
 
 class VkExternalResourceFactory : public ExternalResourceFactory
 {
-	using ExternalBuffers_t = std::vector<std::shared_ptr<VkExternalBuffer>>;
+	using ExternalBuffer_t = std::shared_ptr<VkExternalBuffer>;
 
 public:
 	VkExternalResourceFactory(VkDevice device, MemoryManager* memoryManager)
@@ -42,9 +43,9 @@ public:
 	void RemoveExternalBuffer(size_t index) noexcept override;
 
 private:
-	VkDevice          m_device;
-	MemoryManager*    m_memoryManager;
-	ExternalBuffers_t m_externalBuffers;
+	VkDevice                         m_device;
+	MemoryManager*                   m_memoryManager;
+	ReusableVector<ExternalBuffer_t> m_externalBuffers;
 
 public:
 	VkExternalResourceFactory(const VkExternalResourceFactory&) = delete;

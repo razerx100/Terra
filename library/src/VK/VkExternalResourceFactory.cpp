@@ -17,16 +17,12 @@ size_t VkExternalResourceFactory::CreateExternalBuffer(ExternalBufferType type)
 		usageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	}
 
-	const size_t bufferIndex = std::size(m_externalBuffers);
-
-	m_externalBuffers.emplace_back(
+	return m_externalBuffers.Add(
 		std::make_shared<VkExternalBuffer>(m_device, m_memoryManager, memoryType, usageFlags)
 	);
-
-	return bufferIndex;
 }
 
 void VkExternalResourceFactory::RemoveExternalBuffer(size_t index) noexcept
 {
-	m_externalBuffers.erase(std::next(std::begin(m_externalBuffers), index));
+	m_externalBuffers.RemoveElement(index);
 }
