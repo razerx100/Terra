@@ -37,7 +37,9 @@ void RenderEngineMS::SetGraphicsDescriptorBufferLayout()
 {
 	// The layout shouldn't change throughout the runtime.
 	m_meshManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT);
+	SetCommonGraphicsDescriptorBufferLayout(
+		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT
+	);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 	{

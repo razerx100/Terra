@@ -40,7 +40,7 @@ VkSemaphore RenderEngineVSIndividual::ExecutePipelineStages(
 void RenderEngineVSIndividual::SetGraphicsDescriptorBufferLayout()
 {
 	// The layout shouldn't change throughout the runtime.
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 	{
@@ -303,7 +303,7 @@ void RenderEngineVSIndirect::FinaliseInitialisation()
 void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 {
 	// The layout shouldn't change throughout the runtime.
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT);
+	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	m_modelManager.SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
