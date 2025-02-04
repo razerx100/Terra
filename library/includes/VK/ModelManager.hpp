@@ -313,7 +313,7 @@ private:
 	bool                                  m_oldBufferCopyNecessary;
 
 	// Vertex Shader ones
-	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 1u;
+	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 2u;
 
 	// Compute Shader ones
 	static constexpr std::uint32_t s_perModelDataCSBindingSlot      = 1u;

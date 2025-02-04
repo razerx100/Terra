@@ -70,9 +70,6 @@ private:
 
 	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
 
-private:
-	static constexpr std::uint32_t s_cameraBindingSlot = 1u;
-
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
 	RenderEngineVSIndividual& operator=(const RenderEngineVSIndividual&) = delete;
@@ -169,9 +166,6 @@ private:
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
 
 private:
-	// Graphics
-	static constexpr std::uint32_t s_cameraBindingSlot = 2u;
-
 	// Compute
 	static constexpr std::uint32_t s_computePipelineSetLayoutCount = 1u;
 	static constexpr std::uint32_t s_computeShaderSetLayoutIndex   = 0u;

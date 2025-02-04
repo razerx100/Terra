@@ -195,10 +195,10 @@ private:
 	SharedBufferGPU m_vertexIndicesBuffer;
 	SharedBufferGPU m_primIndicesBuffer;
 
-	static constexpr std::uint32_t s_perMeshletBufferBindingSlot    = 1u;
-	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 2u;
-	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 3u;
-	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 4u;
+	static constexpr std::uint32_t s_perMeshletBufferBindingSlot    = 2u;
+	static constexpr std::uint32_t s_vertexBufferBindingSlot        = 3u;
+	static constexpr std::uint32_t s_vertexIndicesBufferBindingSlot = 4u;
+	static constexpr std::uint32_t s_primIndicesBufferBindingSlot   = 5u;
 
 public:
 	MeshManagerMS(const MeshManagerMS&) = delete;

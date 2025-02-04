@@ -144,8 +144,11 @@ protected:
 	static constexpr std::uint32_t s_vertexShaderSetLayoutIndex     = 0u;
 	static constexpr std::uint32_t s_fragmentShaderSetLayoutIndex   = 1u;
 
-	// The fragment and Vertex data are on different sets. So both can be 0u.
+	// Set 0
 	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
+	static constexpr std::uint32_t s_cameraBindingSlot               = 1u;
+
+	// Set 1
 	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
 
 	static constexpr std::uint32_t s_materialBindingSlot        = 1u;
