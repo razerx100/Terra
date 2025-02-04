@@ -145,11 +145,11 @@ protected:
 	static constexpr std::uint32_t s_fragmentShaderSetLayoutIndex   = 1u;
 
 	// Set 0
-	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
+	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
 	static constexpr std::uint32_t s_cameraBindingSlot               = 1u;
 
 	// Set 1
-	static constexpr std::uint32_t s_modelBuffersGraphicsBindingSlot = 0u;
+	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
 
 	static constexpr std::uint32_t s_materialBindingSlot        = 1u;
 	static constexpr std::uint32_t s_combinedTextureBindingSlot = 2u;
