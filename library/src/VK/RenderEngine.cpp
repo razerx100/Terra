@@ -39,7 +39,6 @@ RenderEngine::RenderEngine(
 	m_graphicsPipelineLayout{ logicalDevice },
 	m_textureStorage{ logicalDevice, &m_memoryManager },
 	m_textureManager{ logicalDevice, &m_memoryManager },
-	m_materialBuffers{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
 	m_backgroundColour{ { 0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
 	m_temporaryDataBuffer{}, m_copyNecessary{ false }
@@ -64,36 +63,6 @@ RenderEngine::RenderEngine(
 
 	m_graphicsQueue.CreateCommandBuffers(frameCountU32);
 	m_transferQueue.CreateCommandBuffers(frameCountU32);
-}
-
-size_t RenderEngine::AddMaterial(std::shared_ptr<Material> material)
-{
-	const size_t index = m_materialBuffers.Add(std::move(material));
-
-	m_materialBuffers.Update(index);
-
-	m_materialBuffers.SetDescriptorBuffer(
-		m_graphicsDescriptorBuffers, s_materialBindingSlot, s_fragmentShaderSetLayoutIndex
-	);
-
-	m_copyNecessary = true;
-
-	return index;
-}
-
-std::vector<size_t> RenderEngine::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
-{
-	std::vector<size_t> indices = m_materialBuffers.AddMultiple(std::move(materials));
-
-	m_materialBuffers.Update(indices);
-
-	m_materialBuffers.SetDescriptorBuffer(
-		m_graphicsDescriptorBuffers, s_materialBindingSlot, s_fragmentShaderSetLayoutIndex
-	);
-
-	m_copyNecessary = true;
-
-	return indices;
 }
 
 void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept
@@ -241,10 +210,6 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 	m_cameraManager.SetDescriptorBufferLayoutGraphics(
 		m_graphicsDescriptorBuffers, GetCameraBindingSlot(), s_vertexShaderSetLayoutIndex,
 		cameraShaderStage
-	);
-
-	m_materialBuffers.SetDescriptorBufferLayout(
-		m_graphicsDescriptorBuffers, s_materialBindingSlot, s_fragmentShaderSetLayoutIndex
 	);
 }
 

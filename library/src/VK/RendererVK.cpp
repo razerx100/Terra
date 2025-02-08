@@ -110,26 +110,6 @@ void RendererVK::RemoveMeshBundle(std::uint32_t bundleIndex) noexcept
 	m_terra.GetRenderEngine().RemoveMeshBundle(bundleIndex);
 }
 
-size_t RendererVK::AddMaterial(std::shared_ptr<Material> material)
-{
-	return m_terra.AddMaterial(std::move(material));
-}
-
-std::vector<size_t> RendererVK::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
-{
-	return m_terra.AddMaterials(std::move(materials));
-}
-
-void RendererVK::UpdateMaterial(size_t index) const noexcept
-{
-	m_terra.GetRenderEngine().UpdateMaterial(index);
-}
-
-void RendererVK::RemoveMaterial(size_t index) noexcept
-{
-	m_terra.GetRenderEngine().RemoveMaterial(index);
-}
-
 std::uint32_t RendererVK::AddCamera(std::shared_ptr<Camera>&& camera) noexcept
 {
 	return m_terra.GetRenderEngine().AddCamera(std::move(camera));

@@ -199,19 +199,3 @@ void Terra::RemoveTexture(size_t index)
 
 	m_renderEngine->RemoveTexture(index);
 }
-
-[[nodiscard]]
-size_t Terra::AddMaterial(std::shared_ptr<Material> material)
-{
-	WaitForGPUToFinish();
-
-	return m_renderEngine->AddMaterial(std::move(material));
-}
-
-[[nodiscard]]
-std::vector<size_t> Terra::AddMaterials(std::vector<std::shared_ptr<Material>>&& materials)
-{
-	WaitForGPUToFinish();
-
-	return m_renderEngine->AddMaterials(std::move(materials));
-}

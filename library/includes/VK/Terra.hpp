@@ -65,11 +65,6 @@ public:
 	void RemoveTexture(size_t index);
 
 	[[nodiscard]]
-	size_t AddMaterial(std::shared_ptr<Material> material);
-	[[nodiscard]]
-	std::vector<size_t> AddMaterials(std::vector<std::shared_ptr<Material>>&& materials);
-
-	[[nodiscard]]
 	std::uint32_t AddModelBundle(
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) {

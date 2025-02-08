@@ -7,62 +7,7 @@
 #include <queue>
 #include <TemporaryDataBuffer.hpp>
 
-#include <Material.hpp>
 #include <MeshBundle.hpp>
-
-class MaterialBuffers : public ReusableVkBuffer<MaterialBuffers, std::shared_ptr<Material>>
-{
-	friend class ReusableVkBuffer<MaterialBuffers, std::shared_ptr<Material>>;
-public:
-	MaterialBuffers(VkDevice device, MemoryManager* memoryManager)
-		: ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-		m_device{ device }, m_memoryManager{ memoryManager }
-	{}
-
-	void SetDescriptorBufferLayout(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot,
-		size_t setLayoutIndex
-	) const noexcept;
-	void SetDescriptorBuffer(
-		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t bindingSlot,
-		size_t setLayoutIndex
-	) const;
-
-	// Shouldn't be called on every frame. Only updates the index specified.
-	void Update(size_t index) const noexcept;
-	// Shouldn't be called on every frame. Only updates the indices specified.
-	void Update(const std::vector<size_t>& indices) const noexcept;
-
-private:
-	[[nodiscard]]
-	static consteval size_t GetStride() noexcept { return sizeof(MaterialData); }
-	[[nodiscard]]
-	// Chose 4 for not particular reason.
-	static consteval size_t GetExtraElementAllocationCount() noexcept { return 4u; }
-
-	void CreateBuffer(size_t materialCount);
-
-private:
-	VkDevice       m_device;
-	MemoryManager* m_memoryManager;
-
-public:
-	MaterialBuffers(const MaterialBuffers&) = delete;
-	MaterialBuffers& operator=(const MaterialBuffers&) = delete;
-
-	MaterialBuffers(MaterialBuffers&& other) noexcept
-		: ReusableVkBuffer{ std::move(other) },
-		m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager }
-	{}
-	MaterialBuffers& operator=(MaterialBuffers&& other) noexcept
-	{
-		ReusableVkBuffer::operator=(std::move(other));
-		m_device                  = other.m_device;
-		m_memoryManager           = other.m_memoryManager;
-
-		return *this;
-	}
-};
 
 struct SharedBufferData
 {

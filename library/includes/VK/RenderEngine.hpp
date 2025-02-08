@@ -48,16 +48,6 @@ public:
 
 	virtual void FinaliseInitialisation() = 0;
 
-	[[nodiscard]]
-	// Should wait for the device to be idle before calling this.
-	size_t AddMaterial(std::shared_ptr<Material> material);
-	[[nodiscard]]
-	// Should wait for the device to be idle before calling this.
-	std::vector<size_t> AddMaterials(std::vector<std::shared_ptr<Material>>&& materials);
-
-	void UpdateMaterial(size_t index) const noexcept { m_materialBuffers.Update(index); }
-	void RemoveMaterial(size_t index) noexcept { m_materialBuffers.Remove(index); }
-
 	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
 
 	[[nodiscard]]
@@ -151,10 +141,9 @@ protected:
 	// Set 1
 	static constexpr std::uint32_t s_modelBuffersFragmentBindingSlot = 0u;
 
-	static constexpr std::uint32_t s_materialBindingSlot        = 1u;
-	static constexpr std::uint32_t s_combinedTextureBindingSlot = 2u;
-	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 3u;
-	static constexpr std::uint32_t s_samplerBindingSlot         = 4u;
+	static constexpr std::uint32_t s_combinedTextureBindingSlot = 1u;
+	static constexpr std::uint32_t s_sampledTextureBindingSlot  = 2u;
+	static constexpr std::uint32_t s_samplerBindingSlot         = 3u;
 
 protected:
 	std::shared_ptr<ThreadPool>     m_threadPool;
@@ -169,7 +158,6 @@ protected:
 	PipelineLayout                  m_graphicsPipelineLayout;
 	TextureStorage                  m_textureStorage;
 	TextureManager                  m_textureManager;
-	MaterialBuffers                 m_materialBuffers;
 	CameraManager                   m_cameraManager;
 	VkClearColorValue               m_backgroundColour;
 	ViewportAndScissorManager       m_viewportAndScissors;
@@ -193,7 +181,6 @@ public:
 		m_graphicsPipelineLayout{ std::move(other.m_graphicsPipelineLayout) },
 		m_textureStorage{ std::move(other.m_textureStorage) },
 		m_textureManager{ std::move(other.m_textureManager) },
-		m_materialBuffers{ std::move(other.m_materialBuffers) },
 		m_cameraManager{ std::move(other.m_cameraManager) },
 		m_backgroundColour{ other.m_backgroundColour },
 		m_viewportAndScissors{ other.m_viewportAndScissors },
@@ -214,7 +201,6 @@ public:
 		m_graphicsPipelineLayout    = std::move(other.m_graphicsPipelineLayout);
 		m_textureStorage            = std::move(other.m_textureStorage);
 		m_textureManager            = std::move(other.m_textureManager);
-		m_materialBuffers           = std::move(other.m_materialBuffers);
 		m_cameraManager             = std::move(other.m_cameraManager);
 		m_backgroundColour          = other.m_backgroundColour;
 		m_viewportAndScissors       = other.m_viewportAndScissors;
