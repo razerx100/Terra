@@ -190,6 +190,8 @@ void ModelManagerVSIndirect::ConfigureModelBundleRemove(size_t bundleIndex) noex
 		m_cullingDataBuffer.RelinquishMemory(modelBundleCS.GetCullingSharedData());
 		m_perModelDataCSBuffer.RelinquishMemory(modelBundleCS.GetPerModelDataCSSharedData());
 	}
+
+	m_modelBundlesCS.erase(std::next(std::begin(m_modelBundlesCS), bundleIndex));
 }
 
 void ModelManagerVSIndirect::UpdatePerFrame(
