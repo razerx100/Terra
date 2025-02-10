@@ -215,13 +215,10 @@ public:
 		const std::vector<std::uint32_t>& modelIndices, TemporaryDataBufferGPU& tempBuffer
 	);
 
-	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
 	void ResetCullingData() const noexcept;
 
 	void Update(size_t bufferIndex, const VkMeshBundleVS& meshBundle) const noexcept;
 
-	[[nodiscard]]
-	std::uint32_t GetID() const noexcept { return m_bundleID; }
 	[[nodiscard]]
 	std::uint32_t GetMeshBundleIndex() const noexcept { return m_modelBundle->GetMeshBundleIndex(); }
 
@@ -250,7 +247,6 @@ private:
 	SharedBufferData              m_perModelDataCSSharedData;
 	std::vector<SharedBufferData> m_argumentInputSharedData;
 	std::shared_ptr<ModelBundle>  m_modelBundle;
-	std::uint32_t                 m_bundleID;
 
 public:
 	ModelBundleCSIndirect(const ModelBundleCSIndirect&) = delete;
@@ -260,8 +256,7 @@ public:
 		: m_cullingSharedData{ other.m_cullingSharedData },
 		m_perModelDataCSSharedData{ other.m_perModelDataCSSharedData },
 		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) },
-		m_modelBundle{ std::move(other.m_modelBundle) },
-		m_bundleID{ other.m_bundleID }
+		m_modelBundle{ std::move(other.m_modelBundle) }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
@@ -269,7 +264,6 @@ public:
 		m_perModelDataCSSharedData = other.m_perModelDataCSSharedData;
 		m_argumentInputSharedData  = std::move(other.m_argumentInputSharedData);
 		m_modelBundle              = std::move(other.m_modelBundle);
-		m_bundleID                 = other.m_bundleID;
 
 		return *this;
 	}

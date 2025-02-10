@@ -113,7 +113,6 @@ void ModelBundleMSIndividual::Draw(
 ModelBundleCSIndirect::ModelBundleCSIndirect()
 	: m_cullingSharedData{ nullptr, 0u, 0u }, m_perModelDataCSSharedData{ nullptr, 0u, 0u },
 	m_argumentInputSharedData{}, m_modelBundle{}
-	, m_bundleID{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
 void ModelBundleCSIndirect::ResetCullingData() const noexcept
