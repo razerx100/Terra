@@ -261,7 +261,6 @@ private:
 
 	// These CS models will have the data to be uploaded and the dispatching will be done on the Manager.
 	std::vector<ModelBundleCSIndirect>    m_modelBundlesCS;
-	bool                                  m_oldBufferCopyNecessary;
 
 	// Vertex Shader ones
 	static constexpr std::uint32_t s_modelIndicesVSBindingSlot      = 2u;
@@ -296,8 +295,7 @@ public:
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_argumentCount{ other.m_argumentCount },
-		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) },
-		m_oldBufferCopyNecessary{ other.m_oldBufferCopyNecessary }
+		m_modelBundlesCS{ std::move(other.m_modelBundlesCS) }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
 	{
@@ -314,7 +312,6 @@ public:
 		m_dispatchXCount         = other.m_dispatchXCount;
 		m_argumentCount          = other.m_argumentCount;
 		m_modelBundlesCS         = std::move(other.m_modelBundlesCS);
-		m_oldBufferCopyNecessary = other.m_oldBufferCopyNecessary;
 
 		return *this;
 	}
