@@ -94,7 +94,7 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
 	const std::uint32_t index    = m_modelManager.AddModelBundle(
-		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
+		std::move(modelBundle), psoIndex, m_modelBuffers
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -427,7 +427,7 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
 	const std::uint32_t index    = m_modelManager.AddModelBundle(
-		std::move(modelBundle), psoIndex, m_modelBuffers, m_stagingManager, m_temporaryDataBuffer
+		std::move(modelBundle), psoIndex, m_modelBuffers
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -471,7 +471,6 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
 			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
-			m_modelManager.CopyOldBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 

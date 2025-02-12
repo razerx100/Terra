@@ -202,17 +202,18 @@ public:
 	{
 		std::uint32_t bundleIndex;
 		std::uint32_t modelIndex;
+		std::uint32_t isVisible;
 	};
 
 public:
 	ModelBundleCSIndirect();
 
-	void SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept;
+	void SetModelBundle(
+		std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
+	) noexcept;
 	void CreateBuffers(
-		StagingBufferManager& stagingBufferMan,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
-		SharedBufferCPU& cullingSharedBuffer, SharedBufferGPU& perModelDataCSBuffer,
-		const std::vector<std::uint32_t>& modelIndices, TemporaryDataBufferGPU& tempBuffer
+		SharedBufferCPU& cullingSharedBuffer, SharedBufferCPU& perModelDataCSBuffer
 	);
 
 	void ResetCullingData() const noexcept;
@@ -221,12 +222,26 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t GetMeshBundleIndex() const noexcept { return m_modelBundle->GetMeshBundleIndex(); }
-
+	[[nodiscard]]
+	std::uint32_t GetID() const noexcept
+	{
+		if (!std::empty(m_modelIndices))
+			return m_modelIndices.front();
+		else
+			return std::numeric_limits<std::uint32_t>::max();
+	}
 	[[nodiscard]]
 	// Must be called after the buffers have been created.
 	std::uint32_t GetModelBundleIndex() const noexcept
 	{
 		return static_cast<std::uint32_t>(m_cullingSharedData.offset / sizeof(CullingData));
+	}
+	[[nodiscard]]
+	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
+	[[nodiscard]]
+	std::uint32_t GetModelCount() const noexcept
+	{
+		return static_cast<std::uint32_t>(std::size(m_modelIndices));
 	}
 
 	[[nodiscard]]
@@ -247,6 +262,7 @@ private:
 	SharedBufferData              m_perModelDataCSSharedData;
 	std::vector<SharedBufferData> m_argumentInputSharedData;
 	std::shared_ptr<ModelBundle>  m_modelBundle;
+	std::vector<std::uint32_t>    m_modelIndices;
 
 public:
 	ModelBundleCSIndirect(const ModelBundleCSIndirect&) = delete;
@@ -256,7 +272,8 @@ public:
 		: m_cullingSharedData{ other.m_cullingSharedData },
 		m_perModelDataCSSharedData{ other.m_perModelDataCSSharedData },
 		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) },
-		m_modelBundle{ std::move(other.m_modelBundle) }
+		m_modelBundle{ std::move(other.m_modelBundle) },
+		m_modelIndices{ std::move(other.m_modelIndices) }
 	{}
 	ModelBundleCSIndirect& operator=(ModelBundleCSIndirect&& other) noexcept
 	{
@@ -264,6 +281,7 @@ public:
 		m_perModelDataCSSharedData = other.m_perModelDataCSSharedData;
 		m_argumentInputSharedData  = std::move(other.m_argumentInputSharedData);
 		m_modelBundle              = std::move(other.m_modelBundle);
+		m_modelIndices             = std::move(other.m_modelIndices);
 
 		return *this;
 	}
@@ -274,38 +292,26 @@ class ModelBundleVSIndirect : public ModelBundleBase
 public:
 	ModelBundleVSIndirect();
 
-	void SetModelBundle(
-		std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
-	) noexcept;
+	void SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept;
 
 	void CreateBuffers(
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
+		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
+		std::uint32_t modelCount
 	);
 	void Draw(
 		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 	) const noexcept;
 
-	[[nodiscard]]
-	const std::vector<std::uint32_t>& GetModelIndices() const noexcept { return m_modelIndices; }
+	void SetID(std::uint32_t bundleID) noexcept { m_bundleID = bundleID; }
 
 	[[nodiscard]]
-	std::uint32_t GetID() const noexcept
-	{
-		if (!std::empty(m_modelIndices))
-			return m_modelIndices.front();
-		else
-			return std::numeric_limits<std::uint32_t>::max();
-	}
-
+	std::uint32_t GetID() const noexcept { return m_bundleID; }
 	[[nodiscard]]
 	std::uint32_t GetMeshBundleIndex() const noexcept { return m_modelBundle->GetMeshBundleIndex(); }
 	[[nodiscard]]
-	std::uint32_t GetModelCount() const noexcept
-	{
-		return static_cast<std::uint32_t>(std::size(m_modelIndices));
-	}
+	std::uint32_t GetModelCount() const noexcept { return m_modelCount; }
 	[[nodiscard]]
 	std::uint32_t GetModelOffset() const noexcept { return m_modelOffset; }
 	[[nodiscard]]
@@ -339,11 +345,8 @@ private:
 	std::vector<SharedBufferData> m_argumentOutputSharedData;
 	std::vector<SharedBufferData> m_counterSharedData;
 	std::vector<SharedBufferData> m_modelIndicesSharedData;
-
-	// I am gonna use the DrawIndex in the Vertex shader and the thread Index in the Compute shader
-	// to index into this buffer and that will give us the actual model index.
-	// Should replace this with a better alternative one day.
-	std::vector<std::uint32_t>    m_modelIndices;
+	std::uint32_t                 m_modelCount;
+	std::uint32_t                 m_bundleID;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
@@ -357,7 +360,8 @@ public:
 		m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
 		m_counterSharedData{ std::move(other.m_counterSharedData) },
 		m_modelIndicesSharedData{ std::move(other.m_modelIndicesSharedData) },
-		m_modelIndices{ std::move(other.m_modelIndices) }
+		m_modelCount{ other.m_modelCount },
+		m_bundleID{ other.m_bundleID }
 	{}
 	ModelBundleVSIndirect& operator=(ModelBundleVSIndirect&& other) noexcept
 	{
@@ -367,7 +371,8 @@ public:
 		m_argumentOutputSharedData = std::move(other.m_argumentOutputSharedData);
 		m_counterSharedData        = std::move(other.m_counterSharedData);
 		m_modelIndicesSharedData   = std::move(other.m_modelIndicesSharedData);
-		m_modelIndices             = std::move(other.m_modelIndices);
+		m_modelCount               = other.m_modelCount;
+		m_bundleID                 = other.m_bundleID;
 
 		return *this;
 	}

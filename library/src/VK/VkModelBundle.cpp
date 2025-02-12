@@ -32,14 +32,17 @@ void ModelBundleVSIndividual::Draw(
 
 	for(size_t index = 0; index < std::size(models); ++index)
 	{
+		const std::shared_ptr<Model>& model = models[index];
+
+		if (!model->IsVisible())
+			continue;
+
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
 			pushConstantSize, &m_modelBufferIndices[index]
 		);
-
-		const std::shared_ptr<Model>& model = models[index];
 
 		const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
 		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(meshDetailsVS);
@@ -70,7 +73,10 @@ void ModelBundleMSIndividual::Draw(
 
 	for (size_t index = 0u; index < std::size(models); ++index)
 	{
-		const auto& model = models[index];
+		const std::shared_ptr<Model>& model = models[index];
+
+		if (!model->IsVisible())
+			continue;
 
 		constexpr auto pushConstantSize = GetConstantBufferSize();
 
@@ -78,7 +84,7 @@ void ModelBundleMSIndividual::Draw(
 
 		const ModelDetails modelConstants
 		{
-			.meshDetails      = MeshDetails
+			.meshDetails = MeshDetails
 				{
 					.meshletCount  = meshDetailsMS.meshletCount,
 					.meshletOffset = meshDetailsMS.meshletOffset,
@@ -112,7 +118,7 @@ void ModelBundleMSIndividual::Draw(
 // Model Bundle CS Indirect
 ModelBundleCSIndirect::ModelBundleCSIndirect()
 	: m_cullingSharedData{ nullptr, 0u, 0u }, m_perModelDataCSSharedData{ nullptr, 0u, 0u },
-	m_argumentInputSharedData{}, m_modelBundle{}
+	m_argumentInputSharedData{}, m_modelBundle{}, m_modelIndices{}
 {}
 
 void ModelBundleCSIndirect::ResetCullingData() const noexcept
@@ -128,23 +134,24 @@ void ModelBundleCSIndirect::ResetCullingData() const noexcept
 	);
 }
 
-void ModelBundleCSIndirect::SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept
-{
-	m_modelBundle = std::move(bundle);
+void ModelBundleCSIndirect::SetModelBundle(
+	std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
+) noexcept {
+	m_modelBundle  = std::move(bundle);
+	m_modelIndices = std::move(modelBufferIndices);
 }
 
 void ModelBundleCSIndirect::CreateBuffers(
-	StagingBufferManager& stagingBufferMan,
 	std::vector<SharedBufferCPU>& argumentInputSharedBuffer,
-	SharedBufferCPU& cullingSharedBuffer, SharedBufferGPU& perModelDataCSBuffer,
-	const std::vector<std::uint32_t>& modelIndices, TemporaryDataBufferGPU& tempBuffer
+	SharedBufferCPU& cullingSharedBuffer, SharedBufferCPU& perModelDataCSBuffer
 ) {
 	constexpr size_t argumentStrideSize = sizeof(VkDrawIndexedIndirectCommand);
+	constexpr size_t perModelStride     = sizeof(PerModelData);
 
-	const auto argumentCount        = static_cast<std::uint32_t>(std::size(m_modelBundle->GetModels()));
-	const auto argumentBufferSize   = static_cast<VkDeviceSize>(argumentStrideSize * argumentCount);
-	const auto cullingDataSize      = static_cast<VkDeviceSize>(sizeof(CullingData));
-	const auto perModelDataSize     = static_cast<VkDeviceSize>(sizeof(PerModelData) * argumentCount);
+	const auto argumentCount      = static_cast<std::uint32_t>(std::size(m_modelBundle->GetModels()));
+	const auto argumentBufferSize = static_cast<VkDeviceSize>(argumentStrideSize * argumentCount);
+	const auto cullingDataSize    = static_cast<VkDeviceSize>(sizeof(CullingData));
+	const auto perModelDataSize   = static_cast<VkDeviceSize>(perModelStride * argumentCount);
 
 	{
 		const size_t argumentInputBufferCount = std::size(argumentInputSharedBuffer);
@@ -186,44 +193,35 @@ void ModelBundleCSIndirect::CreateBuffers(
 		);
 	}
 
-	m_perModelDataCSSharedData = perModelDataCSBuffer.AllocateAndGetSharedData(
-		perModelDataSize, tempBuffer
-	);
-
-	const std::uint32_t modelBundleIndex = GetModelBundleIndex();
-
-	// Each thread will process a single model independently. And since we are trying to
-	// cull all of the models across all of the bundles with a single call to dispatch, we can't
-	// set the index as constantData per bundle. So, we will be giving each model the index
-	// of its bundle so each thread can work independently.
-
-	auto perModelDataTempBuffer = std::make_shared<std::uint8_t[]>(perModelDataSize);
-
 	{
-		std::uint8_t* perModelDataAddress = perModelDataTempBuffer.get();
-		size_t offset                     = 0u;
+		const std::uint32_t modelBundleIndex = GetModelBundleIndex();
 
-		for (std::uint32_t modelIndex : modelIndices)
+		// Each thread will process a single model independently. And since we are trying to
+		// cull all of the models across all of the bundles with a single call to dispatch, we can't
+		// set the index as constantData per bundle. So, we will be giving each model the index
+		// of its bundle so each thread can work independently.
+
+		m_perModelDataCSSharedData = perModelDataCSBuffer.AllocateAndGetSharedData(
+			perModelDataSize, true
+		);
+
+		std::uint8_t* bufferStart = m_perModelDataCSSharedData.bufferData->CPUHandle();
+		auto offset               = static_cast<size_t>(m_perModelDataCSSharedData.offset);
+
+		for (std::uint32_t modelIndex : m_modelIndices)
 		{
-			constexpr size_t perModelStride = sizeof(PerModelData);
-
 			PerModelData perModelData
 			{
 				.bundleIndex = modelBundleIndex,
-				.modelIndex  = modelIndex
+				.modelIndex  = modelIndex,
+				.isVisible   = 1u
 			};
 
-			memcpy(perModelDataAddress + offset, &perModelData, perModelStride);
+			memcpy(bufferStart + offset, &perModelData, perModelStride);
 
 			offset += perModelStride;
 		}
 	}
-
-	stagingBufferMan.AddBuffer(
-		std::move(perModelDataTempBuffer), perModelDataSize,
-		m_perModelDataCSSharedData.bufferData, m_perModelDataCSSharedData.offset,
-		tempBuffer
-	);
 }
 
 void ModelBundleCSIndirect::Update(
@@ -231,49 +229,71 @@ void ModelBundleCSIndirect::Update(
 ) const noexcept {
 	const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[bufferIndex];
 
-	std::uint8_t* argumentInputStart
-		= argumentInputSharedData.bufferData->CPUHandle() + argumentInputSharedData.offset;
+	std::uint8_t* argumentInputStart  = argumentInputSharedData.bufferData->CPUHandle();
+	std::uint8_t* perModelBufferStart = m_perModelDataCSSharedData.bufferData->CPUHandle();
 
 	constexpr size_t argumentStride = sizeof(VkDrawIndexedIndirectCommand);
-	size_t modelOffset              = 0u;
-	const auto& models              = m_modelBundle->GetModels();
+	auto argumentOffset             = static_cast<size_t>(argumentInputSharedData.offset);
 
-	for (const auto& model : models)
+	constexpr size_t perModelStride = sizeof(PerModelData);
+	auto perModelOffset             = static_cast<size_t>(m_perModelDataCSSharedData.offset);
+	constexpr auto isVisibleOffset  = offsetof(PerModelData, isVisible);
+	constexpr auto modelIndexOffset = offsetof(PerModelData, modelIndex);
+
+	const auto& models              = m_modelBundle->GetModels();
+	const size_t modelCount         = std::size(models);
+
+	for (size_t index = 0; index < modelCount; ++index)
 	{
+		const std::shared_ptr<Model>& model         = models[index];
+
 		const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
 		const VkDrawIndexedIndirectCommand meshArgs = ModelBundleBase::GetDrawIndexedIndirectCommand(
 			meshDetailsVS
 		);
 
-		memcpy(argumentInputStart + modelOffset, &meshArgs, argumentStride);
+		memcpy(argumentInputStart + argumentOffset, &meshArgs, argumentStride);
 
-		modelOffset += argumentStride;
+		argumentOffset += argumentStride;
+
+		// Model Visiblity
+		const auto visiblity = static_cast<std::uint32_t>(model->IsVisible());
+
+		memcpy(perModelBufferStart + perModelOffset + isVisibleOffset, &visiblity, sizeof(std::uint32_t));
+
+		// Model Index
+		memcpy(
+			perModelBufferStart + perModelOffset + modelIndexOffset,
+			&m_modelIndices[index], sizeof(std::uint32_t)
+		);
+
+		perModelOffset += perModelStride;
 	}
 }
 
 // Model Bundle VS Indirect
 ModelBundleVSIndirect::ModelBundleVSIndirect()
 	: ModelBundleBase{}, m_modelOffset{ 0u }, m_modelBundle {}, m_argumentOutputSharedData{},
-	m_counterSharedData{}, m_modelIndicesSharedData{}, m_modelIndices{}
+	m_counterSharedData{}, m_modelIndicesSharedData{}, m_modelCount{ 0u }, m_bundleID{ 0u }
 {}
 
-void ModelBundleVSIndirect::SetModelBundle(
-	std::shared_ptr<ModelBundle> bundle, std::vector<std::uint32_t> modelBufferIndices
-) noexcept {
-	m_modelBundle  = std::move(bundle);
-	m_modelIndices = std::move(modelBufferIndices);
+void ModelBundleVSIndirect::SetModelBundle(std::shared_ptr<ModelBundle> bundle) noexcept
+{
+	m_modelBundle = std::move(bundle);
 }
 
 void ModelBundleVSIndirect::CreateBuffers(
 	std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 	std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-	std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
+	std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
+	std::uint32_t modelCount
 ) {
 	constexpr size_t argStrideSize      = sizeof(VkDrawIndexedIndirectCommand);
 	constexpr size_t indexStrideSize    = sizeof(std::uint32_t);
-	const std::uint32_t modelCount      = GetModelCount();
 	const auto argumentOutputBufferSize = static_cast<VkDeviceSize>(modelCount * argStrideSize);
 	const auto modelIndiceBufferSize    = static_cast<VkDeviceSize>(modelCount * indexStrideSize);
+
+	m_modelCount                        = modelCount;
 
 	{
 		const size_t argumentOutputBufferCount = std::size(argumentOutputSharedBuffers);

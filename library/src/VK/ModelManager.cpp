@@ -17,11 +17,19 @@ void ModelManagerVSIndividual::_setGraphicsConstantRange(PipelineLayout& layout)
 
 void ModelManagerVSIndividual::ConfigureModelBundle(
 	ModelBundleVSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundle>&& modelBundle,
-	[[maybe_unused]] StagingBufferManager& stagingBufferMan,
-	[[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle
 ) const noexcept {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
+}
+
+void ModelManagerVSIndividual::ConfigureModelBundleRemove(
+	size_t bundleIndex, ModelBuffers& modelBuffers
+) noexcept {
+	const ModelBundleVSIndividual& modelBundle     = m_modelBundles[bundleIndex];
+	const std::vector<std::uint32_t>& modelIndices = modelBundle.GetModelIndices();
+
+	for (std::uint32_t modelIndex : modelIndices)
+		modelBuffers.Remove(modelIndex);
 }
 
 void ModelManagerVSIndividual::Draw(
@@ -121,23 +129,24 @@ void ModelManagerVSIndirect::UpdateDispatchX() noexcept
 
 void ModelManagerVSIndirect::ConfigureModelBundle(
 	ModelBundleVSIndirect& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundle>&& modelBundle, StagingBufferManager& stagingBufferMan,
-	TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle
 ) {
 	ModelBundleCSIndirect modelBundleCS{};
 
-	modelBundleCS.SetModelBundle(modelBundle);
+	modelBundleCS.SetModelBundle(modelBundle, std::move(modelIndices));
 
-	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
+	modelBundleObj.SetID(modelBundleCS.GetID());
 
-	modelBundleObj.CreateBuffers(m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers);
+	modelBundleObj.SetModelBundle(std::move(modelBundle));
+
+	modelBundleObj.CreateBuffers(
+		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers,
+		modelBundleCS.GetModelCount()
+	);
 
 	UpdateCounterResetValues();
 
-	modelBundleCS.CreateBuffers(
-		stagingBufferMan, m_argumentInputBuffers, m_cullingDataBuffer,
-		m_perModelDataCSBuffer, modelBundleObj.GetModelIndices(), tempBuffer
-	);
+	modelBundleCS.CreateBuffers(m_argumentInputBuffers, m_cullingDataBuffer, m_perModelDataCSBuffer);
 
 	const auto modelBundleIndexInBuffer = modelBundleCS.GetModelBundleIndex();
 
@@ -152,8 +161,9 @@ void ModelManagerVSIndirect::ConfigureModelBundle(
 	UpdateDispatchX();
 }
 
-void ModelManagerVSIndirect::ConfigureModelBundleRemove(size_t bundleIndex) noexcept
-{
+void ModelManagerVSIndirect::ConfigureModelBundleRemove(
+	size_t bundleIndex, ModelBuffers& modelBuffers
+) noexcept {
 	const ModelBundleVSIndirect& modelBundleVS = m_modelBundles[bundleIndex];
 
 	{
@@ -190,6 +200,11 @@ void ModelManagerVSIndirect::ConfigureModelBundleRemove(size_t bundleIndex) noex
 		m_cullingDataBuffer.RelinquishMemory(modelBundleCS.GetCullingSharedData());
 		m_perModelDataCSBuffer.RelinquishMemory(modelBundleCS.GetPerModelDataCSSharedData());
 	}
+
+	const std::vector<std::uint32_t>& modelIndices = modelBundleCS.GetModelIndices();
+
+	for (std::uint32_t modelIndex : modelIndices)
+		modelBuffers.Remove(modelIndex);
 
 	m_modelBundlesCS.erase(std::next(std::begin(m_modelBundlesCS), bundleIndex));
 }
@@ -375,19 +390,6 @@ void ModelManagerVSIndirect::Draw(
 	}
 }
 
-void ModelManagerVSIndirect::CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept
-{
-	if (m_oldBufferCopyNecessary)
-	{
-		m_perModelDataCSBuffer.CopyOldBuffer(transferBuffer);
-		// I don't think copying is needed for the Output Argument
-		// and the counter buffers. As their data will be only
-		// needed on the same frame and not afterwards.
-
-		m_oldBufferCopyNecessary = false;
-	}
-}
-
 void ModelManagerVSIndirect::ResetCounterBuffer(
 	const VKCommandBuffer& computeCmdBuffer, size_t frameIndex
 ) const noexcept {
@@ -435,11 +437,18 @@ ModelManagerMS::ModelManagerMS(MemoryManager* memoryManager) : ModelManager{ mem
 
 void ModelManagerMS::ConfigureModelBundle(
 	ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-	std::shared_ptr<ModelBundle>&& modelBundle,
-	[[maybe_unused]] StagingBufferManager& stagingBufferMan,
-	[[maybe_unused]] TemporaryDataBufferGPU& tempBuffer
+	std::shared_ptr<ModelBundle>&& modelBundle
 ) {
 	modelBundleObj.SetModelBundle(std::move(modelBundle), std::move(modelIndices));
+}
+
+void ModelManagerMS::ConfigureModelBundleRemove(size_t bundleIndex, ModelBuffers& modelBuffers) noexcept
+{
+	const ModelBundleMSIndividual& modelBundle     = m_modelBundles[bundleIndex];
+	const std::vector<std::uint32_t>& modelIndices = modelBundle.GetModelIndices();
+
+	for (std::uint32_t modelIndex : modelIndices)
+		modelBuffers.Remove(modelIndex);
 }
 
 void ModelManagerMS::_setGraphicsConstantRange(PipelineLayout& layout) noexcept

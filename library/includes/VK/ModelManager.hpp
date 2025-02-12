@@ -37,9 +37,7 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, std::uint32_t psoIndex,
-		ModelBuffers& modelBuffers, StagingBufferManager& stagingBufferMan,
-		TemporaryDataBufferGPU& tempBuffer
+		std::shared_ptr<ModelBundle>&& modelBundle, std::uint32_t psoIndex, ModelBuffers& modelBuffers
 	) {
 		const std::vector<std::shared_ptr<Model>>& models = modelBundle->GetModels();
 
@@ -55,8 +53,7 @@ public:
 			ModelBundleType modelBundleObj{};
 
 			static_cast<Derived*>(this)->ConfigureModelBundle(
-				modelBundleObj, std::move(modelIndices), std::move(modelBundle),
-				stagingBufferMan, tempBuffer
+				modelBundleObj, std::move(modelIndices), std::move(modelBundle)
 			);
 
 			modelBundleObj.SetPSOIndex(psoIndex);
@@ -79,9 +76,7 @@ public:
 				std::distance(std::begin(m_modelBundles), result)
 			);
 
-			RemoveModelsFromModelBuffer(*result, modelBuffers);
-
-			static_cast<Derived*>(this)->ConfigureModelBundleRemove(modelBundleIndex);
+			static_cast<Derived*>(this)->ConfigureModelBundleRemove(modelBundleIndex, modelBuffers);
 
 			m_modelBundles.erase(result);
 		}
@@ -120,18 +115,6 @@ protected:
 			m_modelBundles,
 			[bundleID](const ModelBundleType& bundle) { return bundle.GetID() == bundleID; }
 		);
-	}
-
-	virtual void ConfigureModelBundleRemove([[maybe_unused]] size_t modelBundleIndex) noexcept {}
-
-private:
-	static void RemoveModelsFromModelBuffer(
-		const ModelBundleType& modelBundle, ModelBuffers& modelBuffers
-	) {
-		const std::vector<std::uint32_t>& modelIndices = modelBundle.GetModelIndices();
-
-		for (std::uint32_t modelIndex : modelIndices)
-			modelBuffers.Remove(modelIndex);
 	}
 
 protected:
@@ -173,12 +156,11 @@ private:
 	static void _setGraphicsConstantRange(PipelineLayout& layout) noexcept;
 
 	void ConfigureModelBundle(
-		ModelBundleVSIndividual& modelBundleObj,
-		std::vector<std::uint32_t>&& modelIndices,
-		std::shared_ptr<ModelBundle>&& modelBundle,
-		StagingBufferManager& stagingBufferMan,
-		TemporaryDataBufferGPU& tempBuffer
+		ModelBundleVSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
+		std::shared_ptr<ModelBundle>&& modelBundle
 	) const noexcept;
+
+	void ConfigureModelBundleRemove(size_t bundleIndex, ModelBuffers& modelBuffers) noexcept;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -217,8 +199,6 @@ public:
 
 	static void SetComputeConstantRange(PipelineLayout& layout) noexcept;
 
-	void CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexcept;
-
 	void SetDescriptorBufferLayoutVS(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 	) const noexcept;
@@ -252,11 +232,10 @@ private:
 
 	void ConfigureModelBundle(
 		ModelBundleVSIndirect& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-		std::shared_ptr<ModelBundle>&& modelBundle, StagingBufferManager& stagingBufferMan,
-		TemporaryDataBufferGPU& tempBuffer
+		std::shared_ptr<ModelBundle>&& modelBundle
 	);
 
-	void ConfigureModelBundleRemove(size_t bundleIndex) noexcept override;
+	void ConfigureModelBundleRemove(size_t bundleIndex, ModelBuffers& modelBuffers) noexcept;
 
 	void UpdateDispatchX() noexcept;
 	void UpdateCounterResetValues();
@@ -275,7 +254,7 @@ private:
 	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
 	Buffer                                m_counterResetBuffer;
 	MultiInstanceCPUBuffer<std::uint32_t> m_meshBundleIndexBuffer;
-	SharedBufferGPU                       m_perModelDataCSBuffer;
+	SharedBufferCPU                       m_perModelDataCSBuffer;
 	QueueIndices3                         m_queueIndices3;
 	std::uint32_t                         m_dispatchXCount;
 	std::uint32_t                         m_argumentCount;
@@ -360,9 +339,10 @@ private:
 
 	void ConfigureModelBundle(
 		ModelBundleMSIndividual& modelBundleObj, std::vector<std::uint32_t>&& modelIndices,
-		std::shared_ptr<ModelBundle>&& modelBundle, StagingBufferManager& stagingBufferMan,
-		TemporaryDataBufferGPU& tempBuffer
+		std::shared_ptr<ModelBundle>&& modelBundle
 	);
+
+	void ConfigureModelBundleRemove(size_t bundleIndex, ModelBuffers& modelBuffers) noexcept;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
