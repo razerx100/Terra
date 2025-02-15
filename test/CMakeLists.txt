@@ -20,7 +20,7 @@ unset(TERRA_PRIVATE_INCLUDES)
 
 if(MSVC)
     target_compile_definitions(TerraTest PRIVATE TERRA_WIN32)
-    target_compile_options(TerraTest PRIVATE /fp:fast /MP /Ot /W4 /Gy)
+    target_compile_options(TerraTest PRIVATE /fp:fast /MP /Ot /W4 /Gy /std:c++20 /Zc:__cplusplus)
 endif()
 
 include(FetchContent)
