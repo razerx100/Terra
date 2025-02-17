@@ -3,51 +3,6 @@
 
 #include <CommonBuffers.hpp>
 
-// Shared Buffer Allocator
-void SharedBufferAllocator::AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept
-{
-	auto result = std::ranges::upper_bound(
-		m_availableMemory, size, {},
-		[](const AllocInfo& info) { return info.size; }
-	);
-
-	m_availableMemory.insert(result, AllocInfo{ offset, size });
-}
-
-std::optional<size_t> SharedBufferAllocator::GetAvailableAllocInfo(VkDeviceSize size) const noexcept
-{
-	auto result = std::ranges::lower_bound(
-		m_availableMemory, size, {},
-		[](const AllocInfo& info) { return info.size; }
-	);
-
-	if (result != std::end(m_availableMemory))
-		return std::distance(std::begin(m_availableMemory), result);
-	else
-		return {};
-}
-
-SharedBufferAllocator::AllocInfo SharedBufferAllocator::GetAndRemoveAllocInfo(size_t index) noexcept
-{
-	AllocInfo allocInfo = m_availableMemory[index];
-
-	m_availableMemory.erase(std::next(std::begin(m_availableMemory), index));
-
-	return allocInfo;
-}
-
-VkDeviceSize SharedBufferAllocator::AllocateMemory(
-	const AllocInfo& allocInfo, VkDeviceSize size
-) noexcept {
-	const VkDeviceSize offset     = allocInfo.offset;
-	const VkDeviceSize freeMemory = allocInfo.size - size;
-
-	if (freeMemory)
-		AddAllocInfo(offset + size, freeMemory);
-
-	return offset;
-}
-
 // Shared Buffer GPU
 void SharedBufferGPU::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
 {

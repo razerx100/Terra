@@ -6,6 +6,7 @@
 #include <VkCommandQueue.hpp>
 #include <queue>
 #include <TemporaryDataBuffer.hpp>
+#include <SharedBufferAllocator.hpp>
 
 #include <MeshBundle.hpp>
 
@@ -14,58 +15,6 @@ struct SharedBufferData
 	Buffer const* bufferData;
 	VkDeviceSize  offset;
 	VkDeviceSize  size;
-};
-
-class SharedBufferAllocator
-{
-public:
-	struct AllocInfo
-	{
-		VkDeviceSize offset;
-		VkDeviceSize size;
-	};
-
-public:
-	SharedBufferAllocator() : m_availableMemory{} {}
-
-	[[nodiscard]]
-	// The offset from the start of the buffer will be returned. Should make sure
-	// there is enough memory before calling this.
-	VkDeviceSize AllocateMemory(const AllocInfo& allocInfo, VkDeviceSize size) noexcept;
-
-	void AddAllocInfo(VkDeviceSize offset, VkDeviceSize size) noexcept;
-	void RelinquishMemory(VkDeviceSize offset, VkDeviceSize size) noexcept
-	{
-		AddAllocInfo(offset, size);
-	}
-
-	[[nodiscard]]
-	std::optional<size_t> GetAvailableAllocInfo(VkDeviceSize size) const noexcept;
-	[[nodiscard]]
-	AllocInfo GetAndRemoveAllocInfo(size_t index) noexcept;
-
-private:
-	std::vector<AllocInfo> m_availableMemory;
-
-public:
-	SharedBufferAllocator(const SharedBufferAllocator& other) noexcept
-		: m_availableMemory{ other.m_availableMemory }
-	{}
-	SharedBufferAllocator& operator=(const SharedBufferAllocator& other) noexcept
-	{
-		m_availableMemory = other.m_availableMemory;
-
-		return *this;
-	}
-	SharedBufferAllocator(SharedBufferAllocator&& other) noexcept
-		: m_availableMemory{ std::move(other.m_availableMemory) }
-	{}
-	SharedBufferAllocator& operator=(SharedBufferAllocator&& other) noexcept
-	{
-		m_availableMemory = std::move(other.m_availableMemory);
-
-		return *this;
-	}
 };
 
 class SharedBufferBase
