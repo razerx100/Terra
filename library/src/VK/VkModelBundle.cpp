@@ -714,10 +714,17 @@ void ModelBundleVSIndividual::Draw(
 ) const noexcept {
 	meshBundle.Bind(graphicsBuffer);
 
-	const auto& models = m_modelBundle->GetModels();
+	const auto& models         = m_modelBundle->GetModels();
 
-	for (const PipelineModelsVSIndividual& pipeline : m_pipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
 	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		const PipelineModelsVSIndividual& pipeline = m_pipelines[index];
+
 		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
 
 		pipeline.Draw(graphicsBuffer, pipelineLayout, meshBundle, models);
@@ -730,10 +737,17 @@ void ModelBundleVSIndividual::DrawSorted(
 ) noexcept {
 	meshBundle.Bind(graphicsBuffer);
 
-	const auto& models = m_modelBundle->GetModels();
+	const auto& models         = m_modelBundle->GetModels();
 
-	for (PipelineModelsVSIndividual& pipeline : m_pipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
 	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		PipelineModelsVSIndividual& pipeline = m_pipelines[index];
+
 		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
 
 		pipeline.DrawSorted(graphicsBuffer, pipelineLayout, meshBundle, models);
@@ -741,10 +755,12 @@ void ModelBundleVSIndividual::DrawSorted(
 }
 
 void ModelBundleVSIndividual::DrawPipeline(
-	size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleVS& meshBundle
+	size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+	VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 ) const noexcept {
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
 	meshBundle.Bind(graphicsBuffer);
 
 	const auto& models = m_modelBundle->GetModels();
@@ -755,10 +771,12 @@ void ModelBundleVSIndividual::DrawPipeline(
 }
 
 void ModelBundleVSIndividual::DrawPipelineSorted(
-	size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleVS& meshBundle
+	size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+	VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 ) noexcept {
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
 	meshBundle.Bind(graphicsBuffer);
 
 	const auto& models  = m_modelBundle->GetModels();
@@ -790,10 +808,17 @@ void ModelBundleMSIndividual::Draw(
 ) const noexcept {
 	SetMeshBundleConstants(graphicsBuffer.Get(), pipelineLayout, meshBundle);
 
-	const auto& models = m_modelBundle->GetModels();
+	const auto& models         = m_modelBundle->GetModels();
 
-	for (const PipelineModelsMSIndividual& pipeline : m_pipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
 	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		const PipelineModelsMSIndividual& pipeline = m_pipelines[index];
+
 		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
 
 		pipeline.Draw(graphicsBuffer, pipelineLayout, meshBundle, models);
@@ -806,10 +831,17 @@ void ModelBundleMSIndividual::DrawSorted(
 ) noexcept {
 	SetMeshBundleConstants(graphicsBuffer.Get(), pipelineLayout, meshBundle);
 
-	const auto& models = m_modelBundle->GetModels();
+	const auto& models         = m_modelBundle->GetModels();
 
-	for (PipelineModelsMSIndividual& pipeline : m_pipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
 	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		PipelineModelsMSIndividual& pipeline = m_pipelines[index];
+
 		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
 
 		pipeline.DrawSorted(graphicsBuffer, pipelineLayout, meshBundle, models);
@@ -817,10 +849,12 @@ void ModelBundleMSIndividual::DrawSorted(
 }
 
 void ModelBundleMSIndividual::DrawPipeline(
-	size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleMS& meshBundle
+	size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+	VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 ) const noexcept {
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
 	SetMeshBundleConstants(graphicsBuffer.Get(), pipelineLayout, meshBundle);
 
 	const auto& models = m_modelBundle->GetModels();
@@ -831,10 +865,12 @@ void ModelBundleMSIndividual::DrawPipeline(
 }
 
 void ModelBundleMSIndividual::DrawPipelineSorted(
-	size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleMS& meshBundle
+	size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+	VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 ) noexcept {
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
 	SetMeshBundleConstants(graphicsBuffer.Get(), pipelineLayout, meshBundle);
 
 	const auto& models  = m_modelBundle->GetModels();
@@ -1299,18 +1335,36 @@ void ModelBundleVSIndirect::_addModelsToPipeline(
 
 void ModelBundleVSIndirect::Update(size_t frameIndex, const VkMeshBundleVS& meshBundle) const noexcept
 {
-	const auto& models = m_modelBundle->GetModels();
+	const auto& models         = m_modelBundle->GetModels();
 
-	for (const PipelineModelsCSIndirect& pipeline : m_pipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
+	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		const PipelineModelsCSIndirect& pipeline = m_pipelines[index];
+
 		pipeline.Update(frameIndex, meshBundle, models);
+	}
 }
 
 void ModelBundleVSIndirect::UpdateSorted(size_t frameIndex, const VkMeshBundleVS& meshBundle) noexcept
 {
-	const auto& models = m_modelBundle->GetModels();
+	const auto& models         = m_modelBundle->GetModels();
 
-	for (PipelineModelsCSIndirect& pipeline : m_pipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
+	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		PipelineModelsCSIndirect& pipeline = m_pipelines[index];
+
 		pipeline.UpdateSorted(frameIndex, meshBundle, models);
+	}
 }
 
 void ModelBundleVSIndirect::Draw(
@@ -1319,8 +1373,15 @@ void ModelBundleVSIndirect::Draw(
 ) const noexcept {
 	meshBundle.Bind(graphicsBuffer);
 
-	for (const PipelineModelsVSIndirect& pipeline : m_vsPipelines)
+	const size_t pipelineCount = std::size(m_pipelines);
+
+	for (size_t index = 0u; index < pipelineCount; ++index)
 	{
+		if (!m_pipelines.IsInUse(index))
+			continue;
+
+		const PipelineModelsVSIndirect& pipeline = m_vsPipelines[index];
+
 		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
 
 		pipeline.Draw(frameIndex, graphicsBuffer, pipelineLayout);
@@ -1331,6 +1392,9 @@ void ModelBundleVSIndirect::DrawPipeline(
 	size_t pipelineLocalIndex, size_t frameIndex, const VKCommandBuffer& graphicsBuffer,
 	VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 ) const noexcept {
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
 	meshBundle.Bind(graphicsBuffer);
 
 	const PipelineModelsVSIndirect& pipeline = m_vsPipelines[pipelineLocalIndex];

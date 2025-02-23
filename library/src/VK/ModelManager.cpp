@@ -18,8 +18,15 @@ void ModelManagerVSIndividual::Draw(
 ) const noexcept {
 	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
-	for (const ModelBundleVSIndividual& modelBundle : m_modelBundles)
+	const size_t bundleCount        = std::size(m_modelBundles);
+
+	for (size_t index = 0u; index < bundleCount; ++index)
 	{
+		if (!m_modelBundles.IsInUse(index))
+			continue;
+
+		const ModelBundleVSIndividual& modelBundle = m_modelBundles[index];
+
 		// Mesh
 		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
@@ -34,8 +41,14 @@ void ModelManagerVSIndividual::DrawSorted(
 ) noexcept {
 	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
-	for (ModelBundleVSIndividual& modelBundle : m_modelBundles)
+	const size_t bundleCount        = std::size(m_modelBundles);
+
+	for (size_t index = 0u; index < bundleCount; ++index)
 	{
+		if (!m_modelBundles.IsInUse(index))
+			continue;
+
+		ModelBundleVSIndividual& modelBundle = m_modelBundles[index];
 		// Mesh
 		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
@@ -49,6 +62,9 @@ void ModelManagerVSIndividual::DrawPipeline(
 	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
 	VkPipelineLayout pipelineLayout
 ) const noexcept {
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
 	const ModelBundleVSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
@@ -62,6 +78,9 @@ void ModelManagerVSIndividual::DrawPipelineSorted(
 	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
 	VkPipelineLayout pipelineLayout
 ) noexcept {
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
 	ModelBundleVSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
@@ -408,8 +427,15 @@ void ModelManagerVSIndirect::Draw(
 ) const noexcept {
 	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
-	for (const ModelBundleVSIndirect& modelBundle : m_modelBundles)
+	const size_t bundleCount        = std::size(m_modelBundles);
+
+	for (size_t index = 0u; index < bundleCount; ++index)
 	{
+		if (!m_modelBundles.IsInUse(index))
+			continue;
+
+		const ModelBundleVSIndirect& modelBundle = m_modelBundles[index];
+
 		// Mesh
 		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
@@ -423,6 +449,9 @@ void ModelManagerVSIndirect::DrawPipeline(
 	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
 	VkPipelineLayout pipelineLayout
 ) const noexcept {
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
 	const ModelBundleVSIndirect& modelBundle = m_modelBundles[modelBundleIndex];
 
 	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
@@ -491,8 +520,15 @@ void ModelManagerMS::Draw(
 ) const noexcept {
 	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
-	for (const ModelBundleMSIndividual& modelBundle : m_modelBundles)
+	const size_t bundleCount        = std::size(m_modelBundles);
+
+	for (size_t index = 0u; index < bundleCount; ++index)
 	{
+		if (!m_modelBundles.IsInUse(index))
+			continue;
+
+		const ModelBundleMSIndividual& modelBundle = m_modelBundles[index];
+
 		const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 		// Model
@@ -506,9 +542,16 @@ void ModelManagerMS::DrawSorted(
 ) noexcept {
 	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
 
-	for (ModelBundleMSIndividual& modelBundle : m_modelBundles)
+	const size_t bundleCount        = std::size(m_modelBundles);
+
+	for (size_t index = 0u; index < bundleCount; ++index)
 	{
-		const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+		if (!m_modelBundles.IsInUse(index))
+			continue;
+
+		ModelBundleMSIndividual& modelBundle = m_modelBundles[index];
+
+		const VkMeshBundleMS& meshBundle     = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 		// Model
 		modelBundle.DrawSorted(graphicsBuffer, pipelineLayout, meshBundle, pipelineManager);
@@ -520,6 +563,9 @@ void ModelManagerMS::DrawPipeline(
 	const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
 	VkPipelineLayout pipelineLayout
 ) const noexcept {
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
 	const ModelBundleMSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
@@ -533,6 +579,9 @@ void ModelManagerMS::DrawPipelineSorted(
 	const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
 	VkPipelineLayout pipelineLayout
 ) noexcept {
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
 	ModelBundleMSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
