@@ -26,6 +26,11 @@ public:
 		size_t setLayoutIndex
 	) const;
 
+	using ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>::Remove;
+
+	void Remove(const std::vector<std::uint32_t>& indices) noexcept;
+	void Remove(const std::vector<size_t>& indices) noexcept;
+
 	void Update(VkDeviceSize bufferIndex) const noexcept;
 
 	[[nodiscard]]

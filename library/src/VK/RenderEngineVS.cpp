@@ -3,7 +3,10 @@
 // VS Individual
 RenderEngineVSIndividual::RenderEngineVSIndividual(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
-) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
+) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }, m_modelManager{},
+	m_modelBuffers{
+		deviceManager.GetLogicalDevice(), &m_memoryManager, static_cast<std::uint32_t>(frameCount), {}
+	}
 {
 	SetGraphicsDescriptorBufferLayout();
 
@@ -55,14 +58,6 @@ void RenderEngineVSIndividual::SetGraphicsDescriptorBufferLayout()
 	}
 }
 
-ModelManagerVSIndividual RenderEngineVSIndividual::GetModelManager(
-	[[maybe_unused]] const VkDeviceManager& deviceManager,
-	MemoryManager* memoryManager,
-	[[maybe_unused]] std::uint32_t frameCount
-) {
-	return ModelManagerVSIndividual{ memoryManager };
-}
-
 void RenderEngineVSIndividual::SetGraphicsDescriptors()
 {
 	const size_t frameCount = std::size(m_graphicsDescriptorBuffers);
@@ -81,20 +76,15 @@ void RenderEngineVSIndividual::SetGraphicsDescriptors()
 	}
 }
 
-ModelBuffers RenderEngineVSIndividual::ConstructModelBuffers(
-	const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-) {
-	// Only being accessed from the graphics queue.
-	return ModelBuffers{ deviceManager.GetLogicalDevice(), memoryManager, frameCount, {}};
-}
-
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
+	m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
-	const std::uint32_t index    = m_modelManager.AddModelBundle(
-		std::move(modelBundle), psoIndex, m_modelBuffers
+	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, m_modelBuffers);
+
+	const std::uint32_t index = m_modelManager.AddModelBundle(
+		std::move(modelBundle), std::move(modelBufferIndices)
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -104,6 +94,13 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(
 	m_copyNecessary = true;
 
 	return index;
+}
+
+void RenderEngineVSIndividual::RemoveModelBundle(std::uint32_t bundleIndex) noexcept
+{
+	std::vector<std::uint32_t> modelBufferIndices = m_modelManager.RemoveModelBundle(bundleIndex);
+
+	m_modelBuffers.Remove(modelBufferIndices);
 }
 
 std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
@@ -220,6 +217,15 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 RenderEngineVSIndirect::RenderEngineVSIndirect(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount },
+	m_modelManager{
+		deviceManager.GetLogicalDevice(), &m_memoryManager,
+		deviceManager.GetQueueFamilyManager().GetAllIndices(),
+		static_cast<std::uint32_t>(frameCount)
+	},
+	m_modelBuffers{
+		deviceManager.GetLogicalDevice(), &m_memoryManager, static_cast<std::uint32_t>(frameCount),
+		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices()
+	},
 	m_computeQueue{
 		deviceManager.GetLogicalDevice(),
 		deviceManager.GetQueueFamilyManager().GetQueue(QueueType::ComputeQueue),
@@ -349,27 +355,6 @@ VkSemaphore RenderEngineVSIndirect::ExecutePipelineStages(
 	return waitSemaphore;
 }
 
-ModelManagerVSIndirect RenderEngineVSIndirect::GetModelManager(
-	const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-) {
-	return ModelManagerVSIndirect
-	{
-		deviceManager.GetLogicalDevice(), memoryManager,
-		deviceManager.GetQueueFamilyManager().GetAllIndices(), frameCount
-	};
-}
-
-ModelBuffers RenderEngineVSIndirect::ConstructModelBuffers(
-	const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-) {
-	// Will be accessed from both the Graphics queue and the compute queue.
-	return ModelBuffers
-	{
-		deviceManager.GetLogicalDevice(), memoryManager, frameCount,
-		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices()
-	};
-}
-
 void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 {
 	m_modelManager.SetDescriptorBuffersVS(
@@ -411,6 +396,7 @@ void RenderEngineVSIndirect::SetModelComputeDescriptors()
 
 void RenderEngineVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
 {
+	m_modelBuffers.Update(frameIndex);
 	m_modelManager.UpdatePerFrame(frameIndex, m_meshManager);
 }
 
@@ -424,10 +410,12 @@ void RenderEngineVSIndirect::SetShaderPath(const std::wstring& shaderPath)
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 ) {
-	const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
+	m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 
-	const std::uint32_t index    = m_modelManager.AddModelBundle(
-		std::move(modelBundle), psoIndex, m_modelBuffers
+	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, m_modelBuffers);
+
+	const std::uint32_t index = m_modelManager.AddModelBundle(
+		std::move(modelBundle), std::move(modelBufferIndices)
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -438,6 +426,13 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(
 	m_copyNecessary = true;
 
 	return index;
+}
+
+void RenderEngineVSIndirect::RemoveModelBundle(std::uint32_t bundleIndex) noexcept
+{
+	std::vector<std::uint32_t> modelBufferIndices = m_modelManager.RemoveModelBundle(bundleIndex);
+
+	m_modelBuffers.Remove(modelBufferIndices);
 }
 
 std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)

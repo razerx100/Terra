@@ -8,7 +8,6 @@ class RenderEngineVSIndividualDeviceExtension : public RenderEngineDeviceExtensi
 class RenderEngineVSIndividual : public
 	RenderEngineCommon
 	<
-		ModelManagerVSIndividual,
 		MeshManagerVSIndividual,
 		GraphicsPipelineVSIndividualDraw,
 		RenderEngineVSIndividual
@@ -16,7 +15,6 @@ class RenderEngineVSIndividual : public
 {
 	friend class RenderEngineCommon
 		<
-			ModelManagerVSIndividual,
 			MeshManagerVSIndividual,
 			GraphicsPipelineVSIndividualDraw,
 			RenderEngineVSIndividual
@@ -35,20 +33,13 @@ public:
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
+	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
 
 private:
-	[[nodiscard]]
-	static ModelManagerVSIndividual GetModelManager(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-	);
-	[[nodiscard]]
-	static ModelBuffers ConstructModelBuffers(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-	);
-
 	[[nodiscard]]
 	VkSemaphore ExecutePipelineStages(
 		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
@@ -68,18 +59,29 @@ private:
 	void SetGraphicsDescriptorBufferLayout();
 	void SetGraphicsDescriptors();
 
-	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
+	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept
+	{
+		m_modelBuffers.Update(frameIndex);
+	}
+
+private:
+	ModelManagerVSIndividual m_modelManager;
+	ModelBuffers             m_modelBuffers;
 
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
 	RenderEngineVSIndividual& operator=(const RenderEngineVSIndividual&) = delete;
 
 	RenderEngineVSIndividual(RenderEngineVSIndividual&& other) noexcept
-		: RenderEngineCommon{ std::move(other) }
+		: RenderEngineCommon{ std::move(other) },
+		m_modelManager{ std::move(other.m_modelManager) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) }
 	{}
 	RenderEngineVSIndividual& operator=(RenderEngineVSIndividual&& other) noexcept
 	{
 		RenderEngineCommon::operator=(std::move(other));
+		m_modelManager = std::move(other.m_modelManager);
+		m_modelBuffers = std::move(other.m_modelBuffers);
 
 		return *this;
 	}
@@ -90,7 +92,6 @@ class RenderEngineVSIndirectDeviceExtension : public RenderEngineDeviceExtension
 class RenderEngineVSIndirect : public
 	RenderEngineCommon
 	<
-		ModelManagerVSIndirect,
 		MeshManagerVSIndirect,
 		GraphicsPipelineVSIndirectDraw,
 		RenderEngineVSIndirect
@@ -98,7 +99,6 @@ class RenderEngineVSIndirect : public
 {
 	friend class RenderEngineCommon
 		<
-			ModelManagerVSIndirect,
 			MeshManagerVSIndirect,
 			GraphicsPipelineVSIndirectDraw,
 			RenderEngineVSIndirect
@@ -119,6 +119,8 @@ public:
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
+	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
@@ -126,15 +128,6 @@ public:
 	void SetShaderPath(const std::wstring& shaderPath) override;
 
 private:
-	[[nodiscard]]
-	static ModelManagerVSIndirect GetModelManager(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-	);
-	[[nodiscard]]
-	static ModelBuffers ConstructModelBuffers(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-	);
-
 	[[nodiscard]]
 	VkSemaphore ExecutePipelineStages(
 		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
@@ -174,6 +167,8 @@ private:
 	static constexpr std::uint32_t s_cameraComputeBindingSlot       = 10u;
 
 private:
+	ModelManagerVSIndirect             m_modelManager;
+	ModelBuffers                       m_modelBuffers;
 	VkCommandQueue                     m_computeQueue;
 	std::vector<VKSemaphore>           m_computeWait;
 	std::vector<VkDescriptorBuffer>    m_computeDescriptorBuffers;
@@ -186,6 +181,8 @@ public:
 
 	RenderEngineVSIndirect(RenderEngineVSIndirect&& other) noexcept
 		: RenderEngineCommon{ std::move(other) },
+		m_modelManager{ std::move(other.m_modelManager) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_computeQueue{ std::move(other.m_computeQueue) },
 		m_computeWait{ std::move(other.m_computeWait) },
 		m_computeDescriptorBuffers{ std::move(other.m_computeDescriptorBuffers) },
@@ -195,6 +192,8 @@ public:
 	RenderEngineVSIndirect& operator=(RenderEngineVSIndirect&& other) noexcept
 	{
 		RenderEngineCommon::operator=(std::move(other));
+		m_modelManager             = std::move(other.m_modelManager);
+		m_modelBuffers             = std::move(other.m_modelBuffers);
 		m_computeQueue             = std::move(other.m_computeQueue);
 		m_computeWait              = std::move(other.m_computeWait);
 		m_computeDescriptorBuffers = std::move(other.m_computeDescriptorBuffers);

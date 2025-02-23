@@ -219,17 +219,6 @@ private:
 		m_buffer.Create(buffersSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 	}
 
-	void CreateBufferIfNecessary(size_t index)
-	{
-		const VkDeviceSize currentSize = m_buffer.BufferSize();
-		constexpr size_t strideSize    = GetStride();
-
-		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(index * strideSize + strideSize);
-
-		if (currentSize < minimumSpaceRequirement)
-			CreateBuffer(index + 1u + GetExtraElementAllocationCount());
-	}
-
 public:
 	MultiInstanceCPUBuffer(VkDevice device, MemoryManager* memoryManager, std::uint32_t instanceCount)
 		: m_device{ device }, m_memoryManager{ memoryManager },
@@ -248,9 +237,15 @@ public:
 		return m_buffer.CPUHandle() + (m_instanceSize * instanceIndex);
 	}
 
-	void Add(size_t index)
+	void ExtendBufferIfNecessaryFor(size_t index)
 	{
-		CreateBufferIfNecessary(index);
+		const VkDeviceSize currentSize = m_buffer.BufferSize();
+		constexpr size_t strideSize    = GetStride();
+
+		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(index * strideSize + strideSize);
+
+		if (currentSize < minimumSpaceRequirement)
+			CreateBuffer(index + 1u + GetExtraElementAllocationCount());
 	}
 
 private:

@@ -74,8 +74,9 @@ public:
 	virtual void SetShaderPath(const std::wstring& shaderPath) = 0;
 	virtual void AddFragmentShader(const ShaderName& fragmentShader) = 0;
 	virtual void ChangeFragmentShader(
-		std::uint32_t modelBundleID, const ShaderName& fragmentShader
-	) = 0;
+		[[maybe_unused]] std::uint32_t modelBundleID,
+		[[maybe_unused]] const ShaderName& fragmentShader
+	) {}
 	virtual void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept = 0;
 
 	[[nodiscard]]
@@ -95,7 +96,7 @@ public:
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) = 0;
 
-	virtual void RemoveModelBundle(std::uint32_t bundleID) noexcept = 0;
+	virtual void RemoveModelBundle(std::uint32_t bundleIndex) noexcept = 0;
 
 	[[nodiscard]]
 	ExternalResourceManager* GetExternalResourceManager() noexcept
@@ -124,6 +125,11 @@ protected:
 	[[nodiscard]]
 	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
 	virtual void ResetGraphicsPipeline() = 0;
+
+	[[nodiscard]]
+	static std::vector<std::uint32_t> AddModelsToBuffer(
+		const ModelBundle& modelBundle, ModelBuffers& modelBuffers
+	) noexcept;
 
 	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlags cameraShaderStage) noexcept;
 
@@ -212,7 +218,6 @@ public:
 };
 
 template<
-	typename ModelManager_t,
 	typename MeshManager_t,
 	typename GraphicsPipeline_t,
 	typename Derived
@@ -223,21 +228,11 @@ public:
 	RenderEngineCommon(
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
-		m_modelManager{
-			Derived::GetModelManager(
-				deviceManager, &m_memoryManager, static_cast<std::uint32_t>(frameCount)
-			)
-		},
 		m_meshManager{
 			deviceManager.GetLogicalDevice(), &m_memoryManager,
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
 		},
-		m_renderPassManager{ deviceManager.GetLogicalDevice() },
-		m_modelBuffers{
-			Derived::ConstructModelBuffers(
-				deviceManager, &m_memoryManager, static_cast<std::uint32_t>(frameCount)
-			)
-		}
+		m_renderPassManager{ deviceManager.GetLogicalDevice() }
 	{
 		m_renderPassManager.SetDepthTesting(deviceManager.GetLogicalDevice(), &m_memoryManager);
 
@@ -256,22 +251,10 @@ public:
 	{
 		m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 	}
-	void ChangeFragmentShader(
-		std::uint32_t modelBundleID, const ShaderName& fragmentShader
-	) override {
-		const std::uint32_t psoIndex = m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
-
-		m_modelManager.ChangePSO(modelBundleID, psoIndex);
-	}
 
 	void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept override
 	{
 		m_renderPassManager.SetPSOOverwritable(fragmentShader);
-	}
-
-	void RemoveModelBundle(std::uint32_t bundleID) noexcept override
-	{
-		m_modelManager.RemoveModelBundle(bundleID, m_modelBuffers);
 	}
 
 	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
@@ -329,8 +312,6 @@ protected:
 	{
 		m_cameraManager.Update(frameIndex);
 
-		m_modelBuffers.Update(frameIndex);
-
 		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 
 		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
@@ -352,10 +333,8 @@ protected:
 	}
 
 protected:
-	ModelManager_t                          m_modelManager;
 	MeshManager_t                           m_meshManager;
 	VkRenderPassManager<GraphicsPipeline_t> m_renderPassManager;
-	ModelBuffers                            m_modelBuffers;
 
 public:
 	RenderEngineCommon(const RenderEngineCommon&) = delete;
@@ -363,18 +342,14 @@ public:
 
 	RenderEngineCommon(RenderEngineCommon&& other) noexcept
 		: RenderEngine{ std::move(other) },
-		m_modelManager{ std::move(other.m_modelManager) },
 		m_meshManager{ std::move(other.m_meshManager) },
-		m_renderPassManager{ std::move(other.m_renderPassManager) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) }
+		m_renderPassManager{ std::move(other.m_renderPassManager) }
 	{}
 	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
 	{
 		RenderEngine::operator=(std::move(other));
-		m_modelManager      = std::move(other.m_modelManager);
 		m_meshManager       = std::move(other.m_meshManager);
 		m_renderPassManager = std::move(other.m_renderPassManager);
-		m_modelBuffers      = std::move(other.m_modelBuffers);
 
 		return *this;
 	}

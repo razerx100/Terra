@@ -204,6 +204,14 @@ void RenderEngine::RemoveTexture(size_t index)
 	m_textureStorage.RemoveTexture(index);
 }
 
+std::vector<std::uint32_t> RenderEngine::AddModelsToBuffer(
+	const ModelBundle& modelBundle, ModelBuffers& modelBuffers
+) noexcept {
+	std::vector<std::shared_ptr<Model>> models = modelBundle.GetModels();
+
+	return modelBuffers.AddMultipleRU32(std::move(models));
+}
+
 void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 	VkShaderStageFlags cameraShaderStage
 ) noexcept {

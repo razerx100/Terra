@@ -12,7 +12,6 @@ public:
 class RenderEngineMS : public
 	RenderEngineCommon
 	<
-		ModelManagerMS,
 		MeshManagerMS,
 		GraphicsPipelineMS,
 		RenderEngineMS
@@ -20,7 +19,6 @@ class RenderEngineMS : public
 {
 	friend class RenderEngineCommon
 		<
-			ModelManagerMS,
 			MeshManagerMS,
 			GraphicsPipelineMS,
 			RenderEngineMS
@@ -32,26 +30,20 @@ public:
 	);
 
 	void FinaliseInitialisation() override;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddModelBundle(
 		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
 	) override;
 
+	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override;
+
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
 
 private:
-	[[nodiscard]]
-	static ModelManagerMS GetModelManager(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-	);
-	[[nodiscard]]
-	static ModelBuffers ConstructModelBuffers(
-		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, std::uint32_t frameCount
-	);
-
 	[[nodiscard]]
 	VkSemaphore ExecutePipelineStages(
 		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
@@ -71,18 +63,29 @@ private:
 	void SetGraphicsDescriptorBufferLayout();
 	void SetModelGraphicsDescriptors();
 
-	void _updatePerFrame([[maybe_unused]]VkDeviceSize frameIndex) const noexcept {}
+	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept
+	{
+		m_modelBuffers.Update(frameIndex);
+	}
+
+private:
+	ModelManagerMS m_modelManager;
+	ModelBuffers   m_modelBuffers;
 
 public:
 	RenderEngineMS(const RenderEngineMS&) = delete;
 	RenderEngineMS& operator=(const RenderEngineMS&) = delete;
 
 	RenderEngineMS(RenderEngineMS&& other) noexcept
-		: RenderEngineCommon{ std::move(other) }
+		: RenderEngineCommon{ std::move(other) },
+		m_modelManager{ std::move(other.m_modelManager) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) }
 	{}
 	RenderEngineMS& operator=(RenderEngineMS&& other) noexcept
 	{
 		RenderEngineCommon::operator=(std::move(other));
+		m_modelManager = std::move(other.m_modelManager);
+		m_modelBuffers = std::move(other.m_modelBuffers);
 
 		return *this;
 	}
