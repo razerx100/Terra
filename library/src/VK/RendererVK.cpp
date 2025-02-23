@@ -54,9 +54,9 @@ void RendererVK::SetShaderPath(const wchar_t* path)
 	m_terra.GetRenderEngine().SetShaderPath(path);
 }
 
-void RendererVK::AddPixelShader(const ShaderName& fragmentShader)
+std::uint32_t RendererVK::AddGraphicsPipeline(const ShaderName& fragmentShader)
 {
-	m_terra.GetRenderEngine().AddFragmentShader(fragmentShader);
+	return m_terra.GetRenderEngine().AddGraphicsPipeline(fragmentShader);
 }
 
 void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader)

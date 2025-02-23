@@ -72,7 +72,10 @@ public:
 	void RemoveCamera(std::uint32_t index) noexcept { m_cameraManager.RemoveCamera(index); }
 
 	virtual void SetShaderPath(const std::wstring& shaderPath) = 0;
-	virtual void AddFragmentShader(const ShaderName& fragmentShader) = 0;
+
+	[[nodiscard]]
+	virtual std::uint32_t AddGraphicsPipeline(const ShaderName& fragmentShader) = 0;
+
 	virtual void ChangeFragmentShader(
 		[[maybe_unused]] std::uint32_t modelBundleID,
 		[[maybe_unused]] const ShaderName& fragmentShader
@@ -247,9 +250,11 @@ public:
 	{
 		m_renderPassManager.SetShaderPath(shaderPath);
 	}
-	void AddFragmentShader(const ShaderName& fragmentShader) override
+
+	[[nodiscard]]
+	std::uint32_t AddGraphicsPipeline(const ShaderName& fragmentShader) override
 	{
-		m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
+		return m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
 	}
 
 	void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept override
