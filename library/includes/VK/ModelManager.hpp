@@ -187,7 +187,7 @@ class ModelManagerVSIndirect : public ModelManager<ModelBundleVSIndirect>
 
 	struct ConstantData
 	{
-		std::uint32_t modelCount;
+		std::uint32_t allocatedModelCount;
 	};
 
 	struct PerModelBundleData
@@ -266,7 +266,7 @@ private:
 		std::uint32_t modelBundleIndex
 	);
 
-	void UpdateDispatchX() noexcept;
+	void UpdateAllocatedModelCount() noexcept;
 	void UpdateCounterResetValues();
 
 	[[nodiscard]]
@@ -286,7 +286,7 @@ private:
 	SharedBufferCPU                            m_perModelDataCSBuffer;
 	QueueIndices3                              m_queueIndices3;
 	std::uint32_t                              m_dispatchXCount;
-	std::uint32_t                              m_argumentCount;
+	std::uint32_t                              m_allocatedModelCount;
 	std::uint32_t                              m_csPSOIndex;
 
 	// Vertex Shader ones
@@ -321,7 +321,7 @@ public:
 		m_perModelDataCSBuffer{ std::move(other.m_perModelDataCSBuffer) },
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
-		m_argumentCount{ other.m_argumentCount },
+		m_allocatedModelCount{ other.m_allocatedModelCount },
 		m_csPSOIndex{ other.m_csPSOIndex }
 	{}
 	ModelManagerVSIndirect& operator=(ModelManagerVSIndirect&& other) noexcept
@@ -337,7 +337,7 @@ public:
 		m_perModelDataCSBuffer   = std::move(other.m_perModelDataCSBuffer);
 		m_queueIndices3          = other.m_queueIndices3;
 		m_dispatchXCount         = other.m_dispatchXCount;
-		m_argumentCount          = other.m_argumentCount;
+		m_allocatedModelCount    = other.m_allocatedModelCount;
 		m_csPSOIndex             = other.m_csPSOIndex;
 
 		return *this;

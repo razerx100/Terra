@@ -348,6 +348,12 @@ public:
 		return areSortedModels ? std::size(m_sortedData) : std::size(m_modelData);
 	}
 
+	[[nodiscard]]
+	static consteval size_t GetPerModelStride() noexcept
+	{
+		return sizeof(PerModelData);
+	}
+
 private:
 	void _update(
 		size_t modelCount,

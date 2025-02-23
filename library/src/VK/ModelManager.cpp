@@ -104,7 +104,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	m_perModelDataCSBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
-	}, m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_argumentCount{ 0u },
+	}, m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_allocatedModelCount{ 0u },
 	m_csPSOIndex{ 0u }
 {
 	for (size_t _ = 0u; _ < frameCount; ++_)
@@ -152,15 +152,6 @@ void ModelManagerVSIndirect::SetComputeConstantRange(PipelineLayout& layout) noe
 	layout.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
 }
 
-void ModelManagerVSIndirect::UpdateDispatchX() noexcept
-{
-	// ThreadBlockSize is the number of threads in a thread group. If the argumentCount/ModelCount
-	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
-	// Threads 64, Model 65 = Group 2.
-
-	m_dispatchXCount = static_cast<std::uint32_t>(std::ceil(m_argumentCount / THREADBLOCKSIZE));
-}
-
 void ModelManagerVSIndirect::ChangeModelPipeline(
 	std::uint32_t bundleIndex, std::uint32_t modelIndexInBundle, std::uint32_t oldPipelineIndex,
 	std::uint32_t newPipelineIndex
@@ -172,11 +163,29 @@ void ModelManagerVSIndirect::ChangeModelPipeline(
 	);
 }
 
+void ModelManagerVSIndirect::UpdateAllocatedModelCount() noexcept
+{
+	// We can't reduce the amount of allocated model count, as we don't deallocate. We only
+	// make the memory available for something else. So, if a bundle from the middle is freed
+	// and we decrease the model count, then the last ones will be the ones which won't be rendered.
+	// Then again we can't also keep adding the newly added model count, as they might be allocated
+	// in some freed memory. We should set the model count to the total allocated model count, that
+	// way it won't skip the last ones and also not unnecessarily add extra ones.
+	m_allocatedModelCount = static_cast<std::uint32_t>(
+		m_perModelDataCSBuffer.Size() / PipelineModelsCSIndirect::GetPerModelStride()
+	);
+
+	// ThreadBlockSize is the number of threads in a thread group. If the allocated model count
+	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
+	// Threads 64, Model 65 = Group 2.
+	m_dispatchXCount = static_cast<std::uint32_t>(std::ceil(m_allocatedModelCount / THREADBLOCKSIZE));
+}
+
 std::uint32_t ModelManagerVSIndirect::AddModelBundle(
 	std::shared_ptr<ModelBundle>&& modelBundle, std::vector<std::uint32_t>&& modelBufferIndices
 ) {
-	const size_t bundleIndex                = m_modelBundles.Add(ModelBundleVSIndirect{});
-	const auto bundleIndexU32               = static_cast<std::uint32_t>(bundleIndex);
+	const size_t bundleIndex  = m_modelBundles.Add(ModelBundleVSIndirect{});
+	const auto bundleIndexU32 = static_cast<std::uint32_t>(bundleIndex);
 
 	ModelBundleVSIndirect& localModelBundle = m_modelBundles[bundleIndex];
 
@@ -188,9 +197,7 @@ std::uint32_t ModelManagerVSIndirect::AddModelBundle(
 
 	m_perModelBundleBuffer.ExtendBufferIfNecessaryFor(bundleIndex);
 
-	m_argumentCount += localModelBundle.GetModelCount();
-
-	UpdateDispatchX();
+	UpdateAllocatedModelCount();
 
 	localModelBundle.SetModelBundle(std::move(modelBundle));
 
@@ -409,7 +416,7 @@ void ModelManagerVSIndirect::Dispatch(
 
 		const ConstantData constantData
 		{
-			.modelCount = m_argumentCount
+			.allocatedModelCount = m_allocatedModelCount
 		};
 
 		vkCmdPushConstants(
