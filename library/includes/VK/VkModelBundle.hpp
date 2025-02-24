@@ -322,7 +322,7 @@ public:
 
 	void AllocateBuffers(
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
+		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer,
 		bool areSortedModels
 	);
 
@@ -339,7 +339,7 @@ public:
 
 	void RelinquishMemory(
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer
+		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer
 	) noexcept;
 
 	[[nodiscard]]
@@ -365,7 +365,7 @@ private:
 
 private:
 	SharedBufferData              m_perPipelineSharedData;
-	SharedBufferData              m_perModelDataCSSharedData;
+	SharedBufferData              m_perModelSharedData;
 	std::vector<SharedBufferData> m_argumentInputSharedData;
 
 public:
@@ -375,14 +375,14 @@ public:
 	PipelineModelsCSIndirect(PipelineModelsCSIndirect&& other) noexcept
 		: PipelineModelsBase{ std::move(other) },
 		m_perPipelineSharedData{ other.m_perPipelineSharedData },
-		m_perModelDataCSSharedData{ other.m_perModelDataCSSharedData },
+		m_perModelSharedData{ other.m_perModelSharedData },
 		m_argumentInputSharedData{ std::move(other.m_argumentInputSharedData) }
 	{}
 	PipelineModelsCSIndirect& operator=(PipelineModelsCSIndirect&& other) noexcept
 	{
 		PipelineModelsBase::operator=(std::move(other));
 		m_perPipelineSharedData     = other.m_perPipelineSharedData;
-		m_perModelDataCSSharedData  = other.m_perModelDataCSSharedData;
+		m_perModelSharedData        = other.m_perModelSharedData;
 		m_argumentInputSharedData   = std::move(other.m_argumentInputSharedData);
 
 		return *this;

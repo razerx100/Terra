@@ -278,29 +278,30 @@ private:
 private:
 	std::vector<SharedBufferCPU>               m_argumentInputBuffers;
 	std::vector<SharedBufferGPUWriteOnly>      m_argumentOutputBuffers;
-	std::vector<SharedBufferGPUWriteOnly>      m_modelIndicesVSBuffers;
+	std::vector<SharedBufferGPUWriteOnly>      m_modelIndicesBuffers;
 	SharedBufferCPU                            m_perPipelineDataBuffer;
 	std::vector<SharedBufferGPUWriteOnly>      m_counterBuffers;
 	Buffer                                     m_counterResetBuffer;
 	MultiInstanceCPUBuffer<PerModelBundleData> m_perModelBundleBuffer;
-	SharedBufferCPU                            m_perModelDataCSBuffer;
+	SharedBufferCPU                            m_perModelBuffer;
 	QueueIndices3                              m_queueIndices3;
 	std::uint32_t                              m_dispatchXCount;
 	std::uint32_t                              m_allocatedModelCount;
 	std::uint32_t                              m_csPSOIndex;
 
 	// Vertex Shader ones
-	static constexpr std::uint32_t s_modelIndicesVSBindingSlot       = 2u;
+	// To read the model indices of the not culled models.
+	static constexpr std::uint32_t s_modelIndicesVSBindingSlot   = 2u;
 
 	// Compute Shader ones
-	static constexpr std::uint32_t s_perModelDataCSBindingSlot       = 1u;
-	static constexpr std::uint32_t s_argumentInputBufferBindingSlot  = 2u;
-	static constexpr std::uint32_t s_perPipelineBufferBindingSlot    = 3u;
-	static constexpr std::uint32_t s_argumenOutputBindingSlot        = 4u;
-	static constexpr std::uint32_t s_counterBindingSlot              = 5u;
-	static constexpr std::uint32_t s_perModelBundleBufferBindingSlot = 8u;
+	static constexpr std::uint32_t s_perModelBindingSlot         = 1u;
+	static constexpr std::uint32_t s_argumentInputBindingSlot    = 2u;
+	static constexpr std::uint32_t s_perPipelineBindingSlot      = 3u;
+	static constexpr std::uint32_t s_argumenOutputBindingSlot    = 4u;
+	static constexpr std::uint32_t s_counterBindingSlot          = 5u;
+	static constexpr std::uint32_t s_perModelBundleBindingSlot   = 8u;
 	// To write the model indices of the not culled models.
-	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot     = 9u;
+	static constexpr std::uint32_t s_modelIndicesVSCSBindingSlot = 9u;
 
 	// Each Compute Thread Group should have 64 threads.
 	static constexpr float THREADBLOCKSIZE = 64.f;
@@ -313,12 +314,12 @@ public:
 		: ModelManager{ std::move(other) },
 		m_argumentInputBuffers{ std::move(other.m_argumentInputBuffers) },
 		m_argumentOutputBuffers{ std::move(other.m_argumentOutputBuffers) },
-		m_modelIndicesVSBuffers{ std::move(other.m_modelIndicesVSBuffers) },
+		m_modelIndicesBuffers{ std::move(other.m_modelIndicesBuffers) },
 		m_perPipelineDataBuffer{ std::move(other.m_perPipelineDataBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_perModelBundleBuffer{ std::move(other.m_perModelBundleBuffer) },
-		m_perModelDataCSBuffer{ std::move(other.m_perModelDataCSBuffer) },
+		m_perModelBuffer{ std::move(other.m_perModelBuffer) },
 		m_queueIndices3{ other.m_queueIndices3 },
 		m_dispatchXCount{ other.m_dispatchXCount },
 		m_allocatedModelCount{ other.m_allocatedModelCount },
@@ -329,12 +330,12 @@ public:
 		ModelManager::operator=(std::move(other));
 		m_argumentInputBuffers   = std::move(other.m_argumentInputBuffers);
 		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
-		m_modelIndicesVSBuffers  = std::move(other.m_modelIndicesVSBuffers);
+		m_modelIndicesBuffers    = std::move(other.m_modelIndicesBuffers);
 		m_perPipelineDataBuffer  = std::move(other.m_perPipelineDataBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
 		m_perModelBundleBuffer   = std::move(other.m_perModelBundleBuffer);
-		m_perModelDataCSBuffer   = std::move(other.m_perModelDataCSBuffer);
+		m_perModelBuffer         = std::move(other.m_perModelBuffer);
 		m_queueIndices3          = other.m_queueIndices3;
 		m_dispatchXCount         = other.m_dispatchXCount;
 		m_allocatedModelCount    = other.m_allocatedModelCount;

@@ -94,14 +94,14 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3,
 	std::uint32_t frameCount
 ) : ModelManager{}, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
-	m_modelIndicesVSBuffers{},
+	m_modelIndicesBuffers{},
 	m_perPipelineDataBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 	m_perModelBundleBuffer{ device, memoryManager, frameCount },
-	m_perModelDataCSBuffer{
+	m_perModelBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_queueIndices3{ queueIndices3 }, m_dispatchXCount{ 0u }, m_allocatedModelCount{ 0u },
@@ -128,7 +128,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
 			}
 		);
-		m_modelIndicesVSBuffers.emplace_back(
+		m_modelIndicesBuffers.emplace_back(
 			SharedBufferGPUWriteOnly{
 				device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 				m_queueIndices3.ResolveQueueIndices<QueueIndicesCG>()
@@ -158,8 +158,8 @@ void ModelManagerVSIndirect::ChangeModelPipeline(
 ) {
 	m_modelBundles[bundleIndex].MoveModel(
 		modelIndexInBundle, bundleIndex, oldPipelineIndex, newPipelineIndex,
-		m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelDataCSBuffer,
-		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers
+		m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelBuffer,
+		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 	);
 }
 
@@ -172,7 +172,7 @@ void ModelManagerVSIndirect::UpdateAllocatedModelCount() noexcept
 	// in some freed memory. We should set the model count to the total allocated model count, that
 	// way it won't skip the last ones and also not unnecessarily add extra ones.
 	m_allocatedModelCount = static_cast<std::uint32_t>(
-		m_perModelDataCSBuffer.Size() / PipelineModelsCSIndirect::GetPerModelStride()
+		m_perModelBuffer.Size() / PipelineModelsCSIndirect::GetPerModelStride()
 	);
 
 	// ThreadBlockSize is the number of threads in a thread group. If the allocated model count
@@ -225,8 +225,8 @@ void ModelManagerVSIndirect::_addModelsFromBundle(
 	for (const auto& pipelineModelIndices : pipelineModelIndicesMap)
 		localModelBundle.AddModels(
 			pipelineModelIndices.first, modelBundleIndex, pipelineModelIndices.second,
-			m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelDataCSBuffer,
-			m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers
+			m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelBuffer,
+			m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 		);
 }
 
@@ -239,8 +239,8 @@ std::vector<std::uint32_t> ModelManagerVSIndirect::RemoveModelBundle(std::uint32
 	std::vector<std::uint32_t> modelBufferIndices = localModelBundle.TakeModelBufferIndices();
 
 	localModelBundle.CleanupData(
-		m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelDataCSBuffer,
-		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesVSBuffers
+		m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelBuffer,
+		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 	);
 
 	m_modelBundles.RemoveElement(bundleIndexST);
@@ -324,7 +324,7 @@ void ModelManagerVSIndirect::SetDescriptorBuffersVS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesVSBuffers[index].GetBuffer(), s_modelIndicesVSBindingSlot, vsSetLayoutIndex, 0u
+			m_modelIndicesBuffers[index].GetBuffer(), s_modelIndicesVSBindingSlot, vsSetLayoutIndex, 0u
 		);
 	}
 }
@@ -335,11 +335,11 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 	for (VkDescriptorBuffer& descriptorBuffer : descriptorBuffers)
 	{
 		descriptorBuffer.AddBinding(
-			s_argumentInputBufferBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_argumentInputBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_perPipelineBufferBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_perPipelineBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
@@ -351,11 +351,11 @@ void ModelManagerVSIndirect::SetDescriptorBufferLayoutCS(
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_perModelDataCSBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_perModelBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
-			s_perModelBundleBufferBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
+			s_perModelBundleBindingSlot, csSetLayoutIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1u,
 			VK_SHADER_STAGE_COMPUTE_BIT
 		);
 		descriptorBuffer.AddBinding(
@@ -375,11 +375,11 @@ void ModelManagerVSIndirect::SetDescriptorBuffersCS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_argumentInputBuffers[index].GetBuffer(), s_argumentInputBufferBindingSlot,
+			m_argumentInputBuffers[index].GetBuffer(), s_argumentInputBindingSlot,
 			csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_perPipelineDataBuffer.GetBuffer(), s_perPipelineBufferBindingSlot, csSetLayoutIndex, 0u
+			m_perPipelineDataBuffer.GetBuffer(), s_perPipelineBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_argumentOutputBuffers[index].GetBuffer(), s_argumenOutputBindingSlot,
@@ -389,15 +389,15 @@ void ModelManagerVSIndirect::SetDescriptorBuffersCS(
 			m_counterBuffers[index].GetBuffer(), s_counterBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_perModelDataCSBuffer.GetBuffer(), s_perModelDataCSBindingSlot, csSetLayoutIndex, 0u
+			m_perModelBuffer.GetBuffer(), s_perModelBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesVSBuffers[index].GetBuffer(), s_modelIndicesVSCSBindingSlot,
+			m_modelIndicesBuffers[index].GetBuffer(), s_modelIndicesVSCSBindingSlot,
 			csSetLayoutIndex, 0u
 		);
 
 		m_perModelBundleBuffer.SetDescriptorBuffer(
-			descriptorBuffer, s_perModelBundleBufferBindingSlot, csSetLayoutIndex
+			descriptorBuffer, s_perModelBundleBindingSlot, csSetLayoutIndex
 		);
 	}
 }

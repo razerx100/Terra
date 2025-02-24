@@ -250,7 +250,7 @@ void PipelineModelsMSIndividual::DrawSorted(
 // Pipeline Models CS Indirect
 PipelineModelsCSIndirect::PipelineModelsCSIndirect()
 	: PipelineModelsBase{}, m_perPipelineSharedData{ nullptr, 0u, 0u },
-	m_perModelDataCSSharedData{ nullptr, 0u, 0u }, m_argumentInputSharedData{}
+	m_perModelSharedData{ nullptr, 0u, 0u }, m_argumentInputSharedData{}
 {}
 
 void PipelineModelsCSIndirect::ResetCullingData() const noexcept
@@ -322,10 +322,10 @@ void PipelineModelsCSIndirect::UpdateNonPerFrameData(
 			);
 		}
 
-		Buffer const* cullingBuffer = m_perPipelineSharedData.bufferData;
+		Buffer const* perPipelineBuffer = m_perPipelineSharedData.bufferData;
 
 		memcpy(
-			cullingBuffer->CPUHandle() + m_perPipelineSharedData.offset,
+			perPipelineBuffer->CPUHandle() + m_perPipelineSharedData.offset,
 			&perPipelineData, perPipelineStride
 		);
 	}
@@ -336,8 +336,8 @@ void PipelineModelsCSIndirect::UpdateNonPerFrameData(
 			m_perPipelineSharedData.offset / perPipelineStride
 		);
 
-		std::uint8_t* bufferStart = m_perModelDataCSSharedData.bufferData->CPUHandle();
-		auto offset               = static_cast<size_t>(m_perModelDataCSSharedData.offset);
+		std::uint8_t* bufferStart = m_perModelSharedData.bufferData->CPUHandle();
+		auto offset               = static_cast<size_t>(m_perModelSharedData.offset);
 
 		for (size_t index  = 0u; index < modelCount; ++index)
 		{
@@ -359,8 +359,7 @@ void PipelineModelsCSIndirect::UpdateNonPerFrameData(
 
 void PipelineModelsCSIndirect::AllocateBuffers(
 	std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-	bool areSortedModels
+	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer, bool areSortedModels
 ) {
 	const size_t modelCount = GetModelCount(areSortedModels);
 
@@ -407,10 +406,10 @@ void PipelineModelsCSIndirect::AllocateBuffers(
 
 	// Per Model Data
 	{
-		if (m_perModelDataCSSharedData.bufferData)
-			perModelDataCSBuffer.RelinquishMemory(m_perModelDataCSSharedData);
+		if (m_perModelSharedData.bufferData)
+			perModelSharedBuffer.RelinquishMemory(m_perModelSharedData);
 
-		m_perModelDataCSSharedData = perModelDataCSBuffer.AllocateAndGetSharedData(
+		m_perModelSharedData = perModelSharedBuffer.AllocateAndGetSharedData(
 			perModelDataSize, true
 		);
 	}
@@ -429,13 +428,13 @@ void PipelineModelsCSIndirect::_update(
 	const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[frameIndex];
 
 	std::uint8_t* argumentInputStart  = argumentInputSharedData.bufferData->CPUHandle();
-	std::uint8_t* perModelBufferStart = m_perModelDataCSSharedData.bufferData->CPUHandle();
+	std::uint8_t* perModelBufferStart = m_perModelSharedData.bufferData->CPUHandle();
 
 	constexpr size_t argumentStride = sizeof(VkDrawIndexedIndirectCommand);
 	auto argumentOffset             = static_cast<size_t>(argumentInputSharedData.offset);
 
 	constexpr size_t perModelStride = sizeof(PerModelData);
-	auto perModelOffset             = static_cast<size_t>(m_perModelDataCSSharedData.offset);
+	auto perModelOffset             = static_cast<size_t>(m_perModelSharedData.offset);
 	constexpr auto isVisibleOffset  = offsetof(PerModelData, isVisible);
 	constexpr auto modelIndexOffset = offsetof(PerModelData, modelIndex);
 
@@ -502,7 +501,7 @@ void PipelineModelsCSIndirect::UpdateSorted(
 
 void PipelineModelsCSIndirect::RelinquishMemory(
 	std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer
+	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer
 ) noexcept {
 	// Input Buffers
 	for (size_t index = 0u; index < std::size(argumentInputSharedBuffers); ++index)
@@ -527,11 +526,11 @@ void PipelineModelsCSIndirect::RelinquishMemory(
 	}
 
 	// Per Model Buffer
-	if (m_perModelDataCSSharedData.bufferData)
+	if (m_perModelSharedData.bufferData)
 	{
-		perModelDataCSBuffer.RelinquishMemory(m_perModelDataCSSharedData);
+		perModelSharedBuffer.RelinquishMemory(m_perModelSharedData);
 
-		m_perModelDataCSSharedData = SharedBufferData{ nullptr, 0u, 0u };
+		m_perModelSharedData = SharedBufferData{ nullptr, 0u, 0u };
 	}
 }
 
