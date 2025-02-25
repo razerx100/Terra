@@ -111,7 +111,7 @@ void PipelineModelsVSIndividual::_draw(
 		if (!(this->*IsModelInUse)(index) || !model->IsVisible())
 			continue;
 
-		constexpr auto pushConstantSize = GetConstantBufferSize();
+		constexpr std::uint32_t pushConstantSize = GetConstantBufferSize();
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
@@ -179,7 +179,9 @@ void PipelineModelsMSIndividual::_draw(
 		if (!(this->*IsModelInUse)(index) || !model->IsVisible())
 			continue;
 
-		constexpr auto pushConstantSize = GetConstantBufferSize();
+		constexpr std::uint32_t pushConstantSize    = GetConstantBufferSize();
+
+		constexpr std::uint32_t constBufferOffset   = VkMeshBundleMS::GetConstantBufferSize();
 
 		const MeshTemporaryDetailsMS& meshDetailsMS = meshBundle.GetMeshDetails(model->GetMeshIndex());
 
@@ -198,7 +200,7 @@ void PipelineModelsMSIndividual::_draw(
 
 		vkCmdPushConstants(
 			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-			0u, pushConstantSize, &modelConstants
+			constBufferOffset, pushConstantSize, &modelConstants
 		);
 
 		// If we have a Task shader, this will launch a Task global workGroup. We would want
@@ -557,6 +559,7 @@ void PipelineModelsVSIndirect::AllocateBuffers(
 	if (!m_modelCount)
 		return;
 
+	// Argument Output
 	{
 		const size_t argumentOutputBufferCount = std::size(argumentOutputSharedBuffers);
 
@@ -583,6 +586,7 @@ void PipelineModelsVSIndirect::AllocateBuffers(
 		}
 	}
 
+	// Counter Buffer
 	{
 		const size_t counterBufferCount = std::size(counterSharedBuffers);
 
@@ -605,6 +609,7 @@ void PipelineModelsVSIndirect::AllocateBuffers(
 		}
 	}
 
+	// Model Indices
 	{
 		const size_t modelIndicesBufferCount = std::size(modelIndicesSharedBuffers);
 
@@ -789,15 +794,14 @@ void ModelBundleVSIndividual::DrawPipelineSorted(
 void ModelBundleMSIndividual::SetMeshBundleConstants(
 	VkCommandBuffer graphicsBuffer, VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 ) noexcept {
-	constexpr std::uint32_t constantBufferOffset = PipelineModelsMSIndividual::GetConstantBufferSize();
-	constexpr std::uint32_t constBufferSize      = VkMeshBundleMS::GetConstantBufferSize();
+	constexpr std::uint32_t constBufferSize = VkMeshBundleMS::GetConstantBufferSize();
 
 	const VkMeshBundleMS::MeshBundleDetailsMS meshBundleDetailsMS = meshBundle.GetMeshBundleDetailsMS();
 
 	vkCmdPushConstants(
 		graphicsBuffer, pipelineLayout,
 		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-		constantBufferOffset, constBufferSize, &meshBundleDetailsMS
+		0u, constBufferSize, &meshBundleDetailsMS
 	);
 }
 
