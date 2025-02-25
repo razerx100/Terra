@@ -848,14 +848,12 @@ public:
 	) noexcept;
 
 	void DrawPipeline(
-		size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle
+		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) const noexcept;
 	void DrawPipelineSorted(
-		size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle
+		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) noexcept;
 
 public:
@@ -890,14 +888,12 @@ public:
 	) noexcept;
 
 	void DrawPipeline(
-		size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle
+		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 	) const noexcept;
 	void DrawPipelineSorted(
-		size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle
+		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 	) noexcept;
 
 private:
@@ -1023,9 +1019,8 @@ public:
 	) const noexcept;
 
 	void DrawPipeline(
-		size_t pipelineLocalIndex,
-		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle
+		size_t pipelineLocalIndex, size_t frameIndex, const VKCommandBuffer& graphicsBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) const noexcept;
 
 private:

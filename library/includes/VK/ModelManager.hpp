@@ -153,14 +153,12 @@ public:
 		const PipelineManager<Pipeline_t>& pipelineManager
 	) noexcept;
 	void DrawPipeline(
-		size_t modelBundleIndex, size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-		VkPipelineLayout pipelineLayout
+		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
 	) const noexcept;
 	void DrawPipelineSorted(
-		size_t modelBundleIndex, size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-		VkPipelineLayout pipelineLayout
+		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
 	) noexcept;
 
 public:
@@ -180,8 +178,6 @@ public:
 
 class ModelManagerVSIndirect : public ModelManager<ModelBundleVSIndirect>
 {
-	friend class ModelManager<ModelBundleVSIndirect>;
-
 	using GraphicsPipeline_t = GraphicsPipelineVSIndirectDraw;
 	using ComputePipeline_t  = ComputePipeline;
 
@@ -279,7 +275,7 @@ private:
 	std::vector<SharedBufferCPU>               m_argumentInputBuffers;
 	std::vector<SharedBufferGPUWriteOnly>      m_argumentOutputBuffers;
 	std::vector<SharedBufferGPUWriteOnly>      m_modelIndicesBuffers;
-	SharedBufferCPU                            m_perPipelineDataBuffer;
+	SharedBufferCPU                            m_perPipelineBuffer;
 	std::vector<SharedBufferGPUWriteOnly>      m_counterBuffers;
 	Buffer                                     m_counterResetBuffer;
 	MultiInstanceCPUBuffer<PerModelBundleData> m_perModelBundleBuffer;
@@ -315,7 +311,7 @@ public:
 		m_argumentInputBuffers{ std::move(other.m_argumentInputBuffers) },
 		m_argumentOutputBuffers{ std::move(other.m_argumentOutputBuffers) },
 		m_modelIndicesBuffers{ std::move(other.m_modelIndicesBuffers) },
-		m_perPipelineDataBuffer{ std::move(other.m_perPipelineDataBuffer) },
+		m_perPipelineBuffer{ std::move(other.m_perPipelineBuffer) },
 		m_counterBuffers{ std::move(other.m_counterBuffers) },
 		m_counterResetBuffer{ std::move(other.m_counterResetBuffer) },
 		m_perModelBundleBuffer{ std::move(other.m_perModelBundleBuffer) },
@@ -331,7 +327,7 @@ public:
 		m_argumentInputBuffers   = std::move(other.m_argumentInputBuffers);
 		m_argumentOutputBuffers  = std::move(other.m_argumentOutputBuffers);
 		m_modelIndicesBuffers    = std::move(other.m_modelIndicesBuffers);
-		m_perPipelineDataBuffer  = std::move(other.m_perPipelineDataBuffer);
+		m_perPipelineBuffer      = std::move(other.m_perPipelineBuffer);
 		m_counterBuffers         = std::move(other.m_counterBuffers);
 		m_counterResetBuffer     = std::move(other.m_counterResetBuffer);
 		m_perModelBundleBuffer   = std::move(other.m_perModelBundleBuffer);
@@ -363,14 +359,12 @@ public:
 		const PipelineManager<Pipeline_t>& pipelineManager
 	) noexcept;
 	void DrawPipeline(
-		size_t modelBundleIndex, size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
-		VkPipelineLayout pipelineLayout
+		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		const MeshManagerMS& meshManager, VkPipelineLayout pipelineLayout
 	) const noexcept;
 	void DrawPipelineSorted(
-		size_t modelBundleIndex, size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
-		VkPipelineLayout pipelineLayout
+		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+		const MeshManagerMS& meshManager, VkPipelineLayout pipelineLayout
 	) noexcept;
 
 public:

@@ -58,9 +58,8 @@ void ModelManagerVSIndividual::DrawSorted(
 }
 
 void ModelManagerVSIndividual::DrawPipeline(
-	size_t modelBundleIndex, size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-	VkPipelineLayout pipelineLayout
+	size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+	const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
 ) const noexcept {
 	if (!m_modelBundles.IsInUse(modelBundleIndex))
 		return;
@@ -70,13 +69,13 @@ void ModelManagerVSIndividual::DrawPipeline(
 	// Mesh
 	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
+	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
 }
 
 void ModelManagerVSIndividual::DrawPipelineSorted(
-	size_t modelBundleIndex, size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-	VkPipelineLayout pipelineLayout
+	size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
+	const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
 ) noexcept {
 	if (!m_modelBundles.IsInUse(modelBundleIndex))
 		return;
@@ -84,8 +83,9 @@ void ModelManagerVSIndividual::DrawPipelineSorted(
 	ModelBundleVSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
-	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleVS& meshBundle     = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
+	// Model
 	modelBundle.DrawPipelineSorted(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
 }
 
@@ -95,7 +95,7 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 	std::uint32_t frameCount
 ) : ModelManager{}, m_argumentInputBuffers{}, m_argumentOutputBuffers{},
 	m_modelIndicesBuffers{},
-	m_perPipelineDataBuffer{
+	m_perPipelineBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_counterBuffers{},
@@ -158,7 +158,7 @@ void ModelManagerVSIndirect::ChangeModelPipeline(
 ) {
 	m_modelBundles[bundleIndex].MoveModel(
 		modelIndexInBundle, bundleIndex, oldPipelineIndex, newPipelineIndex,
-		m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelBuffer,
+		m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
 		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 	);
 }
@@ -225,7 +225,7 @@ void ModelManagerVSIndirect::_addModelsFromBundle(
 	for (const auto& pipelineModelIndices : pipelineModelIndicesMap)
 		localModelBundle.AddModels(
 			pipelineModelIndices.first, modelBundleIndex, pipelineModelIndices.second,
-			m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelBuffer,
+			m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
 			m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 		);
 }
@@ -239,7 +239,7 @@ std::vector<std::uint32_t> ModelManagerVSIndirect::RemoveModelBundle(std::uint32
 	std::vector<std::uint32_t> modelBufferIndices = localModelBundle.TakeModelBufferIndices();
 
 	localModelBundle.CleanupData(
-		m_argumentInputBuffers, m_perPipelineDataBuffer, m_perModelBuffer,
+		m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
 		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 	);
 
@@ -281,7 +281,7 @@ void ModelManagerVSIndirect::UpdatePerFrameSorted(
 ) noexcept {
 	std::uint8_t* bufferOffsetPtr = m_perModelBundleBuffer.GetInstancePtr(frameIndex);
 	constexpr size_t strideSize   = sizeof(PerModelBundleData);
-	VkDeviceSize bufferOffset     = 0u;
+	size_t bufferOffset           = 0u;
 
 	const size_t modelBundleCount = std::size(m_modelBundles);
 
@@ -379,7 +379,7 @@ void ModelManagerVSIndirect::SetDescriptorBuffersCS(
 			csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_perPipelineDataBuffer.GetBuffer(), s_perPipelineBindingSlot, csSetLayoutIndex, 0u
+			m_perPipelineBuffer.GetBuffer(), s_perPipelineBindingSlot, csSetLayoutIndex, 0u
 		);
 		descriptorBuffer.SetStorageBufferDescriptor(
 			m_argumentOutputBuffers[index].GetBuffer(), s_argumenOutputBindingSlot,
@@ -536,6 +536,7 @@ void ModelManagerMS::Draw(
 
 		const ModelBundleMSIndividual& modelBundle = m_modelBundles[index];
 
+		// Mesh
 		const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 		// Model
@@ -558,6 +559,7 @@ void ModelManagerMS::DrawSorted(
 
 		ModelBundleMSIndividual& modelBundle = m_modelBundles[index];
 
+		// Mesh
 		const VkMeshBundleMS& meshBundle     = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 		// Model
@@ -578,6 +580,7 @@ void ModelManagerMS::DrawPipeline(
 	// Mesh
 	const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
+	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
 }
 
@@ -594,5 +597,6 @@ void ModelManagerMS::DrawPipelineSorted(
 	// Mesh
 	const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
+	// Model
 	modelBundle.DrawPipelineSorted(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
 }
