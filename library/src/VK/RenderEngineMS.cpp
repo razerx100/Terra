@@ -66,7 +66,7 @@ VkSemaphore RenderEngineMS::ExecutePipelineStages(
 
 	waitSemaphore = DrawingStage(frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore);
 
-		return waitSemaphore;
+	return waitSemaphore;
 }
 
 void RenderEngineMS::SetModelGraphicsDescriptors()

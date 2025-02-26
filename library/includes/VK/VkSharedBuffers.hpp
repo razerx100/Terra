@@ -1,5 +1,5 @@
-#ifndef COMMON_BUFFERS_HPP_
-#define COMMON_BUFFERS_HPP_
+#ifndef VK_SHARED_BUFFERS_HPP_
+#define VK_SHARED_BUFFERS_HPP_
 #include <VkResources.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <ReusableVkBuffer.hpp>

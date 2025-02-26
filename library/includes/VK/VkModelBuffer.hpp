@@ -1,7 +1,7 @@
 #ifndef VK_MODEL_BUFFER_HPP_
 #define VK_MODEL_BUFFER_HPP_
 #include <Model.hpp>
-#include <CommonBuffers.hpp>
+#include <VkSharedBuffers.hpp>
 
 class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>
 {

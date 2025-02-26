@@ -4,7 +4,7 @@
 #include <VkMeshBundleMS.hpp>
 #include <VkMeshBundleVS.hpp>
 #include <ReusableVector.hpp>
-#include <CommonBuffers.hpp>
+#include <VkSharedBuffers.hpp>
 #include <VkCommandQueue.hpp>
 #include <StagingBufferManager.hpp>
 

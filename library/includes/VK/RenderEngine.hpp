@@ -6,7 +6,7 @@
 #include <StagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <TextureManager.hpp>
-#include <CommonBuffers.hpp>
+#include <VkSharedBuffers.hpp>
 #include <CameraManager.hpp>
 #include <ViewportAndScissorManager.hpp>
 #include <Model.hpp>

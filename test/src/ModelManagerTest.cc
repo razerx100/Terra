@@ -62,7 +62,7 @@ void ModelManagerTest::TearDownTestSuite()
 
 class ModelDummy : public Model
 {
-	std::uint32_t m_psoIndex = 0;
+	std::uint32_t m_psoIndex = 0u;
 public:
 	[[nodiscard]]
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
@@ -340,7 +340,6 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
 		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
-
 
 		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";

@@ -1,7 +1,7 @@
 #include <ranges>
 #include <algorithm>
 
-#include <CommonBuffers.hpp>
+#include <VkSharedBuffers.hpp>
 
 // Shared Buffer GPU
 void SharedBufferGPU::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)

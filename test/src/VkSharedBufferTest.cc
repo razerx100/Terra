@@ -3,14 +3,14 @@
 
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
-#include <CommonBuffers.hpp>
+#include <VkSharedBuffers.hpp>
 
 namespace Constants
 {
 	constexpr const char* appName  = "TerraTest";
 }
 
-class CommonBufferTest : public ::testing::Test
+class VkSharedBufferTest : public ::testing::Test
 {
 protected:
 	static void SetUpTestSuite();
@@ -21,7 +21,7 @@ protected:
 	inline static std::unique_ptr<VkDeviceManager>   s_deviceManager;
 };
 
-void CommonBufferTest::SetUpTestSuite()
+void VkSharedBufferTest::SetUpTestSuite()
 {
 	const CoreVersion coreVersion = CoreVersion::V1_3;
 
@@ -43,13 +43,13 @@ void CommonBufferTest::SetUpTestSuite()
 		.CreateLogicalDevice();
 }
 
-void CommonBufferTest::TearDownTestSuite()
+void VkSharedBufferTest::TearDownTestSuite()
 {
 	s_deviceManager.reset();
 	s_instanceManager.reset();
 }
 
-TEST_F(CommonBufferTest, SharedBufferTest)
+TEST_F(VkSharedBufferTest, SharedBufferTest)
 {
 	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
 	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();

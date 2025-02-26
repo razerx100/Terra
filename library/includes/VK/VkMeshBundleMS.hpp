@@ -4,7 +4,7 @@
 #include <memory>
 #include <VkResources.hpp>
 #include <StagingBufferManager.hpp>
-#include <CommonBuffers.hpp>
+#include <VkSharedBuffers.hpp>
 
 #include <MeshBundle.hpp>
 

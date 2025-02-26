@@ -17,6 +17,7 @@
 #include <TemporaryDataBuffer.hpp>
 #include <MeshManager.hpp>
 #include <PipelineManager.hpp>
+#include <VkSharedBuffers.hpp>
 
 #include <VkModelBundle.hpp>
 #include <Shader.hpp>
