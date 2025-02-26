@@ -50,7 +50,7 @@ void ModelManagerVSIndividual::DrawSorted(
 
 		ModelBundleVSIndividual& modelBundle = m_modelBundles[index];
 		// Mesh
-		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+		const VkMeshBundleVS& meshBundle     = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 		// Model
 		modelBundle.DrawSorted(graphicsBuffer, pipelineLayout, meshBundle, pipelineManager);
@@ -67,7 +67,7 @@ void ModelManagerVSIndividual::DrawPipeline(
 	const ModelBundleVSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
-	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleVS& meshBundle           = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
@@ -595,7 +595,7 @@ void ModelManagerMS::DrawPipelineSorted(
 	ModelBundleMSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
-	const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleMS& meshBundle     = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 	// Model
 	modelBundle.DrawPipelineSorted(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);

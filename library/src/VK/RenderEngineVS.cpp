@@ -302,8 +302,13 @@ void RenderEngineVSIndirect::FinaliseInitialisation()
 		!std::empty(m_computePipelineManager.GetShaderPath())
 		&& "The shader path should be set before calling this function."
 	);
+
 	// Add the Frustum Culling Shader.
-	m_computePipelineManager.AddOrGetComputePipeline(L"VertexShaderCSIndirect");
+	const std::uint32_t frustumCSOIndex = m_computePipelineManager.AddOrGetComputePipeline(
+		L"VertexShaderCSIndirect"
+	);
+
+	m_modelManager.SetCSPSOIndex(frustumCSOIndex);
 }
 
 void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
