@@ -461,7 +461,7 @@ void ModelManagerVSIndirect::DrawPipeline(
 
 	const ModelBundleVSIndirect& modelBundle = m_modelBundles[modelBundleIndex];
 
-	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleVS& meshBundle         = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 	modelBundle.DrawPipeline(pipelineLocalIndex, frameIndex, graphicsBuffer, pipelineLayout, meshBundle);
 }
@@ -578,7 +578,7 @@ void ModelManagerMS::DrawPipeline(
 	const ModelBundleMSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
-	const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleMS& meshBundle           = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
