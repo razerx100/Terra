@@ -15,7 +15,8 @@
 #include <TemporaryDataBuffer.hpp>
 #include <Texture.hpp>
 #include <VkModelBuffer.hpp>
-#include <VkRenderPassManager.hpp>
+#include <PipelineManager.hpp>
+#include <VkExternalRenderPass.hpp>
 #include <VkExternalResourceManager.hpp>
 
 // This needs to be a separate class, since the actual Engine will need the device to be created
@@ -74,13 +75,13 @@ public:
 	virtual void SetShaderPath(const std::wstring& shaderPath) = 0;
 
 	[[nodiscard]]
-	virtual std::uint32_t AddGraphicsPipeline(const ShaderName& fragmentShader) = 0;
+	virtual std::uint32_t AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline) = 0;
 
-	virtual void ChangeFragmentShader(
-		[[maybe_unused]] std::uint32_t modelBundleID,
-		[[maybe_unused]] const ShaderName& fragmentShader
-	) {}
-	virtual void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept = 0;
+	virtual void ChangeModelPipelineInBundle(
+		std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
+		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
+	) = 0;
+	virtual void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept = 0;
 
 	[[nodiscard]]
 	// Returned semaphore will be signalled when the rendering is finished.
@@ -89,18 +90,23 @@ public:
 		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
 	) = 0;
 	virtual void Resize(
-		std::uint32_t width, std::uint32_t height,
-		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
+		std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged
 	) = 0;
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	virtual std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-	) = 0;
+	virtual std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) = 0;
 
 	virtual void RemoveModelBundle(std::uint32_t bundleIndex) noexcept = 0;
 
+	[[nodiscard]]
+	// Should wait for the device to be idle before calling this.
+	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) = 0;
+
+	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
+
+public:
+	// External stuff
 	[[nodiscard]]
 	ExternalResourceManager* GetExternalResourceManager() noexcept
 	{
@@ -119,10 +125,24 @@ public:
 	);
 
 	[[nodiscard]]
-	// Should wait for the device to be idle before calling this.
-	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) = 0;
+	virtual std::uint32_t AddExternalRenderPass() = 0;
+	[[nodiscard]]
+	virtual ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept = 0;
+	[[nodiscard]]
+	virtual std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(
+		size_t index
+	) const noexcept = 0;
 
-	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
+	[[nodiscard]]
+	virtual void SetSwapchainExternalRenderPass() = 0;
+
+	[[nodiscard]]
+	virtual ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept = 0;
+	[[nodiscard]]
+	virtual std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept = 0;
+
+	virtual void RemoveExternalRenderPass(size_t index) noexcept = 0;
+	virtual void RemoveSwapchainExternalRenderPass() noexcept = 0;
 
 protected:
 	[[nodiscard]]
@@ -221,24 +241,31 @@ public:
 };
 
 template<
+	typename ModelManager_t,
 	typename MeshManager_t,
 	typename GraphicsPipeline_t,
 	typename Derived
 >
 class RenderEngineCommon : public RenderEngine
 {
+protected:
+	using ExternalRenderPass_t   = VkExternalRenderPassCommon<ModelManager_t>;
+	using ExternalRenderPassSP_t = std::shared_ptr<ExternalRenderPass_t>;
+
 public:
 	RenderEngineCommon(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount,
+		ModelManager_t&& modelManager, ModelBuffers&& modelBuffers
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
+		m_modelManager{ std::move(modelManager) },
+		m_modelBuffers{ std::move(modelBuffers) },
 		m_meshManager{
 			deviceManager.GetLogicalDevice(), &m_memoryManager,
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
 		},
-		m_renderPassManager{ deviceManager.GetLogicalDevice() }
+		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() },
+		m_renderPasses{}, m_swapchainRenderPass{}
 	{
-		m_renderPassManager.SetDepthTesting(deviceManager.GetLogicalDevice(), &m_memoryManager);
-
 		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, s_combinedTextureBindingSlot, s_sampledTextureBindingSlot,
@@ -248,18 +275,27 @@ public:
 
 	void SetShaderPath(const std::wstring& shaderPath) override
 	{
-		m_renderPassManager.SetShaderPath(shaderPath);
+		m_graphicsPipelineManager.SetShaderPath(shaderPath);
 	}
 
 	[[nodiscard]]
-	std::uint32_t AddGraphicsPipeline(const ShaderName& fragmentShader) override
+	std::uint32_t AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline) override
 	{
-		return m_renderPassManager.AddOrGetGraphicsPipeline(fragmentShader);
+		return m_graphicsPipelineManager.AddOrGetGraphicsPipeline(gfxPipeline);
 	}
 
-	void MakeFragmentShaderRemovable(const ShaderName& fragmentShader) noexcept override
+	void ChangeModelPipelineInBundle(
+		std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
+		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
+	) override {
+		m_modelManager.ChangeModelPipeline(
+			modelBundleIndex, modelIndex, oldPipelineIndex, newPipelineIndex
+		);
+	}
+
+	void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept override
 	{
-		m_renderPassManager.SetPSOOverwritable(fragmentShader);
+		m_graphicsPipelineManager.SetOverwritable(pipelineIndex);
 	}
 
 	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
@@ -267,17 +303,15 @@ public:
 		m_meshManager.RemoveMeshBundle(bundleIndex);
 	}
 
-	void Resize(
-		std::uint32_t width, std::uint32_t height,
-		bool hasSwapchainFormatChanged, VkFormat swapchainFormat
-	) override {
-		m_renderPassManager.ResizeDepthBuffer(width, height);
+	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override
+	{
+		m_modelBuffers.Remove(m_modelManager.RemoveModelBundle(bundleIndex));
+	}
 
+	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged) override
+	{
 		if (hasSwapchainFormatChanged)
-		{
-			m_renderPassManager.SetColourAttachmentFormat(swapchainFormat);
-			m_renderPassManager.RecreatePipelines();
-		}
+			m_graphicsPipelineManager.RecreateAllGraphicsPipelines();
 
 		m_viewportAndScissors.Resize(width, height);
 	}
@@ -312,12 +346,64 @@ public:
 		return waitSemaphore;
 	}
 
+	[[nodiscard]]
+	std::uint32_t AddExternalRenderPass() override
+	{
+		return static_cast<std::uint32_t>(
+			m_renderPasses.Add(
+				std::make_shared<ExternalRenderPass_t>(
+					&m_modelManager, m_externalResourceManager.GetVkResourceFactory()
+				)
+			)
+		);
+	}
+	[[nodiscard]]
+	ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept override
+	{
+		return m_renderPasses[index].get();
+	}
+	[[nodiscard]]
+	std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(size_t index) const noexcept override
+	{
+		return m_renderPasses[index];
+	}
+
+	void RemoveExternalRenderPass(size_t index) noexcept override
+	{
+		m_renderPasses[index].reset();
+		m_renderPasses.RemoveElement(index);
+	}
+
+	void SetSwapchainExternalRenderPass() override
+	{
+		m_swapchainRenderPass = std::make_shared<ExternalRenderPass_t>(
+			&m_modelManager, m_externalResourceManager.GetVkResourceFactory()
+		);
+	}
+
+	[[nodiscard]]
+	ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept override
+	{
+		return m_swapchainRenderPass.get();
+	}
+
+	[[nodiscard]]
+	std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept override
+	{
+		return m_swapchainRenderPass;
+	}
+
+	void RemoveSwapchainExternalRenderPass() noexcept override
+	{
+		m_swapchainRenderPass.reset();
+	}
+
 protected:
-	void Update(VkDeviceSize frameIndex) const noexcept
+	void Update(VkDeviceSize frameIndex) noexcept
 	{
 		m_cameraManager.Update(frameIndex);
 
-		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
+		static_cast<Derived*>(this)->_updatePerFrame(frameIndex);
 
 		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
 	}
@@ -327,19 +413,23 @@ protected:
 		if (!std::empty(m_graphicsDescriptorBuffers))
 			m_graphicsPipelineLayout.Create(m_graphicsDescriptorBuffers.front().GetValidLayouts());
 
-		m_renderPassManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
+		m_graphicsPipelineManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
 	}
 
 	void ResetGraphicsPipeline() override
 	{
 		CreateGraphicsPipelineLayout();
 
-		m_renderPassManager.RecreatePipelines();
+		m_graphicsPipelineManager.RecreateAllGraphicsPipelines();
 	}
 
 protected:
-	MeshManager_t                           m_meshManager;
-	VkRenderPassManager<GraphicsPipeline_t> m_renderPassManager;
+	ModelManager_t                         m_modelManager;
+	ModelBuffers                           m_modelBuffers;
+	MeshManager_t                          m_meshManager;
+	PipelineManager<GraphicsPipeline_t>    m_graphicsPipelineManager;
+	ReusableVector<ExternalRenderPassSP_t> m_renderPasses;
+	ExternalRenderPassSP_t                 m_swapchainRenderPass;
 
 public:
 	RenderEngineCommon(const RenderEngineCommon&) = delete;
@@ -347,14 +437,22 @@ public:
 
 	RenderEngineCommon(RenderEngineCommon&& other) noexcept
 		: RenderEngine{ std::move(other) },
+		m_modelManager{ std::move(other.m_modelManager) },
+		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_meshManager{ std::move(other.m_meshManager) },
-		m_renderPassManager{ std::move(other.m_renderPassManager) }
+		m_graphicsPipelineManager{ std::move(other.m_graphicsPipelineManager) },
+		m_renderPasses{ std::move(other.m_renderPasses) },
+		m_swapchainRenderPass{ std::move(other.m_swapchainRenderPass) }
 	{}
 	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
 	{
 		RenderEngine::operator=(std::move(other));
-		m_meshManager       = std::move(other.m_meshManager);
-		m_renderPassManager = std::move(other.m_renderPassManager);
+		m_modelManager            = std::move(other.m_modelManager);
+		m_modelBuffers            = std::move(other.m_modelBuffers);
+		m_meshManager             = std::move(other.m_meshManager);
+		m_graphicsPipelineManager = std::move(other.m_graphicsPipelineManager);
+		m_renderPasses            = std::move(other.m_renderPasses);
+		m_swapchainRenderPass     = std::move(other.m_swapchainRenderPass);
 
 		return *this;
 	}

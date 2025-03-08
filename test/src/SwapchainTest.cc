@@ -117,8 +117,6 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 
 	VKRenderPass renderPass{ logicalDevice };
 
-	DepthBuffer depthBuffer{ logicalDevice, &memoryManager };
-
 	SwapchainManager swapchain{
 		logicalDevice, device.GetQueueFamilyManager().GetQueue(QueueType::GraphicsQueue),
 		Constants::bufferCount
@@ -131,16 +129,12 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 	{
 		const VkExtent2D newExtent = swapchain.GetCurrentSwapchainExtent();
 
-		depthBuffer.Create(newExtent.width, newExtent.height);
-
 		renderPass.Create(
 			RenderPassBuilder{}
 			.AddColourAttachment(swapchain.GetSwapchainFormat())
-			.AddDepthAttachment(depthBuffer.GetFormat())
 			.Build()
 		);
 	}
-
 
 	EXPECT_NE(swapchain.GetVkSwapchain(), VK_NULL_HANDLE) << "Swapchain creation failed.";
 
@@ -151,12 +145,9 @@ TEST_F(SwapchainTest, SwapchainManagerTest)
 	{
 		const VkExtent2D newExtent = swapchain.GetCurrentSwapchainExtent();
 
-		depthBuffer.Create(newExtent.width, newExtent.height);
-
 		renderPass.Create(
 			RenderPassBuilder{}
 			.AddColourAttachment(swapchain.GetSwapchainFormat())
-			.AddDepthAttachment(depthBuffer.GetFormat())
 			.Build()
 		);
 	}

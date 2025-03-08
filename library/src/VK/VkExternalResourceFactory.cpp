@@ -22,7 +22,9 @@ size_t VkExternalResourceFactory::CreateExternalBuffer(ExternalBufferType type)
 	);
 }
 
-void VkExternalResourceFactory::RemoveExternalBuffer(size_t index) noexcept
+size_t VkExternalResourceFactory::CreateExternalTexture()
 {
-	m_externalBuffers.RemoveElement(index);
+	return m_externalTextures.Add(
+		std::make_shared<VkExternalTexture>(m_device, m_memoryManager)
+	);
 }

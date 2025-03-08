@@ -133,13 +133,11 @@ void Terra::Resize(std::uint32_t width, std::uint32_t height)
 
 		const VkExtent2D newExtent = m_swapchain->GetCurrentSwapchainExtent();
 
-		// Then recreate the RenderPass and Depth buffer.
 		// Using the new extent, as it might be slightly different than the values we got.
 		// For example, the title area of a window can't be drawn upon.
 		// So, the actual rendering area would be a bit smaller.
 		m_renderEngine->Resize(
-			newExtent.width, newExtent.height,
-			m_swapchain->HasSwapchainFormatChanged(), m_swapchain->GetSwapchainFormat()
+			newExtent.width, newExtent.height, m_swapchain->HasSwapchainFormatChanged()
 		);
 
 		m_windowWidth  = width;

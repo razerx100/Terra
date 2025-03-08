@@ -304,6 +304,52 @@ void ModelManagerVSIndirect::UpdatePerFrameSorted(
 	}
 }
 
+void ModelManagerVSIndirect::UpdatePipelinePerFrame(
+	VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
+	const MeshManagerVSIndirect& meshManager
+) const noexcept {
+	std::uint8_t* bufferOffsetPtr = m_perModelBundleBuffer.GetInstancePtr(frameIndex);
+	constexpr size_t strideSize   = sizeof(PerModelBundleData);
+
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
+	const VkDeviceSize bufferOffset       = strideSize * modelBundleIndex;
+
+	const ModelBundleVSIndirect& vsBundle = m_modelBundles[modelBundleIndex];
+
+	const std::uint32_t meshBundleIndex   = vsBundle.GetMeshBundleIndex();
+
+	const VkMeshBundleVS& meshBundle      = meshManager.GetBundle(meshBundleIndex);
+
+	vsBundle.UpdatePipeline(pipelineLocalIndex, static_cast<size_t>(frameIndex), meshBundle);
+
+	memcpy(bufferOffsetPtr + bufferOffset, &meshBundleIndex, strideSize);
+}
+
+void ModelManagerVSIndirect::UpdatePipelinePerFrameSorted(
+	VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
+	const MeshManagerVSIndirect& meshManager
+) noexcept {
+	std::uint8_t* bufferOffsetPtr = m_perModelBundleBuffer.GetInstancePtr(frameIndex);
+	constexpr size_t strideSize   = sizeof(PerModelBundleData);
+
+	if (!m_modelBundles.IsInUse(modelBundleIndex))
+		return;
+
+	const VkDeviceSize bufferOffset     = strideSize * modelBundleIndex;
+
+	ModelBundleVSIndirect& vsBundle     = m_modelBundles[modelBundleIndex];
+
+	const std::uint32_t meshBundleIndex = vsBundle.GetMeshBundleIndex();
+
+	const VkMeshBundleVS& meshBundle    = meshManager.GetBundle(meshBundleIndex);
+
+	vsBundle.UpdatePipelineSorted(pipelineLocalIndex, static_cast<size_t>(frameIndex), meshBundle);
+
+	memcpy(bufferOffsetPtr + bufferOffset, &meshBundleIndex, strideSize);
+}
+
 void ModelManagerVSIndirect::SetDescriptorBufferLayoutVS(
 	std::vector<VkDescriptorBuffer>& descriptorBuffers, size_t vsSetLayoutIndex
 ) const noexcept {
@@ -453,7 +499,7 @@ void ModelManagerVSIndirect::Draw(
 
 void ModelManagerVSIndirect::DrawPipeline(
 	size_t frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
+	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager,
 	VkPipelineLayout pipelineLayout
 ) const noexcept {
 	if (!m_modelBundles.IsInUse(modelBundleIndex))

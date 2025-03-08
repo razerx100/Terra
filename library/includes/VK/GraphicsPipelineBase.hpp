@@ -7,39 +7,31 @@
 #include <VkCommandQueue.hpp>
 #include <VKRenderPass.hpp>
 #include <PipelineLayout.hpp>
-#include <Shader.hpp>
-
-struct DepthStencilFormat
-{
-	VkFormat depthFormat;
-	VkFormat stencilFormat;
-};
+#include <ExternalPipeline.hpp>
+#include <VkExternalFormatMap.hpp>
 
 template<typename Derived>
 class GraphicsPipelineBase
 {
 public:
-	GraphicsPipelineBase() : m_graphicsPipeline{}, m_fragmentShader{} {}
+	GraphicsPipelineBase() : m_graphicsPipeline{}, m_graphicsExternalPipeline{} {}
 
 	void Create(
-		VkDevice device, VkPipelineLayout graphicsLayout, VkFormat colourFormat,
-		const DepthStencilFormat& depthStencilFormat,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
+		VkDevice device, VkPipelineLayout graphicsLayout,
+		const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 	) {
-		m_fragmentShader   = fragmentShader;
+		m_graphicsExternalPipeline = graphicsExtPipeline;
 
 		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
-			device, graphicsLayout, colourFormat, depthStencilFormat, shaderPath, m_fragmentShader
+			device, graphicsLayout, shaderPath, m_graphicsExternalPipeline
 		);
 	}
 
 	void Recreate(
-		VkDevice device, VkPipelineLayout graphicsLayout,
-		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
-		const std::wstring& shaderPath
+		VkDevice device, VkPipelineLayout graphicsLayout, const std::wstring& shaderPath
 	) {
 		m_graphicsPipeline = static_cast<Derived*>(this)->_createGraphicsPipeline(
-			device, graphicsLayout, colourFormat, depthStencilFormat, shaderPath, m_fragmentShader
+			device, graphicsLayout, shaderPath, m_graphicsExternalPipeline
 		);
 	}
 
@@ -51,11 +43,14 @@ public:
 	}
 
 	[[nodiscard]]
-	ShaderName GetShaderName() const noexcept { return m_fragmentShader; }
+	const ExternalGraphicsPipeline& GetExternalPipeline() const noexcept
+	{
+		return m_graphicsExternalPipeline;
+	}
 
 protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
-	ShaderName                        m_fragmentShader;
+	ExternalGraphicsPipeline          m_graphicsExternalPipeline;
 
 	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
 
@@ -65,14 +60,18 @@ public:
 
 	GraphicsPipelineBase(GraphicsPipelineBase&& other) noexcept
 		: m_graphicsPipeline{ std::move(other.m_graphicsPipeline) },
-		m_fragmentShader{ std::move(other.m_fragmentShader) }
+		m_graphicsExternalPipeline{ std::move(other.m_graphicsExternalPipeline) }
 	{}
 	GraphicsPipelineBase& operator=(GraphicsPipelineBase&& other) noexcept
 	{
-		m_graphicsPipeline = std::move(other.m_graphicsPipeline);
-		m_fragmentShader   = std::move(other.m_fragmentShader);
+		m_graphicsPipeline         = std::move(other.m_graphicsPipeline);
+		m_graphicsExternalPipeline = std::move(other.m_graphicsExternalPipeline);
 
 		return *this;
 	}
 };
+
+void ConfigurePipelineBuilder(
+	GraphicsPipelineBuilder& builder, const ExternalGraphicsPipeline& graphicsExtPipeline
+) noexcept;
 #endif

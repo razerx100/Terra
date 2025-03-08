@@ -65,12 +65,11 @@ public:
 	void RemoveTexture(size_t index);
 
 	[[nodiscard]]
-	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-	) {
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
+	{
 		WaitForGPUToFinish();
 
-		return m_renderEngine->AddModelBundle(std::move(modelBundle), fragmentShader);
+		return m_renderEngine->AddModelBundle(std::move(modelBundle));
 	}
 
 	[[nodiscard]]

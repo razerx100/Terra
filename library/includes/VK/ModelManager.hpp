@@ -35,6 +35,13 @@ public:
 		return m_modelBundles[bundleIndex].AddPipeline(pipelineIndex);
 	}
 
+	[[nodiscard]]
+	std::optional<size_t> GetPipelineLocalIndex(
+		std::uint32_t bundleIndex, std::uint32_t pipelineIndex
+	) const noexcept {
+		return m_modelBundles[bundleIndex].GetPipelineLocalIndex(pipelineIndex);
+	}
+
 protected:
 	ReusableVector<ModelBundleType> m_modelBundles;
 
@@ -242,7 +249,7 @@ public:
 	) const noexcept;
 	void DrawPipeline(
 		size_t frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
+		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager,
 		VkPipelineLayout pipelineLayout
 	) const noexcept;
 
@@ -255,6 +262,15 @@ public:
 	) const noexcept;
 	void UpdatePerFrameSorted(
 		VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
+	) noexcept;
+
+	void UpdatePipelinePerFrame(
+		VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
+		const MeshManagerVSIndirect& meshManager
+	) const noexcept;
+	void UpdatePipelinePerFrameSorted(
+		VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
+		const MeshManagerVSIndirect& meshManager
 	) noexcept;
 
 private:

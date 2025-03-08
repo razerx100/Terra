@@ -6,40 +6,43 @@
 #include <VKPipelineObject.hpp>
 #include <VkCommandQueue.hpp>
 #include <PipelineLayout.hpp>
-#include <Shader.hpp>
+#include <ExternalPipeline.hpp>
 
 class ComputePipeline
 {
 public:
-	ComputePipeline() : m_computePipeline{}, m_computeShader{} {}
+	ComputePipeline() : m_computePipeline{}, m_computeExternalPipeline{} {}
 
 	void Create(
-		VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
-		const std::wstring& shaderPath
+		VkDevice device, VkPipelineLayout computeLayout,
+		const ExternalComputePipeline& computeExtPipeline, const std::wstring& shaderPath
 	);
 	void Create(
-		VkDevice device, const PipelineLayout& computeLayout, const ShaderName& computeShader,
-		const std::wstring& shaderPath
+		VkDevice device, const PipelineLayout& computeLayout,
+		const ExternalComputePipeline& computeExtPipeline, const std::wstring& shaderPath
 	) {
-		Create(device, computeLayout.Get(), computeShader, shaderPath);
+		Create(device, computeLayout.Get(), computeExtPipeline, shaderPath);
 	}
 	void Recreate(VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath);
 
 	void Bind(const VKCommandBuffer& computeBuffer) const noexcept;
 
 	[[nodiscard]]
-	ShaderName GetShaderName() const noexcept { return m_computeShader; }
+	const ExternalComputePipeline& GetExternalPipeline() const noexcept
+	{
+		return m_computeExternalPipeline;
+	}
 
 private:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> _createComputePipeline(
-		VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+		VkDevice device, VkPipelineLayout computeLayout, const ExternalComputePipeline& computeExtPipeline,
 		const std::wstring& shaderPath
 	);
 
 private:
 	std::unique_ptr<VkPipelineObject> m_computePipeline;
-	ShaderName                        m_computeShader;
+	ExternalComputePipeline           m_computeExternalPipeline;
 
 	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
 
@@ -49,12 +52,12 @@ public:
 
 	ComputePipeline(ComputePipeline&& other) noexcept
 		: m_computePipeline{ std::move(other.m_computePipeline) },
-		m_computeShader{ std::move(other.m_computeShader) }
+		m_computeExternalPipeline{ std::move(other.m_computeExternalPipeline) }
 	{}
 	ComputePipeline& operator=(ComputePipeline&& other) noexcept
 	{
-		m_computePipeline = std::move(other.m_computePipeline);
-		m_computeShader   = std::move(other.m_computeShader);
+		m_computePipeline         = std::move(other.m_computePipeline);
+		m_computeExternalPipeline = std::move(other.m_computeExternalPipeline);
 
 		return *this;
 	}

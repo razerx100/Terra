@@ -1,230 +1,370 @@
 #ifndef VK_RENDER_PASS_MANAGER_HPP_
 #define VK_RENDER_PASS_MANAGER_HPP_
 #include <memory>
+#include <array>
+#include <vector>
 #include <PipelineManager.hpp>
-#include <DepthBuffer.hpp>
 
-// Render Pass Manager but without any actual render passes.
-template<typename Pipeline_t>
+// This class shouldn't be created and destroyed on every frame.
+class RenderingInfoBuilder
+{
+public:
+	RenderingInfoBuilder()
+		: m_colourAttachments{},
+		m_depthAttachment{
+			.sType     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+			.imageView = VK_NULL_HANDLE
+		},
+		m_stencilAttachment{
+			.sType     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+			.imageView = VK_NULL_HANDLE
+		}
+	{}
+	RenderingInfoBuilder(size_t colourAttachmentCount) : RenderingInfoBuilder{}
+	{
+		m_colourAttachments.reserve(colourAttachmentCount);
+	}
+
+	RenderingInfoBuilder& AddColourAttachment(
+		const VKImageView& colourView, const VkClearColorValue& clearValue,
+		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+	) noexcept {
+		m_colourAttachments.emplace_back(
+			VkRenderingAttachmentInfo
+			{
+				.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+				.imageView   = colourView.GetView(),
+				.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+				.resolveMode = VK_RESOLVE_MODE_NONE,
+				.loadOp      = loadOp,
+				.storeOp     = storeOP,
+				.clearValue  = VkClearValue{ .color = clearValue }
+			}
+		);
+
+		return *this;
+	}
+
+	// These functions can be used every frame.
+	RenderingInfoBuilder& SetDepthAttachment(
+		const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
+		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+	) noexcept {
+		m_depthAttachment.imageView   = depthView.GetView();
+		m_depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+		m_depthAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
+		m_depthAttachment.loadOp      = loadOp;
+		m_depthAttachment.storeOp     = storeOP;
+		m_depthAttachment.clearValue  = VkClearValue{ .depthStencil = clearValue };
+
+		return *this;
+	}
+	RenderingInfoBuilder& SetDepthView(const VKImageView& depthView) noexcept
+	{
+		m_depthAttachment.imageView = depthView.GetView();
+
+		return *this;
+	}
+	RenderingInfoBuilder& SetDepthClearColour(const VkClearDepthStencilValue& clearValue
+	) noexcept {
+		m_depthAttachment.clearValue = VkClearValue{ .depthStencil = clearValue };
+
+		return *this;
+	}
+
+	RenderingInfoBuilder& SetStencilAttachment(
+		const VKImageView& stencilView, const VkClearDepthStencilValue& clearValue,
+		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+	) noexcept {
+		m_stencilAttachment.imageView   = stencilView.GetView();
+		m_stencilAttachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+		m_stencilAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
+		m_stencilAttachment.loadOp      = loadOp;
+		m_stencilAttachment.storeOp     = storeOP;
+		m_stencilAttachment.clearValue  = VkClearValue{ .depthStencil = clearValue };
+
+		return *this;
+	}
+	RenderingInfoBuilder& SetStencilView(const VKImageView& stencilView) noexcept
+	{
+		m_stencilAttachment.imageView = stencilView.GetView();
+
+		return *this;
+	}
+	RenderingInfoBuilder& SetStencilClearColour(const VkClearDepthStencilValue& clearValue) noexcept
+	{
+		m_stencilAttachment.clearValue = VkClearValue{ .depthStencil = clearValue };
+
+		return *this;
+	}
+
+	RenderingInfoBuilder& SetColourView(
+		size_t colourAttachmentIndex, const VKImageView& colourView
+	) noexcept {
+		VkRenderingAttachmentInfo& colourAttachment = m_colourAttachments[colourAttachmentIndex];
+
+		colourAttachment.imageView  = colourView.GetView();
+
+		return *this;
+	}
+	RenderingInfoBuilder& SetColourClearValue(
+		size_t colourAttachmentIndex, const VkClearColorValue& clearValue
+	) noexcept {
+		VkRenderingAttachmentInfo& colourAttachment = m_colourAttachments[colourAttachmentIndex];
+
+		colourAttachment.clearValue = VkClearValue{.color = clearValue };
+
+		return *this;
+	}
+
+	VkRenderingInfo BuildRenderingInfo(VkExtent2D renderArea) const noexcept
+	{
+		return VkRenderingInfo
+		{
+			.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO,
+			.renderArea           = VkRect2D{ .offset = VkOffset2D{ 0u, 0u }, .extent = renderArea },
+			.layerCount           = 1u,
+			.viewMask             = 0u,
+			.colorAttachmentCount = static_cast<std::uint32_t>(std::size(m_colourAttachments)),
+			.pColorAttachments    = std::data(m_colourAttachments),
+			// As long the depthImage and stencilImage handles are VK_NULL_HANDLE, including them
+			// even in pipelines which don't use any depthStencil should be fine.
+			.pDepthAttachment     = &m_depthAttachment,
+			.pStencilAttachment   = &m_stencilAttachment
+		};
+	}
+
+private:
+	std::vector<VkRenderingAttachmentInfo> m_colourAttachments;
+	VkRenderingAttachmentInfo              m_depthAttachment;
+	VkRenderingAttachmentInfo              m_stencilAttachment;
+
+public:
+	RenderingInfoBuilder(const RenderingInfoBuilder& other) noexcept
+		: m_colourAttachments{ other.m_colourAttachments },
+		m_depthAttachment{ other.m_depthAttachment },
+		m_stencilAttachment{ other.m_stencilAttachment }
+	{}
+
+	RenderingInfoBuilder& operator=(const RenderingInfoBuilder& other) noexcept
+	{
+		m_colourAttachments = other.m_colourAttachments;
+		m_depthAttachment   = other.m_depthAttachment;
+		m_stencilAttachment = other.m_stencilAttachment;
+
+		return *this;
+	}
+
+	RenderingInfoBuilder(RenderingInfoBuilder&& other) noexcept
+		: m_colourAttachments{ std::move(other.m_colourAttachments) },
+		m_depthAttachment{ other.m_depthAttachment },
+		m_stencilAttachment{ other.m_stencilAttachment }
+	{}
+
+	RenderingInfoBuilder& operator=(RenderingInfoBuilder&& other) noexcept
+	{
+		m_colourAttachments = std::move(other.m_colourAttachments);
+		m_depthAttachment   = other.m_depthAttachment;
+		m_stencilAttachment = other.m_stencilAttachment;
+
+		return *this;
+	}
+};
+
+// Render Pass Manager but without any actual render passe object. Encapsulates the concept of
+// a Render pass only.
 class VkRenderPassManager
 {
 public:
-	VkRenderPassManager(VkDevice device)
-		: m_graphicsPipelineManager{ device }, m_depthBuffer{},
-		m_colourAttachmentFormat{ VK_FORMAT_UNDEFINED }
-	{}
+	VkRenderPassManager() : m_renderingInfoBuilder{}, m_startImageBarriers{} {}
 
-	void SetShaderPath(const std::wstring& shaderPath) noexcept
-	{
-		m_graphicsPipelineManager.SetShaderPath(shaderPath);
+	void AddColourAttachment(
+		const VKImageView& colourView, const VkClearColorValue& clearValue,
+		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+	) noexcept {
+		m_renderingInfoBuilder.AddColourAttachment(colourView, clearValue, loadOp, storeOP);
 	}
 
-	void SetPipelineLayout(VkPipelineLayout graphicsPipelineLayout) noexcept
+	[[nodiscard]]
+	// The Stage masks will be overwritten.
+	std::uint32_t AddColourStartBarrier(ImageBarrierBuilder& barrierBuilder) noexcept
 	{
-		m_graphicsPipelineManager.SetPipelineLayout(graphicsPipelineLayout);
+		barrierBuilder.StageMasks(
+			// The top of the pipeline bit doesn't queue a wait operation. So, have to wait for
+			// the threads from the previous Colour attachment output.
+			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+		);
+
+		return AddStartImageBarrier(barrierBuilder);
+	}
+	[[nodiscard]]
+	// The Stage masks will be overwritten.
+	std::uint32_t AddColourStartBarrier(ImageBarrierBuilder&& barrierBuilder) noexcept
+	{
+		return AddColourStartBarrier(barrierBuilder);
 	}
 
-	void SetColourAttachmentFormat(VkFormat colourAttachmentFormat) noexcept
+	[[nodiscard]]
+	// The Stage masks will be overwritten.
+	std::uint32_t AddDepthOrStencilStartBarrier(ImageBarrierBuilder& barrierBuilder) noexcept
 	{
-		m_colourAttachmentFormat = colourAttachmentFormat;
+		// Wait for all the threads from one Early Fragment Tests to the next one.
+		barrierBuilder.StageMasks(
+			VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+			VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
+		);
+
+		return AddStartImageBarrier(barrierBuilder);
+	}
+	[[nodiscard]]
+	// The Stage masks will be overwritten.
+	std::uint32_t AddDepthOrStencilStartBarrier(ImageBarrierBuilder&& barrierBuilder) noexcept
+	{
+		return AddDepthOrStencilStartBarrier(barrierBuilder);
 	}
 
-	void SetDepthTesting(VkDevice device, MemoryManager* memoryManager)
+	// These functions can be used every frame.
+	void SetDepthAttachment(
+		size_t barrierIndex, const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
+		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+	) noexcept {
+		m_renderingInfoBuilder.SetDepthAttachment(depthView, clearValue, loadOp, storeOP);
+
+		m_startImageBarriers.SetImage(barrierIndex, depthView);
+	}
+	void SetDepthClearColour(const VkClearDepthStencilValue& clearColour) noexcept
 	{
-		m_depthBuffer = std::make_unique<DepthBuffer>(device, memoryManager);
+		m_renderingInfoBuilder.SetDepthClearColour(clearColour);
+	}
+	void SetDepthView(size_t barrierIndex, const VKImageView& depthView) noexcept
+	{
+		m_renderingInfoBuilder.SetDepthView(depthView);
+
+		m_startImageBarriers.SetImage(barrierIndex, depthView);
 	}
 
-	void SetPSOOverwritable(const ShaderName& fragmentShader) noexcept
+	void SetStencilAttachment(
+		size_t barrierIndex, const VKImageView& stencilView, const VkClearDepthStencilValue& clearValue,
+		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+	) noexcept {
+		m_renderingInfoBuilder.SetStencilAttachment(stencilView, clearValue, loadOp, storeOP);
+
+		m_startImageBarriers.SetImage(barrierIndex, stencilView);
+	}
+	void SetStencilClearColour(const VkClearDepthStencilValue& clearColour) noexcept
 	{
-		m_graphicsPipelineManager.SetOverwritable(fragmentShader);
+		m_renderingInfoBuilder.SetStencilClearColour(clearColour);
+	}
+	void SetStencilView(size_t barrierIndex, const VKImageView& stencilView) noexcept
+	{
+		m_renderingInfoBuilder.SetStencilView(stencilView);
+
+		m_startImageBarriers.SetImage(barrierIndex, stencilView);
 	}
 
-	void ResizeDepthBuffer(std::uint32_t width, std::uint32_t height)
+	void SetColourView(
+		size_t colourAttachmentIndex, size_t barrierIndex, const VKImageView& colourView
+	) noexcept {
+		m_renderingInfoBuilder.SetColourView(colourAttachmentIndex, colourView);
+
+		m_startImageBarriers.SetImage(barrierIndex, colourView);
+	}
+	void SetColourClearValue(size_t colourAttachmentIndex, const VkClearColorValue& clearValue) noexcept
 	{
-		if (m_depthBuffer)
-			m_depthBuffer->Create(width, height);
+		m_renderingInfoBuilder.SetColourClearValue(colourAttachmentIndex, clearValue);
 	}
 
-	void BeginRenderingWithDepth(
-		const VKCommandBuffer& graphicsCmdBuffer, VkExtent2D renderArea,
-		const VKImageView& colourAttachment, const VkClearColorValue& colourClearValue
+	void StartPass(const VKCommandBuffer& graphicsCmdBuffer, VkExtent2D renderArea) const noexcept
+	{
+		VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
+
+		m_startImageBarriers.RecordBarriers(cmdBuffer);
+
+		VkRenderingInfo renderingInfo = m_renderingInfoBuilder.BuildRenderingInfo(renderArea);
+
+		vkCmdBeginRendering(cmdBuffer, &renderingInfo);
+	}
+
+	void EndPass(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
+	{
+		vkCmdEndRendering(graphicsCmdBuffer.Get());
+	}
+
+	void EndPassForSwapchain(
+		const VKCommandBuffer& graphicsCmdBuffer, const VKImageView& srcColourView,
+		const VKImageView& swapchainBackBuffer, const VkExtent3D& srcColourExtent
 	) const noexcept {
 		VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
 
-		// Depth
-		DepthBuffer& depthBuffer = *m_depthBuffer;
-
-		VkRenderingAttachmentInfo depthAttachmentInfo
-		{
-			.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-			.imageView   = depthBuffer.GetVkView(),
-			.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-			.resolveMode = VK_RESOLVE_MODE_NONE,
-			.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			.storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			.clearValue  = VkClearValue{ .depthStencil = depthBuffer.GetClearValues() }
-		};
-
-		// Colour
-		VkRenderingAttachmentInfo colourAttachmentInfo
-		{
-			.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-			.imageView   = colourAttachment.GetView(),
-			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.resolveMode = VK_RESOLVE_MODE_NONE,
-			.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			.storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-			.clearValue  = VkClearValue{ .color = colourClearValue }
-		};
-
-		VkRenderingInfo renderingInfo
-		{
-			.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO,
-			.renderArea           = VkRect2D{ .offset = VkOffset2D{ 0u, 0u }, .extent = renderArea },
-			.layerCount           = 1u,
-			.viewMask             = 0u,
-			.colorAttachmentCount = 1u,
-			.pColorAttachments    = &colourAttachmentInfo,
-			.pDepthAttachment     = &depthAttachmentInfo
-		};
-
-		// Barrier and API call.
 		VkImageBarrier2<2>{}
 		.AddMemoryBarrier(
 			ImageBarrierBuilder{}
-			.Image(depthBuffer.GetView())
-			// The scope would be from one Early Fragment Tests to the next one.
+			.Image(srcColourView)
 			.StageMasks(
-				VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-				VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
-			).AccessMasks(0u, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
-			.Layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+				VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT
+			).AccessMasks(VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_TRANSFER_READ_BIT)
+			.Layouts(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
 		).AddMemoryBarrier(
 			ImageBarrierBuilder{}
-			.Image(colourAttachment)
+			.Image(swapchainBackBuffer)
 			.StageMasks(
-				VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-				VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-			).AccessMasks(0u, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT)
-			.Layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+				VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT
+			).AccessMasks(0u, VK_ACCESS_2_TRANSFER_WRITE_BIT)
+			.Layouts(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		).RecordBarriers(cmdBuffer);
 
-		vkCmdBeginRendering(cmdBuffer, &renderingInfo);
-	}
-
-	void BeginRendering(
-		const VKCommandBuffer& graphicsCmdBuffer, VkExtent2D renderArea,
-		const VKImageView& colourAttachment, const VkClearColorValue& colourClearValue
-	) const noexcept {
-		VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
-
-		VkRenderingAttachmentInfo colourAttachmentInfo
-		{
-			.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-			.imageView   = colourAttachment.GetView(),
-			.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.resolveMode = VK_RESOLVE_MODE_NONE,
-			.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
-			.storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-			.clearValue  = VkClearValue{ .color = colourClearValue }
-		};
-
-		VkRenderingInfo renderingInfo
-		{
-			.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO,
-			.renderArea           = VkRect2D{ .offset = VkOffset2D{ 0u, 0u }, .extent = renderArea },
-			.layerCount           = 1u,
-			.viewMask             = 0u,
-			.colorAttachmentCount = 1u,
-			.pColorAttachments    = &colourAttachmentInfo
-		};
-
-		VkImageBarrier2<1>{}.AddMemoryBarrier(
-			ImageBarrierBuilder{}
-			.Image(colourAttachment)
-			.StageMasks(
-				VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-				VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-			).AccessMasks(0u, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT)
-			.Layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-		).RecordBarriers(cmdBuffer);
-
-		vkCmdBeginRendering(cmdBuffer, &renderingInfo);
-	}
-
-	void EndRendering(
-		const VKCommandBuffer& graphicsCmdBuffer, const VKImageView& colourAttachment
-	) const noexcept {
-		VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
+		graphicsCmdBuffer.Copy(
+			srcColourView, swapchainBackBuffer,
+			ImageCopyBuilder{}
+			.Extent(srcColourExtent)
+			.SrcImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
+			.DstImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
+		);
 
 		vkCmdEndRendering(cmdBuffer);
 
-		VkImageBarrier2<1>{}.AddMemoryBarrier(
+		VkImageBarrier2<>{}
+		.AddMemoryBarrier(
 			ImageBarrierBuilder{}
-			.Image(colourAttachment)
+			.Image(swapchainBackBuffer)
 			.StageMasks(
-				VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
 				VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
-			).AccessMasks(VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, 0u)
-			.Layouts(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		).RecordBarriers(cmdBuffer);
-	}
-
-	std::uint32_t AddOrGetGraphicsPipeline(const ShaderName& fragmentShader)
-	{
-		return m_graphicsPipelineManager.AddOrGetGraphicsPipeline(
-			fragmentShader, m_colourAttachmentFormat, GetDepthStencilFormat()
+			).AccessMasks(VK_ACCESS_2_TRANSFER_WRITE_BIT, 0u)
+			.Layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
 		);
-	}
-
-	void RecreatePipelines()
-	{
-		m_graphicsPipelineManager.RecreateAllGraphicsPipelines(
-			m_colourAttachmentFormat, GetDepthStencilFormat()
-		);
-	}
-
-	[[nodiscard]]
-	const PipelineManager<Pipeline_t>& GetGraphicsPipelineManager() const noexcept
-	{
-		return m_graphicsPipelineManager;
 	}
 
 private:
 	[[nodiscard]]
-	DepthStencilFormat GetDepthStencilFormat() const noexcept
+	std::uint32_t AddStartImageBarrier(const ImageBarrierBuilder& barrierBuilder) noexcept
 	{
-		DepthStencilFormat depthStencilFormat
-		{
-			.depthFormat   = VK_FORMAT_UNDEFINED,
-			.stencilFormat = VK_FORMAT_UNDEFINED
-		};
+		const std::uint32_t barrierIndex = m_startImageBarriers.GetCount();
 
-		if (m_depthBuffer)
-			depthStencilFormat.depthFormat = m_depthBuffer->GetFormat();
+		m_startImageBarriers.AddMemoryBarrier(barrierBuilder);
 
-		return depthStencilFormat;
+		return barrierIndex;
 	}
 
 private:
-	PipelineManager<Pipeline_t>  m_graphicsPipelineManager;
-	std::unique_ptr<DepthBuffer> m_depthBuffer;
-	VkFormat                     m_colourAttachmentFormat;
+	RenderingInfoBuilder m_renderingInfoBuilder;
+	VkImageBarrier2_1    m_startImageBarriers;
 
 public:
 	VkRenderPassManager(const VkRenderPassManager&) = delete;
 	VkRenderPassManager& operator=(const VkRenderPassManager&) = delete;
 
 	VkRenderPassManager(VkRenderPassManager&& other) noexcept
-		: m_graphicsPipelineManager{ std::move(other.m_graphicsPipelineManager) },
-		m_depthBuffer{ std::move(other.m_depthBuffer) },
-		m_colourAttachmentFormat{ other.m_colourAttachmentFormat }
+		: m_renderingInfoBuilder{ std::move(other.m_renderingInfoBuilder) },
+		m_startImageBarriers{ std::move(other.m_startImageBarriers) }
 	{}
 	VkRenderPassManager& operator=(VkRenderPassManager&& other) noexcept
 	{
-		m_graphicsPipelineManager = std::move(other.m_graphicsPipelineManager);
-		m_depthBuffer             = std::move(other.m_depthBuffer);
-		m_colourAttachmentFormat  = other.m_colourAttachmentFormat;
+		m_renderingInfoBuilder = std::move(other.m_renderingInfoBuilder);
+		m_startImageBarriers   = std::move(other.m_startImageBarriers);
 
 		return *this;
 	}

@@ -176,11 +176,24 @@ public:
 	}
 
 private:
+	template<bool Sorted>
 	void _draw(
 		size_t modelCount,
-		const ModelData& (PipelineModelsVSIndividual::*GetModelData) (size_t) const noexcept,
-		bool (PipelineModelsVSIndividual::*IsModelInUse) (size_t) const noexcept,
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
+		const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
+	) const noexcept {
+		VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+
+		for (size_t index = 0u; index < modelCount; ++index)
+			DrawModel(
+				_isModelInUse<Sorted>(index), _getModelData<Sorted>(index), cmdBuffer,
+				pipelineLayout, meshBundle, models
+			);
+	}
+
+	void DrawModel(
+		bool isInUse, const ModelData& modelData,
+		VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
 		const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
@@ -244,11 +257,24 @@ private:
 		return (num + den - 1) / den;
 	}
 
+	template<bool Sorted>
 	void _draw(
 		size_t modelCount,
-		const ModelData& (PipelineModelsMSIndividual::* GetModelData) (size_t) const noexcept,
-		bool (PipelineModelsMSIndividual::* IsModelInUse) (size_t) const noexcept,
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
+		const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
+	) const noexcept {
+		VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+
+		for (size_t index = 0u; index < modelCount; ++index)
+			DrawModel(
+				_isModelInUse<Sorted>(index), _getModelData<Sorted>(index),
+				cmdBuffer, pipelineLayout, meshBundle, models
+			);
+	}
+
+	void DrawModel(
+		bool isInUse, const ModelData& modelData,
+		VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
 		const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
@@ -355,13 +381,59 @@ public:
 	}
 
 private:
+	template<bool Sorted>
 	void _update(
-		size_t modelCount,
-		const ModelData& (PipelineModelsCSIndirect::* GetModelData) (size_t) const noexcept,
-		bool (PipelineModelsCSIndirect::* IsModelInUse) (size_t) const noexcept,
-		size_t frameIndex, const VkMeshBundleVS& meshBundle,
+		size_t modelCount, size_t frameIndex, const VkMeshBundleVS& meshBundle,
 		const std::vector<std::shared_ptr<Model>>& models
-	) const noexcept;
+	) const noexcept {
+		if (!modelCount)
+			return;
+
+		const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[frameIndex];
+
+		std::uint8_t* argumentInputStart  = argumentInputSharedData.bufferData->CPUHandle();
+		std::uint8_t* perModelBufferStart = m_perModelSharedData.bufferData->CPUHandle();
+
+		constexpr size_t argumentStride = sizeof(VkDrawIndexedIndirectCommand);
+		auto argumentOffset             = static_cast<size_t>(argumentInputSharedData.offset);
+
+		constexpr size_t perModelStride = sizeof(PerModelData);
+		auto perModelOffset             = static_cast<size_t>(m_perModelSharedData.offset);
+		constexpr auto isVisibleOffset  = offsetof(PerModelData, isVisible);
+		constexpr auto modelIndexOffset = offsetof(PerModelData, modelIndex);
+
+		for (size_t index = 0; index < modelCount; ++index)
+		{
+			const ModelData& modelData          = _getModelData<Sorted>(index);
+			const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
+
+			const MeshTemporaryDetailsVS& meshDetailsVS
+				= meshBundle.GetMeshDetails(model->GetMeshIndex());
+			const VkDrawIndexedIndirectCommand meshArgs
+				= PipelineModelsBase::GetDrawIndexedIndirectCommand(meshDetailsVS);
+
+			memcpy(argumentInputStart + argumentOffset, &meshArgs, argumentStride);
+
+			argumentOffset += argumentStride;
+
+			// Model Visiblity
+			const auto visiblity = static_cast<std::uint32_t>(
+				_isModelInUse<Sorted>(index) && model->IsVisible()
+			);
+
+			memcpy(
+				perModelBufferStart + perModelOffset + isVisibleOffset, &visiblity, sizeof(std::uint32_t)
+			);
+
+			// Model Index
+			memcpy(
+				perModelBufferStart + perModelOffset + modelIndexOffset,
+				&modelData.bufferIndex, sizeof(std::uint32_t)
+			);
+
+			perModelOffset += perModelStride;
+		}
+	}
 
 private:
 	SharedBufferData              m_perPipelineSharedData;
@@ -1012,6 +1084,13 @@ public:
 
 	void Update(size_t frameIndex, const VkMeshBundleVS& meshBundle) const noexcept;
 	void UpdateSorted(size_t frameIndex, const VkMeshBundleVS& meshBundle) noexcept;
+
+	void UpdatePipeline(
+		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
+	) const noexcept;
+	void UpdatePipelineSorted(
+		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
+	) noexcept;
 
 	void Draw(
 		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,

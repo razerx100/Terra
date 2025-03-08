@@ -8,6 +8,7 @@ class RenderEngineVSIndividualDeviceExtension : public RenderEngineDeviceExtensi
 class RenderEngineVSIndividual : public
 	RenderEngineCommon
 	<
+		ModelManagerVSIndividual,
 		MeshManagerVSIndividual,
 		GraphicsPipelineVSIndividualDraw,
 		RenderEngineVSIndividual
@@ -15,6 +16,7 @@ class RenderEngineVSIndividual : public
 {
 	friend class RenderEngineCommon
 		<
+			ModelManagerVSIndividual,
 			MeshManagerVSIndividual,
 			GraphicsPipelineVSIndividualDraw,
 			RenderEngineVSIndividual
@@ -29,11 +31,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-	) override;
-
-	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override;
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) override;
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
@@ -65,23 +63,20 @@ private:
 	}
 
 private:
-	ModelManagerVSIndividual m_modelManager;
-	ModelBuffers             m_modelBuffers;
+	void DrawRenderPassPipelines(
+		const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
+	) noexcept;
 
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
 	RenderEngineVSIndividual& operator=(const RenderEngineVSIndividual&) = delete;
 
 	RenderEngineVSIndividual(RenderEngineVSIndividual&& other) noexcept
-		: RenderEngineCommon{ std::move(other) },
-		m_modelManager{ std::move(other.m_modelManager) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) }
+		: RenderEngineCommon{ std::move(other) }
 	{}
 	RenderEngineVSIndividual& operator=(RenderEngineVSIndividual&& other) noexcept
 	{
 		RenderEngineCommon::operator=(std::move(other));
-		m_modelManager = std::move(other.m_modelManager);
-		m_modelBuffers = std::move(other.m_modelBuffers);
 
 		return *this;
 	}
@@ -92,6 +87,7 @@ class RenderEngineVSIndirectDeviceExtension : public RenderEngineDeviceExtension
 class RenderEngineVSIndirect : public
 	RenderEngineCommon
 	<
+		ModelManagerVSIndirect,
 		MeshManagerVSIndirect,
 		GraphicsPipelineVSIndirectDraw,
 		RenderEngineVSIndirect
@@ -99,6 +95,7 @@ class RenderEngineVSIndirect : public
 {
 	friend class RenderEngineCommon
 		<
+			ModelManagerVSIndirect,
 			MeshManagerVSIndirect,
 			GraphicsPipelineVSIndirectDraw,
 			RenderEngineVSIndirect
@@ -115,11 +112,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-	) override;
-
-	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override;
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) override;
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
@@ -156,7 +149,15 @@ private:
 
 	void CreateComputePipelineLayout();
 
-	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
+	void _updatePerFrame(VkDeviceSize frameIndex) noexcept;
+
+private:
+	void DrawRenderPassPipelines(
+		size_t frameIndex , const VKCommandBuffer& graphicsCmdBuffer,
+		const ExternalRenderPass_t& renderPass
+	) noexcept;
+
+	void UpdateRenderPassPipelines(size_t frameIndex, const ExternalRenderPass_t& renderPass) noexcept;
 
 private:
 	// Compute
@@ -167,8 +168,6 @@ private:
 	static constexpr std::uint32_t s_cameraComputeBindingSlot       = 10u;
 
 private:
-	ModelManagerVSIndirect             m_modelManager;
-	ModelBuffers                       m_modelBuffers;
 	VkCommandQueue                     m_computeQueue;
 	std::vector<VKSemaphore>           m_computeWait;
 	std::vector<VkDescriptorBuffer>    m_computeDescriptorBuffers;
@@ -181,8 +180,6 @@ public:
 
 	RenderEngineVSIndirect(RenderEngineVSIndirect&& other) noexcept
 		: RenderEngineCommon{ std::move(other) },
-		m_modelManager{ std::move(other.m_modelManager) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_computeQueue{ std::move(other.m_computeQueue) },
 		m_computeWait{ std::move(other.m_computeWait) },
 		m_computeDescriptorBuffers{ std::move(other.m_computeDescriptorBuffers) },
@@ -192,8 +189,6 @@ public:
 	RenderEngineVSIndirect& operator=(RenderEngineVSIndirect&& other) noexcept
 	{
 		RenderEngineCommon::operator=(std::move(other));
-		m_modelManager             = std::move(other.m_modelManager);
-		m_modelBuffers             = std::move(other.m_modelBuffers);
 		m_computeQueue             = std::move(other.m_computeQueue);
 		m_computeWait              = std::move(other.m_computeWait);
 		m_computeDescriptorBuffers = std::move(other.m_computeDescriptorBuffers);

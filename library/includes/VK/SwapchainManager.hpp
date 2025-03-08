@@ -6,7 +6,6 @@
 #include <VkExtensionManager.hpp>
 #include <VkTextureView.hpp>
 #include <SurfaceManager.hpp>
-#include <DepthBuffer.hpp>
 #include <VkFramebuffer.hpp>
 #include <VkSyncObjects.hpp>
 #include <VkDeviceManager.hpp>

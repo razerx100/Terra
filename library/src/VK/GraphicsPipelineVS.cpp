@@ -4,9 +4,8 @@
 // Vertex Shader
 static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 	VkDevice device, VkPipelineLayout graphicsLayout,
-	VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
 	ShaderType binaryType, const std::wstring& shaderPath,
-	const ShaderName& fragmentShader, const ShaderName& vertexShader
+	const ExternalGraphicsPipeline& graphicsExtPipeline, const ShaderName& vertexShader
 ) {
 	auto vs              = std::make_unique<VkShader>(device);
 	const bool vsSuccess = vs->Create(
@@ -15,7 +14,7 @@ static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 
 	auto fs              = std::make_unique<VkShader>(device);
 	const bool fsSuccess = fs->Create(
-		shaderPath + fragmentShader.GetNameWithExtension(binaryType)
+		shaderPath + graphicsExtPipeline.GetFragmentShader().GetNameWithExtension(binaryType)
 	);
 
 	GraphicsPipelineBuilder builder{ graphicsLayout };
@@ -28,14 +27,7 @@ static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 		.InitLayout()
 	);
 
-	// Don't think it will be that useful to have multiple colour attachment in the same pass?
-	builder.AddColourAttachment(colourFormat).SetCullMode(VK_CULL_MODE_BACK_BIT);
-
-	if (depthStencilFormat.depthFormat != VK_FORMAT_UNDEFINED)
-		builder.SetDepthStencilState(
-			DepthStencilStateBuilder{}.Enable(VK_TRUE, VK_TRUE, VK_FALSE, VK_FALSE),
-			depthStencilFormat.depthFormat, depthStencilFormat.stencilFormat
-		);
+	ConfigurePipelineBuilder(builder, graphicsExtPipeline);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
 
@@ -52,23 +44,21 @@ static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 // Indirect Draw
 std::unique_ptr<VkPipelineObject> GraphicsPipelineVSIndirectDraw::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout,
-	VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
-	const std::wstring& shaderPath, const ShaderName& fragmentShader
+	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) const {
 	return CreateGraphicsPipelineVS(
-		device, graphicsLayout, colourFormat, depthStencilFormat, s_shaderBytecodeType,
-		shaderPath, fragmentShader, L"VertexShaderIndirect"
+		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline,
+		L"VertexShaderIndirect"
 	);
 }
 
 // Individual Draw
 std::unique_ptr<VkPipelineObject> GraphicsPipelineVSIndividualDraw::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout,
-	VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
-	const std::wstring& shaderPath, const ShaderName& fragmentShader
+	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) const {
 	return CreateGraphicsPipelineVS(
-		device, graphicsLayout, colourFormat, depthStencilFormat, s_shaderBytecodeType,
-		shaderPath, fragmentShader, L"VertexShaderIndividual"
+		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline,
+		L"VertexShaderIndividual"
 	);
 }

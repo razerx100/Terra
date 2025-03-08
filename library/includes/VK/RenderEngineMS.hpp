@@ -12,6 +12,7 @@ public:
 class RenderEngineMS : public
 	RenderEngineCommon
 	<
+		ModelManagerMS,
 		MeshManagerMS,
 		GraphicsPipelineMS,
 		RenderEngineMS
@@ -19,6 +20,7 @@ class RenderEngineMS : public
 {
 	friend class RenderEngineCommon
 		<
+			ModelManagerMS,
 			MeshManagerMS,
 			GraphicsPipelineMS,
 			RenderEngineMS
@@ -33,11 +35,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-	) override;
-
-	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override;
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) override;
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
@@ -69,23 +67,20 @@ private:
 	}
 
 private:
-	ModelManagerMS m_modelManager;
-	ModelBuffers   m_modelBuffers;
+	void DrawRenderPassPipelines(
+		const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
+	) noexcept;
 
 public:
 	RenderEngineMS(const RenderEngineMS&) = delete;
 	RenderEngineMS& operator=(const RenderEngineMS&) = delete;
 
 	RenderEngineMS(RenderEngineMS&& other) noexcept
-		: RenderEngineCommon{ std::move(other) },
-		m_modelManager{ std::move(other.m_modelManager) },
-		m_modelBuffers{ std::move(other.m_modelBuffers) }
+		: RenderEngineCommon{ std::move(other) }
 	{}
 	RenderEngineMS& operator=(RenderEngineMS&& other) noexcept
 	{
 		RenderEngineCommon::operator=(std::move(other));
-		m_modelManager = std::move(other.m_modelManager);
-		m_modelBuffers = std::move(other.m_modelBuffers);
 
 		return *this;
 	}

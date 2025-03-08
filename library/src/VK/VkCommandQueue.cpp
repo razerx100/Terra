@@ -53,6 +53,23 @@ void VKCommandBuffer::CopyWhole(
 	Copy(src, dst, builder.Size(src.BufferSize()));
 }
 
+void VKCommandBuffer::CopyWithoutBarrier(
+	const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
+) const noexcept {
+	vkCmdCopyBufferToImage(
+		m_commandBuffer, src.Get(), dst.GetTexture().Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1u, builder.GetPtr()
+	);
+}
+
+void VKCommandBuffer::CopyWholeWithoutBarrier(
+	const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
+) const noexcept {
+	CopyWithoutBarrier(
+		src, dst, builder.ImageExtent(dst.GetTexture().GetExtent()).ImageAspectFlags(dst.GetAspect())
+	);
+}
+
 void VKCommandBuffer::CopyWhole(
 	const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
 ) const noexcept {
@@ -72,8 +89,16 @@ void VKCommandBuffer::Copy(
 		.StageMasks(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT)
 	).RecordBarriers(m_commandBuffer);
 
-	vkCmdCopyBufferToImage(
-		m_commandBuffer, src.Get(), dst.GetTexture().Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	CopyWithoutBarrier(src, dst, builder);
+}
+
+void VKCommandBuffer::Copy(
+	const VKImageView& src, const VKImageView& dst, const ImageCopyBuilder& builder
+) const noexcept {
+	vkCmdCopyImage(
+		m_commandBuffer,
+		src.GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		dst.GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1u, builder.GetPtr()
 	);
 }

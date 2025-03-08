@@ -54,19 +54,23 @@ void RendererVK::SetShaderPath(const wchar_t* path)
 	m_terra.GetRenderEngine().SetShaderPath(path);
 }
 
-std::uint32_t RendererVK::AddGraphicsPipeline(const ShaderName& fragmentShader)
+std::uint32_t RendererVK::AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline)
 {
-	return m_terra.GetRenderEngine().AddGraphicsPipeline(fragmentShader);
+	return m_terra.GetRenderEngine().AddGraphicsPipeline(gfxPipeline);
 }
 
-void RendererVK::ChangePixelShader(std::uint32_t modelBundleID, const ShaderName& fragmentShader)
-{
-	m_terra.GetRenderEngine().ChangeFragmentShader(modelBundleID, fragmentShader);
+void RendererVK::ChangeModelPipelineInBundle(
+	std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
+	std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
+) {
+	m_terra.GetRenderEngine().ChangeModelPipelineInBundle(
+		modelBundleIndex, modelIndex, oldPipelineIndex, newPipelineIndex
+	);
 }
 
-void RendererVK::MakePixelShaderRemovable(const ShaderName& fragmentShader) noexcept
+void RendererVK::RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept
 {
-	m_terra.GetRenderEngine().MakeFragmentShaderRemovable(fragmentShader);
+	m_terra.GetRenderEngine().RemoveGraphicsPipeline(pipelineIndex);
 }
 
 size_t RendererVK::AddTexture(STexture&& texture)
@@ -89,10 +93,9 @@ void RendererVK::RemoveTexture(size_t index)
 	m_terra.RemoveTexture(index);
 }
 
-std::uint32_t RendererVK::AddModelBundle(
-	std::shared_ptr<ModelBundle>&& modelBundle, const ShaderName& fragmentShader
-) {
-	return m_terra.AddModelBundle(std::move(modelBundle), fragmentShader);
+std::uint32_t RendererVK::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
+{
+	return m_terra.AddModelBundle(std::move(modelBundle));
 }
 
 void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept
@@ -152,4 +155,45 @@ void RendererVK::QueueExternalBufferGPUCopy(
 		externalBufferSrcIndex, externalBufferDstIndex, dstBufferOffset, srcBufferOffset,
 		srcDataSizeInBytes
 	);
+}
+
+std::uint32_t RendererVK::AddExternalRenderPass()
+{
+	return m_terra.GetRenderEngine().AddExternalRenderPass();
+}
+
+ExternalRenderPass* RendererVK::GetExternalRenderPassRP(size_t index) const noexcept
+{
+	return m_terra.GetRenderEngine().GetExternalRenderPassRP(index);
+}
+
+std::shared_ptr<ExternalRenderPass> RendererVK::GetExternalRenderPassSP(
+	size_t index
+) const noexcept {
+	return m_terra.GetRenderEngine().GetExternalRenderPassSP(index);
+}
+
+void RendererVK::SetSwapchainExternalRenderPass()
+{
+	m_terra.GetRenderEngine().SetSwapchainExternalRenderPass();
+}
+
+ExternalRenderPass* RendererVK::GetSwapchainExternalRenderPassRP() const noexcept
+{
+	return m_terra.GetRenderEngine().GetSwapchainExternalRenderPassRP();
+}
+
+std::shared_ptr<ExternalRenderPass> RendererVK::GetSwapchainExternalRenderPassSP() const noexcept
+{
+	return m_terra.GetRenderEngine().GetSwapchainExternalRenderPassSP();
+}
+
+void RendererVK::RemoveExternalRenderPass(size_t index) noexcept
+{
+	m_terra.GetRenderEngine().RemoveExternalRenderPass(index);
+}
+
+void RendererVK::RemoveSwapchainExternalRenderPass() noexcept
+{
+	m_terra.GetRenderEngine().RemoveSwapchainExternalRenderPass();
 }

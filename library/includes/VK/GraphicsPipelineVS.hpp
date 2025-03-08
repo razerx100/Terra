@@ -13,8 +13,7 @@ private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout,
-		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
+		const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 	) const;
 
 public:
@@ -43,8 +42,7 @@ private:
 	[[nodiscard]]
 	std::unique_ptr<VkPipelineObject> _createGraphicsPipeline(
 		VkDevice device, VkPipelineLayout graphicsLayout,
-		VkFormat colourFormat, const DepthStencilFormat& depthStencilFormat,
-		const std::wstring& shaderPath, const ShaderName& fragmentShader
+		const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 	) const;
 
 public:

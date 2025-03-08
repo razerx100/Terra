@@ -2,26 +2,32 @@
 #include <VkShader.hpp>
 
 void ComputePipeline::Create(
-	VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+	VkDevice device, VkPipelineLayout computeLayout, const ExternalComputePipeline& computeExtPipeline,
 	const std::wstring& shaderPath
 ) {
-	m_computeShader   = computeShader;
+	m_computeExternalPipeline = computeExtPipeline;
 
-	m_computePipeline = _createComputePipeline(device, computeLayout, computeShader, shaderPath);
+	m_computePipeline = _createComputePipeline(
+		device, computeLayout, m_computeExternalPipeline, shaderPath
+	);
 }
 
 void ComputePipeline::Recreate(
 	VkDevice device, VkPipelineLayout computeLayout, const std::wstring& shaderPath
 ) {
-	m_computePipeline = _createComputePipeline(device, computeLayout, m_computeShader, shaderPath);
+	m_computePipeline = _createComputePipeline(
+		device, computeLayout, m_computeExternalPipeline, shaderPath
+	);
 }
 
 std::unique_ptr<VkPipelineObject> ComputePipeline::_createComputePipeline(
-	VkDevice device, VkPipelineLayout computeLayout, const ShaderName& computeShader,
+	VkDevice device, VkPipelineLayout computeLayout, const ExternalComputePipeline& computeExtPipeline,
 	const std::wstring& shaderPath
 ) {
 	auto cs            = std::make_unique<VkShader>(device);
-	const bool success = cs->Create(shaderPath + computeShader.GetNameWithExtension(s_shaderBytecodeType));
+	const bool success = cs->Create(
+		shaderPath + computeExtPipeline.GetComputeShader().GetNameWithExtension(s_shaderBytecodeType)
+	);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
 

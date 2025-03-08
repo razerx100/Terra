@@ -93,7 +93,7 @@ public:
 
 	BufferToImageCopyBuilder& ImageExtent(const VkExtent3D& extent) noexcept
 	{
-		m_imageCopy.imageExtent  = extent;
+		m_imageCopy.imageExtent = extent;
 
 		return *this;
 	}
@@ -137,6 +137,94 @@ private:
 	VkBufferImageCopy m_imageCopy;
 };
 
+class ImageCopyBuilder
+{
+public:
+	ImageCopyBuilder()
+		: m_imageCopy
+		{
+			.srcSubresource = VkImageSubresourceLayers{ 0u, 0u, 0u, 1u },
+			.srcOffset      = VkOffset3D{ .x = 0u, .y = 0u, .z = 0u },
+			.dstSubresource = VkImageSubresourceLayers{ 0u, 0u, 0u, 1u },
+			.dstOffset      = VkOffset3D{ .x = 0u, .y = 0u, .z = 0u },
+			.extent         = VkExtent3D{ .width = 0u, .height = 0u, .depth = 0u }
+		}
+	{}
+
+	ImageCopyBuilder& SrcImageOffset(
+		std::uint32_t x, std::uint32_t y, std::uint32_t z = 0u
+	) noexcept {
+		m_imageCopy.srcOffset.x = x;
+		m_imageCopy.srcOffset.y = y;
+		m_imageCopy.srcOffset.z = z;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& SrcImageOffset(const VkOffset3D& offset) noexcept
+	{
+		m_imageCopy.srcOffset = offset;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& DstImageOffset(
+		std::uint32_t x, std::uint32_t y, std::uint32_t z = 0u
+	) noexcept {
+		m_imageCopy.dstOffset.x = x;
+		m_imageCopy.dstOffset.y = y;
+		m_imageCopy.dstOffset.z = z;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& DstImageOffset(const VkOffset3D& offset) noexcept
+	{
+		m_imageCopy.dstOffset = offset;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& Extent(
+		std::uint32_t width, std::uint32_t height, std::uint32_t depth = 0u
+	) noexcept {
+		m_imageCopy.extent.width  = width;
+		m_imageCopy.extent.height = height;
+		m_imageCopy.extent.depth  = depth;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& Extent(const VkExtent3D& extent) noexcept
+	{
+		m_imageCopy.extent = extent;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& SrcImageAspectFlags(VkImageAspectFlags aspectFlags) noexcept
+	{
+		m_imageCopy.srcSubresource.aspectMask = aspectFlags;
+
+		return *this;
+	}
+
+	ImageCopyBuilder& DstImageAspectFlags(VkImageAspectFlags aspectFlags) noexcept
+	{
+		m_imageCopy.dstSubresource.aspectMask = aspectFlags;
+
+		return *this;
+	}
+
+	[[nodiscard]]
+	const VkImageCopy* GetPtr() const noexcept { return &m_imageCopy; }
+	[[nodiscard]]
+	VkImageCopy Get() const noexcept { return m_imageCopy; }
+
+private:
+	VkImageCopy m_imageCopy;
+};
+
 class VkCommandQueue;
 
 class VKCommandBuffer
@@ -157,12 +245,31 @@ public:
 	void CopyWhole(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder& builder
 	) const noexcept;
+	// Puts a barrier assuming that the texture is in undefined state.
 	void Copy(
 		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
 	) const noexcept;
+	// Puts a barrier assuming that the texture is in undefined state.
 	void CopyWhole(
 		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
 	) const noexcept;
+
+	void CopyWithoutBarrier(
+		const Buffer& src, const VkTextureView& dst, const BufferToImageCopyBuilder& builder
+	) const noexcept;
+	void CopyWholeWithoutBarrier(
+		const Buffer& src, const VkTextureView& dst, BufferToImageCopyBuilder& builder
+	) const noexcept;
+
+	// The barriers should be handled before calling this.
+	void Copy(
+		const VKImageView& src, const VKImageView& dst, const ImageCopyBuilder& builder
+	) const noexcept;
+	void Copy(
+		const VkTextureView& src, const VkTextureView& dst, const ImageCopyBuilder& builder
+	) const noexcept {
+		Copy(src.GetView(), dst.GetView(), builder);
+	}
 
 	void Copy(
 		const Buffer& src, const Buffer& dst, BufferToBufferCopyBuilder&& builder

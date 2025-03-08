@@ -5,7 +5,6 @@
 #include <VkDeviceManager.hpp>
 #include <VkResources.hpp>
 #include <VkTextureView.hpp>
-#include <DepthBuffer.hpp>
 
 namespace Constants
 {
@@ -133,28 +132,4 @@ TEST_F(BufferTest, TextureViewTest)
 	);
 
 	VkTextureView testMoveTextureView = std::move(testTextureView);
-}
-
-TEST_F(BufferTest, DepthBufferTest)
-{
-	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
-	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
-
-	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
-
-	{
-		DepthBuffer depth{ logicalDevice, &memoryManager };
-
-		depth.Create(1280u, 720u);
-
-		EXPECT_NE(depth.GetVkView(), VK_NULL_HANDLE) << "DepthView Handle is null.";
-		EXPECT_EQ(depth.GetFormat(), VK_FORMAT_D32_SFLOAT) << "Depth format doesn't match.";
-	}
-	{
-		DepthBuffer depth{ logicalDevice, &memoryManager };
-
-		depth.Create(1920u, 1080u);
-
-		EXPECT_NE(depth.GetVkView(), VK_NULL_HANDLE) << "DepthView Handle is null.";
-	}
 }

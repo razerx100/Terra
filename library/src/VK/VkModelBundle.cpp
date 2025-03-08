@@ -94,38 +94,30 @@ void PipelineModelsBase::RemoveModelSorted(std::uint32_t localIndex) noexcept
 }
 
 // Pipeline Models VS Individual
-void PipelineModelsVSIndividual::_draw(
-	size_t modelCount,
-	const ModelData& (PipelineModelsVSIndividual::*GetModelData)(size_t) const noexcept,
-	bool (PipelineModelsVSIndividual::*IsModelInUse) (size_t) const noexcept,
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
+void PipelineModelsVSIndividual::DrawModel(
+	bool isInUse, const ModelData& modelData,
+	VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
 	const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 ) const noexcept {
-	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+	const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
 
-	for(size_t index  = 0u; index < modelCount; ++index)
-	{
-		const ModelData& modelData          = (this->*GetModelData)(index);
-		const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
+	if (!isInUse || !model->IsVisible())
+		return;
 
-		if (!(this->*IsModelInUse)(index) || !model->IsVisible())
-			continue;
+	constexpr std::uint32_t pushConstantSize = GetConstantBufferSize();
 
-		constexpr std::uint32_t pushConstantSize = GetConstantBufferSize();
+	vkCmdPushConstants(
+		graphicsCmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
+		pushConstantSize, &modelData.bufferIndex
+	);
 
-		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
-			pushConstantSize, &modelData.bufferIndex
-		);
+	const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
+	const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(meshDetailsVS);
 
-		const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
-		const VkDrawIndexedIndirectCommand meshArgs = GetDrawIndexedIndirectCommand(meshDetailsVS);
-
-		vkCmdDrawIndexed(
-			cmdBuffer, meshArgs.indexCount, meshArgs.instanceCount,
-			meshArgs.firstIndex, meshArgs.vertexOffset, meshArgs.firstInstance
-		);
-	}
+	vkCmdDrawIndexed(
+		graphicsCmdBuffer, meshArgs.indexCount, meshArgs.instanceCount,
+		meshArgs.firstIndex, meshArgs.vertexOffset, meshArgs.firstInstance
+	);
 }
 
 void PipelineModelsVSIndividual::Draw(
@@ -134,12 +126,7 @@ void PipelineModelsVSIndividual::Draw(
 ) const noexcept {
 	const size_t modelCount = std::size(m_modelData);
 
-	_draw(
-		modelCount,
-		&PipelineModelsVSIndividual::_getModelData<false>,
-		&PipelineModelsVSIndividual::_isModelInUse<false>,
-		graphicsBuffer, pipelineLayout, meshBundle, models
-	);
+	_draw<false>(modelCount, graphicsBuffer, pipelineLayout, meshBundle, models);
 }
 
 void PipelineModelsVSIndividual::DrawSorted(
@@ -151,71 +138,58 @@ void PipelineModelsVSIndividual::DrawSorted(
 	// Draw
 	const size_t modelCount = std::size(m_sortedData);
 
-	_draw(
-		modelCount,
-		&PipelineModelsVSIndividual::_getModelData<true>,
-		&PipelineModelsVSIndividual::_isModelInUse<true>,
-		graphicsBuffer, pipelineLayout, meshBundle, models
-	);
+	_draw<true>(modelCount, graphicsBuffer, pipelineLayout, meshBundle, models);
 }
 
 // Pipeline Models MS Individual
-void PipelineModelsMSIndividual::_draw(
-	size_t modelCount,
-	const ModelData& (PipelineModelsMSIndividual::* GetModelData) (size_t) const noexcept,
-	bool (PipelineModelsMSIndividual::* IsModelInUse) (size_t) const noexcept,
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
+void PipelineModelsMSIndividual::DrawModel(
+	bool isInUse, const ModelData& modelData,
+	VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
 	const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 
-	VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
+	const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
 
-	for (size_t index = 0u; index < modelCount; ++index)
+	if (!isInUse || !model->IsVisible())
+		return;
+
+	constexpr std::uint32_t pushConstantSize    = GetConstantBufferSize();
+
+	constexpr std::uint32_t constBufferOffset   = VkMeshBundleMS::GetConstantBufferSize();
+
+	const MeshTemporaryDetailsMS& meshDetailsMS = meshBundle.GetMeshDetails(model->GetMeshIndex());
+
+	const ModelDetails modelConstants
 	{
-		const ModelData& modelData          = (this->*GetModelData)(index);
-		const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
+		.meshDetails = MeshDetails
+			{
+				.meshletCount  = meshDetailsMS.meshletCount,
+				.meshletOffset = meshDetailsMS.meshletOffset,
+				.indexOffset   = meshDetailsMS.indexOffset,
+				.primOffset    = meshDetailsMS.primitiveOffset,
+				.vertexOffset  = meshDetailsMS.vertexOffset
+			},
+		.modelBufferIndex = modelData.bufferIndex
+	};
 
-		if (!(this->*IsModelInUse)(index) || !model->IsVisible())
-			continue;
+	vkCmdPushConstants(
+		graphicsCmdBuffer, pipelineLayout, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
+		constBufferOffset, pushConstantSize, &modelConstants
+	);
 
-		constexpr std::uint32_t pushConstantSize    = GetConstantBufferSize();
+	// If we have a Task shader, this will launch a Task global workGroup. We would want
+	// each Task shader invocation to process a meshlet and launch the necessary
+	// Mesh Shader workGroups. On Nvdia we can have a maximum of 32 invocations active
+	// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
+	// meshlets concurrently.
+	const std::uint32_t taskGroupCount = DivRoundUp(
+		meshDetailsMS.meshletCount, s_taskInvocationCount
+	);
 
-		constexpr std::uint32_t constBufferOffset   = VkMeshBundleMS::GetConstantBufferSize();
-
-		const MeshTemporaryDetailsMS& meshDetailsMS = meshBundle.GetMeshDetails(model->GetMeshIndex());
-
-		const ModelDetails modelConstants
-		{
-			.meshDetails = MeshDetails
-				{
-					.meshletCount  = meshDetailsMS.meshletCount,
-					.meshletOffset = meshDetailsMS.meshletOffset,
-					.indexOffset   = meshDetailsMS.indexOffset,
-					.primOffset    = meshDetailsMS.primitiveOffset,
-					.vertexOffset  = meshDetailsMS.vertexOffset
-				},
-			.modelBufferIndex = modelData.bufferIndex
-		};
-
-		vkCmdPushConstants(
-			cmdBuffer, pipelineLayout, VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-			constBufferOffset, pushConstantSize, &modelConstants
-		);
-
-		// If we have a Task shader, this will launch a Task global workGroup. We would want
-		// each Task shader invocation to process a meshlet and launch the necessary
-		// Mesh Shader workGroups. On Nvdia we can have a maximum of 32 invocations active
-		// in a subGroup and 64 on AMD. So, a workGroup will be able to work on 32/64
-		// meshlets concurrently.
-		const std::uint32_t taskGroupCount = DivRoundUp(
-			meshDetailsMS.meshletCount, s_taskInvocationCount
-		);
-
-		MS::vkCmdDrawMeshTasksEXT(cmdBuffer, taskGroupCount, 1u, 1u);
-		// It might be worth checking if we are reaching the Group Count Limit and if needed
-		// launch more Groups. Could achieve that by passing a GroupLaunch index.
-	}
+	MS::vkCmdDrawMeshTasksEXT(graphicsCmdBuffer, taskGroupCount, 1u, 1u);
+	// It might be worth checking if we are reaching the Group Count Limit and if needed
+	// launch more Groups. Could achieve that by passing a GroupLaunch index.
 }
 
 void PipelineModelsMSIndividual::Draw(
@@ -224,12 +198,7 @@ void PipelineModelsMSIndividual::Draw(
 ) const noexcept {
 	const size_t modelCount = std::size(m_modelData);
 
-	_draw(
-		modelCount,
-		&PipelineModelsMSIndividual::_getModelData<false>,
-		&PipelineModelsMSIndividual::_isModelInUse<false>,
-		graphicsBuffer, pipelineLayout, meshBundle, models
-	);
+	_draw<false>(modelCount, graphicsBuffer, pipelineLayout, meshBundle, models);
 }
 
 void PipelineModelsMSIndividual::DrawSorted(
@@ -241,12 +210,7 @@ void PipelineModelsMSIndividual::DrawSorted(
 	// Draw
 	const size_t modelCount = std::size(m_sortedData);
 
-	_draw(
-		modelCount,
-		&PipelineModelsMSIndividual::_getModelData<true>,
-		&PipelineModelsMSIndividual::_isModelInUse<true>,
-		graphicsBuffer, pipelineLayout, meshBundle, models
-	);
+	_draw<true>(modelCount, graphicsBuffer, pipelineLayout, meshBundle, models);
 }
 
 // Pipeline Models CS Indirect
@@ -417,72 +381,13 @@ void PipelineModelsCSIndirect::AllocateBuffers(
 	}
 }
 
-void PipelineModelsCSIndirect::_update(
-	size_t modelCount,
-	const ModelData& (PipelineModelsCSIndirect::* GetModelData) (size_t) const noexcept,
-	bool (PipelineModelsCSIndirect::* IsModelInUse) (size_t) const noexcept,
-	size_t frameIndex, const VkMeshBundleVS& meshBundle,
-	const std::vector<std::shared_ptr<Model>>& models
-) const noexcept {
-	if (!modelCount)
-		return;
-
-	const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[frameIndex];
-
-	std::uint8_t* argumentInputStart  = argumentInputSharedData.bufferData->CPUHandle();
-	std::uint8_t* perModelBufferStart = m_perModelSharedData.bufferData->CPUHandle();
-
-	constexpr size_t argumentStride = sizeof(VkDrawIndexedIndirectCommand);
-	auto argumentOffset             = static_cast<size_t>(argumentInputSharedData.offset);
-
-	constexpr size_t perModelStride = sizeof(PerModelData);
-	auto perModelOffset             = static_cast<size_t>(m_perModelSharedData.offset);
-	constexpr auto isVisibleOffset  = offsetof(PerModelData, isVisible);
-	constexpr auto modelIndexOffset = offsetof(PerModelData, modelIndex);
-
-	for (size_t index = 0; index < modelCount; ++index)
-	{
-		const ModelData& modelData          = (this->*GetModelData)(index);
-		const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
-
-		const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
-		const VkDrawIndexedIndirectCommand meshArgs = PipelineModelsBase::GetDrawIndexedIndirectCommand(
-			meshDetailsVS
-		);
-
-		memcpy(argumentInputStart + argumentOffset, &meshArgs, argumentStride);
-
-		argumentOffset += argumentStride;
-
-		// Model Visiblity
-		const auto visiblity = static_cast<std::uint32_t>(
-			(this->*IsModelInUse)(index) && model->IsVisible()
-		);
-
-		memcpy(perModelBufferStart + perModelOffset + isVisibleOffset, &visiblity, sizeof(std::uint32_t));
-
-		// Model Index
-		memcpy(
-			perModelBufferStart + perModelOffset + modelIndexOffset,
-			&modelData.bufferIndex, sizeof(std::uint32_t)
-		);
-
-		perModelOffset += perModelStride;
-	}
-}
-
 void PipelineModelsCSIndirect::Update(
 	size_t frameIndex, const VkMeshBundleVS& meshBundle,
 	const std::vector<std::shared_ptr<Model>>& models
 ) const noexcept {
 	const size_t modelCount = std::size(m_modelData);
 
-	_update(
-		modelCount,
-		&PipelineModelsCSIndirect::_getModelData<false>,
-		&PipelineModelsCSIndirect::_isModelInUse<false>,
-		frameIndex, meshBundle, models
-	);
+	_update<false>(modelCount, frameIndex, meshBundle, models);
 }
 
 void PipelineModelsCSIndirect::UpdateSorted(
@@ -493,12 +398,7 @@ void PipelineModelsCSIndirect::UpdateSorted(
 
 	const size_t modelCount = std::size(m_sortedData);
 
-	_update(
-		modelCount,
-		&PipelineModelsCSIndirect::_getModelData<true>,
-		&PipelineModelsCSIndirect::_isModelInUse<true>,
-		frameIndex, meshBundle, models
-	);
+	_update<true>(modelCount, frameIndex, meshBundle, models);
 }
 
 void PipelineModelsCSIndirect::RelinquishMemory(
@@ -783,7 +683,7 @@ void ModelBundleVSIndividual::DrawPipelineSorted(
 
 	meshBundle.Bind(graphicsBuffer);
 
-	const auto& models  = m_modelBundle->GetModels();
+	const auto& models = m_modelBundle->GetModels();
 
 	PipelineModelsVSIndividual& pipeline = m_pipelines[pipelineLocalIndex];
 
@@ -876,7 +776,7 @@ void ModelBundleMSIndividual::DrawPipelineSorted(
 
 	SetMeshBundleConstants(graphicsBuffer.Get(), pipelineLayout, meshBundle);
 
-	const auto& models  = m_modelBundle->GetModels();
+	const auto& models = m_modelBundle->GetModels();
 
 	PipelineModelsMSIndividual& pipeline = m_pipelines[pipelineLocalIndex];
 
@@ -1368,6 +1268,32 @@ void ModelBundleVSIndirect::UpdateSorted(size_t frameIndex, const VkMeshBundleVS
 
 		pipeline.UpdateSorted(frameIndex, meshBundle, models);
 	}
+}
+
+void ModelBundleVSIndirect::UpdatePipeline(
+	size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
+) const noexcept {
+	const auto& models = m_modelBundle->GetModels();
+
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
+	const PipelineModelsCSIndirect& pipeline = m_pipelines[pipelineLocalIndex];
+
+	pipeline.Update(frameIndex, meshBundle, models);
+}
+
+void ModelBundleVSIndirect::UpdatePipelineSorted(
+	size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
+) noexcept {
+	const auto& models = m_modelBundle->GetModels();
+
+	if (!m_pipelines.IsInUse(pipelineLocalIndex))
+		return;
+
+	PipelineModelsCSIndirect& pipeline = m_pipelines[pipelineLocalIndex];
+
+	pipeline.UpdateSorted(frameIndex, meshBundle, models);
 }
 
 void ModelBundleVSIndirect::Draw(

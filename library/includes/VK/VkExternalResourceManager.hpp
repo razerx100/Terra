@@ -48,10 +48,21 @@ public:
 	[[nodiscard]]
 	ExternalResourceFactory* GetResourceFactory() noexcept override
 	{
-		return &m_resourceFactory;
+		return GetVkResourceFactory();
 	}
 	[[nodiscard]]
 	ExternalResourceFactory const* GetResourceFactory() const noexcept override
+	{
+		return GetVkResourceFactory();
+	}
+
+	[[nodiscard]]
+	VkExternalResourceFactory* GetVkResourceFactory() noexcept
+	{
+		return &m_resourceFactory;
+	}
+	[[nodiscard]]
+	VkExternalResourceFactory const* GetVkResourceFactory() const noexcept
 	{
 		return &m_resourceFactory;
 	}
