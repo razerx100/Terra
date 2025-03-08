@@ -45,15 +45,15 @@ public:
 	) = 0;
 	virtual void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept = 0;
 
+	// The returned Index is the texture resource's index. Not its bound index in the shader.
+	// It should be used to remove or bind the texture.
 	[[nodiscard]]
-	// The returned Index is the texture's ID. Not its index in the shader. It should be
-	// used to remove or bind the texture.
 	virtual size_t AddTexture(STexture&& texture) = 0;
 
 	virtual void UnbindTexture(size_t index) = 0;
 
+	// The returned index is the index of the bound texture in the shader.
 	[[nodiscard]]
-	// The returned index is the index of the texture in the shader.
 	virtual std::uint32_t BindTexture(size_t index) = 0;
 
 	virtual void RemoveTexture(size_t index) = 0;
@@ -111,7 +111,6 @@ public:
 
 	// This is should be almost identical to a normal RenderPass, the only difference would be that
 	// it will copy a specified render target to the swapchain backbuffer at the end.
-	[[nodiscard]]
 	virtual void SetSwapchainExternalRenderPass() = 0;
 
 	[[nodiscard]]

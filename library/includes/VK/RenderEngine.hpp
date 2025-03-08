@@ -133,7 +133,6 @@ public:
 		size_t index
 	) const noexcept = 0;
 
-	[[nodiscard]]
 	virtual void SetSwapchainExternalRenderPass() = 0;
 
 	[[nodiscard]]

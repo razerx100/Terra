@@ -37,13 +37,11 @@ public:
 	void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept override;
 
 	[[nodiscard]]
-	// The returned Index is the texture's ID. Not its index in the shader. It should be
-	// used to remove or bind the texture.
 	size_t AddTexture(STexture&& texture) override;
 
 	void UnbindTexture(size_t index) override;
+
 	[[nodiscard]]
-	// The returned index is the index of the texture in the shader.
 	std::uint32_t BindTexture(size_t index) override;
 
 	void RemoveTexture(size_t index) override;
@@ -83,8 +81,6 @@ public:
 		size_t dstBufferOffset, size_t srcBufferOffset = 0, size_t srcDataSizeInBytes = 0
 	) override;
 
-	// These can't be put in an independent manager because then that manager will need
-	// to keep references of multiple other objects.
 	[[nodiscard]]
 	std::uint32_t AddExternalRenderPass() override;
 	[[nodiscard]]
@@ -94,7 +90,6 @@ public:
 		size_t index
 	) const noexcept override;
 
-	[[nodiscard]]
 	void SetSwapchainExternalRenderPass() override;
 
 	[[nodiscard]]

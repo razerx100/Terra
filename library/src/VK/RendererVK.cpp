@@ -98,9 +98,9 @@ std::uint32_t RendererVK::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBun
 	return m_terra.AddModelBundle(std::move(modelBundle));
 }
 
-void RendererVK::RemoveModelBundle(std::uint32_t bundleID) noexcept
+void RendererVK::RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 {
-	m_terra.GetRenderEngine().RemoveModelBundle(bundleID);
+	m_terra.GetRenderEngine().RemoveModelBundle(bundleIndex);
 }
 
 std::uint32_t RendererVK::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
