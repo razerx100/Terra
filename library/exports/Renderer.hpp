@@ -121,5 +121,8 @@ public:
 
 	virtual void RemoveExternalRenderPass(size_t index) noexcept = 0;
 	virtual void RemoveSwapchainExternalRenderPass() noexcept = 0;
+
+	[[nodiscard]]
+	virtual size_t GetActiveRenderPassCount() const noexcept = 0;
 };
 #endif

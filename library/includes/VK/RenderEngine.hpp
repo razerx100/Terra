@@ -144,6 +144,9 @@ public:
 	virtual void RemoveExternalRenderPass(size_t index) noexcept = 0;
 	virtual void RemoveSwapchainExternalRenderPass() noexcept = 0;
 
+	[[nodiscard]]
+	virtual size_t GetActiveRenderPassCount() const noexcept = 0;
+
 protected:
 	[[nodiscard]]
 	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
@@ -396,6 +399,17 @@ public:
 	void RemoveSwapchainExternalRenderPass() noexcept override
 	{
 		m_swapchainRenderPass.reset();
+	}
+
+	[[nodiscard]]
+	size_t GetActiveRenderPassCount() const noexcept override
+	{
+		size_t activeRenderPassCount = m_renderPasses.GetIndicesManager().GetActiveIndexCount();
+
+		if (m_swapchainRenderPass)
+			++activeRenderPassCount;
+
+		return activeRenderPassCount;
 	}
 
 protected:

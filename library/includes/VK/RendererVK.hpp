@@ -105,6 +105,9 @@ public:
 	void RemoveExternalRenderPass(size_t index) noexcept override;
 	void RemoveSwapchainExternalRenderPass() noexcept override;
 
+	[[nodiscard]]
+	size_t GetActiveRenderPassCount() const noexcept override;
+
 private:
 	Terra m_terra;
 

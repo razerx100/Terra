@@ -197,3 +197,8 @@ void RendererVK::RemoveSwapchainExternalRenderPass() noexcept
 {
 	m_terra.GetRenderEngine().RemoveSwapchainExternalRenderPass();
 }
+
+size_t RendererVK::GetActiveRenderPassCount() const noexcept
+{
+	return m_terra.GetRenderEngine().GetActiveRenderPassCount();
+}
