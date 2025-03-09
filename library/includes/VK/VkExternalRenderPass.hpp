@@ -155,7 +155,7 @@ public:
 
 			size_t resultIndex = std::size(modelIndices);
 
-			if (result != std::end(modelIndices))
+			if (result == std::end(modelIndices))
 			{
 				modelIndices.emplace_back(0u);
 				localIndices.emplace_back(0u);

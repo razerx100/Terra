@@ -121,7 +121,7 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 		);
 
 		m_renderPassManager.SetColourView(
-			index, m_stencilAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
+			index, colourAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
 		);
 	}
 }
