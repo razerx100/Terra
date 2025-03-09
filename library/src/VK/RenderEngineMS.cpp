@@ -180,6 +180,8 @@ void RenderEngineMS::DrawRenderPassPipelines(
 		const std::vector<std::uint32_t>& bundleIndices        = details.modelBundleIndices;
 		const std::vector<std::uint32_t>& pipelineLocalIndices = details.pipelineLocalIndices;
 
+		m_graphicsPipelineManager.BindPipeline(details.pipelineGlobalIndex, graphicsCmdBuffer);
+
 		const size_t bundleCount = std::size(bundleIndices);
 
 		if (details.renderSorted)
