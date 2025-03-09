@@ -42,11 +42,18 @@ void RendererVK::Resize(std::uint32_t width, std::uint32_t height)
 	m_terra.Resize(width, height);
 }
 
-Renderer::Resolution RendererVK::GetFirstDisplayCoordinates() const
+Renderer::Extent RendererVK::GetCurrentRenderingExtent() const noexcept
+{
+	VkExtent2D currentRenderArea = m_terra.GetCurrentRenderArea();
+
+	return Renderer::Extent{ .width = currentRenderArea.width, .height = currentRenderArea.height };
+}
+
+Renderer::Extent RendererVK::GetFirstDisplayCoordinates() const
 {
 	DisplayManager::Resolution resolution = m_terra.GetFirstDisplayCoordinates();
 
-	return Renderer::Resolution{ .width = resolution.width, .height = resolution.height };
+	return Renderer::Extent{ .width = resolution.width, .height = resolution.height };
 }
 
 void RendererVK::SetShaderPath(const wchar_t* path)

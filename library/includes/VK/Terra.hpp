@@ -30,6 +30,8 @@ public:
 
 	[[nodiscard]]
 	DisplayManager::Resolution GetFirstDisplayCoordinates() const;
+	[[nodiscard]]
+	VkExtent2D GetCurrentRenderArea() const noexcept;
 
 private:
 	void CreateInstance();

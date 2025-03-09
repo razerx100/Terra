@@ -177,6 +177,11 @@ DisplayManager::Resolution Terra::GetFirstDisplayCoordinates() const
 	return m_displayManager->GetDisplayResolution(m_deviceManager.GetPhysicalDevice(), 0u);
 }
 
+VkExtent2D Terra::GetCurrentRenderArea() const noexcept
+{
+	return m_swapchain->GetCurrentSwapchainExtent();
+}
+
 size_t Terra::AddTextureAsCombined(STexture&& texture)
 {
 	WaitForGPUToFinish();
