@@ -315,7 +315,7 @@ public:
 				VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
 				VK_PIPELINE_STAGE_2_TRANSFER_BIT
 			).AccessMasks(0u, VK_ACCESS_2_TRANSFER_WRITE_BIT)
-			.Layouts(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+			.Layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		).RecordBarriers(cmdBuffer);
 
 		// You can't copy textures inside of a render pass. Since the rendering won't have been
