@@ -337,7 +337,7 @@ public:
 				VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
 			).AccessMasks(VK_ACCESS_2_TRANSFER_WRITE_BIT, 0u)
 			.Layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		);
+		).RecordBarriers(cmdBuffer);
 	}
 
 private:
