@@ -29,6 +29,12 @@ public:
 	const RenderEngine& GetRenderEngine() const noexcept { return *m_renderEngine; }
 
 	[[nodiscard]]
+	ExternalFormat GetSwapchainFormat() const noexcept
+	{
+		return GetExternalFormat(m_swapchain->GetSwapchainFormat());
+	}
+
+	[[nodiscard]]
 	DisplayManager::Resolution GetFirstDisplayCoordinates() const;
 	[[nodiscard]]
 	VkExtent2D GetCurrentRenderArea() const noexcept;

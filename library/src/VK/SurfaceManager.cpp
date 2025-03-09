@@ -46,7 +46,8 @@ VkSurfaceFormatKHR SurfaceManager::GetSurfaceFormat(VkPhysicalDevice device) con
 		device, m_surface, &formatCount, std::data(surfaceFormats)
 	);
 
-	for (const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats) {
+	for (const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
+	{
 		bool surfaceCheck =
 			surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB
 			||

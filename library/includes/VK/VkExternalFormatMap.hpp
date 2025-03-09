@@ -5,4 +5,6 @@
 
 [[nodiscard]]
 VkFormat GetVkFormat(ExternalFormat format) noexcept;
+[[nodiscard]]
+ExternalFormat GetExternalFormat(VkFormat format) noexcept;
 #endif

@@ -106,6 +106,9 @@ public:
 	[[nodiscard]]
 	size_t GetActiveRenderPassCount() const noexcept override;
 
+	[[nodiscard]]
+	ExternalFormat GetSwapchainFormat() const noexcept override;
+
 private:
 	Terra m_terra;
 

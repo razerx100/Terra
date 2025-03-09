@@ -209,3 +209,8 @@ size_t RendererVK::GetActiveRenderPassCount() const noexcept
 {
 	return m_terra.GetRenderEngine().GetActiveRenderPassCount();
 }
+
+ExternalFormat RendererVK::GetSwapchainFormat() const noexcept
+{
+	return m_terra.GetSwapchainFormat();
+}
