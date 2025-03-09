@@ -248,7 +248,7 @@ void VkExternalRenderPass::StartPass(
 
 void VkExternalRenderPass::EndPass(const VKCommandBuffer& graphicsCmdBuffer) const noexcept
 {
-	vkCmdEndRendering(graphicsCmdBuffer.Get());
+	m_renderPassManager.EndPass(graphicsCmdBuffer);
 }
 
 void VkExternalRenderPass::EndPassForSwapchain(

@@ -297,6 +297,8 @@ public:
 	) const noexcept {
 		VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
 
+		vkCmdEndRendering(cmdBuffer);
+
 		VkImageBarrier2<2>{}
 		.AddMemoryBarrier(
 			ImageBarrierBuilder{}
@@ -316,6 +318,8 @@ public:
 			.Layouts(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		).RecordBarriers(cmdBuffer);
 
+		// You can't copy textures inside of a render pass. Since the rendering won't have been
+		// finished by then. So have to do it afterwards.
 		graphicsCmdBuffer.Copy(
 			srcColourView, swapchainBackBuffer,
 			ImageCopyBuilder{}
@@ -323,8 +327,6 @@ public:
 			.SrcImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
 			.DstImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
 		);
-
-		vkCmdEndRendering(cmdBuffer);
 
 		VkImageBarrier2<>{}
 		.AddMemoryBarrier(
