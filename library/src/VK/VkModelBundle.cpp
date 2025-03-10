@@ -406,7 +406,9 @@ void PipelineModelsCSIndirect::RelinquishMemory(
 	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer
 ) noexcept {
 	// Input Buffers
-	for (size_t index = 0u; index < std::size(argumentInputSharedBuffers); ++index)
+	// The argument input shared data container might be empty due to no models being added.
+	// So, have to use its size to free instead of the Shared Buffer's.
+	for (size_t index = 0u; index < std::size(m_argumentInputSharedData); ++index)
 	{
 		SharedBufferCPU& argumentSharedBuffer = argumentInputSharedBuffers[index];
 		SharedBufferData& argumentSharedData  = m_argumentInputSharedData[index];
@@ -568,8 +570,11 @@ void PipelineModelsVSIndirect::RelinquishMemory(
 	std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
 	std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 ) noexcept {
+	// The shared data containers might be empty due to no models being added.
+	// So, have to use their size to free instead of the Shared Buffers'.
+
 	// Output Buffers
-	for (size_t index = 0u; index < std::size(argumentOutputSharedBuffers); ++index)
+	for (size_t index = 0u; index < std::size(m_argumentOutputSharedData); ++index)
 	{
 		SharedBufferGPUWriteOnly& argumentSharedBuffer = argumentOutputSharedBuffers[index];
 		SharedBufferData& argumentSharedData           = m_argumentOutputSharedData[index];
@@ -583,7 +588,7 @@ void PipelineModelsVSIndirect::RelinquishMemory(
 	}
 
 	// Counter Shared Buffer
-	for (size_t index = 0u; index < std::size(counterSharedBuffers); ++index)
+	for (size_t index = 0u; index < std::size(m_counterSharedData); ++index)
 	{
 		SharedBufferGPUWriteOnly& counterSharedBuffer = counterSharedBuffers[index];
 		SharedBufferData& counterSharedData           = m_counterSharedData[index];
@@ -597,7 +602,7 @@ void PipelineModelsVSIndirect::RelinquishMemory(
 	}
 
 	// Model Indices Buffer
-	for (size_t index = 0u; index < std::size(modelIndicesSharedBuffers); ++index)
+	for (size_t index = 0u; index < std::size(m_modelIndicesSharedData); ++index)
 	{
 		SharedBufferGPUWriteOnly& modelIndicesSharedBuffer = modelIndicesSharedBuffers[index];
 		SharedBufferData& modelIndicesSharedData           = m_modelIndicesSharedData[index];
