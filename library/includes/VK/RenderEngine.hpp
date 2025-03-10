@@ -49,8 +49,6 @@ public:
 
 	virtual void FinaliseInitialisation() = 0;
 
-	void SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept;
-
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
 	size_t AddTextureAsCombined(STexture&& texture);
@@ -190,7 +188,6 @@ protected:
 	TextureStorage                  m_textureStorage;
 	TextureManager                  m_textureManager;
 	CameraManager                   m_cameraManager;
-	VkClearColorValue               m_backgroundColour;
 	ViewportAndScissorManager       m_viewportAndScissors;
 	TemporaryDataBufferGPU          m_temporaryDataBuffer;
 	bool                            m_copyNecessary;
@@ -213,7 +210,6 @@ public:
 		m_textureStorage{ std::move(other.m_textureStorage) },
 		m_textureManager{ std::move(other.m_textureManager) },
 		m_cameraManager{ std::move(other.m_cameraManager) },
-		m_backgroundColour{ other.m_backgroundColour },
 		m_viewportAndScissors{ other.m_viewportAndScissors },
 		m_temporaryDataBuffer{ std::move(other.m_temporaryDataBuffer) },
 		m_copyNecessary{ other.m_copyNecessary }
@@ -233,7 +229,6 @@ public:
 		m_textureStorage            = std::move(other.m_textureStorage);
 		m_textureManager            = std::move(other.m_textureManager);
 		m_cameraManager             = std::move(other.m_cameraManager);
-		m_backgroundColour          = other.m_backgroundColour;
 		m_viewportAndScissors       = other.m_viewportAndScissors;
 		m_temporaryDataBuffer       = std::move(other.m_temporaryDataBuffer);
 		m_copyNecessary             = other.m_copyNecessary;

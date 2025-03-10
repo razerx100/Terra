@@ -40,8 +40,7 @@ RenderEngine::RenderEngine(
 	m_textureStorage{ logicalDevice, &m_memoryManager },
 	m_textureManager{ logicalDevice, &m_memoryManager },
 	m_cameraManager{ logicalDevice, &m_memoryManager },
-	m_backgroundColour{ { 0.0001f, 0.0001f, 0.0001f, 0.0001f } }, m_viewportAndScissors{},
-	m_temporaryDataBuffer{}, m_copyNecessary{ false }
+	m_viewportAndScissors{}, m_temporaryDataBuffer{}, m_copyNecessary{ false }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
 
@@ -63,13 +62,6 @@ RenderEngine::RenderEngine(
 
 	m_graphicsQueue.CreateCommandBuffers(frameCountU32);
 	m_transferQueue.CreateCommandBuffers(frameCountU32);
-}
-
-void RenderEngine::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept
-{
-	m_backgroundColour = {
-		{ colourVector.at(0u), colourVector.at(1), colourVector.at(2), colourVector.at(3) }
-	};
 }
 
 size_t RenderEngine::AddTextureAsCombined(STexture&& texture)

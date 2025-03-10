@@ -22,11 +22,6 @@ void RendererVK::FinaliseInitialisation()
 	m_terra.FinaliseInitialisation();
 }
 
-void RendererVK::SetBackgroundColour(const std::array<float, 4>& colourVector) noexcept
-{
-	m_terra.GetRenderEngine().SetBackgroundColour(colourVector);
-}
-
 void RendererVK::Render()
 {
 	m_terra.Render();
