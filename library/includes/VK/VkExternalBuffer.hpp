@@ -63,7 +63,7 @@ public:
 	{
 		const VkExtent3D vkExtent = m_textureView.GetTexture().GetExtent();
 
-		return Extent{ .width  = vkExtent.width, .height = vkExtent.height };
+		return Extent{ .width = vkExtent.width, .height = vkExtent.height };
 	}
 
 	[[nodiscard]]

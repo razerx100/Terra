@@ -7,6 +7,7 @@
 #include <DisplayManager.hpp>
 #include <RendererTypes.hpp>
 #include <RenderEngine.hpp>
+#include <VkExternalFormatMap.hpp>
 
 class Terra
 {
@@ -36,6 +37,7 @@ public:
 
 	[[nodiscard]]
 	DisplayManager::Resolution GetFirstDisplayCoordinates() const;
+
 	[[nodiscard]]
 	VkExtent2D GetCurrentRenderArea() const noexcept;
 

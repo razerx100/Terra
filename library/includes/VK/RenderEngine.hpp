@@ -263,7 +263,7 @@ public:
 		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() },
 		m_renderPasses{}, m_swapchainRenderPass{}
 	{
-		for (auto& descriptorBuffer : m_graphicsDescriptorBuffers)
+		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
 				descriptorBuffer, s_combinedTextureBindingSlot, s_sampledTextureBindingSlot,
 				s_samplerBindingSlot, s_fragmentShaderSetLayoutIndex
@@ -354,11 +354,13 @@ public:
 			)
 		);
 	}
+
 	[[nodiscard]]
 	ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept override
 	{
 		return m_renderPasses[index].get();
 	}
+
 	[[nodiscard]]
 	std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(size_t index) const noexcept override
 	{

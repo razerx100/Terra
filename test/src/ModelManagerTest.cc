@@ -7,6 +7,7 @@
 #include <VkModelBuffer.hpp>
 #include <StagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
+#include <VKRenderPass.hpp>
 
 namespace Constants
 {

@@ -5,10 +5,8 @@
 #include <string>
 #include <VKPipelineObject.hpp>
 #include <VkCommandQueue.hpp>
-#include <VKRenderPass.hpp>
 #include <PipelineLayout.hpp>
 #include <ExternalPipeline.hpp>
-#include <VkExternalFormatMap.hpp>
 
 template<typename Derived>
 class GraphicsPipelineBase

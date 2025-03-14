@@ -1,4 +1,5 @@
 #include <GraphicsPipelineBase.hpp>
+#include <VkExternalFormatMap.hpp>
 
 void ConfigurePipelineBuilder(
 	GraphicsPipelineBuilder& builder, const ExternalGraphicsPipeline& graphicsExtPipeline

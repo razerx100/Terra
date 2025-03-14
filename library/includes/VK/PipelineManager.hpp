@@ -36,7 +36,7 @@ public:
 
 	void BindPipeline(size_t index, const VKCommandBuffer& commandBuffer) const noexcept
 	{
-		m_pipelines.at(index).Bind(commandBuffer);
+		m_pipelines[index].Bind(commandBuffer);
 	}
 
 	void SetOverwritable(size_t pipelineIndex) noexcept

@@ -180,7 +180,7 @@ void VkExternalRenderPass::SetStencilTesting(
 		externalTexture->TransitionState(newAccessFlag, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL)
 	);
 
-	VkClearDepthStencilValue clearValue{ .depth = 1.f };
+	VkClearDepthStencilValue clearValue{ .stencil = 0u };
 
 	m_renderPassManager.SetStencilAttachment(
 		stencilBarrierIndex, externalTexture->GetTextureView().GetView(), clearValue, vkLoadOp, vkStoreOp

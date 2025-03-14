@@ -145,7 +145,6 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 
 		// Since this is the first stage for now. The receiving semaphore won't be a timeline one.
 		// So, no need to increase it.
-
 		m_copyNecessary    = false;
 		signalledSemaphore = transferWaitSemaphore.Get();
 	}
