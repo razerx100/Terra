@@ -30,17 +30,8 @@ public:
 		}
 	};
 
-protected:
-	using ModelDataIt = std::vector<ModelData>::const_iterator;
-
-	struct SortedData
-	{
-		ModelDataIt it;
-		float       worldZ;
-	};
-
 public:
-	PipelineModelsBase() : m_psoIndex{ 0u }, m_modelData{}, m_sortedData{} {}
+	PipelineModelsBase() : m_psoIndex{ 0u }, m_modelData{} {}
 
 	void SetPSOIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
 
@@ -54,76 +45,16 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddModel(std::uint32_t bundleIndex, std::uint32_t bufferIndex) noexcept;
-	[[nodiscard]]
-	// This won't actually sort it. It will be sorted in the DrawSorted function.
-	std::uint32_t AddModelSorted(std::uint32_t bundleIndex, std::uint32_t bufferIndex) noexcept;
-	[[nodiscard]]
-	const ModelData& GetModelData(size_t localIndex) const noexcept
-	{
-		return m_modelData[localIndex];
-	}
 
 	void RemoveModel(std::uint32_t localIndex) noexcept
 	{
 		m_modelData.RemoveElement(localIndex);
 	}
 
-	void RemoveModelSorted(std::uint32_t localIndex) noexcept;
-
-protected:
 	[[nodiscard]]
-	static float GetWorldZ(const AxisAlignedBoundingBox& aabb, const DirectX::XMMATRIX& world) noexcept;
-
-	template<class MeshBundle_t>
-	void SortDetails(
-		const MeshBundle_t& meshBundle, const std::vector<std::shared_ptr<Model>>& models
-	) noexcept {
-		const size_t modelCount = std::size(m_sortedData);
-
-		for (size_t index = 0u; index < modelCount; ++index)
-		{
-			const ModelData& modelData          = *m_sortedData[index].it;
-			const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
-
-			if (!model->IsVisible())
-				continue;
-
-			const auto& meshDetails = meshBundle.GetMeshDetails(model->GetMeshIndex());
-
-			m_sortedData[index].worldZ
-				= GetWorldZ(meshDetails.aabb, model->GetModelMatrix()) + model->GetModelOffset().z;
-		}
-
-		// Sort
-		std::ranges::sort(
-			m_sortedData,
-			[](const SortedData& element1, const SortedData& element2) -> bool
-			{
-				return element1.worldZ < element2.worldZ;
-			}
-		);
-	}
-
-	template<bool Sorted>
-	[[nodiscard]]
-	const ModelData& _getModelData(size_t index) const noexcept
+	const ModelData& GetModelData(size_t index) const noexcept
 	{
-		if constexpr (Sorted)
-			return *m_sortedData[index].it;
-		else
-			return m_modelData[index];
-	}
-	template<bool Sorted>
-	[[nodiscard]]
-	bool _isModelInUse(size_t index) const noexcept
-	{
-		// In sorted mode, the iterators of the actual models will be sorted and
-		// the iterators of the any inactive iterators will be removed. So, it
-		// will always be in use.
-		if constexpr (Sorted)
-			return true;
-		else
-			return m_modelData.IsInUse(index);
+		return m_modelData[index];
 	}
 
 	void _cleanupData() noexcept { operator=(PipelineModelsBase{}); }
@@ -131,7 +62,6 @@ protected:
 protected:
 	std::uint32_t             m_psoIndex;
 	ReusableVector<ModelData> m_modelData;
-	std::vector<SortedData>   m_sortedData;
 
 public:
 	PipelineModelsBase(const PipelineModelsBase&) = delete;
@@ -139,14 +69,12 @@ public:
 
 	PipelineModelsBase(PipelineModelsBase&& other) noexcept
 		: m_psoIndex{ other.m_psoIndex },
-		m_modelData{ std::move(other.m_modelData) },
-		m_sortedData{ std::move(other.m_sortedData) }
+		m_modelData{ std::move(other.m_modelData) }
 	{}
 	PipelineModelsBase& operator=(PipelineModelsBase&& other) noexcept
 	{
-		m_psoIndex   = other.m_psoIndex;
-		m_modelData  = std::move(other.m_modelData);
-		m_sortedData = std::move(other.m_sortedData);
+		m_psoIndex  = other.m_psoIndex;
+		m_modelData = std::move(other.m_modelData);
 
 		return *this;
 	}
@@ -164,11 +92,6 @@ public:
 		const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
-	void DrawSorted(
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
-	) noexcept;
-
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
@@ -176,21 +99,6 @@ public:
 	}
 
 private:
-	template<bool Sorted>
-	void _draw(
-		size_t modelCount,
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
-	) const noexcept {
-		VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
-
-		for (size_t index = 0u; index < modelCount; ++index)
-			DrawModel(
-				_isModelInUse<Sorted>(index), _getModelData<Sorted>(index), cmdBuffer,
-				pipelineLayout, meshBundle, models
-			);
-	}
-
 	void DrawModel(
 		bool isInUse, const ModelData& modelData,
 		VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
@@ -239,11 +147,6 @@ public:
 		const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
-	void DrawSorted(
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
-	) noexcept;
-
 	[[nodiscard]]
 	static consteval std::uint32_t GetConstantBufferSize() noexcept
 	{
@@ -255,21 +158,6 @@ private:
 	static std::uint32_t DivRoundUp(std::uint32_t num, std::uint32_t den) noexcept
 	{
 		return (num + den - 1) / den;
-	}
-
-	template<bool Sorted>
-	void _draw(
-		size_t modelCount,
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
-	) const noexcept {
-		VkCommandBuffer cmdBuffer = graphicsBuffer.Get();
-
-		for (size_t index = 0u; index < modelCount; ++index)
-			DrawModel(
-				_isModelInUse<Sorted>(index), _getModelData<Sorted>(index),
-				cmdBuffer, pipelineLayout, meshBundle, models
-			);
 	}
 
 	void DrawModel(
@@ -344,12 +232,11 @@ public:
 	[[nodiscard]]
 	std::vector<IndexLink> RemoveInactiveModels() noexcept;
 
-	void UpdateNonPerFrameData(std::uint32_t modelBundleIndex, bool areSortedModels) noexcept;
+	void UpdateNonPerFrameData(std::uint32_t modelBundleIndex) noexcept;
 
 	void AllocateBuffers(
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer,
-		bool areSortedModels
+		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelSharedBuffer
 	);
 
 	void ResetCullingData() const noexcept;
@@ -358,10 +245,6 @@ public:
 		size_t frameIndex, const VkMeshBundleVS& meshBundle,
 		const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
-	void UpdateSorted(
-		size_t frameIndex, const VkMeshBundleVS& meshBundle,
-		const std::vector<std::shared_ptr<Model>>& models
-	) noexcept;
 
 	void RelinquishMemory(
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
@@ -369,70 +252,12 @@ public:
 	) noexcept;
 
 	[[nodiscard]]
-	size_t GetModelCount(bool areSortedModels) const noexcept
-	{
-		return areSortedModels ? std::size(m_sortedData) : std::size(m_modelData);
-	}
+	size_t GetModelCount() const noexcept { return std::size(m_modelData); }
 
 	[[nodiscard]]
 	static consteval size_t GetPerModelStride() noexcept
 	{
 		return sizeof(PerModelData);
-	}
-
-private:
-	template<bool Sorted>
-	void _update(
-		size_t modelCount, size_t frameIndex, const VkMeshBundleVS& meshBundle,
-		const std::vector<std::shared_ptr<Model>>& models
-	) const noexcept {
-		if (!modelCount)
-			return;
-
-		const SharedBufferData& argumentInputSharedData = m_argumentInputSharedData[frameIndex];
-
-		std::uint8_t* argumentInputStart  = argumentInputSharedData.bufferData->CPUHandle();
-		std::uint8_t* perModelBufferStart = m_perModelSharedData.bufferData->CPUHandle();
-
-		constexpr size_t argumentStride = sizeof(VkDrawIndexedIndirectCommand);
-		auto argumentOffset             = static_cast<size_t>(argumentInputSharedData.offset);
-
-		constexpr size_t perModelStride = sizeof(PerModelData);
-		auto perModelOffset             = static_cast<size_t>(m_perModelSharedData.offset);
-		constexpr auto isVisibleOffset  = offsetof(PerModelData, isVisible);
-		constexpr auto modelIndexOffset = offsetof(PerModelData, modelIndex);
-
-		for (size_t index = 0; index < modelCount; ++index)
-		{
-			const ModelData& modelData          = _getModelData<Sorted>(index);
-			const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
-
-			const MeshTemporaryDetailsVS& meshDetailsVS
-				= meshBundle.GetMeshDetails(model->GetMeshIndex());
-			const VkDrawIndexedIndirectCommand meshArgs
-				= PipelineModelsBase::GetDrawIndexedIndirectCommand(meshDetailsVS);
-
-			memcpy(argumentInputStart + argumentOffset, &meshArgs, argumentStride);
-
-			argumentOffset += argumentStride;
-
-			// Model Visiblity
-			const auto visiblity = static_cast<std::uint32_t>(
-				_isModelInUse<Sorted>(index) && model->IsVisible()
-			);
-
-			memcpy(
-				perModelBufferStart + perModelOffset + isVisibleOffset, &visiblity, sizeof(std::uint32_t)
-			);
-
-			// Model Index
-			memcpy(
-				perModelBufferStart + perModelOffset + modelIndexOffset,
-				&modelData.bufferIndex, sizeof(std::uint32_t)
-			);
-
-			perModelOffset += perModelStride;
-		}
 	}
 
 private:
@@ -637,26 +462,19 @@ protected:
 		m_pipelines.RemoveElement(pipelineLocalIndex);
 	}
 
-	template<bool Sorted>
 	void _addModelToPipeline(std::uint32_t pipelineLocalIndex, std::uint32_t modelIndex)
 	{
 		Pipeline_t& pipeline            = m_pipelines[pipelineLocalIndex];
 
 		const std::uint32_t bufferIndex = m_modelBufferIndices[modelIndex];
 
-		auto modelPipelineIndex         = std::numeric_limits<std::uint32_t>::max();
+		const std::uint32_t modelPipelineIndex = pipeline.AddModel(modelIndex, bufferIndex);
 
-		if constexpr (Sorted)
-			modelPipelineIndex = pipeline.AddModelSorted(modelIndex, bufferIndex);
-		else
-			modelPipelineIndex = pipeline.AddModel(modelIndex, bufferIndex);
-
-		LocalIndexMap_t& pipelineMap = m_localModelIndexMap[pipelineLocalIndex];
+		LocalIndexMap_t& pipelineMap           = m_localModelIndexMap[pipelineLocalIndex];
 
 		pipelineMap.insert_or_assign(modelIndex, modelPipelineIndex);
 	}
 
-	template<bool Sorted>
 	void _addModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex)
 	{
 		std::optional<size_t> oPipelineLocalIndex = FindPipeline(pipelineIndex);
@@ -667,10 +485,9 @@ protected:
 		else
 			pipelineLocalIndex = _addPipeline(pipelineIndex);
 
-		_addModelToPipeline<Sorted>(static_cast<std::uint32_t>(pipelineLocalIndex), modelIndex);
+		_addModelToPipeline(static_cast<std::uint32_t>(pipelineLocalIndex), modelIndex);
 	}
 
-	template<bool Sorted>
 	void _addModels(std::uint32_t pipelineIndex, const std::vector<std::uint32_t>& modelIndices)
 	{
 		const size_t modelCount = std::size(modelIndices);
@@ -679,11 +496,10 @@ protected:
 		{
 			const std::uint32_t modelIndex = modelIndices[index];
 
-			_addModel<Sorted>(pipelineIndex, modelIndex);
+			_addModel(pipelineIndex, modelIndex);
 		}
 	}
 
-	template<bool Sorted>
 	PipelineModelsBase::ModelData _removeModelFromPipeline(
 		std::uint32_t pipelineLocalIndex, std::uint32_t modelIndex
 	) noexcept {
@@ -704,10 +520,7 @@ protected:
 
 			modelData = pipeline.GetModelData(modelLocalIndex);
 
-			if constexpr (Sorted)
-				pipeline.RemoveModelSorted(modelLocalIndex);
-			else
-				pipeline.RemoveModel(modelLocalIndex);
+			pipeline.RemoveModel(modelLocalIndex);
 
 			pipelineMap.erase(modelIndex);
 		}
@@ -715,7 +528,6 @@ protected:
 		return modelData;
 	}
 
-	template<bool Sorted>
 	PipelineModelsBase::ModelData _removeModel(
 		std::uint32_t pipelineIndex, std::uint32_t modelIndex
 	) noexcept {
@@ -731,13 +543,12 @@ protected:
 		{
 			const auto pipelineLocalIndex = static_cast<std::uint32_t>(oPipelineLocalIndex.value());
 
-			modelData = _removeModelFromPipeline<Sorted>(pipelineLocalIndex, modelIndex);
+			modelData = _removeModelFromPipeline(pipelineLocalIndex, modelIndex);
 		}
 
 		return modelData;
 	}
 
-	template<bool Sorted>
 	MoveModelCommonData _moveModelCommon(
 		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
 	) {
@@ -773,7 +584,7 @@ protected:
 
 		// If we can't find the old pipeline, then there will be nothing to move?
 		if (oldPipelineLocalIndex != std::numeric_limits<std::uint32_t>::max())
-			modelData = _removeModelFromPipeline<Sorted>(oldPipelineLocalIndex, modelIndex);
+			modelData = _removeModelFromPipeline(oldPipelineLocalIndex, modelIndex);
 
 		return MoveModelCommonData
 		{
@@ -782,11 +593,10 @@ protected:
 		};
 	}
 
-	template<bool Sorted>
 	void _moveModel(
 		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
 	) {
-		const MoveModelCommonData moveData = _moveModelCommon<Sorted>(
+		const MoveModelCommonData moveData = _moveModelCommon(
 			modelIndex, oldPipelineIndex, newPipelineIndex
 		);
 
@@ -798,7 +608,7 @@ protected:
 			newPipelineLocalIndex = static_cast<std::uint32_t>(_addPipeline(newPipelineIndex));
 
 		if (modelData.bundleIndex != std::numeric_limits<std::uint32_t>::max())
-			_addModelToPipeline<Sorted>(newPipelineLocalIndex, modelData.bundleIndex);
+			_addModelToPipeline(newPipelineLocalIndex, modelData.bundleIndex);
 	}
 
 protected:
@@ -851,41 +661,24 @@ public:
 	// index in the GPU visible buffer.
 	void AddModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex)
 	{
-		this->_addModel<false>(pipelineIndex, modelIndex);
-	}
-	void AddModelSorted(std::uint32_t pipelineIndex, std::uint32_t modelIndex)
-	{
-		this->_addModel<true>(pipelineIndex, modelIndex);
+		this->_addModel(pipelineIndex, modelIndex);
 	}
 
 	// The size of both of the vectors must be the same.
 	void AddModels(std::uint32_t pipelineIndex, const std::vector<std::uint32_t>& modelIndices)
 	{
-		this->_addModels<false>(pipelineIndex, modelIndices);
-	}
-	void AddModelsSorted(std::uint32_t pipelineIndex, const std::vector<std::uint32_t>& modelIndices)
-	{
-		this->_addModels<true>(pipelineIndex, modelIndices);
+		this->_addModels(pipelineIndex, modelIndices);
 	}
 
 	void MoveModel(
 		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
 	) {
-		this->_moveModel<false>(modelIndex, oldPipelineIndex, newPipelineIndex);
-	}
-	void MoveModelSorted(
-		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
-	) {
-		this->_moveModel<true>(modelIndex, oldPipelineIndex, newPipelineIndex);
+		this->_moveModel(modelIndex, oldPipelineIndex, newPipelineIndex);
 	}
 
 	void RemoveModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex) noexcept
 	{
-		this->_removeModel<false>(pipelineIndex, modelIndex);
-	}
-	void RemoveModelSorted(std::uint32_t pipelineIndex, std::uint32_t modelIndex) noexcept
-	{
-		this->_removeModel<true>(pipelineIndex, modelIndex);
+		this->_removeModel(pipelineIndex, modelIndex);
 	}
 
 public:
@@ -914,19 +707,11 @@ public:
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
 		const VkMeshBundleVS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
 	) const noexcept;
-	void DrawSorted(
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-	) noexcept;
 
 	void DrawPipeline(
 		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) const noexcept;
-	void DrawPipelineSorted(
-		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
-		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
-	) noexcept;
 
 public:
 	ModelBundleVSIndividual(const ModelBundleVSIndividual&) = delete;
@@ -954,19 +739,11 @@ public:
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
 		const VkMeshBundleMS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
 	) const noexcept;
-	void DrawSorted(
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-	) noexcept;
 
 	void DrawPipeline(
 		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 		VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 	) const noexcept;
-	void DrawPipelineSorted(
-		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
-		VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
-	) noexcept;
 
 private:
 	static void SetMeshBundleConstants(
@@ -1025,26 +802,9 @@ public:
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
-	void AddModelSorted(
-		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
 
 	// The size of both of the index vectors must be the same.
 	void AddModels(
-		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
-		const std::vector<std::uint32_t>& modelIndices,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
-	void AddModelsSorted(
 		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
 		const std::vector<std::uint32_t>& modelIndices,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
@@ -1063,34 +823,17 @@ public:
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
-	void MoveModelSorted(
-		std::uint32_t modeIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
 
 	void RemoveModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex) noexcept
 	{
-		_removeModel<false>(pipelineIndex, modelIndex);
-	}
-	void RemoveModelSorted(std::uint32_t pipelineIndex, std::uint32_t modelIndex) noexcept
-	{
-		_removeModel<true>(pipelineIndex, modelIndex);
+		_removeModel(pipelineIndex, modelIndex);
 	}
 
 	void Update(size_t frameIndex, const VkMeshBundleVS& meshBundle) const noexcept;
-	void UpdateSorted(size_t frameIndex, const VkMeshBundleVS& meshBundle) noexcept;
 
 	void UpdatePipeline(
 		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
 	) const noexcept;
-	void UpdatePipelineSorted(
-		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
-	) noexcept;
 
 	void Draw(
 		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
@@ -1106,8 +849,7 @@ private:
 	void _addModels(
 		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
 		std::uint32_t const* modelIndices, std::uint32_t const* bufferIndices,
-		size_t modelCount, bool areModelsSorted,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
+		size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
@@ -1116,8 +858,7 @@ private:
 	void _addModelsToPipeline(
 		std::uint32_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
 		std::uint32_t const* modelIndices, std::uint32_t const* bufferIndices,
-		size_t modelCount, bool areModelsSorted,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
+		size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
@@ -1126,7 +867,7 @@ private:
 
 	void ResizePreviousPipelines(
 		size_t addableStartIndex, size_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
-		bool areModelsSorted, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
+		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
@@ -1134,7 +875,7 @@ private:
 	);
 
 	void RecreateFollowingPipelines(
-		size_t pipelineLocalIndex, std::uint32_t modelBundleIndex, bool areModelsSorted,
+		size_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
@@ -1144,7 +885,7 @@ private:
 
 	void _moveModel(
 		std::uint32_t modelIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex, bool areModelsSorted,
+		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,

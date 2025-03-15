@@ -15,15 +15,9 @@ VkExternalRenderPass::VkExternalRenderPass(VkExternalResourceFactory* resourceFa
 	}, m_swapchainCopySource{ std::numeric_limits<std::uint32_t>::max() }
 {}
 
-void VkExternalRenderPass::AddPipeline(std::uint32_t pipelineIndex, bool sorted)
+void VkExternalRenderPass::AddPipeline(std::uint32_t pipelineIndex)
 {
-	m_pipelineDetails.emplace_back(
-		PipelineDetails
-		{
-			.pipelineGlobalIndex = pipelineIndex,
-			.renderSorted        = sorted
-		}
-	);
+	m_pipelineDetails.emplace_back(PipelineDetails{ .pipelineGlobalIndex = pipelineIndex });
 }
 
 void VkExternalRenderPass::RemoveModelBundle(std::uint32_t bundleIndex) noexcept

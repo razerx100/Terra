@@ -161,7 +161,6 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 
 		// Since this is the first stage for now. The receiving semaphore won't be a timeline one.
 		// So, no need to increase it.
-
 		m_copyNecessary    = false;
 		signalledSemaphore = transferWaitSemaphore.Get();
 	}
@@ -184,18 +183,11 @@ void RenderEngineMS::DrawRenderPassPipelines(
 
 		const size_t bundleCount = std::size(bundleIndices);
 
-		if (details.renderSorted)
-			for (size_t index = 0u; index < bundleCount; ++index)
-				m_modelManager.DrawPipelineSorted(
-					bundleIndices[index], pipelineLocalIndices[index],
-					graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
-				);
-		else
-			for (size_t index = 0u; index < bundleCount; ++index)
-				m_modelManager.DrawPipeline(
-					bundleIndices[index], pipelineLocalIndices[index],
-					graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
-				);
+		for (size_t index = 0u; index < bundleCount; ++index)
+			m_modelManager.DrawPipeline(
+				bundleIndices[index], pipelineLocalIndices[index],
+				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
+			);
 	}
 }
 

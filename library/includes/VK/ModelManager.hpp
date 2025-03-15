@@ -156,18 +156,11 @@ public:
 		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
 		const PipelineManager<Pipeline_t>& pipelineManager
 	) const noexcept;
-	void DrawSorted(
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-		const PipelineManager<Pipeline_t>& pipelineManager
-	) noexcept;
+
 	void DrawPipeline(
 		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 		const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
 	) const noexcept;
-	void DrawPipelineSorted(
-		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
-		const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
-	) noexcept;
 
 public:
 	ModelManagerVSIndividual(const ModelManagerVSIndividual&) = delete;
@@ -260,18 +253,11 @@ public:
 	void UpdatePerFrame(
 		VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
 	) const noexcept;
-	void UpdatePerFrameSorted(
-		VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
-	) noexcept;
 
 	void UpdatePipelinePerFrame(
 		VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
 		const MeshManagerVSIndirect& meshManager
 	) const noexcept;
-	void UpdatePipelinePerFrameSorted(
-		VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
-		const MeshManagerVSIndirect& meshManager
-	) noexcept;
 
 private:
 	void _addModelsFromBundle(
@@ -371,18 +357,11 @@ public:
 		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
 		const PipelineManager<Pipeline_t>& pipelineManager
 	) const noexcept;
-	void DrawSorted(
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
-		const PipelineManager<Pipeline_t>& pipelineManager
-	) noexcept;
+
 	void DrawPipeline(
 		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 		const MeshManagerMS& meshManager, VkPipelineLayout pipelineLayout
 	) const noexcept;
-	void DrawPipelineSorted(
-		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
-		const MeshManagerMS& meshManager, VkPipelineLayout pipelineLayout
-	) noexcept;
 
 public:
 	ModelManagerMS(const ModelManagerMS&) = delete;
