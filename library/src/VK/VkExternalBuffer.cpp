@@ -30,7 +30,7 @@ void VkExternalTexture::Destroy() noexcept
 
 void VkExternalTexture::Create(
 	std::uint32_t width, std::uint32_t height, ExternalFormat format, ExternalTexture2DType type,
-	bool copySrc, bool copyDst, [[maybe_unused]] const ExternalClearColour& clearColour
+	bool copySrc, bool copyDst
 ) {
 	VkImageUsageFlags usageFlags   = 0u;
 	VkImageAspectFlags aspectFlags = 0u;

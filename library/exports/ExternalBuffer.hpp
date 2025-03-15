@@ -35,13 +35,6 @@ enum class ExternalTexture2DType
 	Stencil
 };
 
-struct ExternalClearColour
-{
-	std::array<float, 4u> colour  = { 0.f, 0.f, 0.f, 0.f };
-	float                 depth   = 1.f;
-	std::uint32_t         stencil = 0u;
-};
-
 class ExternalTexture
 {
 public:
@@ -54,11 +47,11 @@ public:
 public:
 	virtual ~ExternalTexture() = default;
 
-	// The two copy flags are only necessary on Vulkan for now.
-	// And the clear colour is only necessary Dx12.
+	// The two copy flags are only necessary on Vulkan for now. Until Dx12 Enhanced Barrier is more common.
+	// It is available on Win11 only now.
 	virtual void Create(
 		std::uint32_t width, std::uint32_t height, ExternalFormat format, ExternalTexture2DType type,
-		bool copySrc, bool copyDst, const ExternalClearColour& clearColour = {}
+		bool copySrc, bool copyDst
 	) = 0;
 
 	virtual void Destroy() noexcept = 0;

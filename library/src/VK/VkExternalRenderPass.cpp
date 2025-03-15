@@ -154,7 +154,7 @@ void VkExternalRenderPass::SetDepthTesting(
 	);
 }
 
-void VkExternalRenderPass::SetDepthClearColour(float clearColour) noexcept
+void VkExternalRenderPass::SetDepthClearColour(float clearColour)
 {
 	m_renderPassManager.SetDepthClearColour(VkClearDepthStencilValue{ .depth = clearColour });
 }
@@ -187,7 +187,7 @@ void VkExternalRenderPass::SetStencilTesting(
 	);
 }
 
-void VkExternalRenderPass::SetStencilClearColour(std::uint32_t clearColour) noexcept
+void VkExternalRenderPass::SetStencilClearColour(std::uint32_t clearColour)
 {
 	m_renderPassManager.SetStencilClearColour(VkClearDepthStencilValue{ .stencil = clearColour });
 }
@@ -226,7 +226,7 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 
 void VkExternalRenderPass::SetRenderTargetClearColour(
 	std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour
-) noexcept {
+) {
 	const VkClearColorValue clearValue
 	{
 		.float32{ clearColour.x, clearColour.y, clearColour.z, clearColour.w }
