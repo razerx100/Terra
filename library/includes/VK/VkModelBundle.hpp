@@ -46,15 +46,15 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddModel(std::uint32_t bundleIndex, std::uint32_t bufferIndex) noexcept;
 
+	[[nodiscard]]
+	const ModelData& GetModelData(size_t localIndex) const noexcept
+	{
+		return m_modelData[localIndex];
+	}
+
 	void RemoveModel(std::uint32_t localIndex) noexcept
 	{
 		m_modelData.RemoveElement(localIndex);
-	}
-
-	[[nodiscard]]
-	const ModelData& GetModelData(size_t index) const noexcept
-	{
-		return m_modelData[index];
 	}
 
 	void _cleanupData() noexcept { operator=(PipelineModelsBase{}); }

@@ -65,7 +65,7 @@ private:
 private:
 	void DrawRenderPassPipelines(
 		const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
-	) noexcept;
+	) const noexcept;
 
 public:
 	RenderEngineVSIndividual(const RenderEngineVSIndividual&) = delete;
@@ -149,15 +149,17 @@ private:
 
 	void CreateComputePipelineLayout();
 
-	void _updatePerFrame(VkDeviceSize frameIndex) noexcept;
+	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
 
 private:
 	void DrawRenderPassPipelines(
 		size_t frameIndex , const VKCommandBuffer& graphicsCmdBuffer,
 		const ExternalRenderPass_t& renderPass
-	) noexcept;
+	) const noexcept;
 
-	void UpdateRenderPassPipelines(size_t frameIndex, const ExternalRenderPass_t& renderPass) noexcept;
+	void UpdateRenderPassPipelines(
+		size_t frameIndex, const ExternalRenderPass_t& renderPass
+	) const noexcept;
 
 private:
 	// Compute

@@ -69,7 +69,7 @@ private:
 private:
 	void DrawRenderPassPipelines(
 		const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
-	) noexcept;
+	) const noexcept;
 
 public:
 	RenderEngineMS(const RenderEngineMS&) = delete;

@@ -170,7 +170,7 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 
 void RenderEngineMS::DrawRenderPassPipelines(
 	const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
-) noexcept {
+) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
 

@@ -409,11 +409,11 @@ public:
 	}
 
 protected:
-	void Update(VkDeviceSize frameIndex) noexcept
+	void Update(VkDeviceSize frameIndex) const noexcept
 	{
 		m_cameraManager.Update(frameIndex);
 
-		static_cast<Derived*>(this)->_updatePerFrame(frameIndex);
+		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 
 		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
 	}

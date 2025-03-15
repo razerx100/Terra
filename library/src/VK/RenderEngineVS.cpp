@@ -154,7 +154,7 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 
 void RenderEngineVSIndividual::DrawRenderPassPipelines(
 	const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
-) noexcept {
+) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
 
@@ -439,7 +439,7 @@ void RenderEngineVSIndirect::SetModelComputeDescriptors()
 
 void RenderEngineVSIndirect::UpdateRenderPassPipelines(
 	size_t frameIndex, const ExternalRenderPass_t& renderPass
-) noexcept {
+) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
 
@@ -457,7 +457,7 @@ void RenderEngineVSIndirect::UpdateRenderPassPipelines(
 	}
 }
 
-void RenderEngineVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) noexcept
+void RenderEngineVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
 {
 	m_modelBuffers.Update(frameIndex);
 
@@ -605,7 +605,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 
 void RenderEngineVSIndirect::DrawRenderPassPipelines(
 	size_t frameIndex, const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
-) noexcept {
+) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
 
