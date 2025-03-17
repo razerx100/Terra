@@ -79,9 +79,10 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::SetDepthStencilState(
 	return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColourAttachment(VkFormat colourFormat) noexcept
-{
-	m_colourAttachmentStates.emplace_back(GetColourBlendState());
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColourAttachment(
+	VkFormat colourFormat, const VkPipelineColorBlendAttachmentState& blendState
+) noexcept {
+	m_colourAttachmentStates.emplace_back(blendState);
 	m_colourAttachmentFormats.emplace_back(colourFormat);
 
 	++m_colourStateInfo.attachmentCount;
@@ -161,20 +162,4 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(VkDynamicState
 	m_dynamicStateInfo.dynamicStateCount = static_cast<std::uint32_t>(std::size(m_dynamicStates));
 
 	return *this;
-}
-
-VkPipelineColorBlendAttachmentState GraphicsPipelineBuilder::GetColourBlendState() noexcept
-{
-	return VkPipelineColorBlendAttachmentState
-	{
-		.blendEnable         = VK_FALSE,
-		.srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-		.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-		.colorBlendOp        = VK_BLEND_OP_ADD,
-		.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-		.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-		.alphaBlendOp        = VK_BLEND_OP_ADD,
-		.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
-			| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-	};
 }

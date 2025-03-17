@@ -216,7 +216,9 @@ public:
 		const DepthStencilStateBuilder& depthStencilBuilder, VkFormat depthFormat, VkFormat stencilFormat
 	) noexcept;
 
-	GraphicsPipelineBuilder& AddColourAttachment(VkFormat colourFormat) noexcept;
+	GraphicsPipelineBuilder& AddColourAttachment(
+		VkFormat colourFormat, const VkPipelineColorBlendAttachmentState& blendState
+	) noexcept;
 	GraphicsPipelineBuilder& SetCullMode(VkCullModeFlagBits cullMode) noexcept;
 
 	// Can only be set on a Mesh Shader based Pipeline.
@@ -233,9 +235,6 @@ public:
 	VkGraphicsPipelineCreateInfo const* GetRef() const noexcept { return &m_pipelineCreateInfo; }
 	[[nodiscard]]
 	VkGraphicsPipelineCreateInfo Get() const noexcept { return m_pipelineCreateInfo; }
-
-	[[nodiscard]]
-	static VkPipelineColorBlendAttachmentState GetColourBlendState() noexcept;
 
 private:
 	void UpdateShaderStages() noexcept;

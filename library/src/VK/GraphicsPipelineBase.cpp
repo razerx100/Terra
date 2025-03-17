@@ -22,9 +22,11 @@ void ConfigurePipelineBuilder(
 			);
 	}
 
-	// Will add Colour blending later.
 	const size_t colourAttachmentCount = graphicsExtPipeline.GetRenderTargetCount();
 
 	for (size_t index = 0u; index < colourAttachmentCount; ++index)
-		builder.AddColourAttachment(GetVkFormat(graphicsExtPipeline.GetRenderTargetFormat(index)));
+		builder.AddColourAttachment(
+			GetVkFormat(graphicsExtPipeline.GetRenderTargetFormat(index)),
+			GetVkBlendState(graphicsExtPipeline.GetBlendState(index))
+		);
 }
