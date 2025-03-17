@@ -9,7 +9,10 @@
 class Resource
 {
 public:
+	// If the default ctor is used, then a new object will have to be moved in it.
+	Resource();
 	Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
+
 	~Resource() noexcept;
 
 	[[nodiscard]]
@@ -92,7 +95,10 @@ public:
 class Buffer : public Resource
 {
 public:
+	// If the default ctor is used, then a new object will have to be moved in it.
+	Buffer();
 	Buffer(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
+
 	~Buffer() noexcept;
 
 	void Create(
@@ -142,7 +148,10 @@ public:
 class Texture : public Resource
 {
 public:
+	// If the default ctor is used, then a new object will have to be moved in it.
+	Texture();
 	Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType);
+
 	~Texture() noexcept;
 
 	void Create2D(

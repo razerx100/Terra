@@ -3,6 +3,19 @@
 #include <unordered_map>
 
 // Resource
+Resource::Resource()
+	: m_memoryManager{ nullptr },
+	m_allocationInfo{
+		.gpuOffset = 0u,
+		.cpuOffset = nullptr,
+		.size      = 0u,
+		.alignment = 0u,
+		.memoryID  = 0u,
+		.isValid   = false
+	},
+	m_resourceType{ VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM }
+{}
+
 Resource::Resource(MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: m_memoryManager{ memoryManager },
 	m_allocationInfo{
@@ -42,6 +55,10 @@ void Resource::ThrowMemoryManagerException()
 }
 
 // Buffer
+Buffer::Buffer()
+	: Resource{}, m_buffer{ VK_NULL_HANDLE }, m_device{ VK_NULL_HANDLE }, m_bufferSize{ 0u }
+{}
+
 Buffer::Buffer(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: Resource{ memoryManager, memoryType }, m_buffer{ VK_NULL_HANDLE }, m_device{ device },
 	m_bufferSize{ 0u }
@@ -54,7 +71,8 @@ Buffer::~Buffer() noexcept
 
 void Buffer::SelfDestruct() noexcept
 {
-	vkDestroyBuffer(m_device, m_buffer, nullptr);
+	if (m_device != VK_NULL_HANDLE && m_buffer != VK_NULL_HANDLE)
+		vkDestroyBuffer(m_device, m_buffer, nullptr);
 
 	m_buffer = VK_NULL_HANDLE;
 }
@@ -79,8 +97,7 @@ void Buffer::Create(
 	ConfigureResourceQueueAccess(queueFamilyIndices, createInfo);
 
 	// If the buffer pointer is already allocated, then free it.
-	if (m_buffer != VK_NULL_HANDLE)
-		Destroy();
+	Destroy();
 
 	vkCreateBuffer(m_device, &createInfo, nullptr, &m_buffer);
 
@@ -100,6 +117,11 @@ VkDeviceAddress Buffer::GpuPhysicalAddress() const noexcept
 }
 
 // Texture
+Texture::Texture()
+	: Resource{}, m_image{ VK_NULL_HANDLE }, m_device{ VK_NULL_HANDLE },
+	m_format{ VK_FORMAT_UNDEFINED }, m_imageExtent{ 0u, 0u, 0u }
+{}
+
 Texture::Texture(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 	: Resource{ memoryManager, memoryType }, m_image{ VK_NULL_HANDLE }, m_device{ device },
 	m_format{ VK_FORMAT_UNDEFINED }, m_imageExtent{ 0u, 0u, 0u }
@@ -112,7 +134,8 @@ Texture::~Texture() noexcept
 
 void Texture::SelfDestruct() noexcept
 {
-	vkDestroyImage(m_device, m_image, nullptr);
+	if (m_device != VK_NULL_HANDLE && m_image != VK_NULL_HANDLE)
+		vkDestroyImage(m_device, m_image, nullptr);
 
 	m_image = VK_NULL_HANDLE;
 }
@@ -171,8 +194,7 @@ void Texture::Create(
 	ConfigureResourceQueueAccess(queueFamilyIndices, createInfo);
 
 	// If the image pointer is already allocated, then free it.
-	if (m_image != VK_NULL_HANDLE)
-		Destroy();
+	Destroy();
 
 	vkCreateImage(m_device, &createInfo, nullptr, &m_image);
 

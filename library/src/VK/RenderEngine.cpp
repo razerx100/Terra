@@ -75,9 +75,9 @@ size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
 	return textureIndex;
 }
 
-void RenderEngine::UnbindCombinedTexture(size_t index)
+void RenderEngine::UnbindCombinedTexture(size_t textureIndex)
 {
-	UnbindCombinedTexture(index, m_textureStorage.GetDefaultSamplerIndex());
+	UnbindCombinedTexture(textureIndex, m_textureStorage.GetDefaultSamplerIndex());
 }
 
 void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex)
@@ -177,15 +177,15 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	return freeGlobalDescIndex;
 }
 
-void RenderEngine::RemoveTexture(size_t index)
+void RenderEngine::RemoveTexture(size_t textureIndex)
 {
 	// Could be either an only texture descriptor or multiple combined ones. Unbind all.
-	const auto u32Index = static_cast<std::uint32_t>(index);
+	const auto u32Index = static_cast<std::uint32_t>(textureIndex);
 
 	m_textureManager.RemoveLocalDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(u32Index);
 	m_textureManager.RemoveCombinedLocalDescriptorTexture(u32Index);
 
-	const std::uint32_t globalDescriptorIndex = m_textureStorage.GetTextureBindingIndex(index);
+	const std::uint32_t globalDescriptorIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
 	m_textureManager.SetAvailableIndex<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
 		globalDescriptorIndex, true
 	);
@@ -193,7 +193,7 @@ void RenderEngine::RemoveTexture(size_t index)
 		globalDescriptorIndex, true
 	);
 
-	m_textureStorage.RemoveTexture(index);
+	m_textureStorage.RemoveTexture(textureIndex);
 }
 
 std::vector<std::uint32_t> RenderEngine::AddModelsToBuffer(

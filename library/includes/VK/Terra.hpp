@@ -70,9 +70,9 @@ public:
 	[[nodiscard]]
 	size_t AddTextureAsCombined(STexture&& texture);
 	[[nodiscard]]
-	std::uint32_t BindCombinedTexture(size_t index);
+	std::uint32_t BindCombinedTexture(size_t textureIndex);
 
-	void RemoveTexture(size_t index);
+	void RemoveTexture(size_t textureIndex);
 
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)

@@ -46,15 +46,15 @@ VKSampler::~VKSampler() noexcept
 
 void VKSampler::SelfDestruct() noexcept
 {
-	vkDestroySampler(m_device, m_sampler, nullptr);
+	if (m_device != VK_NULL_HANDLE && m_sampler != VK_NULL_HANDLE)
+		vkDestroySampler(m_device, m_sampler, nullptr);
 
 	m_sampler = VK_NULL_HANDLE;
 }
 
 void VKSampler::Create(const VkSamplerCreateInfo* createInfo)
 {
-	if (m_sampler != VK_NULL_HANDLE)
-		SelfDestruct();
+	SelfDestruct();
 
 	vkCreateSampler(m_device, createInfo, nullptr, &m_sampler);
 }
@@ -67,7 +67,8 @@ VKImageView::~VKImageView() noexcept
 
 void VKImageView::SelfDestruct() noexcept
 {
-	vkDestroyImageView(m_device, m_imageView, nullptr);
+	if (m_device != VK_NULL_HANDLE && m_imageView != VK_NULL_HANDLE)
+		vkDestroyImageView(m_device, m_imageView, nullptr);
 
 	m_imageView = VK_NULL_HANDLE;
 }
@@ -104,8 +105,7 @@ void VKImageView::CreateView(
 		.subresourceRange = subresourceRange
 	};
 
-	if (m_imageView != VK_NULL_HANDLE)
-		SelfDestruct();
+	SelfDestruct();
 
 	vkCreateImageView(m_device, &createInfo, nullptr, &m_imageView);
 

@@ -1,32 +1,6 @@
 #include <TextureManager.hpp>
 #include <VkResourceBarriers2.hpp>
 
-template<typename T>
-[[nodiscard]]
-static std::pair<size_t, T*> AddResource(
-	std::vector<bool>& availableIndices, std::deque<T>& resources, T&& resource
-) noexcept {
-	auto index     = std::numeric_limits<size_t>::max();
-	T* resourcePtr = nullptr;
-
-	auto result = std::ranges::find(availableIndices, true);
-
-	if (result != std::end(availableIndices))
-	{
-		index       = static_cast<size_t>(std::distance(std::begin(availableIndices), result));
-		resourcePtr = &resources[index];
-	}
-	else
-	{
-		index          = std::size(resources);
-		T& returnedRef = resources.emplace_back(std::move(resource));
-		availableIndices.emplace_back(false);
-		resourcePtr    = &returnedRef;
-	}
-
-	return { index, resourcePtr };
-}
-
 // Texture storage
 void TextureStorage::SetBindingIndex(
 	size_t index, std::uint32_t bindingIndex, std::vector<std::uint32_t>& bindingIndices
@@ -42,10 +16,11 @@ void TextureStorage::SetBindingIndex(
 size_t TextureStorage::AddTexture(
 	STexture&& texture, StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
 ) {
-	auto [index, textureViewPtr] = AddResource(
-		m_availableTextureIndices, m_textures,
+	const size_t index = m_textures.Add(
 		VkTextureView{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT }
 	);
+
+	VkTextureView* textureViewPtr = &m_textures[index];
 
 	textureViewPtr->CreateView2D(
 		texture.width, texture.height, s_textureFormat,
@@ -58,6 +33,7 @@ size_t TextureStorage::AddTexture(
 		VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, tempBuffer
 	);
 
+	// Should be fine because of the deque.
 	m_transitionQueue.push(textureViewPtr);
 
 	return index;
@@ -65,11 +41,11 @@ size_t TextureStorage::AddTexture(
 
 size_t TextureStorage::AddSampler(const VkSamplerCreateInfoBuilder& builder)
 {
-	auto [index, samplerPtr] = AddResource(m_availableSamplerIndices, m_samplers, VKSampler{ m_device });
+	VKSampler sampler{ m_device };
 
-	samplerPtr->Create(builder);
+	sampler.Create(builder);
 
-	return index;
+	return m_samplers.Add(std::move(sampler));
 }
 
 void TextureStorage::TransitionQueuedTextures(const VKCommandBuffer& graphicsCmdBuffer)
@@ -91,14 +67,15 @@ void TextureStorage::TransitionQueuedTextures(const VKCommandBuffer& graphicsCmd
 
 void TextureStorage::RemoveTexture(size_t index)
 {
-	m_availableTextureIndices[index] = true;
 	m_textures[index].Destroy();
+	m_textures.RemoveElement(index);
 }
 
 void TextureStorage::RemoveSampler(size_t index)
 {
 	if (index != s_defaultSamplerIndex)
-		m_availableSamplerIndices[index] = true;
+		m_samplers.RemoveElement(index);
+
 	// Don't need to destroy this like textures, as it doesn't require any buffer allocations.
 }
 

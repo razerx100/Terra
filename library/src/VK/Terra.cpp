@@ -189,16 +189,16 @@ size_t Terra::AddTextureAsCombined(STexture&& texture)
 	return m_renderEngine->AddTextureAsCombined(std::move(texture));
 }
 
-std::uint32_t Terra::BindCombinedTexture(size_t index)
+std::uint32_t Terra::BindCombinedTexture(size_t textureIndex)
 {
 	WaitForGPUToFinish();
 
-	return m_renderEngine->BindCombinedTexture(index);
+	return m_renderEngine->BindCombinedTexture(textureIndex);
 }
 
-void Terra::RemoveTexture(size_t index)
+void Terra::RemoveTexture(size_t textureIndex)
 {
 	WaitForGPUToFinish();
 
-	m_renderEngine->RemoveTexture(index);
+	m_renderEngine->RemoveTexture(textureIndex);
 }

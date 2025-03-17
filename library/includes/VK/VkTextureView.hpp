@@ -7,10 +7,16 @@
 class VKImageView
 {
 public:
+	// If the default ctor is used, then a new object will have to be moved in it.
+	VKImageView()
+		: m_device{ VK_NULL_HANDLE }, m_image{ VK_NULL_HANDLE }, m_imageView{ VK_NULL_HANDLE },
+		m_imageAspect{ 0u }, m_mipBaseLevel{ 0u }, m_mipLevelCount{ 1u }
+	{}
 	VKImageView(VkDevice device)
 		: m_device{ device }, m_image{ VK_NULL_HANDLE }, m_imageView{ VK_NULL_HANDLE },
 		m_imageAspect{ 0u }, m_mipBaseLevel{ 0u }, m_mipLevelCount{ 1u }
 	{}
+
 	~VKImageView() noexcept;
 
 	void CreateView(
@@ -72,6 +78,8 @@ public:
 class VkTextureView
 {
 public:
+	// If the default ctor is used, then a new object will have to be moved in it.
+	VkTextureView() : m_device{ VK_NULL_HANDLE }, m_texture{}, m_imageView{} {}
 	VkTextureView(VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType)
 		: m_device{ device }, m_texture{ device, memoryManager, memoryType }, m_imageView{ device }
 	{}
@@ -229,7 +237,10 @@ private:
 class VKSampler
 {
 public:
+	// If the default ctor is used, then a new object will have to be moved in it.
+	VKSampler() : m_device{ VK_NULL_HANDLE }, m_sampler{ VK_NULL_HANDLE } {}
 	VKSampler(VkDevice device) : m_device{ device }, m_sampler{ VK_NULL_HANDLE } {}
+
 	~VKSampler() noexcept;
 
 	void Create(const VkSamplerCreateInfo* createInfo);

@@ -80,19 +80,19 @@ size_t RendererVK::AddTexture(STexture&& texture)
 	return m_terra.AddTextureAsCombined(std::move(texture));
 }
 
-void RendererVK::UnbindTexture(size_t index)
+void RendererVK::UnbindTexture(size_t textureIndex)
 {
-	m_terra.GetRenderEngine().UnbindCombinedTexture(index);
+	m_terra.GetRenderEngine().UnbindCombinedTexture(textureIndex);
 }
 
-std::uint32_t RendererVK::BindTexture(size_t index)
+std::uint32_t RendererVK::BindTexture(size_t textureIndex)
 {
-	return m_terra.BindCombinedTexture(index);
+	return m_terra.BindCombinedTexture(textureIndex);
 }
 
-void RendererVK::RemoveTexture(size_t index)
+void RendererVK::RemoveTexture(size_t textureIndex)
 {
-	m_terra.RemoveTexture(index);
+	m_terra.RemoveTexture(textureIndex);
 }
 
 std::uint32_t RendererVK::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)

@@ -5,6 +5,7 @@
 #include <VkDescriptorBuffer.hpp>
 #include <VkCommandQueue.hpp>
 #include <TemporaryDataBuffer.hpp>
+#include <ReusableVector.hpp>
 #include <ranges>
 #include <algorithm>
 #include <deque>
@@ -16,16 +17,18 @@
 // But can be removed and re-added.
 class TextureStorage
 {
-	static constexpr size_t s_defaultSamplerIndex = 0u;
+	inline static size_t s_defaultSamplerIndex = 0u;
 public:
 	TextureStorage(VkDevice device, MemoryManager* memoryManager)
 		: m_device{ device }, m_memoryManager{ memoryManager },
-		m_textures{}, m_samplers{}, m_availableTextureIndices{},
-		m_availableSamplerIndices{}, m_transitionQueue{}, m_textureBindingIndices{},
+		m_textures{}, m_samplers{}, m_transitionQueue{}, m_textureBindingIndices{},
 		m_samplerBindingIndices{}
 	{
-		VKSampler& defaultSampler = m_samplers.emplace_back(device);
+		VKSampler defaultSampler{ device };
 		defaultSampler.Create(VkSamplerCreateInfoBuilder{});
+
+		// This should always be 0 but still doing this to please the compiler.
+		s_defaultSamplerIndex = m_samplers.Add(std::move(defaultSampler));
 	}
 
 	[[nodiscard]]
@@ -131,10 +134,8 @@ private:
 	MemoryManager*                   m_memoryManager;
 	// The TextureView objects need to have the same address until their data is copied.
 	// For the transitionQueue member and also the StagingBufferManager.
-	std::deque<VkTextureView>        m_textures;
-	std::deque<VKSampler>            m_samplers;
-	std::vector<bool>                m_availableTextureIndices;
-	std::vector<bool>                m_availableSamplerIndices;
+	ReusableDeque<VkTextureView>     m_textures;
+	ReusableDeque<VKSampler>         m_samplers;
 	std::queue<VkTextureView const*> m_transitionQueue;
 	std::vector<std::uint32_t>       m_textureBindingIndices;
 	std::vector<std::uint32_t>       m_samplerBindingIndices;
@@ -149,23 +150,19 @@ public:
 		: m_device{ other.m_device }, m_memoryManager{ other.m_memoryManager },
 		m_textures{ std::move(other.m_textures) },
 		m_samplers{ std::move(other.m_samplers) },
-		m_availableTextureIndices{ std::move(other.m_availableTextureIndices) },
-		m_availableSamplerIndices{ std::move(other.m_availableSamplerIndices) },
 		m_transitionQueue{ std::move(other.m_transitionQueue) },
 		m_textureBindingIndices{ std::move(other.m_textureBindingIndices) },
 		m_samplerBindingIndices{ std::move(other.m_samplerBindingIndices) }
 	{}
 	TextureStorage& operator=(TextureStorage&& other) noexcept
 	{
-		m_device                  = other.m_device;
-		m_memoryManager           = other.m_memoryManager;
-		m_textures                = std::move(other.m_textures);
-		m_samplers                = std::move(other.m_samplers);
-		m_availableTextureIndices = std::move(other.m_availableTextureIndices);
-		m_availableSamplerIndices = std::move(other.m_availableSamplerIndices);
-		m_transitionQueue         = std::move(other.m_transitionQueue);
-		m_textureBindingIndices   = std::move(other.m_textureBindingIndices);
-		m_samplerBindingIndices   = std::move(other.m_samplerBindingIndices);
+		m_device                = other.m_device;
+		m_memoryManager         = other.m_memoryManager;
+		m_textures              = std::move(other.m_textures);
+		m_samplers              = std::move(other.m_samplers);
+		m_transitionQueue       = std::move(other.m_transitionQueue);
+		m_textureBindingIndices = std::move(other.m_textureBindingIndices);
+		m_samplerBindingIndices = std::move(other.m_samplerBindingIndices);
 
 		return *this;
 	}

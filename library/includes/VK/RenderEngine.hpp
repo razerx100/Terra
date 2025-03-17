@@ -53,14 +53,14 @@ public:
 	// Should wait for the device to be idle before calling this.
 	size_t AddTextureAsCombined(STexture&& texture);
 
-	void UnbindCombinedTexture(size_t index);
+	void UnbindCombinedTexture(size_t textureIndex);
 	void UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex);
 	[[nodiscard]]
-	std::uint32_t BindCombinedTexture(size_t index);
+	std::uint32_t BindCombinedTexture(size_t textureIndex);
 	[[nodiscard]]
 	std::uint32_t BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
 
-	void RemoveTexture(size_t index);
+	void RemoveTexture(size_t textureIndex);
 
 	[[nodiscard]]
 	std::uint32_t AddCamera(std::shared_ptr<Camera> camera) noexcept
