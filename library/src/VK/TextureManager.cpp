@@ -108,7 +108,11 @@ std::optional<std::uint32_t> TextureStorage::GetAndRemoveCombinedLocalDescIndex(
 	std::optional<std::uint32_t> oLocalDescIndex{};
 
 	if (result != std::end(m_combinedCacheDetails))
+	{
 		oLocalDescIndex = result->localDescIndex;
+
+		m_combinedCacheDetails.erase(result);
+	}
 
 	return oLocalDescIndex;
 }

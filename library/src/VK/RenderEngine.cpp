@@ -94,6 +94,8 @@ std::uint32_t RenderEngine::UnbindCombinedTextureCommon(std::uint32_t textureBou
 
 	m_textureManager.SetLocalDescriptor<DescType>(globalDescriptor, localCacheIndex);
 
+	m_textureManager.SetLocalDescriptorAvailability<DescType>(localCacheIndex, false);
+
 	m_textureManager.SetAvailableIndex<DescType>(textureBoundIndex, true);
 
 	return localCacheIndex;
@@ -119,7 +121,7 @@ void RenderEngine::UnbindCombinedTexture(size_t textureIndex)
 
 std::uint32_t RenderEngine::BindCombinedTextureCommon(
 	VkTextureView const* textureView, VKSampler const* sampler,
-	std::optional<std::uint32_t> localCacheIndex
+	std::optional<std::uint32_t> oLocalCacheIndex
 ) {
 	static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
@@ -154,11 +156,15 @@ std::uint32_t RenderEngine::BindCombinedTextureCommon(
 
 	m_textureManager.SetAvailableIndex<DescType>(freeGlobalDescIndex, false);
 
-	if (localCacheIndex)
+	if (oLocalCacheIndex)
 	{
+		const std::uint32_t localCacheIndex = oLocalCacheIndex.value();
+
 		void const* localDescriptor = m_textureManager.GetLocalDescriptor<DescType>(
-			localCacheIndex.value()
+			localCacheIndex
 		);
+
+		m_textureManager.SetLocalDescriptorAvailability<DescType>(localCacheIndex, true);
 
 		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
@@ -181,6 +187,8 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	VkTextureView const* textureView = m_textureStorage.GetPtr(textureIndex);
 	VKSampler const* sampler         = m_textureStorage.GetSamplerPtr(samplerIndex);
 
+	// The current caching system only works for read only single textures which are bound to
+	// multiple descriptor buffers. Because we only cache one of them.
 	std::optional<std::uint32_t> localCacheIndex = m_textureStorage.GetAndRemoveCombinedLocalDescIndex(
 		static_cast<std::uint32_t>(textureIndex), static_cast<std::uint32_t>(samplerIndex)
 	);
@@ -208,7 +216,9 @@ void RenderEngine::RemoveTexture(size_t textureIndex)
 		= m_textureStorage.GetAndRemoveCombinedCacheDetailsTexture(u32Index);
 
 	for (std::uint32_t localCacheIndex : localCombinedCacheIndices)
-		m_textureManager.RemoveLocalDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(localCacheIndex);
+		m_textureManager.SetLocalDescriptorAvailability<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
+			localCacheIndex, true
+		);
 
 	const std::uint32_t globalDescriptorIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
 

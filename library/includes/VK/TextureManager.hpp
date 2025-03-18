@@ -330,11 +330,11 @@ public:
 	}
 
 	template<VkDescriptorType type>
-	void RemoveLocalDescriptor(std::uint32_t localDescIndex) noexcept
+	void SetLocalDescriptorAvailability(std::uint32_t localDescIndex, bool availability) noexcept
 	{
 		IndicesManager& localCaches = GetCaches<type>();
 
-		localCaches.ToggleAvailability(localDescIndex, false);
+		localCaches.ToggleAvailability(localDescIndex, availability);
 	}
 
 	template<VkDescriptorType type>
@@ -412,12 +412,12 @@ public:
 	}
 
 	template<VkDescriptorType type>
-	void SetAvailableIndex(std::uint32_t descriptorIndex, bool availablity) noexcept
+	void SetAvailableIndex(std::uint32_t descriptorIndex, bool availability) noexcept
 	{
 		IndicesManager& availableIndices = GetAvailableIndices<type>();
 
 		if (std::size(availableIndices) > descriptorIndex)
-			availableIndices.ToggleAvailability(static_cast<size_t>(descriptorIndex), availablity);
+			availableIndices.ToggleAvailability(static_cast<size_t>(descriptorIndex), availability);
 	}
 
 	// Use the global index to set the descriptor in the desired global descriptor buffer. If

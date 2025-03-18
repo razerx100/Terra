@@ -107,7 +107,7 @@ private:
 	[[nodiscard]]
 	std::uint32_t BindCombinedTextureCommon(
 		VkTextureView const* textureView, VKSampler const* sampler,
-		std::optional<std::uint32_t> localCacheIndex
+		std::optional<std::uint32_t> oLocalCacheIndex
 	);
 
 	[[nodiscard]]
