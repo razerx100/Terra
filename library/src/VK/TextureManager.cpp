@@ -79,6 +79,82 @@ void TextureStorage::RemoveSampler(size_t index)
 	// Don't need to destroy this like textures, as it doesn't require any buffer allocations.
 }
 
+void TextureStorage::SetCombinedCacheDetails(
+	std::uint32_t textureIndex, std::uint32_t samplerIndex, std::uint32_t localDescIndex
+) noexcept {
+	m_combinedCacheDetails.emplace_back(
+		CombinedCacheDetails
+		{
+			.textureIndex   = textureIndex,
+			.samplerIndex   = samplerIndex,
+			.localDescIndex = localDescIndex
+		}
+	);
+}
+
+std::optional<std::uint32_t> TextureStorage::GetAndRemoveCombinedLocalDescIndex(
+	std::uint32_t textureIndex, std::uint32_t samplerIndex
+) noexcept {
+	auto result = std::ranges::find_if(
+		m_combinedCacheDetails,
+		[textureIndex, samplerIndex]
+		(const CombinedCacheDetails& cacheDetails)
+		{
+			return cacheDetails.samplerIndex == samplerIndex
+				&& cacheDetails.textureIndex == textureIndex;
+		}
+	);
+
+	std::optional<std::uint32_t> oLocalDescIndex{};
+
+	if (result != std::end(m_combinedCacheDetails))
+		oLocalDescIndex = result->localDescIndex;
+
+	return oLocalDescIndex;
+}
+
+std::vector<std::uint32_t> TextureStorage::GetAndRemoveCombinedCacheDetailsTexture(
+	std::uint32_t textureIndex
+) noexcept {
+	std::vector<std::uint32_t> localDescDetails{};
+
+	std::erase_if(
+		m_combinedCacheDetails,
+		[textureIndex, &localDescDetails](const CombinedCacheDetails& cacheDetails)
+		{
+			const bool doesMatch = textureIndex == cacheDetails.textureIndex;
+
+			if (doesMatch)
+				localDescDetails.emplace_back(cacheDetails.localDescIndex);
+
+			return doesMatch;
+		}
+	);
+
+	return localDescDetails;
+}
+
+std::vector<std::uint32_t> TextureStorage::GetAndRemoveCombinedCacheDetailsSampler(
+	std::uint32_t samplerIndex
+) noexcept {
+	std::vector<std::uint32_t> localDescDetails{};
+
+	std::erase_if(
+		m_combinedCacheDetails,
+		[samplerIndex, &localDescDetails](const CombinedCacheDetails& cacheDetails)
+		{
+			const bool doesMatch = samplerIndex == cacheDetails.samplerIndex;
+
+			if (doesMatch)
+				localDescDetails.emplace_back(cacheDetails.localDescIndex);
+
+			return doesMatch;
+		}
+	);
+
+	return localDescDetails;
+}
+
 // Texture Manager
 void TextureManager::SetDescriptorBufferLayout(
 	VkDescriptorBuffer& descriptorBuffer, std::uint32_t combinedTexturesBindingSlot,

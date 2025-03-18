@@ -75,36 +75,40 @@ size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
 	return textureIndex;
 }
 
-void RenderEngine::UnbindCombinedTextureCommon(
-	std::uint32_t textureBoundIndex, const TextureManager::DescDetailsCombined& textureDetails
-) {
+std::uint32_t RenderEngine::UnbindCombinedTextureCommon(std::uint32_t textureBoundIndex)
+{
 	// This function shouldn't need to wait for the GPU to finish, as it isn't doing
 	// anything on the GPU side.
 	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-	if (!std::empty(m_graphicsDescriptorBuffers))
-	{
-		void const* globalDescriptor = m_graphicsDescriptorBuffers.front().GetDescriptor<DescType>(
-			s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, textureBoundIndex
-		);
+	assert(
+		!std::empty(m_graphicsDescriptorBuffers)
+		&& "The Descriptor Buffers should be created before calling this."
+	);
 
-		m_textureManager.SetLocalDescriptor<DescType>(globalDescriptor, textureDetails);
+	void const* globalDescriptor = m_graphicsDescriptorBuffers.front().GetDescriptor<DescType>(
+		s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, textureBoundIndex
+	);
 
-		m_textureManager.SetAvailableIndex<DescType>(textureBoundIndex, true);
-	}
+	const std::uint32_t localCacheIndex = m_textureManager.GetFirstFreeLocalDescriptor<DescType>();
+
+	m_textureManager.SetLocalDescriptor<DescType>(globalDescriptor, localCacheIndex);
+
+	m_textureManager.SetAvailableIndex<DescType>(textureBoundIndex, true);
+
+	return localCacheIndex;
 }
 
 void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex)
 {
 	const std::uint32_t globalDescIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
 
-	UnbindCombinedTextureCommon(
-		globalDescIndex,
-		TextureManager::DescDetailsCombined
-		{
-			.textureIndex = static_cast<std::uint32_t>(textureIndex),
-			.samplerIndex = static_cast<std::uint32_t>(samplerIndex)
-		}
+	const std::uint32_t localCacheIndex = UnbindCombinedTextureCommon(globalDescIndex);
+
+	m_textureStorage.SetCombinedCacheDetails(
+		static_cast<std::uint32_t>(textureIndex),
+		static_cast<std::uint32_t>(samplerIndex),
+		localCacheIndex
 	);
 }
 
@@ -115,7 +119,7 @@ void RenderEngine::UnbindCombinedTexture(size_t textureIndex)
 
 std::uint32_t RenderEngine::BindCombinedTextureCommon(
 	VkTextureView const* textureView, VKSampler const* sampler,
-	const TextureManager::DescDetailsCombined& textureDetails
+	std::optional<std::uint32_t> localCacheIndex
 ) {
 	static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
@@ -150,11 +154,11 @@ std::uint32_t RenderEngine::BindCombinedTextureCommon(
 
 	m_textureManager.SetAvailableIndex<DescType>(freeGlobalDescIndex, false);
 
-	auto localDesc = m_textureManager.GetLocalDescriptor<DescType>(textureDetails);
-
-	if (localDesc)
+	if (localCacheIndex)
 	{
-		void const* localDescriptor = localDesc.value();
+		void const* localDescriptor = m_textureManager.GetLocalDescriptor<DescType>(
+			localCacheIndex.value()
+		);
 
 		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
@@ -177,13 +181,12 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	VkTextureView const* textureView = m_textureStorage.GetPtr(textureIndex);
 	VKSampler const* sampler         = m_textureStorage.GetSamplerPtr(samplerIndex);
 
+	std::optional<std::uint32_t> localCacheIndex = m_textureStorage.GetAndRemoveCombinedLocalDescIndex(
+		static_cast<std::uint32_t>(textureIndex), static_cast<std::uint32_t>(samplerIndex)
+	);
+
 	const std::uint32_t freeGlobalDescIndex = BindCombinedTextureCommon(
-		textureView, sampler,
-		TextureManager::DescDetailsCombined
-		{
-			.textureIndex = static_cast<std::uint32_t>(textureIndex),
-			.samplerIndex = static_cast<std::uint32_t>(samplerIndex)
-		}
+		textureView, sampler, localCacheIndex
 	);
 
 	m_textureStorage.SetTextureBindingIndex(textureIndex, freeGlobalDescIndex);
@@ -201,10 +204,14 @@ void RenderEngine::RemoveTexture(size_t textureIndex)
 	// Could be either an only texture descriptor or multiple combined ones. Unbind all.
 	const auto u32Index = static_cast<std::uint32_t>(textureIndex);
 
-	m_textureManager.RemoveLocalDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(u32Index);
-	m_textureManager.RemoveCombinedLocalDescriptorTexture(u32Index);
+	std::vector<std::uint32_t> localCombinedCacheIndices
+		= m_textureStorage.GetAndRemoveCombinedCacheDetailsTexture(u32Index);
+
+	for (std::uint32_t localCacheIndex : localCombinedCacheIndices)
+		m_textureManager.RemoveLocalDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(localCacheIndex);
 
 	const std::uint32_t globalDescriptorIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
+
 	m_textureManager.SetAvailableIndex<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
 		globalDescriptorIndex, true
 	);

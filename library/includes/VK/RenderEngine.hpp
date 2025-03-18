@@ -107,12 +107,11 @@ private:
 	[[nodiscard]]
 	std::uint32_t BindCombinedTextureCommon(
 		VkTextureView const* textureView, VKSampler const* sampler,
-		const TextureManager::DescDetailsCombined& textureDetails
+		std::optional<std::uint32_t> localCacheIndex
 	);
 
-	void UnbindCombinedTextureCommon(
-		std::uint32_t textureBoundIndex, const TextureManager::DescDetailsCombined& textureDetails
-	);
+	[[nodiscard]]
+	std::uint32_t UnbindCombinedTextureCommon(std::uint32_t textureBoundIndex);
 
 public:
 	// External stuff
