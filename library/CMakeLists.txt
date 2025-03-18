@@ -44,7 +44,7 @@ if(MSVC)
 endif()
 
 if(MSVC)
-    target_compile_options(TerraLib PRIVATE /fp:fast /MP /Ot /W4 /Gy /std:c++20 /Zc:__cplusplus)
+    target_compile_options(TerraLib PRIVATE /fp:fast /MP /Ot /W4 /Gy /std:c++latest /Zc:__cplusplus)
 endif()
 
 include(FetchContent)

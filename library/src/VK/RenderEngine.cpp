@@ -120,8 +120,7 @@ std::uint32_t RenderEngine::BindCombinedTextureCommon(
 	static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
 
-	std::optional<std::uint32_t> oFreeGlobalDescIndex
-		= m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
+	std::optional<size_t> oFreeGlobalDescIndex = m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
 
 	// If there is no free global index, increase the limit. Right now it should be possible to
 	// have 65535 bound textures at once. There could be more textures.
@@ -147,7 +146,7 @@ std::uint32_t RenderEngine::BindCombinedTextureCommon(
 		ResetGraphicsPipeline();
 	}
 
-	const std::uint32_t freeGlobalDescIndex = oFreeGlobalDescIndex.value();
+	const auto freeGlobalDescIndex = static_cast<std::uint32_t>(oFreeGlobalDescIndex.value());
 
 	m_textureManager.SetAvailableIndex<DescType>(freeGlobalDescIndex, false);
 

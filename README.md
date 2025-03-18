@@ -14,4 +14,4 @@ Use the ADD_TEST_TERRA cmake flag to add unit testing.
 ## Requirements
 Vulkan SDK 1.3.\
 cmake 3.21+.\
-C++20 Standard supported Compiler.
+C++23 Standard supported Compiler (deducing this).

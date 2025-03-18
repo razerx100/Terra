@@ -194,11 +194,11 @@ class TextureManager
 
 public:
 	TextureManager(VkDevice device, MemoryManager* memoryManager)
-		: m_localDescBuffer{ device, memoryManager, localSetLayoutCount }, m_inactiveCombinedDescDetails{},
+		: m_availableIndicesCombinedTextures(s_combinedTextureDescriptorCount),
+		m_availableIndicesSampledTextures{}, m_availableIndicesSamplers{},
+		m_localDescBuffer{ device, memoryManager, localSetLayoutCount }, m_inactiveCombinedDescDetails{},
 		m_inactiveSampledDescDetails{}, m_inactiveSamplerDescDetails{},
-		m_availableIndicesCombinedTextures(s_combinedTextureDescriptorCount, true),
-		m_availableIndicesSampledTextures{},
-		m_availableIndicesSamplers{}, m_localCombinedDescCount{ 0u }, m_localSampledDescCount{ 0u },
+		m_localCombinedDescCount{ 0u }, m_localSampledDescCount{ 0u },
 		m_localSamplerDescCount{ 0u }
 	{}
 
@@ -221,20 +221,15 @@ public:
 	};
 
 private:
-	[[nodiscard]]
-	static std::optional<std::uint32_t> FindFreeIndex(
-		const std::vector<bool>& availableIndices
-	) noexcept;
+	IndicesManager                   m_availableIndicesCombinedTextures;
+	IndicesManager                   m_availableIndicesSampledTextures;
+	IndicesManager                   m_availableIndicesSamplers;
 
-private:
 	// It will be used for caching descriptors.
 	VkDescriptorBuffer               m_localDescBuffer;
 	std::vector<DescDetailsCombined> m_inactiveCombinedDescDetails;
 	std::vector<std::uint32_t>       m_inactiveSampledDescDetails;
 	std::vector<std::uint32_t>       m_inactiveSamplerDescDetails;
-	std::vector<bool>                m_availableIndicesCombinedTextures;
-	std::vector<bool>                m_availableIndicesSampledTextures;
-	std::vector<bool>                m_availableIndicesSamplers;
 	std::uint32_t                    m_localCombinedDescCount;
 	std::uint32_t                    m_localSampledDescCount;
 	std::uint32_t                    m_localSamplerDescCount;
@@ -254,26 +249,14 @@ private:
 
 	template<VkDescriptorType type>
 	[[nodiscard]]
-	const std::vector<bool>& GetAvailableIndices() const noexcept
+	auto&& GetAvailableIndices(this auto&& self) noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-			return m_availableIndicesSampledTextures;
+			return std::forward_like<decltype(self)>(self.m_availableIndicesSampledTextures);
 		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
-			return m_availableIndicesSamplers;
+			return std::forward_like<decltype(self)>(self.m_availableIndicesSamplers);
 		else
-			return m_availableIndicesCombinedTextures;
-	}
-
-	template<VkDescriptorType type>
-	[[nodiscard]]
-	std::vector<bool>& GetAvailableIndices() noexcept
-	{
-		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-			return m_availableIndicesSampledTextures;
-		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
-			return m_availableIndicesSamplers;
-		else
-			return m_availableIndicesCombinedTextures;
+			return std::forward_like<decltype(self)>(self.m_availableIndicesCombinedTextures);
 	}
 
 	template<VkDescriptorType type>
@@ -290,14 +273,14 @@ private:
 
 	template<VkDescriptorType type>
 	[[nodiscard]]
-	std::uint32_t& GetLocalDescCount() noexcept
+	auto&& GetLocalDescCount(this auto&& self) noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-			return m_localSampledDescCount;
+			return std::forward_like<decltype(self)>(self.m_localSampledDescCount);
 		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
-			return m_localSamplerDescCount;
+			return std::forward_like<decltype(self)>(self.m_localSamplerDescCount);
 		else
-			return m_localCombinedDescCount;
+			return std::forward_like<decltype(self)>(self.m_localCombinedDescCount);
 	}
 
 public:
@@ -310,23 +293,23 @@ public:
 		{
 			const size_t newSize =
 				std::size(m_availableIndicesCombinedTextures) + s_combinedTextureDescriptorCount;
-			m_availableIndicesCombinedTextures.resize(newSize, true);
+			m_availableIndicesCombinedTextures.Resize(newSize);
 		}
 		else if constexpr (DescType == TextureDescType::SampledTexture)
 		{
 			const size_t newSize =
 				std::size(m_availableIndicesSampledTextures) + s_sampledTextureDescriptorCount;
-			m_availableIndicesSampledTextures.resize(newSize, true);
+			m_availableIndicesSampledTextures.Resize(newSize);
 		}
 		else if constexpr (DescType == TextureDescType::Sampler)
 		{
 			const size_t newSize = std::size(m_availableIndicesSamplers) + s_samplerDescriptorCount;
-			m_availableIndicesSamplers.resize(newSize, true);
+			m_availableIndicesSamplers.Resize(newSize);
 		}
 	}
 
 	template<TextureDescType DescType>
-	size_t GetTotalDescriptorCount() noexcept
+	size_t GetTotalDescriptorCount() const noexcept
 	{
 		if constexpr (DescType == TextureDescType::CombinedTexture)
 			return std::size(m_availableIndicesCombinedTextures);
@@ -442,20 +425,20 @@ public:
 	// case, the available indices should be increased and the descriptor buffer should be recreated.
 	// This will only work if this object is the only object which is managing all the texture
 	// descriptors across all the descriptor buffers which are passed to it.
-	std::optional<std::uint32_t> GetFreeGlobalDescriptorIndex() const noexcept
+	std::optional<size_t> GetFreeGlobalDescriptorIndex() const noexcept
 	{
-		const std::vector<bool>& availableIndices = GetAvailableIndices<type>();
+		const IndicesManager& availableIndices = GetAvailableIndices<type>();
 
-		return FindFreeIndex(availableIndices);
+		return availableIndices.GetFirstAvailableIndex();
 	}
 
 	template<VkDescriptorType type>
 	void SetAvailableIndex(std::uint32_t descriptorIndex, bool availablity) noexcept
 	{
-		std::vector<bool>& availableIndices = GetAvailableIndices<type>();
+		IndicesManager& availableIndices = GetAvailableIndices<type>();
 
 		if (std::size(availableIndices) > descriptorIndex)
-			availableIndices[static_cast<size_t>(descriptorIndex)] = availablity;
+			availableIndices.ToggleAvailability(static_cast<size_t>(descriptorIndex), availablity);
 	}
 
 	// Use the global index to set the descriptor in the desired global descriptor buffer. If
@@ -466,26 +449,26 @@ public:
 	TextureManager& operator=(const TextureManager&) = delete;
 
 	TextureManager(TextureManager&& other) noexcept
-		: m_localDescBuffer{ std::move(other.m_localDescBuffer) },
+		: m_availableIndicesCombinedTextures{ std::move(other.m_availableIndicesCombinedTextures) },
+		m_availableIndicesSampledTextures{ std::move(other.m_availableIndicesSampledTextures) },
+		m_availableIndicesSamplers{ std::move(other.m_availableIndicesSamplers) },
+		m_localDescBuffer{ std::move(other.m_localDescBuffer) },
 		m_inactiveCombinedDescDetails{ std::move(other.m_inactiveCombinedDescDetails) },
 		m_inactiveSampledDescDetails{ std::move(other.m_inactiveSampledDescDetails) },
 		m_inactiveSamplerDescDetails{ std::move(other.m_inactiveSamplerDescDetails) },
-		m_availableIndicesCombinedTextures{ std::move(other.m_availableIndicesCombinedTextures) },
-		m_availableIndicesSampledTextures{ std::move(other.m_availableIndicesSampledTextures) },
-		m_availableIndicesSamplers{ std::move(other.m_availableIndicesSamplers) },
 		m_localCombinedDescCount{ other.m_localCombinedDescCount },
 		m_localSampledDescCount{ other.m_localSampledDescCount },
 		m_localSamplerDescCount{ other.m_localSamplerDescCount }
 	{}
 	TextureManager& operator=(TextureManager&& other) noexcept
 	{
+		m_availableIndicesCombinedTextures = std::move(other.m_availableIndicesCombinedTextures);
+		m_availableIndicesSampledTextures  = std::move(other.m_availableIndicesSampledTextures);
+		m_availableIndicesSamplers         = std::move(other.m_availableIndicesSamplers);
 		m_localDescBuffer                  = std::move(other.m_localDescBuffer);
 		m_inactiveCombinedDescDetails      = std::move(other.m_inactiveCombinedDescDetails);
 		m_inactiveSampledDescDetails       = std::move(other.m_inactiveSampledDescDetails);
 		m_inactiveSamplerDescDetails       = std::move(other.m_inactiveSamplerDescDetails);
-		m_availableIndicesCombinedTextures = std::move(other.m_availableIndicesCombinedTextures);
-		m_availableIndicesSampledTextures  = std::move(other.m_availableIndicesSampledTextures);
-		m_availableIndicesSamplers         = std::move(other.m_availableIndicesSamplers);
 		m_localCombinedDescCount           = other.m_localCombinedDescCount;
 		m_localSampledDescCount            = other.m_localSampledDescCount;
 		m_localSamplerDescCount            = other.m_localSamplerDescCount;

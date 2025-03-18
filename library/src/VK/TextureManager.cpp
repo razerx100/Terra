@@ -115,14 +115,3 @@ void TextureManager::SetDescriptorBufferLayout(
 			samplerDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 }
-
-std::optional<std::uint32_t> TextureManager::FindFreeIndex(
-	const std::vector<bool>& availableIndices
-) noexcept {
-	auto result = std::ranges::find(availableIndices, true);
-
-	if (result != std::end(availableIndices))
-		return static_cast<std::uint32_t>(std::distance(std::begin(availableIndices), result));
-
-	return {};
-}
