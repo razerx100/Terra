@@ -110,9 +110,6 @@ private:
 		std::optional<std::uint32_t> oLocalCacheIndex
 	);
 
-	[[nodiscard]]
-	std::uint32_t UnbindCombinedTextureCommon(std::uint32_t textureBoundIndex);
-
 public:
 	// External stuff
 	[[nodiscard]]

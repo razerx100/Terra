@@ -269,7 +269,7 @@ private:
 
 	template<VkDescriptorType type>
 	[[nodiscard]]
-	auto&& GetAvailableIndices(this auto&& self) noexcept
+	auto&& GetAvailableBindings(this auto&& self) noexcept
 	{
 		if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
 			return std::forward_like<decltype(self)>(self.m_availableIndicesSampledTextures);
@@ -295,7 +295,7 @@ public:
 	// Add new entries to the available indices container. After calling
 	// this, the descriptor buffer needs to be updated and recreated.
 	template<TextureDescType DescType>
-	void IncreaseAvailableIndices() noexcept
+	void IncreaseMaximumBindingCount() noexcept
 	{
 		if constexpr (DescType == TextureDescType::CombinedTexture)
 		{
@@ -314,19 +314,6 @@ public:
 			const size_t newSize = std::size(m_availableIndicesSamplers) + s_samplerDescriptorCount;
 			m_availableIndicesSamplers.Resize(newSize);
 		}
-	}
-
-	template<TextureDescType DescType>
-	size_t GetTotalDescriptorCount() const noexcept
-	{
-		if constexpr (DescType == TextureDescType::CombinedTexture)
-			return std::size(m_availableIndicesCombinedTextures);
-		else if constexpr (DescType == TextureDescType::SampledTexture)
-			return std::size(m_availableIndicesSampledTextures);
-		else if constexpr (DescType == TextureDescType::Sampler)
-			return std::size(m_availableIndicesSamplers);
-		else
-			return 0u;
 	}
 
 	template<VkDescriptorType type>
@@ -406,18 +393,18 @@ public:
 	[[nodiscard]]
 	std::optional<size_t> GetFreeGlobalDescriptorIndex() const noexcept
 	{
-		const IndicesManager& availableIndices = GetAvailableIndices<type>();
+		const IndicesManager& availableBindings = GetAvailableBindings<type>();
 
-		return availableIndices.GetFirstAvailableIndex();
+		return availableBindings.GetFirstAvailableIndex();
 	}
 
 	template<VkDescriptorType type>
-	void SetAvailableIndex(std::uint32_t descriptorIndex, bool availability) noexcept
+	void SetBindingAvailability(std::uint32_t descriptorIndex, bool availability) noexcept
 	{
-		IndicesManager& availableIndices = GetAvailableIndices<type>();
+		IndicesManager& availableBindings = GetAvailableBindings<type>();
 
-		if (std::size(availableIndices) > descriptorIndex)
-			availableIndices.ToggleAvailability(static_cast<size_t>(descriptorIndex), availability);
+		if (std::size(availableBindings) > descriptorIndex)
+			availableBindings.ToggleAvailability(static_cast<size_t>(descriptorIndex), availability);
 	}
 
 	// Use the global index to set the descriptor in the desired global descriptor buffer. If
