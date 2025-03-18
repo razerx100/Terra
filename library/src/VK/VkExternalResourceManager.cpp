@@ -2,7 +2,8 @@
 #include <limits>
 
 VkExternalResourceManager::VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager)
-	: m_resourceFactory{ device, memoryManager }, m_gfxExtensions{}, m_copyQueueDetails{}
+	: m_resourceFactory{ device, memoryManager }, m_gfxExtensions{}, m_copyQueueDetails{},
+	m_textureBindingIndices{}
 {}
 
 void VkExternalResourceManager::OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension)
@@ -166,4 +167,13 @@ void VkExternalResourceManager::CopyQueuedBuffers(const VKCommandBuffer& transfe
 
 		m_copyQueueDetails.clear();
 	}
+}
+
+void VkExternalResourceManager::SetTextureBindingIndex(
+	size_t textureIndex, std::uint32_t bindingIndex
+) noexcept {
+	if (std::size(m_textureBindingIndices) <= textureIndex)
+		m_textureBindingIndices.resize(textureIndex + 1u);
+
+	m_textureBindingIndices[textureIndex] = bindingIndex;
 }

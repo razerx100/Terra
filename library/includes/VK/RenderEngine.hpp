@@ -60,6 +60,16 @@ public:
 	[[nodiscard]]
 	std::uint32_t BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
 
+	void UnbindExternalTexture(size_t textureIndex);
+
+	void RebindExternalTexture(size_t textureIndex, std::uint32_t bindingIndex);
+	void RebindExternalTexture(size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex);
+
+	[[nodiscard]]
+	std::uint32_t BindExternalTexture(size_t textureIndex);
+	[[nodiscard]]
+	std::uint32_t BindExternalTexture(size_t textureIndex, size_t samplerIndex);
+
 	void RemoveTexture(size_t textureIndex);
 
 	[[nodiscard]]

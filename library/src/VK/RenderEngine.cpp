@@ -200,6 +200,58 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t index)
 	return BindCombinedTexture(index, m_textureStorage.GetDefaultSamplerIndex());
 }
 
+void RenderEngine::UnbindExternalTexture(size_t textureIndex)
+{
+	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	const std::uint32_t globalDescIndex = m_externalResourceManager.GetTextureBindingIndex(textureIndex);
+
+	m_textureManager.SetBindingAvailability<DescType>(globalDescIndex, true);
+}
+
+void RenderEngine::RebindExternalTexture(size_t textureIndex, std::uint32_t bindingIndex)
+{
+	RebindExternalTexture(textureIndex, m_textureStorage.GetDefaultSamplerIndex(), bindingIndex);
+}
+
+void RenderEngine::RebindExternalTexture(
+	size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex
+) {
+	VkExternalResourceFactory* resourceFactory = m_externalResourceManager.GetVkResourceFactory();
+
+	VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
+
+	VKSampler const* sampler         = m_textureStorage.GetSamplerPtr(samplerIndex);
+
+	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
+		descriptorBuffer.SetCombinedImageDescriptor(
+			*textureView, *sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, bindingIndex
+		);
+}
+
+std::uint32_t RenderEngine::BindExternalTexture(size_t textureIndex)
+{
+	return BindExternalTexture(textureIndex, m_textureStorage.GetDefaultSamplerIndex());
+}
+
+std::uint32_t RenderEngine::BindExternalTexture(size_t textureIndex, size_t samplerIndex)
+{
+	VkExternalResourceFactory* resourceFactory = m_externalResourceManager.GetVkResourceFactory();
+
+	VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
+
+	VKSampler const* sampler         = m_textureStorage.GetSamplerPtr(samplerIndex);
+
+	// Can't cache as the underlying resource might change or we might have a separate texture
+	// on each descriptor buffer.
+	const std::uint32_t freeGlobalDescIndex = BindCombinedTextureCommon(textureView, sampler, {});
+
+	m_externalResourceManager.SetTextureBindingIndex(textureIndex, freeGlobalDescIndex);
+
+	return freeGlobalDescIndex;
+}
+
 void RenderEngine::RemoveTexture(size_t textureIndex)
 {
 	// Could be either an only texture descriptor or multiple combined ones. Unbind all.
