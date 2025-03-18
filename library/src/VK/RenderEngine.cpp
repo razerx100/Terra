@@ -75,51 +75,53 @@ size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
 	return textureIndex;
 }
 
+void RenderEngine::UnbindCombinedTextureCommon(
+	std::uint32_t textureBoundIndex, const TextureManager::DescDetailsCombined& textureDetails
+) {
+	// This function shouldn't need to wait for the GPU to finish, as it isn't doing
+	// anything on the GPU side.
+	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	if (!std::empty(m_graphicsDescriptorBuffers))
+	{
+		void const* globalDescriptor = m_graphicsDescriptorBuffers.front().GetDescriptor<DescType>(
+			s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, textureBoundIndex
+		);
+
+		m_textureManager.SetLocalDescriptor<DescType>(globalDescriptor, textureDetails);
+
+		m_textureManager.SetAvailableIndex<DescType>(textureBoundIndex, true);
+	}
+}
+
+void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex)
+{
+	const std::uint32_t globalDescIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
+
+	UnbindCombinedTextureCommon(
+		globalDescIndex,
+		TextureManager::DescDetailsCombined
+		{
+			.textureIndex = static_cast<std::uint32_t>(textureIndex),
+			.samplerIndex = static_cast<std::uint32_t>(samplerIndex)
+		}
+	);
+}
+
 void RenderEngine::UnbindCombinedTexture(size_t textureIndex)
 {
 	UnbindCombinedTexture(textureIndex, m_textureStorage.GetDefaultSamplerIndex());
 }
 
-void RenderEngine::UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex)
-{
-	// This function shouldn't need to wait for the GPU to finish, as it isn't doing
-	// anything on the GPU side.
-	static constexpr VkDescriptorType DescType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-	const std::uint32_t globalDescIndex = m_textureStorage.GetTextureBindingIndex(textureIndex);
-
-	if (!std::empty(m_graphicsDescriptorBuffers))
-	{
-		void const* globalDescriptor = m_graphicsDescriptorBuffers.front().GetDescriptor<DescType>(
-			s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, globalDescIndex
-		);
-
-		m_textureManager.SetLocalDescriptor<DescType>(
-			globalDescriptor,
-			TextureManager::DescDetailsCombined{
-				.textureIndex = static_cast<std::uint32_t>(textureIndex),
-				.samplerIndex = static_cast<std::uint32_t>(samplerIndex)
-			}
-		);
-
-		m_textureManager.SetAvailableIndex<DescType>(globalDescIndex, true);
-	}
-}
-
-std::uint32_t RenderEngine::BindCombinedTexture(size_t index)
-{
-	return BindCombinedTexture(index, m_textureStorage.GetDefaultSamplerIndex());
-}
-
-std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
-{
+std::uint32_t RenderEngine::BindCombinedTextureCommon(
+	VkTextureView const* textureView, VKSampler const* sampler,
+	const TextureManager::DescDetailsCombined& textureDetails
+) {
 	static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
 
-	VkTextureView const* textureView = m_textureStorage.GetPtr(textureIndex);
-	VKSampler const* defaultSampler  = m_textureStorage.GetSamplerPtr(samplerIndex);
-
-	auto oFreeGlobalDescIndex        = m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
+	std::optional<std::uint32_t> oFreeGlobalDescIndex
+		= m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
 
 	// If there is no free global index, increase the limit. Right now it should be possible to
 	// have 65535 bound textures at once. There could be more textures.
@@ -148,14 +150,8 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	const std::uint32_t freeGlobalDescIndex = oFreeGlobalDescIndex.value();
 
 	m_textureManager.SetAvailableIndex<DescType>(freeGlobalDescIndex, false);
-	m_textureStorage.SetTextureBindingIndex(textureIndex, freeGlobalDescIndex);
 
-	auto localDesc = m_textureManager.GetLocalDescriptor<DescType>(
-		TextureManager::DescDetailsCombined{
-			.textureIndex = static_cast<std::uint32_t>(textureIndex),
-			.samplerIndex = static_cast<std::uint32_t>(samplerIndex)
-		}
-	);
+	auto localDesc = m_textureManager.GetLocalDescriptor<DescType>(textureDetails);
 
 	if (localDesc)
 	{
@@ -170,11 +166,35 @@ std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samp
 	else
 		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			descriptorBuffer.SetCombinedImageDescriptor(
-				*textureView, *defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+				*textureView, *sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 				s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex, freeGlobalDescIndex
 			);
 
 	return freeGlobalDescIndex;
+}
+
+std::uint32_t RenderEngine::BindCombinedTexture(size_t textureIndex, size_t samplerIndex)
+{
+	VkTextureView const* textureView = m_textureStorage.GetPtr(textureIndex);
+	VKSampler const* sampler         = m_textureStorage.GetSamplerPtr(samplerIndex);
+
+	const std::uint32_t freeGlobalDescIndex = BindCombinedTextureCommon(
+		textureView, sampler,
+		TextureManager::DescDetailsCombined
+		{
+			.textureIndex = static_cast<std::uint32_t>(textureIndex),
+			.samplerIndex = static_cast<std::uint32_t>(samplerIndex)
+		}
+	);
+
+	m_textureStorage.SetTextureBindingIndex(textureIndex, freeGlobalDescIndex);
+
+	return freeGlobalDescIndex;
+}
+
+std::uint32_t RenderEngine::BindCombinedTexture(size_t index)
+{
+	return BindCombinedTexture(index, m_textureStorage.GetDefaultSamplerIndex());
 }
 
 void RenderEngine::RemoveTexture(size_t textureIndex)

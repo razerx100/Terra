@@ -103,6 +103,17 @@ public:
 
 	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
 
+private:
+	[[nodiscard]]
+	std::uint32_t BindCombinedTextureCommon(
+		VkTextureView const* textureView, VKSampler const* sampler,
+		const TextureManager::DescDetailsCombined& textureDetails
+	);
+
+	void UnbindCombinedTextureCommon(
+		std::uint32_t textureBoundIndex, const TextureManager::DescDetailsCombined& textureDetails
+	);
+
 public:
 	// External stuff
 	[[nodiscard]]
