@@ -53,14 +53,14 @@ public:
 	// Should wait for the device to be idle before calling this.
 	size_t AddTextureAsCombined(STexture&& texture);
 
-	void UnbindCombinedTexture(size_t textureIndex);
-	void UnbindCombinedTexture(size_t textureIndex, size_t samplerIndex);
+	void UnbindCombinedTexture(size_t textureIndex, std::uint32_t bindingIndex);
+	void UnbindCombinedTexture(size_t textureIndex, std::uint32_t bindingIndex, size_t samplerIndex);
 	[[nodiscard]]
 	std::uint32_t BindCombinedTexture(size_t textureIndex);
 	[[nodiscard]]
 	std::uint32_t BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
 
-	void UnbindExternalTexture(size_t textureIndex);
+	void UnbindExternalTexture(std::uint32_t bindingIndex);
 
 	void RebindExternalTexture(size_t textureIndex, std::uint32_t bindingIndex);
 	void RebindExternalTexture(size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex);

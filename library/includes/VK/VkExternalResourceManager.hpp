@@ -45,14 +45,6 @@ public:
 
 	void SetGraphicsDescriptorLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
-	void SetTextureBindingIndex(size_t textureIndex, std::uint32_t bindingIndex) noexcept;
-
-	[[nodiscard]]
-	std::uint32_t GetTextureBindingIndex(size_t textureIndex) const noexcept
-	{
-		return m_textureBindingIndices[textureIndex];
-	}
-
 	[[nodiscard]]
 	ExternalResourceFactory* GetResourceFactory() noexcept override
 	{
@@ -96,7 +88,6 @@ private:
 	VkExternalResourceFactory      m_resourceFactory;
 	ReusableVector<GfxExtension_t> m_gfxExtensions;
 	std::vector<GPUCopyDetails>    m_copyQueueDetails;
-	std::vector<std::uint32_t>     m_textureBindingIndices;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
 
@@ -107,15 +98,13 @@ public:
 	VkExternalResourceManager(VkExternalResourceManager&& other) noexcept
 		: m_resourceFactory{ std::move(other.m_resourceFactory) },
 		m_gfxExtensions{ std::move(other.m_gfxExtensions) },
-		m_copyQueueDetails{ std::move(other.m_copyQueueDetails) },
-		m_textureBindingIndices{ std::move(other.m_textureBindingIndices) }
+		m_copyQueueDetails{ std::move(other.m_copyQueueDetails) }
 	{}
 	VkExternalResourceManager& operator=(VkExternalResourceManager&& other) noexcept
 	{
-		m_resourceFactory       = std::move(other.m_resourceFactory);
-		m_gfxExtensions         = std::move(other.m_gfxExtensions);
-		m_copyQueueDetails      = std::move(other.m_copyQueueDetails);
-		m_textureBindingIndices = std::move(other.m_textureBindingIndices);
+		m_resourceFactory  = std::move(other.m_resourceFactory);
+		m_gfxExtensions    = std::move(other.m_gfxExtensions);
+		m_copyQueueDetails = std::move(other.m_copyQueueDetails);
 
 		return *this;
 	}

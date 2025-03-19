@@ -2,15 +2,6 @@
 #include <VkResourceBarriers2.hpp>
 
 // Texture storage
-void TextureStorage::SetBindingIndex(
-	size_t index, std::uint32_t bindingIndex, std::vector<std::uint32_t>& bindingIndices
-) noexcept {
-	if (std::size(bindingIndices) <= index)
-		bindingIndices.resize(index + 1u);
-
-	bindingIndices[index] = bindingIndex;
-}
-
 size_t TextureStorage::AddTexture(
 	STexture&& texture, StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
 ) {

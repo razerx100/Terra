@@ -80,9 +80,9 @@ size_t RendererVK::AddTexture(STexture&& texture)
 	return m_terra.AddTextureAsCombined(std::move(texture));
 }
 
-void RendererVK::UnbindTexture(size_t textureIndex)
+void RendererVK::UnbindTexture(size_t textureIndex, std::uint32_t bindingIndex)
 {
-	m_terra.GetRenderEngine().UnbindCombinedTexture(textureIndex);
+	m_terra.GetRenderEngine().UnbindCombinedTexture(textureIndex, bindingIndex);
 }
 
 std::uint32_t RendererVK::BindTexture(size_t textureIndex)
@@ -90,9 +90,9 @@ std::uint32_t RendererVK::BindTexture(size_t textureIndex)
 	return m_terra.BindCombinedTexture(textureIndex);
 }
 
-void RendererVK::UnbindExternalTexture(size_t textureIndex)
+void RendererVK::UnbindExternalTexture(std::uint32_t bindingIndex)
 {
-	m_terra.GetRenderEngine().UnbindExternalTexture(textureIndex);
+	m_terra.GetRenderEngine().UnbindExternalTexture(bindingIndex);
 }
 
 void RendererVK::RebindExternalTexture(size_t textureIndex, std::uint32_t bindingIndex)
