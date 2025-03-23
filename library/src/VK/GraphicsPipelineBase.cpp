@@ -14,10 +14,13 @@ void ConfigurePipelineBuilder(
 		const bool isDepthFormatValid   = depthFormat != VK_FORMAT_UNDEFINED;
 		const bool isStencilFormatValid = stencilFormat != VK_FORMAT_UNDEFINED;
 
+		const VkBool32 depthWrite = graphicsExtPipeline.IsDepthWriteEnabled() ? VK_TRUE : VK_FALSE;
+
 		if (isDepthFormatValid || isStencilFormatValid)
 			builder.SetDepthStencilState(
 				DepthStencilStateBuilder{}.Enable(
-					isDepthFormatValid, isDepthFormatValid, VK_FALSE, isStencilFormatValid
+					isDepthFormatValid ? VK_TRUE : VK_FALSE, depthWrite, VK_FALSE,
+					isStencilFormatValid ? VK_TRUE : VK_FALSE
 				), depthFormat, stencilFormat
 			);
 	}
