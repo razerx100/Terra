@@ -32,12 +32,13 @@ std::uint32_t VkRenderPassManager::AddDepthOrStencilStartBarrier(
 }
 
 void VkRenderPassManager::SetDepthAttachment(
-	size_t barrierIndex, const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
+	std::uint32_t barrierIndex, const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
 	VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
 ) noexcept {
 	m_renderingInfoBuilder.SetDepthAttachment(depthView, clearValue, loadOp, storeOP);
 
-	m_startImageBarriers.SetImage(barrierIndex, depthView);
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetImage(barrierIndex, depthView);
 }
 
 void VkRenderPassManager::SetDepthClearColour(const VkClearDepthStencilValue& clearColour) noexcept
@@ -45,20 +46,22 @@ void VkRenderPassManager::SetDepthClearColour(const VkClearDepthStencilValue& cl
 	m_renderingInfoBuilder.SetDepthClearColour(clearColour);
 }
 
-void VkRenderPassManager::SetDepthView(size_t barrierIndex, const VKImageView& depthView) noexcept
+void VkRenderPassManager::SetDepthView(std::uint32_t barrierIndex, const VKImageView& depthView) noexcept
 {
 	m_renderingInfoBuilder.SetDepthView(depthView);
 
-	m_startImageBarriers.SetImage(barrierIndex, depthView);
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetImage(barrierIndex, depthView);
 }
 
 void VkRenderPassManager::SetStencilAttachment(
-	size_t barrierIndex, const VKImageView& stencilView, const VkClearDepthStencilValue& clearValue,
+	std::uint32_t barrierIndex, const VKImageView& stencilView, const VkClearDepthStencilValue& clearValue,
 	VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
 ) noexcept {
 	m_renderingInfoBuilder.SetStencilAttachment(stencilView, clearValue, loadOp, storeOP);
 
-	m_startImageBarriers.SetImage(barrierIndex, stencilView);
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetImage(barrierIndex, stencilView);
 }
 
 void VkRenderPassManager::SetStencilClearColour(const VkClearDepthStencilValue& clearColour) noexcept
@@ -66,19 +69,22 @@ void VkRenderPassManager::SetStencilClearColour(const VkClearDepthStencilValue& 
 	m_renderingInfoBuilder.SetStencilClearColour(clearColour);
 }
 
-void VkRenderPassManager::SetStencilView(size_t barrierIndex, const VKImageView& stencilView) noexcept
-{
+void VkRenderPassManager::SetStencilView(
+	std::uint32_t barrierIndex, const VKImageView& stencilView
+) noexcept {
 	m_renderingInfoBuilder.SetStencilView(stencilView);
 
-	m_startImageBarriers.SetImage(barrierIndex, stencilView);
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetImage(barrierIndex, stencilView);
 }
 
 void VkRenderPassManager::SetColourView(
-	size_t colourAttachmentIndex, size_t barrierIndex, const VKImageView& colourView
+	size_t colourAttachmentIndex, std::uint32_t barrierIndex, const VKImageView& colourView
 ) noexcept {
 	m_renderingInfoBuilder.SetColourView(colourAttachmentIndex, colourView);
 
-	m_startImageBarriers.SetImage(barrierIndex, colourView);
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetImage(barrierIndex, colourView);
 }
 
 void VkRenderPassManager::SetColourClearValue(
@@ -91,7 +97,8 @@ void VkRenderPassManager::StartPass(const VKCommandBuffer& graphicsCmdBuffer, Vk
 {
 	VkCommandBuffer cmdBuffer = graphicsCmdBuffer.Get();
 
-	m_startImageBarriers.RecordBarriers(cmdBuffer);
+	if (m_startImageBarriers.GetCount())
+		m_startImageBarriers.RecordBarriers(cmdBuffer);
 
 	VkRenderingInfo renderingInfo = m_renderingInfoBuilder.BuildRenderingInfo(renderArea);
 
@@ -155,9 +162,24 @@ void VkRenderPassManager::EndPassForSwapchain(
 std::uint32_t VkRenderPassManager::AddStartImageBarrier(
 	const ImageBarrierBuilder& barrierBuilder
 ) noexcept {
-	const std::uint32_t barrierIndex = m_startImageBarriers.GetCount();
+	auto barrierIndex = std::numeric_limits<std::uint32_t>::max();
 
-	m_startImageBarriers.AddMemoryBarrier(barrierBuilder);
+	const auto isBarrierRequired = [](const ImageBarrierBuilder& barrierBuilder) -> bool
+		{
+			const VkImageMemoryBarrier2& imageBarrier = barrierBuilder.Get();
+
+			const bool isAccessSame = imageBarrier.srcAccessMask == imageBarrier.dstAccessMask;
+			const bool isLayoutSame = imageBarrier.oldLayout == imageBarrier.newLayout;
+
+			return !isLayoutSame || !isAccessSame;
+		}(barrierBuilder);
+
+	if (isBarrierRequired)
+	{
+		barrierIndex = m_startImageBarriers.GetCount();
+
+		m_startImageBarriers.AddMemoryBarrier(barrierBuilder);
+	}
 
 	return barrierIndex;
 }

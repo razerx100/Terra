@@ -19,7 +19,7 @@ public:
 	{}
 
 	[[nodiscard]]
-	VkBarrierType Get() const noexcept { return m_barrier; }
+	const VkBarrierType& Get() const noexcept { return m_barrier; }
 
 protected:
 	void _queueIndices(std::uint32_t srcIndex, std::uint32_t dstIndex) noexcept
