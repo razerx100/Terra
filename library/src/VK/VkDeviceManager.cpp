@@ -6,7 +6,9 @@
 
 VkDeviceManager::VkDeviceManager()
 	: m_physicalDevice{ VK_NULL_HANDLE }, m_logicalDevice{ VK_NULL_HANDLE },
-	m_queueFamilyManager{}, m_extensionManager{}, m_featureManager{} {}
+	m_queueFamilyManager{ std::make_unique<VkQueueFamilyMananger>() }, m_extensionManager{},
+	m_featureManager{}
+{}
 
 VkDeviceManager::~VkDeviceManager() noexcept
 {
@@ -44,7 +46,7 @@ VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(
 		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
 	else
 	{
-		m_queueFamilyManager.SetQueueFamilyInfo(suitableDevice, surface.Get());
+		m_queueFamilyManager->SetQueueFamilyInfo(suitableDevice, surface.Get());
 		m_physicalDevice = suitableDevice;
 	}
 
@@ -61,7 +63,7 @@ VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(VkInstance instance
 		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
 	else
 	{
-		m_queueFamilyManager.SetQueueFamilyInfo(suitableDevice, VK_NULL_HANDLE);
+		m_queueFamilyManager->SetQueueFamilyInfo(suitableDevice, VK_NULL_HANDLE);
 		m_physicalDevice = suitableDevice;
 	}
 
@@ -108,8 +110,7 @@ VkDeviceManager& VkDeviceManager::SetDeviceFeatures(CoreVersion coreVersion)
 
 void VkDeviceManager::CreateLogicalDevice()
 {
-	VkQueueFamilyMananger::QueueCreateInfo queueCreateInfo =
-		m_queueFamilyManager.GetQueueCreateInfo();
+	VkQueueFamilyMananger::QueueCreateInfo queueCreateInfo = m_queueFamilyManager->GetQueueCreateInfo();
 
 	auto vkDeviceQueueCreateInfo = queueCreateInfo.GetDeviceQueueCreateInfo();
 
@@ -129,7 +130,7 @@ void VkDeviceManager::CreateLogicalDevice()
 
 	m_extensionManager.PopulateExtensionFunctions(m_logicalDevice);
 
-	m_queueFamilyManager.CreateQueues(m_logicalDevice);
+	m_queueFamilyManager->CreateQueues(m_logicalDevice);
 
 	m_featureManager.ClearFeatureChecks();
 }

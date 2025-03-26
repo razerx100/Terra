@@ -38,12 +38,12 @@ public:
 	[[nodiscard]]
 	const VkQueueFamilyMananger& GetQueueFamilyManager() const noexcept
 	{
-		return m_queueFamilyManager;
+		return *m_queueFamilyManager;
 	}
 	[[nodiscard]]
 	VkQueueFamilyMananger const* GetQueueFamilyManagerRef() const noexcept
 	{
-		return &m_queueFamilyManager;
+		return m_queueFamilyManager.get();
 	}
 	[[nodiscard]]
 	VkDeviceExtensionManager& ExtensionManager() noexcept { return m_extensionManager; }
@@ -67,11 +67,11 @@ private:
 	void SelfDestruct() noexcept;
 
 private:
-	VkPhysicalDevice         m_physicalDevice;
-	VkDevice                 m_logicalDevice;
-	VkQueueFamilyMananger    m_queueFamilyManager;
-	VkDeviceExtensionManager m_extensionManager;
-	VkFeatureManager         m_featureManager;
+	VkPhysicalDevice                       m_physicalDevice;
+	VkDevice                               m_logicalDevice;
+	std::unique_ptr<VkQueueFamilyMananger> m_queueFamilyManager;
+	VkDeviceExtensionManager               m_extensionManager;
+	VkFeatureManager                       m_featureManager;
 
 private:
 	template<typename T>
@@ -115,7 +115,7 @@ public:
 	VkDeviceManager(VkDeviceManager&& other) noexcept
 		: m_physicalDevice{ other.m_physicalDevice },
 		m_logicalDevice{ std::exchange(other.m_logicalDevice, VK_NULL_HANDLE) },
-		m_queueFamilyManager{ other.m_queueFamilyManager },
+		m_queueFamilyManager{ std::move(other.m_queueFamilyManager) },
 		m_extensionManager{ std::move(other.m_extensionManager) },
 		m_featureManager{ std::move(other.m_featureManager) }
 	{}
@@ -125,7 +125,7 @@ public:
 
 		m_physicalDevice     = other.m_physicalDevice;
 		m_logicalDevice      = std::exchange(other.m_logicalDevice, VK_NULL_HANDLE);
-		m_queueFamilyManager = other.m_queueFamilyManager;
+		m_queueFamilyManager = std::move(other.m_queueFamilyManager);
 		m_extensionManager   = std::move(other.m_extensionManager);
 		m_featureManager     = std::move(other.m_featureManager);
 
