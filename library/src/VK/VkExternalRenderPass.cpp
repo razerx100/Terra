@@ -1,5 +1,24 @@
+#include <array>
 #include <VkExternalRenderPass.hpp>
 
+struct TransitionData
+{
+	VkAccessFlagBits        access;
+	VkImageLayout           layout;
+	VkPipelineStageFlagBits pipelineStage;
+};
+
+static constexpr std::array s_externalTextureTransitionMap
+{
+	TransitionData
+	{
+		.access        = VK_ACCESS_SHADER_READ_BIT,
+		.layout        = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+	} // FragmentShaderReadOnly
+};
+
+// VK External Render Pass
 VkExternalRenderPass::VkExternalRenderPass(VkExternalResourceFactory* resourceFactory)
 	: m_resourceFactory{ resourceFactory }, m_renderPassManager{}, m_pipelineDetails{},
 	m_colourAttachmentDetails{},
@@ -118,6 +137,29 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 			index, colourAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
 		);
 	}
+}
+
+std::uint32_t VkExternalRenderPass::AddStartBarrier(
+	std::uint32_t externalTextureIndex, ExternalTextureTransition transitionState
+) noexcept {
+	const TransitionData transitionData
+		= s_externalTextureTransitionMap[static_cast<size_t>(transitionState)];
+
+	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+
+	return m_renderPassManager.AddStartImageBarrier(
+		externalTexture->TransitionState(
+			transitionData.access, transitionData.layout, transitionData.pipelineStage
+		)
+	);
+}
+
+void VkExternalRenderPass::UpdateStartBarrierResource(
+	std::uint32_t barrierIndex, std::uint32_t externalTextureIndex
+) noexcept {
+	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+
+	m_renderPassManager.SetBarrierImageView(barrierIndex, externalTexture->GetTextureView().GetView());
 }
 
 void VkExternalRenderPass::SetDepthTesting(

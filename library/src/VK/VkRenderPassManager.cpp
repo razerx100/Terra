@@ -7,14 +7,20 @@ void VkRenderPassManager::AddColourAttachment(
 	m_renderingInfoBuilder.AddColourAttachment(colourView, clearValue, loadOp, storeOP);
 }
 
+void VkRenderPassManager::SetBarrierImageView(
+	std::uint32_t barrierIndex, const VKImageView& imageView
+) noexcept {
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetImage(barrierIndex, imageView);
+}
+
 void VkRenderPassManager::SetDepthAttachment(
 	std::uint32_t barrierIndex, const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
 	VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
 ) noexcept {
 	m_renderingInfoBuilder.SetDepthAttachment(depthView, clearValue, loadOp, storeOP);
 
-	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
-		m_startImageBarriers.SetImage(barrierIndex, depthView);
+	SetBarrierImageView(barrierIndex, depthView);
 }
 
 void VkRenderPassManager::SetDepthClearColour(const VkClearDepthStencilValue& clearColour) noexcept
@@ -26,8 +32,7 @@ void VkRenderPassManager::SetDepthView(std::uint32_t barrierIndex, const VKImage
 {
 	m_renderingInfoBuilder.SetDepthView(depthView);
 
-	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
-		m_startImageBarriers.SetImage(barrierIndex, depthView);
+	SetBarrierImageView(barrierIndex, depthView);
 }
 
 void VkRenderPassManager::SetStencilAttachment(
@@ -36,8 +41,7 @@ void VkRenderPassManager::SetStencilAttachment(
 ) noexcept {
 	m_renderingInfoBuilder.SetStencilAttachment(stencilView, clearValue, loadOp, storeOP);
 
-	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
-		m_startImageBarriers.SetImage(barrierIndex, stencilView);
+	SetBarrierImageView(barrierIndex, stencilView);
 }
 
 void VkRenderPassManager::SetStencilClearColour(const VkClearDepthStencilValue& clearColour) noexcept
@@ -50,8 +54,7 @@ void VkRenderPassManager::SetStencilView(
 ) noexcept {
 	m_renderingInfoBuilder.SetStencilView(stencilView);
 
-	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
-		m_startImageBarriers.SetImage(barrierIndex, stencilView);
+	SetBarrierImageView(barrierIndex, stencilView);
 }
 
 void VkRenderPassManager::SetColourView(
@@ -59,8 +62,7 @@ void VkRenderPassManager::SetColourView(
 ) noexcept {
 	m_renderingInfoBuilder.SetColourView(colourAttachmentIndex, colourView);
 
-	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
-		m_startImageBarriers.SetImage(barrierIndex, colourView);
+	SetBarrierImageView(barrierIndex, colourView);
 }
 
 void VkRenderPassManager::SetColourClearValue(

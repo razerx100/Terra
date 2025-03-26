@@ -183,7 +183,10 @@ public:
 		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
 	) noexcept;
 
+	[[nodiscard]]
 	std::uint32_t AddStartImageBarrier(const ImageBarrierBuilder& barrierBuilder) noexcept;
+
+	void SetBarrierImageView(std::uint32_t barrierIndex, const VKImageView& imageView) noexcept;
 
 	// These functions can be used every frame.
 	void SetDepthAttachment(
