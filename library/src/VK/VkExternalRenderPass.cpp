@@ -135,10 +135,18 @@ void VkExternalRenderPass::SetDepthTesting(
 
 	m_depthAttachmentDetails.textureIndex = externalTextureIndex;
 
+	// Set the previous stage to Early fragment if it is the first use as that's why depth/stencil
+	// testing starts.
+	if (externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE)
+		externalTexture->SetCurrentPipelineStage(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+
 	std::uint32_t& depthBarrierIndex      = m_depthAttachmentDetails.barrierIndex;
 
-	depthBarrierIndex = m_renderPassManager.AddDepthOrStencilStartBarrier(
-		externalTexture->TransitionState(newAccessFlag, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+	depthBarrierIndex = m_renderPassManager.AddStartImageBarrier(
+		externalTexture->TransitionState(
+			newAccessFlag, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+		)
 	);
 
 	VkClearDepthStencilValue clearValue{ .depth = 1.f };
@@ -168,10 +176,18 @@ void VkExternalRenderPass::SetStencilTesting(
 
 	m_stencilAttachmentDetails.textureIndex = externalTextureIndex;
 
+	// Set the previous stage to Early fragment if it is the first use as that's why depth/stencil
+	// testing starts.
+	if (externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE)
+		externalTexture->SetCurrentPipelineStage(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+
 	std::uint32_t& stencilBarrierIndex      = m_stencilAttachmentDetails.barrierIndex;
 
-	stencilBarrierIndex = m_renderPassManager.AddDepthOrStencilStartBarrier(
-		externalTexture->TransitionState(newAccessFlag, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL)
+	stencilBarrierIndex = m_renderPassManager.AddStartImageBarrier(
+		externalTexture->TransitionState(
+			newAccessFlag, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+		)
 	);
 
 	VkClearDepthStencilValue clearValue{ .stencil = 0u };
@@ -199,8 +215,16 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 
 	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
 
-	const std::uint32_t colourBarrierIndex = m_renderPassManager.AddColourStartBarrier(
-		externalTexture->TransitionState(newAccessFlag, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	// Set the previous stage to COLOUR ATTACHMENT OUTPUT if it is the first use as the top of
+	// the pipeline bit doesn't queue a wait operation
+	if (externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE)
+		externalTexture->SetCurrentPipelineStage(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+	const std::uint32_t colourBarrierIndex = m_renderPassManager.AddStartImageBarrier(
+		externalTexture->TransitionState(
+			newAccessFlag, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+		)
 	);
 
 	const auto renderTargetIndex = static_cast<std::uint32_t>(std::size(m_colourAttachmentDetails));

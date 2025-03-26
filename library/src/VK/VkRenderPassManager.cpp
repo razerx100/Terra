@@ -7,30 +7,6 @@ void VkRenderPassManager::AddColourAttachment(
 	m_renderingInfoBuilder.AddColourAttachment(colourView, clearValue, loadOp, storeOP);
 }
 
-std::uint32_t VkRenderPassManager::AddColourStartBarrier(ImageBarrierBuilder& barrierBuilder) noexcept
-{
-	barrierBuilder.StageMasks(
-		// The top of the pipeline bit doesn't queue a wait operation. So, have to wait for
-		// the threads from the previous Colour attachment output.
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-	);
-
-	return AddStartImageBarrier(barrierBuilder);
-}
-
-std::uint32_t VkRenderPassManager::AddDepthOrStencilStartBarrier(
-	ImageBarrierBuilder& barrierBuilder
-) noexcept {
-	// Wait for all the threads from one Early Fragment Tests to the next one.
-	barrierBuilder.StageMasks(
-		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-		VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
-	);
-
-	return AddStartImageBarrier(barrierBuilder);
-}
-
 void VkRenderPassManager::SetDepthAttachment(
 	std::uint32_t barrierIndex, const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
 	VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP

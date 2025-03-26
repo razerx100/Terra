@@ -183,25 +183,7 @@ public:
 		VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
 	) noexcept;
 
-	[[nodiscard]]
-	// The Stage masks will be overwritten.
-	std::uint32_t AddColourStartBarrier(ImageBarrierBuilder& barrierBuilder) noexcept;
-	[[nodiscard]]
-	// The Stage masks will be overwritten.
-	std::uint32_t AddColourStartBarrier(ImageBarrierBuilder&& barrierBuilder) noexcept
-	{
-		return AddColourStartBarrier(barrierBuilder);
-	}
-
-	[[nodiscard]]
-	// The Stage masks will be overwritten.
-	std::uint32_t AddDepthOrStencilStartBarrier(ImageBarrierBuilder& barrierBuilder) noexcept;
-	[[nodiscard]]
-	// The Stage masks will be overwritten.
-	std::uint32_t AddDepthOrStencilStartBarrier(ImageBarrierBuilder&& barrierBuilder) noexcept
-	{
-		return AddDepthOrStencilStartBarrier(barrierBuilder);
-	}
+	std::uint32_t AddStartImageBarrier(const ImageBarrierBuilder& barrierBuilder) noexcept;
 
 	// These functions can be used every frame.
 	void SetDepthAttachment(
@@ -230,10 +212,6 @@ public:
 		const VKCommandBuffer& graphicsCmdBuffer, const VKImageView& srcColourView,
 		const VKImageView& swapchainBackBuffer, const VkExtent3D& srcColourExtent
 	) const noexcept;
-
-private:
-	[[nodiscard]]
-	std::uint32_t AddStartImageBarrier(const ImageBarrierBuilder& barrierBuilder) noexcept;
 
 private:
 	RenderingInfoBuilder m_renderingInfoBuilder;

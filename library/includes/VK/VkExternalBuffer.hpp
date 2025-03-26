@@ -66,20 +66,31 @@ public:
 		return Extent{ .width = vkExtent.width, .height = vkExtent.height };
 	}
 
+	void SetCurrentPipelineStage(VkPipelineStageFlagBits newStage) noexcept
+	{
+		m_currentPipelineStage = newStage;
+	}
+
 	[[nodiscard]]
+	VkPipelineStageFlagBits GetCurrentPipelineStage() const noexcept { return m_currentPipelineStage; }
+
 	// This actually won't change the state. Need to use the barrier builder and then execute it
 	// on a CommandQueue. Need to get the barrier builder through this function, so we can remember
 	// the state of the texture.
-	ImageBarrierBuilder TransitionState(VkAccessFlagBits newAccess, VkImageLayout newLayout) noexcept;
+	[[nodiscard]]
+	ImageBarrierBuilder TransitionState(
+		VkAccessFlagBits newAccess, VkImageLayout newLayout, VkPipelineStageFlagBits newStage
+	) noexcept;
 
 	[[nodiscard]]
 	const VkTextureView& GetTextureView() const noexcept { return m_textureView; }
 
 private:
-	VkTextureView    m_textureView;
+	VkTextureView           m_textureView;
 	// For now I don't need to use Access2, so using Access 1 to save memory.
-	VkAccessFlagBits m_currentAccessState;
-	VkImageLayout    m_currentLayoutState;
+	VkAccessFlagBits        m_currentAccessState;
+	VkImageLayout           m_currentLayoutState;
+	VkPipelineStageFlagBits m_currentPipelineStage;
 
 public:
 	VkExternalTexture(const VkExternalTexture&) = delete;
@@ -88,13 +99,15 @@ public:
 	VkExternalTexture(VkExternalTexture&& other) noexcept
 		: m_textureView{ std::move(other.m_textureView) },
 		m_currentAccessState{ other.m_currentAccessState },
-		m_currentLayoutState{ other.m_currentLayoutState }
+		m_currentLayoutState{ other.m_currentLayoutState },
+		m_currentPipelineStage{ other.m_currentPipelineStage }
 	{}
 	VkExternalTexture& operator=(VkExternalTexture&& other) noexcept
 	{
-		m_textureView        = std::move(other.m_textureView);
-		m_currentAccessState = other.m_currentAccessState;
-		m_currentLayoutState = other.m_currentLayoutState;
+		m_textureView          = std::move(other.m_textureView);
+		m_currentAccessState   = other.m_currentAccessState;
+		m_currentLayoutState   = other.m_currentLayoutState;
+		m_currentPipelineStage = other.m_currentPipelineStage;
 
 		return *this;
 	}

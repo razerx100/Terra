@@ -17,7 +17,8 @@ void VkExternalBuffer::Create(size_t bufferSize)
 // External Texture
 VkExternalTexture::VkExternalTexture(VkDevice device, MemoryManager* memoryManager)
 	: m_textureView{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT },
-	m_currentAccessState{ VK_ACCESS_NONE }, m_currentLayoutState{ VK_IMAGE_LAYOUT_UNDEFINED }
+	m_currentAccessState{ VK_ACCESS_NONE }, m_currentLayoutState{ VK_IMAGE_LAYOUT_UNDEFINED },
+	m_currentPipelineStage{ VK_PIPELINE_STAGE_NONE }
 {}
 
 void VkExternalTexture::Destroy() noexcept
@@ -64,7 +65,7 @@ void VkExternalTexture::Create(
 }
 
 ImageBarrierBuilder VkExternalTexture::TransitionState(
-	VkAccessFlagBits newAccess, VkImageLayout newLayout
+	VkAccessFlagBits newAccess, VkImageLayout newLayout, VkPipelineStageFlagBits newStage
 ) noexcept {
 	// From my current understanding, Vulkan doesn't do implicit layout/access transition like Dx12.
 	// We can however define the previous layout as Undefined and that will make the stored data
@@ -75,10 +76,12 @@ ImageBarrierBuilder VkExternalTexture::TransitionState(
 	builder
 		.Image(m_textureView)
 		.AccessMasks(m_currentAccessState, newAccess)
+		.StageMasks(m_currentPipelineStage, newStage)
 		.Layouts(m_currentLayoutState, newLayout);
 
-	m_currentAccessState = newAccess;
-	m_currentLayoutState = newLayout;
+	m_currentAccessState   = newAccess;
+	m_currentLayoutState   = newLayout;
+	m_currentPipelineStage = newStage;
 
 	return builder;
 }
