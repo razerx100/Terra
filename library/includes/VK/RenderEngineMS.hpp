@@ -63,7 +63,7 @@ private:
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
-		m_modelBuffers.Update(frameIndex);
+		m_modelBuffers->Update(frameIndex);
 	}
 
 private:

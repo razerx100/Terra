@@ -10,14 +10,14 @@ void RenderEngineMSDeviceExtension::SetDeviceExtensions(
 
 RenderEngineMS::RenderEngineMS(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
-) : RenderEngineCommon{
-		deviceManager, std::move(threadPool), frameCount, std::make_unique<ModelManagerMS>(),
-		ModelBuffers{
-			deviceManager.GetLogicalDevice(), m_memoryManager.get(), static_cast<std::uint32_t>(frameCount),
-			{}
-		}
-	}
+) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
+	m_modelManager = std::make_unique<ModelManagerMS>();
+	m_modelBuffers = std::make_unique<ModelBuffers>(
+		deviceManager.GetLogicalDevice(), m_memoryManager.get(), static_cast<std::uint32_t>(frameCount),
+		std::vector<std::uint32_t>{}
+	);
+
 	SetGraphicsDescriptorBufferLayout();
 
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
@@ -81,10 +81,10 @@ void RenderEngineMS::SetModelGraphicsDescriptors()
 		VkDescriptorBuffer& descriptorBuffer = m_graphicsDescriptorBuffers[index];
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers.SetDescriptorBuffer(
+		m_modelBuffers->SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex
 		);
-		m_modelBuffers.SetFragmentDescriptorBuffer(
+		m_modelBuffers->SetFragmentDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex
 		);
 	}
@@ -92,7 +92,7 @@ void RenderEngineMS::SetModelGraphicsDescriptors()
 
 std::uint32_t RenderEngineMS::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
-	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, m_modelBuffers);
+	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, *m_modelBuffers);
 
 	const std::uint32_t index = m_modelManager->AddModelBundle(
 		std::move(modelBundle), std::move(modelBufferIndices)

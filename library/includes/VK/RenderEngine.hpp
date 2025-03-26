@@ -268,11 +268,9 @@ protected:
 
 public:
 	RenderEngineCommon(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount,
-		std::unique_ptr<ModelManager_t> modelManager, ModelBuffers&& modelBuffers
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
-		m_modelManager{ std::move(modelManager) },
-		m_modelBuffers{ std::move(modelBuffers) },
+		m_modelManager{}, m_modelBuffers{},
 		m_meshManager{
 			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
@@ -319,7 +317,7 @@ public:
 
 	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override
 	{
-		m_modelBuffers.Remove(m_modelManager->RemoveModelBundle(bundleIndex));
+		m_modelBuffers->Remove(m_modelManager->RemoveModelBundle(bundleIndex));
 	}
 
 	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged) override
@@ -452,7 +450,7 @@ protected:
 
 protected:
 	std::unique_ptr<ModelManager_t>        m_modelManager;
-	ModelBuffers                           m_modelBuffers;
+	std::unique_ptr<ModelBuffers>          m_modelBuffers;
 	MeshManager_t                          m_meshManager;
 	PipelineManager<GraphicsPipeline_t>    m_graphicsPipelineManager;
 	ReusableVector<ExternalRenderPassSP_t> m_renderPasses;
