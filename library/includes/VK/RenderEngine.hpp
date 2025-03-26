@@ -125,7 +125,7 @@ public:
 	[[nodiscard]]
 	ExternalResourceManager* GetExternalResourceManager() noexcept
 	{
-		return &m_externalResourceManager;
+		return m_externalResourceManager.get();
 	}
 
 	void UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails);
@@ -192,22 +192,22 @@ protected:
 	static constexpr std::uint32_t s_samplerBindingSlot         = 3u;
 
 protected:
-	std::shared_ptr<ThreadPool>     m_threadPool;
-	MemoryManager                   m_memoryManager;
-	VkGraphicsQueue                 m_graphicsQueue;
-	std::vector<VKSemaphore>        m_graphicsWait;
-	VkCommandQueue                  m_transferQueue;
-	std::vector<VKSemaphore>        m_transferWait;
-	StagingBufferManager            m_stagingManager;
-	VkExternalResourceManager       m_externalResourceManager;
-	std::vector<VkDescriptorBuffer> m_graphicsDescriptorBuffers;
-	PipelineLayout                  m_graphicsPipelineLayout;
-	TextureStorage                  m_textureStorage;
-	TextureManager                  m_textureManager;
-	CameraManager                   m_cameraManager;
-	ViewportAndScissorManager       m_viewportAndScissors;
-	TemporaryDataBufferGPU          m_temporaryDataBuffer;
-	bool                            m_copyNecessary;
+	std::shared_ptr<ThreadPool>                m_threadPool;
+	std::unique_ptr<MemoryManager>             m_memoryManager;
+	VkGraphicsQueue                            m_graphicsQueue;
+	std::vector<VKSemaphore>                   m_graphicsWait;
+	VkCommandQueue                             m_transferQueue;
+	std::vector<VKSemaphore>                   m_transferWait;
+	StagingBufferManager                       m_stagingManager;
+	std::unique_ptr<VkExternalResourceManager> m_externalResourceManager;
+	std::vector<VkDescriptorBuffer>            m_graphicsDescriptorBuffers;
+	PipelineLayout                             m_graphicsPipelineLayout;
+	TextureStorage                             m_textureStorage;
+	TextureManager                             m_textureManager;
+	CameraManager                              m_cameraManager;
+	ViewportAndScissorManager                  m_viewportAndScissors;
+	TemporaryDataBufferGPU                     m_temporaryDataBuffer;
+	bool                                       m_copyNecessary;
 
 public:
 	RenderEngine(const RenderEngine&) = delete;
@@ -269,12 +269,12 @@ protected:
 public:
 	RenderEngineCommon(
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount,
-		ModelManager_t&& modelManager, ModelBuffers&& modelBuffers
+		std::unique_ptr<ModelManager_t> modelManager, ModelBuffers&& modelBuffers
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
 		m_modelManager{ std::move(modelManager) },
 		m_modelBuffers{ std::move(modelBuffers) },
 		m_meshManager{
-			deviceManager.GetLogicalDevice(), &m_memoryManager,
+			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
 		},
 		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() },
@@ -302,7 +302,7 @@ public:
 		std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
 		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
 	) override {
-		m_modelManager.ChangeModelPipeline(
+		m_modelManager->ChangeModelPipeline(
 			modelBundleIndex, modelIndex, oldPipelineIndex, newPipelineIndex
 		);
 	}
@@ -319,7 +319,7 @@ public:
 
 	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override
 	{
-		m_modelBuffers.Remove(m_modelManager.RemoveModelBundle(bundleIndex));
+		m_modelBuffers.Remove(m_modelManager->RemoveModelBundle(bundleIndex));
 	}
 
 	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged) override
@@ -366,7 +366,7 @@ public:
 		return static_cast<std::uint32_t>(
 			m_renderPasses.Add(
 				std::make_shared<ExternalRenderPass_t>(
-					&m_modelManager, m_externalResourceManager.GetVkResourceFactory()
+					m_modelManager.get(), m_externalResourceManager->GetVkResourceFactory()
 				)
 			)
 		);
@@ -393,7 +393,7 @@ public:
 	void SetSwapchainExternalRenderPass() override
 	{
 		m_swapchainRenderPass = std::make_shared<ExternalRenderPass_t>(
-			&m_modelManager, m_externalResourceManager.GetVkResourceFactory()
+			m_modelManager.get(), m_externalResourceManager->GetVkResourceFactory()
 		);
 	}
 
@@ -432,7 +432,7 @@ protected:
 
 		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 
-		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
+		m_externalResourceManager->UpdateExtensionData(static_cast<size_t>(frameIndex));
 	}
 
 	void CreateGraphicsPipelineLayout()
@@ -451,7 +451,7 @@ protected:
 	}
 
 protected:
-	ModelManager_t                         m_modelManager;
+	std::unique_ptr<ModelManager_t>        m_modelManager;
 	ModelBuffers                           m_modelBuffers;
 	MeshManager_t                          m_meshManager;
 	PipelineManager<GraphicsPipeline_t>    m_graphicsPipelineManager;

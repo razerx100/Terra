@@ -22,7 +22,7 @@ RenderEngine::RenderEngine(
 	VkQueueFamilyMananger const* queueFamilyManager, std::shared_ptr<ThreadPool> threadPool,
 	size_t frameCount
 ) : m_threadPool{ std::move(threadPool) },
-	m_memoryManager{ physicalDevice, logicalDevice, 20_MB, 400_KB },
+	m_memoryManager{ std::make_unique<MemoryManager>(physicalDevice, logicalDevice, 20_MB, 400_KB) },
 	m_graphicsQueue{
 		logicalDevice,
 		queueFamilyManager->GetQueue(QueueType::GraphicsQueue),
@@ -33,13 +33,15 @@ RenderEngine::RenderEngine(
 		queueFamilyManager->GetQueue(QueueType::TransferQueue),
 		queueFamilyManager->GetIndex(QueueType::TransferQueue)
 	}, m_transferWait{},
-	m_stagingManager{ logicalDevice, &m_memoryManager, m_threadPool.get(), queueFamilyManager },
-	m_externalResourceManager{ logicalDevice, &m_memoryManager },
+	m_stagingManager{ logicalDevice, m_memoryManager.get(), m_threadPool.get(), queueFamilyManager},
+	m_externalResourceManager{
+		std::make_unique<VkExternalResourceManager>(logicalDevice, m_memoryManager.get())
+	},
 	m_graphicsDescriptorBuffers{},
 	m_graphicsPipelineLayout{ logicalDevice },
-	m_textureStorage{ logicalDevice, &m_memoryManager },
-	m_textureManager{ logicalDevice, &m_memoryManager },
-	m_cameraManager{ logicalDevice, &m_memoryManager },
+	m_textureStorage{ logicalDevice, m_memoryManager.get() },
+	m_textureManager{ logicalDevice, m_memoryManager.get() },
+	m_cameraManager{ logicalDevice, m_memoryManager.get() },
 	m_viewportAndScissors{}, m_temporaryDataBuffer{}, m_copyNecessary{ false }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
@@ -47,7 +49,7 @@ RenderEngine::RenderEngine(
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
 		m_graphicsDescriptorBuffers.emplace_back(
-			logicalDevice, &m_memoryManager, s_graphicsPipelineSetLayoutCount
+			logicalDevice, m_memoryManager.get(), s_graphicsPipelineSetLayoutCount
 		);
 
 		// The graphics Wait semaphores will be used by the Swapchain, which doesn't support
@@ -208,7 +210,7 @@ void RenderEngine::RebindExternalTexture(size_t textureIndex, std::uint32_t bind
 void RenderEngine::RebindExternalTexture(
 	size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex
 ) {
-	VkExternalResourceFactory* resourceFactory = m_externalResourceManager.GetVkResourceFactory();
+	VkExternalResourceFactory* resourceFactory = m_externalResourceManager->GetVkResourceFactory();
 
 	VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
 
@@ -228,7 +230,7 @@ std::uint32_t RenderEngine::BindExternalTexture(size_t textureIndex)
 
 std::uint32_t RenderEngine::BindExternalTexture(size_t textureIndex, size_t samplerIndex)
 {
-	VkExternalResourceFactory* resourceFactory = m_externalResourceManager.GetVkResourceFactory();
+	VkExternalResourceFactory* resourceFactory = m_externalResourceManager->GetVkResourceFactory();
 
 	VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
 
@@ -274,14 +276,14 @@ void RenderEngine::SetCommonGraphicsDescriptorBufferLayout(
 
 void RenderEngine::UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails)
 {
-	m_externalResourceManager.UpdateDescriptor(m_graphicsDescriptorBuffers, bindingDetails);
+	m_externalResourceManager->UpdateDescriptor(m_graphicsDescriptorBuffers, bindingDetails);
 }
 
 void RenderEngine::UploadExternalBufferGPUOnlyData(
 	std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
 	size_t dstBufferOffset
 ) {
-	m_externalResourceManager.UploadExternalBufferGPUOnlyData(
+	m_externalResourceManager->UploadExternalBufferGPUOnlyData(
 		m_stagingManager, m_temporaryDataBuffer,
 		externalBufferIndex, std::move(cpuData), srcDataSizeInBytes, dstBufferOffset
 	);
@@ -291,7 +293,7 @@ void RenderEngine::QueueExternalBufferGPUCopy(
 	std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
 	size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes
 ) {
-	m_externalResourceManager.QueueExternalBufferGPUCopy(
+	m_externalResourceManager->QueueExternalBufferGPUCopy(
 		externalBufferSrcIndex, externalBufferDstIndex, dstBufferOffset, srcBufferOffset,
 		srcDataSizeInBytes, m_temporaryDataBuffer
 	);

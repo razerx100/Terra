@@ -59,12 +59,12 @@ public:
 	[[nodiscard]]
 	VkExternalResourceFactory* GetVkResourceFactory() noexcept
 	{
-		return &m_resourceFactory;
+		return m_resourceFactory.get();
 	}
 	[[nodiscard]]
 	VkExternalResourceFactory const* GetVkResourceFactory() const noexcept
 	{
-		return &m_resourceFactory;
+		return m_resourceFactory.get();
 	}
 
 private:
@@ -85,9 +85,9 @@ private:
 	) const;
 
 private:
-	VkExternalResourceFactory      m_resourceFactory;
-	ReusableVector<GfxExtension_t> m_gfxExtensions;
-	std::vector<GPUCopyDetails>    m_copyQueueDetails;
+	std::unique_ptr<VkExternalResourceFactory> m_resourceFactory;
+	ReusableVector<GfxExtension_t>             m_gfxExtensions;
+	std::vector<GPUCopyDetails>                m_copyQueueDetails;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
 

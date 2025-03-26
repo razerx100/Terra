@@ -11,9 +11,9 @@ void RenderEngineMSDeviceExtension::SetDeviceExtensions(
 RenderEngineMS::RenderEngineMS(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{
-		deviceManager, std::move(threadPool), frameCount, ModelManagerMS{},
+		deviceManager, std::move(threadPool), frameCount, std::make_unique<ModelManagerMS>(),
 		ModelBuffers{
-			deviceManager.GetLogicalDevice(), &m_memoryManager, static_cast<std::uint32_t>(frameCount),
+			deviceManager.GetLogicalDevice(), m_memoryManager.get(), static_cast<std::uint32_t>(frameCount),
 			{}
 		}
 	}
@@ -25,7 +25,7 @@ RenderEngineMS::RenderEngineMS(
 
 void RenderEngineMS::FinaliseInitialisation()
 {
-	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+	m_externalResourceManager->SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
@@ -94,7 +94,7 @@ std::uint32_t RenderEngineMS::AddModelBundle(std::shared_ptr<ModelBundle>&& mode
 {
 	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, m_modelBuffers);
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(
+	const std::uint32_t index = m_modelManager->AddModelBundle(
 		std::move(modelBundle), std::move(modelBufferIndices)
 	);
 
@@ -138,7 +138,7 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
+			m_externalResourceManager->CopyQueuedBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
@@ -184,7 +184,7 @@ void RenderEngineMS::DrawRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager.DrawPipeline(
+			m_modelManager->DrawPipeline(
 				bundleIndices[index], pipelineLocalIndices[index],
 				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
 			);

@@ -6,10 +6,10 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{
 		deviceManager, std::move(threadPool), frameCount,
-		ModelManagerVSIndividual{},
+		std::make_unique<ModelManagerVSIndividual>(),
 		ModelBuffers{
-			deviceManager.GetLogicalDevice(), &m_memoryManager, static_cast<std::uint32_t>(frameCount),
-			{}
+			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
+			static_cast<std::uint32_t>(frameCount), {}
 		}
 	}
 {
@@ -20,7 +20,7 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 void RenderEngineVSIndividual::FinaliseInitialisation()
 {
-	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+	m_externalResourceManager->SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
@@ -85,7 +85,7 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(std::shared_ptr<ModelBund
 {
 	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, m_modelBuffers);
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(
+	const std::uint32_t index = m_modelManager->AddModelBundle(
 		std::move(modelBundle), std::move(modelBufferIndices)
 	);
 
@@ -122,7 +122,7 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
+			m_externalResourceManager->CopyQueuedBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
@@ -168,7 +168,7 @@ void RenderEngineVSIndividual::DrawRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager.DrawPipeline(
+			m_modelManager->DrawPipeline(
 				bundleIndices[index], pipelineLocalIndices[index],
 				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
 			);
@@ -254,13 +254,14 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{
 		deviceManager, std::move(threadPool), frameCount,
-		ModelManagerVSIndirect{
-			deviceManager.GetLogicalDevice(), &m_memoryManager,
+		std::make_unique<ModelManagerVSIndirect>(
+			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
 			deviceManager.GetQueueFamilyManager().GetAllIndices(),
 			static_cast<std::uint32_t>(frameCount)
-		},
+		),
 		ModelBuffers{
-			deviceManager.GetLogicalDevice(), &m_memoryManager, static_cast<std::uint32_t>(frameCount),
+			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
+			static_cast<std::uint32_t>(frameCount),
 			deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices()
 		}
 	},
@@ -286,7 +287,9 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 
 	for (size_t _ = 0u; _ < frameCount; ++_)
 	{
-		m_computeDescriptorBuffers.emplace_back(device, &m_memoryManager, s_computePipelineSetLayoutCount);
+		m_computeDescriptorBuffers.emplace_back(
+			device, m_memoryManager.get(), s_computePipelineSetLayoutCount
+		);
 
 		// Let's make all of the non graphics semaphores, timeline semaphores.
 		m_computeWait.emplace_back(device).Create(true);
@@ -310,7 +313,7 @@ void RenderEngineVSIndirect::CreateComputePipelineLayout()
 
 void RenderEngineVSIndirect::FinaliseInitialisation()
 {
-	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+	m_externalResourceManager->SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
 
 	// Graphics
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
@@ -346,7 +349,7 @@ void RenderEngineVSIndirect::FinaliseInitialisation()
 		ShaderName{ L"VertexShaderCSIndirect" }
 	);
 
-	m_modelManager.SetCSPSOIndex(frustumCSOIndex);
+	m_modelManager->SetCSPSOIndex(frustumCSOIndex);
 }
 
 void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
@@ -354,7 +357,7 @@ void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 	// The layout shouldn't change throughout the runtime.
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	m_modelManager.SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+	m_modelManager->SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 	{
@@ -371,7 +374,7 @@ void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 
 void RenderEngineVSIndirect::SetComputeDescriptorBufferLayout()
 {
-	m_modelManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_modelManager->SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 	m_meshManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	m_cameraManager.SetDescriptorBufferLayoutCompute(
@@ -400,7 +403,7 @@ VkSemaphore RenderEngineVSIndirect::ExecutePipelineStages(
 
 void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 {
-	m_modelManager.SetDescriptorBuffersVS(
+	m_modelManager->SetDescriptorBuffersVS(
 		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
 	);
 
@@ -422,7 +425,7 @@ void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 
 void RenderEngineVSIndirect::SetModelComputeDescriptors()
 {
-	m_modelManager.SetDescriptorBuffersCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_modelManager->SetDescriptorBuffersCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
 
 	const size_t frameCount = std::size(m_computeDescriptorBuffers);
 
@@ -451,7 +454,7 @@ void RenderEngineVSIndirect::UpdateRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager.UpdatePipelinePerFrame(
+			m_modelManager->UpdatePipelinePerFrame(
 				frameIndex, bundleIndices[index], pipelineLocalIndices[index], m_meshManager
 			);
 	}
@@ -488,7 +491,7 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(std::shared_ptr<ModelBundle
 {
 	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, m_modelBuffers);
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(
+	const std::uint32_t index = m_modelManager->AddModelBundle(
 		std::move(modelBundle), std::move(modelBufferIndices)
 	);
 
@@ -532,7 +535,7 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
+			m_externalResourceManager->CopyQueuedBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
@@ -575,14 +578,14 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 			computeCmdBufferScope, m_computeQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
 		);
 
-		m_modelManager.ResetCounterBuffer(computeCmdBuffer, static_cast<VkDeviceSize>(frameIndex));
+		m_modelManager->ResetCounterBuffer(computeCmdBuffer, static_cast<VkDeviceSize>(frameIndex));
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_computeDescriptorBuffers[frameIndex], computeCmdBufferScope,
 			VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout
 		);
 
-		m_modelManager.Dispatch(computeCmdBufferScope, m_computePipelineManager);
+		m_modelManager->Dispatch(computeCmdBufferScope, m_computePipelineManager);
 	}
 
 	const VKSemaphore& computeWaitSemaphore = m_computeWait[frameIndex];
@@ -619,7 +622,7 @@ void RenderEngineVSIndirect::DrawRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager.DrawPipeline(
+			m_modelManager->DrawPipeline(
 				frameIndex, bundleIndices[index], pipelineLocalIndices[index],
 				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
 			);
