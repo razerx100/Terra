@@ -187,6 +187,7 @@ public:
 	std::uint32_t AddStartImageBarrier(const ImageBarrierBuilder& barrierBuilder) noexcept;
 
 	void SetBarrierImageView(std::uint32_t barrierIndex, const VKImageView& imageView) noexcept;
+	void SetSrcStage(size_t barrierIndex, VkPipelineStageFlagBits2 srcStageFlag) noexcept;
 
 	// These functions can be used every frame.
 	void SetDepthAttachment(

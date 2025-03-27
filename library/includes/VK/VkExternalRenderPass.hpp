@@ -1,5 +1,6 @@
 #ifndef VK_EXTERNAL_RENDER_PASS_HPP_
 #define VK_EXTERNAL_RENDER_PASS_HPP_
+#include <bitset>
 #include <vector>
 #include <limits>
 #include <utility>
@@ -91,14 +92,20 @@ private:
 	[[nodiscard]]
 	static VkAttachmentLoadOp GetVkLoadOp(ExternalAttachmentLoadOp loadOp) noexcept;
 
+	static constexpr size_t s_maxAttachmentCount = 10u;
+
 protected:
-	VkExternalResourceFactory*     m_resourceFactory;
-	VkRenderPassManager            m_renderPassManager;
-	std::vector<PipelineDetails>   m_pipelineDetails;
-	std::vector<AttachmentDetails> m_colourAttachmentDetails;
-	AttachmentDetails              m_depthAttachmentDetails;
-	AttachmentDetails              m_stencilAttachmentDetails;
-	std::uint32_t                  m_swapchainCopySource;
+	VkExternalResourceFactory*        m_resourceFactory;
+	VkRenderPassManager               m_renderPassManager;
+	std::vector<PipelineDetails>      m_pipelineDetails;
+	std::vector<AttachmentDetails>    m_colourAttachmentDetails;
+	AttachmentDetails                 m_depthAttachmentDetails;
+	AttachmentDetails                 m_stencilAttachmentDetails;
+	std::uint32_t                     m_swapchainCopySource;
+	std::bitset<s_maxAttachmentCount> m_firstUseFlags;
+
+	static constexpr size_t s_depthAttachmentIndex   = 8u;
+	static constexpr size_t s_stencilAttachmentIndex = 9u;
 
 public:
 	VkExternalRenderPass(const VkExternalRenderPass&) = delete;
@@ -111,7 +118,8 @@ public:
 		m_colourAttachmentDetails{ std::move(other.m_colourAttachmentDetails) },
 		m_depthAttachmentDetails{ other.m_depthAttachmentDetails },
 		m_stencilAttachmentDetails{ other.m_stencilAttachmentDetails },
-		m_swapchainCopySource{ other.m_swapchainCopySource }
+		m_swapchainCopySource{ other.m_swapchainCopySource },
+		m_firstUseFlags{ other.m_firstUseFlags }
 	{
 		other.m_resourceFactory = nullptr;
 	}
@@ -124,6 +132,7 @@ public:
 		m_depthAttachmentDetails   = other.m_depthAttachmentDetails;
 		m_stencilAttachmentDetails = other.m_stencilAttachmentDetails;
 		m_swapchainCopySource      = other.m_swapchainCopySource;
+		m_firstUseFlags            = other.m_firstUseFlags;
 
 		return *this;
 	}

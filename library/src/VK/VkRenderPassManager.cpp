@@ -14,6 +14,12 @@ void VkRenderPassManager::SetBarrierImageView(
 		m_startImageBarriers.SetImage(barrierIndex, imageView);
 }
 
+void VkRenderPassManager::SetSrcStage(size_t barrierIndex, VkPipelineStageFlagBits2 srcStageFlag) noexcept
+{
+	if (barrierIndex != std::numeric_limits<std::uint32_t>::max())
+		m_startImageBarriers.SetSrcStage(barrierIndex, srcStageFlag);
+}
+
 void VkRenderPassManager::SetDepthAttachment(
 	std::uint32_t barrierIndex, const VKImageView& depthView, const VkClearDepthStencilValue& clearValue,
 	VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP

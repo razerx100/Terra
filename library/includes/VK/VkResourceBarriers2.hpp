@@ -329,6 +329,13 @@ public:
 		subresourceRange.layerCount     = 1u;
 	}
 
+	void SetSrcStage(size_t barrierIndex, VkPipelineStageFlagBits2 srcStageFlag) noexcept
+	{
+		VkImageMemoryBarrier2& barrier = m_barriers[barrierIndex];
+
+		barrier.srcStageMask = srcStageFlag;
+	}
+
 	void SetImage(size_t barrierIndex, const VKImageView& imageView) noexcept
 	{
 		SetImage(

@@ -31,7 +31,8 @@ VkExternalRenderPass::VkExternalRenderPass(VkExternalResourceFactory* resourceFa
 	{
 		.textureIndex = std::numeric_limits<std::uint32_t>::max(),
 		.barrierIndex = std::numeric_limits<std::uint32_t>::max()
-	}, m_swapchainCopySource{ std::numeric_limits<std::uint32_t>::max() }
+	}, m_swapchainCopySource{ std::numeric_limits<std::uint32_t>::max() },
+	m_firstUseFlags{ 0u }
 {}
 
 void VkExternalRenderPass::AddPipeline(std::uint32_t pipelineIndex)
@@ -110,6 +111,11 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 		m_renderPassManager.SetDepthView(
 			m_depthAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
 		);
+
+		if (m_firstUseFlags[s_depthAttachmentIndex])
+			m_renderPassManager.SetSrcStage(
+				m_depthAttachmentDetails.barrierIndex, externalTexture->GetCurrentPipelineStage()
+			);
 	}
 
 	if (m_stencilAttachmentDetails.textureIndex != std::numeric_limits<std::uint32_t>::max())
@@ -121,6 +127,11 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 		m_renderPassManager.SetStencilView(
 			m_stencilAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
 		);
+
+		if (m_firstUseFlags[s_stencilAttachmentIndex])
+			m_renderPassManager.SetSrcStage(
+				m_stencilAttachmentDetails.barrierIndex, externalTexture->GetCurrentPipelineStage()
+			);
 	}
 
 	const size_t colourAttachmentCount = std::size(m_colourAttachmentDetails);
@@ -136,6 +147,11 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 		m_renderPassManager.SetColourView(
 			index, colourAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
 		);
+
+		if (m_firstUseFlags[index])
+			m_renderPassManager.SetSrcStage(
+				colourAttachmentDetails.barrierIndex, externalTexture->GetCurrentPipelineStage()
+			);
 	}
 }
 
@@ -177,12 +193,15 @@ void VkExternalRenderPass::SetDepthTesting(
 
 	m_depthAttachmentDetails.textureIndex = externalTextureIndex;
 
+	m_firstUseFlags[s_depthAttachmentIndex]
+		= externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE;
+
 	// Set the previous stage to Early fragment if it is the first use as that's why depth/stencil
 	// testing starts.
-	if (externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE)
+	if (m_firstUseFlags[s_depthAttachmentIndex])
 		externalTexture->SetCurrentPipelineStage(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
 
-	std::uint32_t& depthBarrierIndex      = m_depthAttachmentDetails.barrierIndex;
+	std::uint32_t& depthBarrierIndex = m_depthAttachmentDetails.barrierIndex;
 
 	depthBarrierIndex = m_renderPassManager.AddStartImageBarrier(
 		externalTexture->TransitionState(
@@ -218,12 +237,15 @@ void VkExternalRenderPass::SetStencilTesting(
 
 	m_stencilAttachmentDetails.textureIndex = externalTextureIndex;
 
+	m_firstUseFlags[s_stencilAttachmentIndex]
+		= externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE;
+
 	// Set the previous stage to Early fragment if it is the first use as that's why depth/stencil
 	// testing starts.
-	if (externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE)
+	if (m_firstUseFlags[s_stencilAttachmentIndex])
 		externalTexture->SetCurrentPipelineStage(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
 
-	std::uint32_t& stencilBarrierIndex      = m_stencilAttachmentDetails.barrierIndex;
+	std::uint32_t& stencilBarrierIndex = m_stencilAttachmentDetails.barrierIndex;
 
 	stencilBarrierIndex = m_renderPassManager.AddStartImageBarrier(
 		externalTexture->TransitionState(
@@ -257,9 +279,14 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 
 	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
 
+	const size_t renderTargetIndex     = std::size(m_colourAttachmentDetails);
+
+	m_firstUseFlags[renderTargetIndex]
+		= externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE;
+
 	// Set the previous stage to COLOUR ATTACHMENT OUTPUT if it is the first use as the top of
 	// the pipeline bit doesn't queue a wait operation
-	if (externalTexture->GetCurrentPipelineStage() == VK_PIPELINE_STAGE_NONE)
+	if (m_firstUseFlags[renderTargetIndex])
 		externalTexture->SetCurrentPipelineStage(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
 	const std::uint32_t colourBarrierIndex = m_renderPassManager.AddStartImageBarrier(
@@ -269,7 +296,7 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 		)
 	);
 
-	const auto renderTargetIndex = static_cast<std::uint32_t>(std::size(m_colourAttachmentDetails));
+	const auto u32RenderTargetIndex = static_cast<std::uint32_t>(renderTargetIndex);
 
 	m_colourAttachmentDetails.emplace_back(
 		AttachmentDetails{ .textureIndex = externalTextureIndex, .barrierIndex = colourBarrierIndex }
@@ -281,7 +308,7 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 		externalTexture->GetTextureView().GetView(), clearValue, vkLoadOp, vkStoreOp
 	);
 
-	return renderTargetIndex;
+	return u32RenderTargetIndex;
 }
 
 void VkExternalRenderPass::SetRenderTargetClearColour(
