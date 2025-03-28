@@ -53,7 +53,7 @@ public:
 
 	void Create(
 		std::uint32_t width, std::uint32_t height, ExternalFormat format, ExternalTexture2DType type,
-		bool copySrc, bool copyDst
+		std::uint32_t creationFlags
 	) override;
 
 	void Destroy() noexcept override;
@@ -84,6 +84,10 @@ public:
 
 	[[nodiscard]]
 	const VkTextureView& GetTextureView() const noexcept { return m_textureView; }
+
+private:
+	[[nodiscard]]
+	static bool DoesContainFlag(ExternalTextureCreationFlagBit flagBit, std::uint32_t flag) noexcept;
 
 private:
 	VkTextureView           m_textureView;

@@ -29,9 +29,17 @@ void VkExternalTexture::Destroy() noexcept
 	m_currentLayoutState = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
+bool VkExternalTexture::DoesContainFlag(
+	ExternalTextureCreationFlagBit flagBit, std::uint32_t flag
+) noexcept {
+	const auto uFlagBit = static_cast<std::uint32_t>(flagBit);
+
+	return (flag & uFlagBit) == uFlagBit;
+}
+
 void VkExternalTexture::Create(
 	std::uint32_t width, std::uint32_t height, ExternalFormat format, ExternalTexture2DType type,
-	bool copySrc, bool copyDst
+	std::uint32_t creationFlags
 ) {
 	VkImageUsageFlags usageFlags   = 0u;
 	VkImageAspectFlags aspectFlags = 0u;
@@ -52,11 +60,14 @@ void VkExternalTexture::Create(
 		aspectFlags = VK_IMAGE_ASPECT_STENCIL_BIT;
 	}
 
-	if (copySrc)
+	if (DoesContainFlag(ExternalTextureCreationFlagBit::CopySrc, creationFlags))
 		usageFlags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-	if (copyDst)
+	if (DoesContainFlag(ExternalTextureCreationFlagBit::CopyDst, creationFlags))
 		usageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+	if (DoesContainFlag(ExternalTextureCreationFlagBit::SampleTexture, creationFlags))
+		usageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
 
 	// For now, let's assume these textures would only be used in the Graphics queue.
 	m_textureView.CreateView2D(
