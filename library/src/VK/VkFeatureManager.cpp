@@ -47,6 +47,9 @@ void VkFeatureManager::SetBaseCoreFeatures() noexcept
 	AddMember(
 		m_feature1Members, offsetof(VkPhysicalDeviceFeatures, samplerAnisotropy), baseFeatures
 	);
+	AddMember(
+		m_feature1Members, offsetof(VkPhysicalDeviceFeatures, independentBlend), baseFeatures
+	);
 
 	m_deviceFeatures2.Get().features = baseFeatures;
 }
