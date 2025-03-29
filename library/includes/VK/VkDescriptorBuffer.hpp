@@ -101,6 +101,8 @@ public:
 			descriptorSize = s_descriptorInfo.sampledImageDescriptorSize;
 		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
 			descriptorSize = s_descriptorInfo.samplerDescriptorSize;
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+			descriptorSize = s_descriptorInfo.inputAttachmentDescriptorSize;
 
 		return descriptorSize;
 	}
@@ -126,6 +128,8 @@ public:
 			descriptorSize = s_descriptorInfo.sampledImageDescriptorSize;
 		else if (type == VK_DESCRIPTOR_TYPE_SAMPLER)
 			descriptorSize = s_descriptorInfo.samplerDescriptorSize;
+		else if (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+			descriptorSize = s_descriptorInfo.inputAttachmentDescriptorSize;
 
 		return descriptorSize;
 	}
@@ -173,22 +177,28 @@ private:
 
 		if constexpr (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 		{
-			imageInfo.sampler              = sampler;
-			imageInfo.imageView            = imageView;
+			imageInfo.sampler   = sampler;
+			imageInfo.imageView = imageView;
 
 			descData.pCombinedImageSampler = &imageInfo;
 		}
 		else if constexpr (type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
 		{
-			imageInfo.imageView    = imageView;
+			imageInfo.imageView = imageView;
 
 			descData.pStorageImage = &imageInfo;
 		}
 		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
 		{
-			imageInfo.imageView    = imageView;
+			imageInfo.imageView = imageView;
 
 			descData.pSampledImage = &imageInfo;
+		}
+		else if constexpr (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+		{
+			imageInfo.imageView = imageView;
+
+			descData.pInputAttachmentImage = &imageInfo;
 		}
 		else if constexpr (type == VK_DESCRIPTOR_TYPE_SAMPLER)
 			descData.pSampler = &sampler;
@@ -208,7 +218,8 @@ public:
 		std::uint32_t bindingIndex, size_t setLayoutIndex, std::uint32_t descriptorIndex,
 		const VkDescriptorDataEXT& descData
 	) const {
-		const VkDescriptorGetInfoEXT getInfo{
+		const VkDescriptorGetInfoEXT getInfo
+		{
 			.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
 			.type  = type,
 			.data  = descData
@@ -283,8 +294,9 @@ public:
 
 	template<VkDescriptorType type>
 	void const* GetTexelBufferToDescriptor(
-		const Buffer& buffer, std::uint32_t bindingIndex, size_t setLayoutIndex, VkFormat texelBufferFormat,
-		std::uint32_t descriptorIndex, VkDeviceAddress bufferOffset = 0u, VkDeviceSize bufferSize = 0u
+		const Buffer& buffer, std::uint32_t bindingIndex, size_t setLayoutIndex,
+		VkFormat texelBufferFormat, std::uint32_t descriptorIndex, VkDeviceAddress bufferOffset = 0u,
+		VkDeviceSize bufferSize = 0u
 	) const {
 		const VkDeviceAddress bufferAddress = buffer.GpuPhysicalAddress() + bufferOffset;
 		const VkDeviceSize actualBufferSize = bufferSize ? bufferSize : buffer.BufferSize();
@@ -357,7 +369,8 @@ public:
 		std::uint32_t bindingIndex, size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(
-			textureView.GetVkView(), sampler.Get(), imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
+			textureView.GetVkView(), sampler.Get(), imageLayout, bindingIndex, setLayoutIndex,
+			descriptorIndex
 		);
 	}
 	[[nodiscard]]
@@ -366,7 +379,18 @@ public:
 		size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
-			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
+			descriptorIndex
+		);
+	}
+	[[nodiscard]]
+	void const* GetInputAttachmentDescriptor(
+		const VkTextureView& textureView, VkImageLayout imageLayout, std::uint32_t bindingIndex,
+		size_t setLayoutIndex, std::uint32_t descriptorIndex
+	) const {
+		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT>(
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
+			descriptorIndex
 		);
 	}
 	[[nodiscard]]
@@ -375,7 +399,8 @@ public:
 		size_t setLayoutIndex, std::uint32_t descriptorIndex
 	) const {
 		return GetImageToDescriptor<VK_DESCRIPTOR_TYPE_STORAGE_IMAGE>(
-			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex, descriptorIndex
+			textureView.GetVkView(), VK_NULL_HANDLE, imageLayout, bindingIndex, setLayoutIndex,
+			descriptorIndex
 		);
 	}
 	[[nodiscard]]
@@ -498,6 +523,14 @@ public:
 		std::uint32_t descriptorIndex
 	) const noexcept {
 		SetDescriptor<VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE>(
+			descriptorAddress, bindingIndex, setLayoutIndex, descriptorIndex
+		);
+	}
+	void SetInputAttachmentDescriptor(
+		void const* descriptorAddress, std::uint32_t bindingIndex, size_t setLayoutIndex,
+		std::uint32_t descriptorIndex
+	) const noexcept {
+		SetDescriptor<VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT>(
 			descriptorAddress, bindingIndex, setLayoutIndex, descriptorIndex
 		);
 	}
