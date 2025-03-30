@@ -197,6 +197,12 @@ public:
 
 class PipelineModelsCSIndirect : public PipelineModelsBase
 {
+	enum class ModelFlag : std::uint32_t
+	{
+		Visibility  = 1u,
+		SkipCulling = 2u
+	};
+
 public:
 	struct PerPipelineData
 	{
@@ -209,7 +215,7 @@ public:
 	{
 		std::uint32_t pipelineIndex;
 		std::uint32_t modelIndex;
-		std::uint32_t isVisible;
+		std::uint32_t modelFlags;
 	};
 
 	struct IndexLink
@@ -242,7 +248,7 @@ public:
 	void ResetCullingData() const noexcept;
 
 	void Update(
-		size_t frameIndex, const VkMeshBundleVS& meshBundle,
+		size_t frameIndex, const VkMeshBundleVS& meshBundle, bool skipCulling,
 		const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
@@ -820,7 +826,7 @@ public:
 	}
 
 	void UpdatePipeline(
-		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
+		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle, bool skipCulling
 	) const noexcept;
 
 	void DrawPipeline(
