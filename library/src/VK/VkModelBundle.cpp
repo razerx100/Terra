@@ -567,29 +567,6 @@ void PipelineModelsVSIndirect::RelinquishMemory(
 }
 
 // Model Bundle VS Individual
-void ModelBundleVSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleVS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-) const noexcept {
-	meshBundle.Bind(graphicsBuffer);
-
-	const auto& models         = m_modelBundle->GetModels();
-
-	const size_t pipelineCount = std::size(m_pipelines);
-
-	for (size_t index = 0u; index < pipelineCount; ++index)
-	{
-		if (!m_pipelines.IsInUse(index))
-			continue;
-
-		const PipelineModelsVSIndividual& pipeline = m_pipelines[index];
-
-		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
-
-		pipeline.Draw(graphicsBuffer, pipelineLayout, meshBundle, models);
-	}
-}
-
 void ModelBundleVSIndividual::DrawPipeline(
 	size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 	VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
@@ -619,29 +596,6 @@ void ModelBundleMSIndividual::SetMeshBundleConstants(
 		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
 		0u, constBufferSize, &meshBundleDetailsMS
 	);
-}
-
-void ModelBundleMSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleMS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-) const noexcept {
-	SetMeshBundleConstants(graphicsBuffer.Get(), pipelineLayout, meshBundle);
-
-	const auto& models         = m_modelBundle->GetModels();
-
-	const size_t pipelineCount = std::size(m_pipelines);
-
-	for (size_t index = 0u; index < pipelineCount; ++index)
-	{
-		if (!m_pipelines.IsInUse(index))
-			continue;
-
-		const PipelineModelsMSIndividual& pipeline = m_pipelines[index];
-
-		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
-
-		pipeline.Draw(graphicsBuffer, pipelineLayout, meshBundle, models);
-	}
 }
 
 void ModelBundleMSIndividual::DrawPipeline(
@@ -1037,23 +991,6 @@ void ModelBundleVSIndirect::_addModelsToPipeline(
 	}
 }
 
-void ModelBundleVSIndirect::Update(size_t frameIndex, const VkMeshBundleVS& meshBundle) const noexcept
-{
-	const auto& models         = m_modelBundle->GetModels();
-
-	const size_t pipelineCount = std::size(m_pipelines);
-
-	for (size_t index = 0u; index < pipelineCount; ++index)
-	{
-		if (!m_pipelines.IsInUse(index))
-			continue;
-
-		const PipelineModelsCSIndirect& pipeline = m_pipelines[index];
-
-		pipeline.Update(frameIndex, meshBundle, models);
-	}
-}
-
 void ModelBundleVSIndirect::UpdatePipeline(
 	size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
 ) const noexcept {
@@ -1065,27 +1002,6 @@ void ModelBundleVSIndirect::UpdatePipeline(
 	const PipelineModelsCSIndirect& pipeline = m_pipelines[pipelineLocalIndex];
 
 	pipeline.Update(frameIndex, meshBundle, models);
-}
-
-void ModelBundleVSIndirect::Draw(
-	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-	const VkMeshBundleVS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-) const noexcept {
-	meshBundle.Bind(graphicsBuffer);
-
-	const size_t pipelineCount = std::size(m_pipelines);
-
-	for (size_t index = 0u; index < pipelineCount; ++index)
-	{
-		if (!m_pipelines.IsInUse(index))
-			continue;
-
-		const PipelineModelsVSIndirect& pipeline = m_vsPipelines[index];
-
-		pipelineManager.BindPipeline(pipeline.GetPSOIndex(), graphicsBuffer);
-
-		pipeline.Draw(frameIndex, graphicsBuffer, pipelineLayout);
-	}
 }
 
 void ModelBundleVSIndirect::DrawPipeline(

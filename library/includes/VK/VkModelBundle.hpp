@@ -703,11 +703,6 @@ class ModelBundleVSIndividual : public ModelBundleCommon<PipelineModelsVSIndivid
 public:
 	ModelBundleVSIndividual() : ModelBundleCommon{} {}
 
-	void Draw(
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-	) const noexcept;
-
 	void DrawPipeline(
 		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
@@ -734,11 +729,6 @@ class ModelBundleMSIndividual : public ModelBundleCommon<PipelineModelsMSIndivid
 
 public:
 	ModelBundleMSIndividual() : ModelBundleCommon{} {}
-
-	void Draw(
-		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
-	) const noexcept;
 
 	void DrawPipeline(
 		size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
@@ -829,15 +819,8 @@ public:
 		_removeModel(pipelineIndex, modelIndex);
 	}
 
-	void Update(size_t frameIndex, const VkMeshBundleVS& meshBundle) const noexcept;
-
 	void UpdatePipeline(
 		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle
-	) const noexcept;
-
-	void Draw(
-		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const PipelineManager<GraphicsPipeline_t>& pipelineManager
 	) const noexcept;
 
 	void DrawPipeline(

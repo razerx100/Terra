@@ -12,29 +12,6 @@ void ModelManagerVSIndividual::SetGraphicsConstantRange(PipelineLayout& layout) 
 	layout.AddPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT, pushConstantSize);
 }
 
-void ModelManagerVSIndividual::Draw(
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-	const PipelineManager<Pipeline_t>& pipelineManager
-) const noexcept {
-	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
-
-	const size_t bundleCount        = std::size(m_modelBundles);
-
-	for (size_t index = 0u; index < bundleCount; ++index)
-	{
-		if (!m_modelBundles.IsInUse(index))
-			continue;
-
-		const ModelBundleVSIndividual& modelBundle = m_modelBundles[index];
-
-		// Mesh
-		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
-
-		// Model
-		modelBundle.Draw(graphicsBuffer, pipelineLayout, meshBundle, pipelineManager);
-	}
-}
-
 void ModelManagerVSIndividual::DrawPipeline(
 	size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 	const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
@@ -210,34 +187,6 @@ std::vector<std::uint32_t> ModelManagerVSIndirect::RemoveModelBundle(std::uint32
 	return modelBufferIndices;
 }
 
-void ModelManagerVSIndirect::UpdatePerFrame(
-	VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
-) const noexcept {
-	std::uint8_t* bufferOffsetPtr = m_perModelBundleBuffer.GetInstancePtr(frameIndex);
-	constexpr size_t strideSize   = sizeof(PerModelBundleData);
-	VkDeviceSize bufferOffset     = 0u;
-
-	const size_t modelBundleCount = std::size(m_modelBundles);
-
-	for (size_t index = 0u; index < modelBundleCount; ++index)
-	{
-		if (!m_modelBundles.IsInUse(index))
-			continue;
-
-		const ModelBundleVSIndirect& vsBundle = m_modelBundles[index];
-
-		const std::uint32_t meshBundleIndex   = vsBundle.GetMeshBundleIndex();
-
-		const VkMeshBundleVS& meshBundle      = meshManager.GetBundle(meshBundleIndex);
-
-		vsBundle.Update(static_cast<size_t>(frameIndex), meshBundle);
-
-		memcpy(bufferOffsetPtr + bufferOffset, &meshBundleIndex, strideSize);
-
-		bufferOffset += strideSize;
-	}
-}
-
 void ModelManagerVSIndirect::UpdatePipelinePerFrame(
 	VkDeviceSize frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
 	const MeshManagerVSIndirect& meshManager
@@ -385,29 +334,6 @@ void ModelManagerVSIndirect::Dispatch(
 	vkCmdDispatch(cmdBuffer, m_dispatchXCount, 1u, 1u);
 }
 
-void ModelManagerVSIndirect::Draw(
-	size_t frameIndex, const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager,
-	const PipelineManager<GraphicsPipeline_t>& pipelineManager
-) const noexcept {
-	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
-
-	const size_t bundleCount        = std::size(m_modelBundles);
-
-	for (size_t index = 0u; index < bundleCount; ++index)
-	{
-		if (!m_modelBundles.IsInUse(index))
-			continue;
-
-		const ModelBundleVSIndirect& modelBundle = m_modelBundles[index];
-
-		// Mesh
-		const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
-
-		// Model
-		modelBundle.Draw(frameIndex, graphicsBuffer, pipelineLayout, meshBundle, pipelineManager);
-	}
-}
-
 void ModelManagerVSIndirect::DrawPipeline(
 	size_t frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
 	const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager,
@@ -476,29 +402,6 @@ void ModelManagerMS::SetGraphicsConstantRange(PipelineLayout& layout) noexcept
 		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
 		modelConstantSize + meshConstantSize
 	);
-}
-
-void ModelManagerMS::Draw(
-	const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
-	const PipelineManager<Pipeline_t>& pipelineManager
-) const noexcept {
-	VkPipelineLayout pipelineLayout = pipelineManager.GetLayout();
-
-	const size_t bundleCount        = std::size(m_modelBundles);
-
-	for (size_t index = 0u; index < bundleCount; ++index)
-	{
-		if (!m_modelBundles.IsInUse(index))
-			continue;
-
-		const ModelBundleMSIndividual& modelBundle = m_modelBundles[index];
-
-		// Mesh
-		const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
-
-		// Model
-		modelBundle.Draw(graphicsBuffer, pipelineLayout, meshBundle, pipelineManager);
-	}
 }
 
 void ModelManagerMS::DrawPipeline(

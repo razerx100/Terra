@@ -152,11 +152,6 @@ public:
 
 	static void SetGraphicsConstantRange(PipelineLayout& layout) noexcept;
 
-	void Draw(
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndividual& meshManager,
-		const PipelineManager<Pipeline_t>& pipelineManager
-	) const noexcept;
-
 	void DrawPipeline(
 		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
 		const MeshManagerVSIndividual& meshManager, VkPipelineLayout pipelineLayout
@@ -235,11 +230,6 @@ public:
 		std::uint32_t newPipelineIndex
 	);
 
-	void Draw(
-		size_t frameIndex, const VKCommandBuffer& graphicsBuffer,
-		const MeshManagerVSIndirect& meshManager,
-		const PipelineManager<GraphicsPipeline_t>& pipelineManager
-	) const noexcept;
 	void DrawPipeline(
 		size_t frameIndex, size_t modelBundleIndex, size_t pipelineLocalIndex,
 		const VKCommandBuffer& graphicsBuffer, const MeshManagerVSIndirect& meshManager,
@@ -248,10 +238,6 @@ public:
 
 	void Dispatch(
 		const VKCommandBuffer& computeBuffer, const PipelineManager<ComputePipeline_t>& pipelineManager
-	) const noexcept;
-
-	void UpdatePerFrame(
-		VkDeviceSize frameIndex, const MeshManagerVSIndirect& meshManager
 	) const noexcept;
 
 	void UpdatePipelinePerFrame(
@@ -352,11 +338,6 @@ public:
 	ModelManagerMS() : ModelManagerCommon{} {}
 
 	static void SetGraphicsConstantRange(PipelineLayout& layout) noexcept;
-
-	void Draw(
-		const VKCommandBuffer& graphicsBuffer, const MeshManagerMS& meshManager,
-		const PipelineManager<Pipeline_t>& pipelineManager
-	) const noexcept;
 
 	void DrawPipeline(
 		size_t modelBundleIndex, size_t pipelineLocalIndex, const VKCommandBuffer& graphicsBuffer,
