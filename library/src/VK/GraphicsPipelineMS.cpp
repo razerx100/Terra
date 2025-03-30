@@ -5,10 +5,12 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout,
 	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) const {
-	constexpr const wchar_t* taskShaderName = L"MeshShaderTSIndividual";
+	constexpr const wchar_t* cullingTaskShaderName   = L"MeshShaderTSIndividual";
+	constexpr const wchar_t* noCullingTaskShaderName = L"MeshShaderTSIndividualNoCulling";
 
 	return CreateGraphicsPipelineMS(
-		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline, taskShaderName
+		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline,
+		graphicsExtPipeline.IsGPUCullingEnabled() ? cullingTaskShaderName : noCullingTaskShaderName
 	);
 }
 
