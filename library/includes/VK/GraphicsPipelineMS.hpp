@@ -14,8 +14,7 @@ private:
 	static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineMS(
 		VkDevice device, VkPipelineLayout graphicsLayout,
 		ShaderType binaryType, const std::wstring& shaderPath,
-		const ExternalGraphicsPipeline& graphicsExtPipeline,
-		const ShaderName& meshShader, const ShaderName& taskShader
+		const ExternalGraphicsPipeline& graphicsExtPipeline, const ShaderName& taskShader
 	);
 
 	[[nodiscard]]

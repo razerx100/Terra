@@ -5,11 +5,11 @@
 static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 	VkDevice device, VkPipelineLayout graphicsLayout,
 	ShaderType binaryType, const std::wstring& shaderPath,
-	const ExternalGraphicsPipeline& graphicsExtPipeline, const ShaderName& vertexShader
+	const ExternalGraphicsPipeline& graphicsExtPipeline
 ) {
 	auto vs              = std::make_unique<VkShader>(device);
 	const bool vsSuccess = vs->Create(
-		shaderPath + vertexShader.GetNameWithExtension(binaryType)
+		shaderPath + graphicsExtPipeline.GetVertexShader().GetNameWithExtension(binaryType)
 	);
 
 	auto fs              = std::make_unique<VkShader>(device);
@@ -47,8 +47,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVSIndirectDraw::_createGraphic
 	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) const {
 	return CreateGraphicsPipelineVS(
-		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline,
-		L"VertexShaderIndirect"
+		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline
 	);
 }
 
@@ -58,7 +57,6 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVSIndividualDraw::_createGraph
 	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) const {
 	return CreateGraphicsPipelineVS(
-		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline,
-		L"VertexShaderIndividual"
+		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline
 	);
 }

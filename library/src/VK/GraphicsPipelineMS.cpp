@@ -5,24 +5,21 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout,
 	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) const {
-	constexpr const wchar_t* meshShaderName = L"MeshShaderMSIndividual";
 	constexpr const wchar_t* taskShaderName = L"MeshShaderTSIndividual";
 
 	return CreateGraphicsPipelineMS(
-		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline,
-		meshShaderName, taskShaderName
+		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline, taskShaderName
 	);
 }
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::CreateGraphicsPipelineMS(
 	VkDevice device, VkPipelineLayout graphicsLayout,
 	ShaderType binaryType, const std::wstring& shaderPath,
-	const ExternalGraphicsPipeline& graphicsExtPipeline,
-	const ShaderName& meshShader, const ShaderName& taskShader
+	const ExternalGraphicsPipeline& graphicsExtPipeline, const ShaderName& taskShader
 ) {
 	auto ms              = std::make_unique<VkShader>(device);
 	const bool msSuccess = ms->Create(
-		shaderPath + meshShader.GetNameWithExtension(binaryType)
+		shaderPath + graphicsExtPipeline.GetVertexShader().GetNameWithExtension(binaryType)
 	);
 
 	auto ts              = std::make_unique<VkShader>(device);
