@@ -171,7 +171,7 @@ private:
 	template<VkDescriptorType type>
 	[[nodiscard]]
 	static VkDescriptorDataEXT GetDescriptorData(
-		VkImageView imageView, VkSampler sampler, VkDescriptorImageInfo& imageInfo
+		VkImageView imageView, const VkSampler& sampler, VkDescriptorImageInfo& imageInfo
 	) noexcept {
 		VkDescriptorDataEXT descData{};
 
