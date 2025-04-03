@@ -21,12 +21,12 @@ class PipelineModelsBase
 public:
 	struct ModelData
 	{
-		std::uint32_t bundleIndex;
-		std::uint32_t bufferIndex;
+		std::uint32_t indexInBundle;
+		std::uint32_t indexInBuffer;
 
 		bool operator==(const ModelData& other) const noexcept
 		{
-			return bundleIndex == other.bundleIndex && bufferIndex == other.bufferIndex;
+			return indexInBundle == other.indexInBundle && indexInBuffer == other.indexInBuffer;
 		}
 	};
 
@@ -44,7 +44,7 @@ public:
 	) noexcept;
 
 	[[nodiscard]]
-	std::uint32_t AddModel(std::uint32_t bundleIndex, std::uint32_t bufferIndex) noexcept;
+	std::uint32_t AddModel(std::uint32_t indexInBundle, std::uint32_t indexInBuffer) noexcept;
 
 	[[nodiscard]]
 	const ModelData& GetModelData(size_t localIndex) const noexcept
@@ -220,7 +220,7 @@ public:
 
 	struct IndexLink
 	{
-		std::uint32_t bundleIndex;
+		std::uint32_t indexInBundle;
 		std::uint32_t localIndex;
 	};
 
@@ -511,8 +511,8 @@ protected:
 	) noexcept {
 		PipelineModelsBase::ModelData modelData
 		{
-			.bundleIndex = std::numeric_limits<std::uint32_t>::max(),
-			.bufferIndex = std::numeric_limits<std::uint32_t>::max()
+			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
+			.indexInBuffer = std::numeric_limits<std::uint32_t>::max()
 		};
 
 		Pipeline_t& pipeline         = m_pipelines[pipelineLocalIndex];
@@ -541,8 +541,8 @@ protected:
 
 		PipelineModelsBase::ModelData modelData
 		{
-			.bundleIndex = std::numeric_limits<std::uint32_t>::max(),
-			.bufferIndex = std::numeric_limits<std::uint32_t>::max()
+			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
+			.indexInBuffer = std::numeric_limits<std::uint32_t>::max()
 		};
 
 		if (oPipelineLocalIndex)
@@ -584,8 +584,8 @@ protected:
 		// Move the model
 		PipelineModelsBase::ModelData modelData
 		{
-			.bundleIndex = std::numeric_limits<std::uint32_t>::max(),
-			.bufferIndex = std::numeric_limits<std::uint32_t>::max()
+			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
+			.indexInBuffer = std::numeric_limits<std::uint32_t>::max()
 		};
 
 		// If we can't find the old pipeline, then there will be nothing to move?
@@ -613,8 +613,8 @@ protected:
 		if (newPipelineLocalIndex == std::numeric_limits<std::uint32_t>::max())
 			newPipelineLocalIndex = static_cast<std::uint32_t>(_addPipeline(newPipelineIndex));
 
-		if (modelData.bundleIndex != std::numeric_limits<std::uint32_t>::max())
-			_addModelToPipeline(newPipelineLocalIndex, modelData.bundleIndex);
+		if (modelData.indexInBundle != std::numeric_limits<std::uint32_t>::max())
+			_addModelToPipeline(newPipelineLocalIndex, modelData.indexInBundle);
 	}
 
 protected:
@@ -837,7 +837,7 @@ public:
 private:
 	void _addModels(
 		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t const* modelIndices, std::uint32_t const* bufferIndices,
+		std::uint32_t const* modelIndicesInBundle, std::uint32_t const* bufferIndices,
 		size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
@@ -846,7 +846,7 @@ private:
 	);
 	void _addModelsToPipeline(
 		std::uint32_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t const* modelIndices, std::uint32_t const* bufferIndices,
+		std::uint32_t const* modelIndicesInBundle, std::uint32_t const* bufferIndices,
 		size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,

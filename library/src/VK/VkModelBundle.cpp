@@ -16,10 +16,13 @@ VkDrawIndexedIndirectCommand PipelineModelsBase::GetDrawIndexedIndirectCommand(
 	return indirectCommand;
 }
 
-uint32_t PipelineModelsBase::AddModel(std::uint32_t bundleIndex, std::uint32_t bufferIndex) noexcept
-{
+uint32_t PipelineModelsBase::AddModel(
+	std::uint32_t indexInBundle, std::uint32_t indexInBuffer
+) noexcept {
 	return static_cast<std::uint32_t>(
-		m_modelData.Add(ModelData{ .bundleIndex = bundleIndex, .bufferIndex = bufferIndex })
+		m_modelData.Add(
+			ModelData{ .indexInBundle = indexInBundle, .indexInBuffer = indexInBuffer }
+		)
 	);
 }
 
@@ -29,7 +32,7 @@ void PipelineModelsVSIndividual::DrawModel(
 	VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
 	const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
 ) const noexcept {
-	const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
+	const std::shared_ptr<Model>& model = models[modelData.indexInBundle];
 
 	if (!isInUse || !model->IsVisible())
 		return;
@@ -38,7 +41,7 @@ void PipelineModelsVSIndividual::DrawModel(
 
 	vkCmdPushConstants(
 		graphicsCmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u,
-		pushConstantSize, &modelData.bufferIndex
+		pushConstantSize, &modelData.indexInBuffer
 	);
 
 	const MeshTemporaryDetailsVS& meshDetailsVS = meshBundle.GetMeshDetails(model->GetMeshIndex());
@@ -72,7 +75,7 @@ void PipelineModelsMSIndividual::DrawModel(
 ) const noexcept {
 	using MS = VkDeviceExtension::VkExtMeshShader;
 
-	const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
+	const std::shared_ptr<Model>& model = models[modelData.indexInBundle];
 
 	if (!isInUse || !model->IsVisible())
 		return;
@@ -93,7 +96,7 @@ void PipelineModelsMSIndividual::DrawModel(
 				.primOffset    = meshDetailsMS.primitiveOffset,
 				.vertexOffset  = meshDetailsMS.vertexOffset
 			},
-		.modelBufferIndex = modelData.bufferIndex
+		.modelBufferIndex = modelData.indexInBuffer
 	};
 
 	vkCmdPushConstants(
@@ -158,8 +161,8 @@ std::vector<PipelineModelsCSIndirect::IndexLink> PipelineModelsCSIndirect::Remov
 		m_modelData.GetIndicesManager().GetActiveIndexCount(),
 		IndexLink
 		{
-			.bundleIndex = std::numeric_limits<std::uint32_t>::max(),
-			.localIndex  = std::numeric_limits<std::uint32_t>::max()
+			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
+			.localIndex    = std::numeric_limits<std::uint32_t>::max()
 		}
 	};
 
@@ -167,8 +170,8 @@ std::vector<PipelineModelsCSIndirect::IndexLink> PipelineModelsCSIndirect::Remov
 
 	for (size_t index = 0u; index < std::size(m_modelData); ++index)
 	{
-		activeIndexLink[index].bundleIndex = m_modelData[index].bundleIndex;
-		activeIndexLink[index].localIndex  = static_cast<std::uint32_t>(index);
+		activeIndexLink[index].indexInBundle = m_modelData[index].indexInBundle;
+		activeIndexLink[index].localIndex    = static_cast<std::uint32_t>(index);
 	}
 
 	return activeIndexLink;
@@ -227,7 +230,7 @@ void PipelineModelsCSIndirect::UpdateNonPerFrameData(std::uint32_t modelBundleIn
 			PerModelData perModelData
 			{
 				.pipelineIndex = pipelineIndex,
-				.modelIndex    = modelData.bufferIndex,
+				.modelIndex    = modelData.indexInBuffer,
 				.modelFlags    = static_cast<std::uint32_t>(ModelFlag::Visibility)
 			};
 
@@ -323,7 +326,7 @@ void PipelineModelsCSIndirect::Update(
 	for (size_t index = 0; index < modelCount; ++index)
 	{
 		const ModelData& modelData          = m_modelData[index];
-		const std::shared_ptr<Model>& model = models[modelData.bundleIndex];
+		const std::shared_ptr<Model>& model = models[modelData.indexInBundle];
 
 		const MeshTemporaryDetailsVS& meshDetailsVS
 			= meshBundle.GetMeshDetails(model->GetMeshIndex());
@@ -345,7 +348,7 @@ void PipelineModelsCSIndirect::Update(
 		// Model Index
 		memcpy(
 			perModelBufferStart + perModelOffset + modelIndexOffset,
-			&modelData.bufferIndex, sizeof(std::uint32_t)
+			&modelData.indexInBuffer, sizeof(std::uint32_t)
 		);
 
 		perModelOffset += perModelStride;
@@ -740,10 +743,10 @@ void ModelBundleVSIndirect::_moveModel(
 	if (newPipelineLocalIndex == std::numeric_limits<std::uint32_t>::max())
 		newPipelineLocalIndex = AddPipeline(newPipelineIndex);
 
-	if (modelData.bundleIndex != std::numeric_limits<std::uint32_t>::max())
+	if (modelData.indexInBundle != std::numeric_limits<std::uint32_t>::max())
 		_addModelsToPipeline(
 			newPipelineLocalIndex, modelBundleIndex,
-			&modelData.bundleIndex, &modelData.bufferIndex, 1u,
+			&modelData.indexInBundle, &modelData.indexInBuffer, 1u,
 			argumentInputSharedBuffers, perPipelineSharedBuffer, perModelDataCSBuffer,
 			argumentOutputSharedBuffers, counterSharedBuffers, modelIndicesSharedBuffers
 		);
@@ -843,7 +846,7 @@ void ModelBundleVSIndirect::ResizePreviousPipelines(
 		LocalIndexMap_t& pipelineMap = m_localModelIndexMap[index];
 
 		for (const PipelineModelsCSIndirect::IndexLink& indexLink : indexLinks)
-			pipelineMap[indexLink.bundleIndex] = indexLink.localIndex;
+			pipelineMap[indexLink.indexInBundle] = indexLink.localIndex;
 
 		csPipeline.AllocateBuffers(
 			argumentInputSharedBuffers, perPipelineSharedBuffer, perModelDataCSBuffer
@@ -904,7 +907,7 @@ void ModelBundleVSIndirect::RecreateFollowingPipelines(
 
 void ModelBundleVSIndirect::_addModels(
 	std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
-	std::uint32_t const* modelIndices, std::uint32_t const* bufferIndices,
+	std::uint32_t const* modelIndicesInBundle, std::uint32_t const* bufferIndices,
 	size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 	std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
@@ -914,7 +917,7 @@ void ModelBundleVSIndirect::_addModels(
 	const auto pipelineLocalIndex = static_cast<std::uint32_t>(GetLocalPipelineIndex(pipelineIndex));
 
 	_addModelsToPipeline(
-		pipelineLocalIndex, modelBundleIndex, modelIndices, bufferIndices, modelCount,
+		pipelineLocalIndex, modelBundleIndex, modelIndicesInBundle, bufferIndices, modelCount,
 		argumentInputSharedBuffers, perPipelineSharedBuffer, perModelDataCSBuffer,
 		argumentOutputSharedBuffers, counterSharedBuffers, modelIndicesSharedBuffers
 	);
@@ -922,7 +925,7 @@ void ModelBundleVSIndirect::_addModels(
 
 void ModelBundleVSIndirect::_addModelsToPipeline(
 	std::uint32_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
-	std::uint32_t const* modelIndices, std::uint32_t const* bufferIndices,
+	std::uint32_t const* modelIndicesInBundle, std::uint32_t const* bufferIndices,
 	size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 	SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 	std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
@@ -937,7 +940,7 @@ void ModelBundleVSIndirect::_addModelsToPipeline(
 	// Add the model data first.
 	for (size_t index = 0u; index < modelCount; ++index)
 	{
-		const std::uint32_t modelIndex  = modelIndices[index];
+		const std::uint32_t modelIndex  = modelIndicesInBundle[index];
 		const std::uint32_t bufferIndex = bufferIndices[index];
 
 		std::uint32_t localModelIndex = pipeline.AddModel(modelIndex, bufferIndex);
