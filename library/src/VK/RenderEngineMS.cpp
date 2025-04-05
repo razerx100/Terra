@@ -14,8 +14,8 @@ RenderEngineMS::RenderEngineMS(
 {
 	m_modelManager = std::make_unique<ModelManagerMS>();
 	m_modelBuffers = std::make_unique<ModelBuffers>(
-		deviceManager.GetLogicalDevice(), m_memoryManager.get(), static_cast<std::uint32_t>(frameCount),
-		std::vector<std::uint32_t>{}
+		deviceManager.GetLogicalDevice(), m_memoryManager.get(),
+		static_cast<std::uint32_t>(frameCount), std::vector<std::uint32_t>{}
 	);
 
 	SetGraphicsDescriptorBufferLayout();
@@ -42,7 +42,9 @@ void RenderEngineMS::FinaliseInitialisation()
 void RenderEngineMS::SetGraphicsDescriptorBufferLayout()
 {
 	// The layout shouldn't change throughout the runtime.
-	m_meshManager.SetDescriptorBufferLayout(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+	m_meshManager.SetDescriptorBufferLayout(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
+	);
 	SetCommonGraphicsDescriptorBufferLayout(
 		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT
 	);
@@ -67,7 +69,9 @@ VkSemaphore RenderEngineMS::ExecutePipelineStages(
 ) {
 	waitSemaphore = GenericTransferStage(frameIndex, semaphoreCounter, waitSemaphore);
 
-	waitSemaphore = DrawingStage(frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore);
+	waitSemaphore = DrawingStage(
+		frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore
+	);
 
 	return waitSemaphore;
 }
@@ -82,20 +86,24 @@ void RenderEngineMS::SetModelGraphicsDescriptors()
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers->SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot,
+			s_vertexShaderSetLayoutIndex
 		);
 		m_modelBuffers->SetFragmentDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot,
+			s_fragmentShaderSetLayoutIndex
 		);
 	}
 }
 
 std::uint32_t RenderEngineMS::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
-	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, *m_modelBuffers);
+	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(
+		*modelBundle, *m_modelBuffers
+	);
 
 	const std::uint32_t index = m_modelManager->AddModelBundle(
-		std::move(modelBundle), std::move(modelBufferIndices)
+		std::move(modelBundle), modelBufferIndices
 	);
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
@@ -142,7 +150,9 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
-			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+			m_stagingManager.ReleaseOwnership(
+				transferCmdBufferScope, m_transferQueue.GetFamilyIndex()
+			);
 		}
 
 		const VKSemaphore& transferWaitSemaphore = m_transferWait[frameIndex];
@@ -202,7 +212,8 @@ VkSemaphore RenderEngineMS::DrawingStage(
 		const CommandBufferScope graphicsCmdBufferScope{ graphicsCmdBuffer };
 
 		m_stagingManager.AcquireOwnership(
-			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(),
+			m_transferQueue.GetFamilyIndex()
 		);
 
 		m_textureStorage.TransitionQueuedTextures(graphicsCmdBufferScope);
@@ -253,8 +264,9 @@ VkSemaphore RenderEngineMS::DrawingStage(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT, oldSemaphoreCounterValue)
-			.CommandBuffer(graphicsCmdBuffer);
+			.WaitSemaphore(
+				waitSemaphore, VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT, oldSemaphoreCounterValue
+			).CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
 		signalFence.Reset();

@@ -85,10 +85,11 @@ public:
 	[[nodiscard]]
 	virtual std::uint32_t AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline) = 0;
 
-	virtual void ChangeModelPipelineInBundle(
-		std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
-		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
+	virtual void ReconfigureModelPipelinesInBundle(
+		std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
+		std::uint32_t increasedModelsPipelineIndex
 	) = 0;
+
 	virtual void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept = 0;
 
 	[[nodiscard]]
@@ -268,7 +269,8 @@ protected:
 
 public:
 	RenderEngineCommon(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
 		m_modelManager{}, m_modelBuffers{},
 		m_meshManager{
@@ -296,12 +298,12 @@ public:
 		return m_graphicsPipelineManager.AddOrGetGraphicsPipeline(gfxPipeline);
 	}
 
-	void ChangeModelPipelineInBundle(
-		std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
-		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
+	void ReconfigureModelPipelinesInBundle(
+		std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
+		std::uint32_t increasedModelsPipelineIndex
 	) override {
-		m_modelManager->ChangeModelPipeline(
-			modelBundleIndex, modelIndex, oldPipelineIndex, newPipelineIndex
+		m_modelManager->ReconfigureModels(
+			modelBundleIndex, decreasedModelsPipelineIndex, increasedModelsPipelineIndex
 		);
 	}
 
@@ -317,7 +319,12 @@ public:
 
 	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override
 	{
-		m_modelBuffers->Remove(m_modelManager->RemoveModelBundle(bundleIndex));
+		std::shared_ptr<ModelBundle> modelBundle = m_modelManager->RemoveModelBundle(bundleIndex);
+
+		const auto& models = modelBundle->GetModels();
+
+		for (const std::shared_ptr<Model>& model : models)
+			m_modelBuffers->Remove(model->GetModelIndexInBuffer());
 	}
 
 	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged) override

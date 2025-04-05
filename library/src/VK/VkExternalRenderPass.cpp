@@ -55,7 +55,8 @@ void VkExternalRenderPass::RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 		{
 			pipelineLocalIndices.erase(
 				std::next(
-					std::begin(pipelineLocalIndices), std::distance(std::begin(bundleIndices), result)
+					std::begin(pipelineLocalIndices),
+					std::distance(std::begin(bundleIndices), result)
 				)
 			);
 
@@ -341,7 +342,9 @@ void VkExternalRenderPass::EndPass(const VKCommandBuffer& graphicsCmdBuffer) con
 void VkExternalRenderPass::EndPassForSwapchain(
 	const VKCommandBuffer& graphicsCmdBuffer, const VKImageView& swapchainBackBuffer
 ) const noexcept {
-	const VkTextureView& srcTextureView = m_resourceFactory->GetVkTextureView(m_swapchainCopySource);
+	const VkTextureView& srcTextureView = m_resourceFactory->GetVkTextureView(
+		m_swapchainCopySource
+	);
 
 	const VkExtent3D srcColourExtent    = srcTextureView.GetTexture().GetExtent();
 

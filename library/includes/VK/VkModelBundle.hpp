@@ -5,7 +5,6 @@
 #include <memory>
 #include <ranges>
 #include <algorithm>
-#include <unordered_map>
 #include <Model.hpp>
 #include <PipelineLayout.hpp>
 #include <VkCommandQueue.hpp>
@@ -19,62 +18,33 @@
 class PipelineModelsBase
 {
 public:
-	struct ModelData
-	{
-		std::uint32_t indexInBundle;
-		std::uint32_t indexInBuffer;
-
-		bool operator==(const ModelData& other) const noexcept
-		{
-			return indexInBundle == other.indexInBundle && indexInBuffer == other.indexInBuffer;
-		}
-	};
-
-public:
-	PipelineModelsBase() : m_psoIndex{ 0u }, m_modelData{} {}
-
-	void SetPSOIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
-
-	[[nodiscard]]
-	std::uint32_t GetPSOIndex() const noexcept { return m_psoIndex; }
+	PipelineModelsBase() : m_pipelineBundle{} {}
 
 	[[nodiscard]]
 	static VkDrawIndexedIndirectCommand GetDrawIndexedIndirectCommand(
 		const MeshTemporaryDetailsVS& meshDetailsVS
 	) noexcept;
 
-	[[nodiscard]]
-	std::uint32_t AddModel(std::uint32_t indexInBundle, std::uint32_t indexInBuffer) noexcept;
-
-	[[nodiscard]]
-	const ModelData& GetModelData(size_t localIndex) const noexcept
-	{
-		return m_modelData[localIndex];
-	}
-
-	void RemoveModel(std::uint32_t localIndex) noexcept
-	{
-		m_modelData.RemoveElement(localIndex);
-	}
+	void SetPipelineModelBundle(std::shared_ptr<PipelineModelBundle> pipelineBundle) noexcept;
 
 	void _cleanupData() noexcept { operator=(PipelineModelsBase{}); }
 
+	[[nodiscard]]
+	std::uint32_t GetPSOIndex() const noexcept { return m_pipelineBundle->GetPipelineIndex(); }
+
 protected:
-	std::uint32_t             m_psoIndex;
-	ReusableVector<ModelData> m_modelData;
+	std::shared_ptr<PipelineModelBundle> m_pipelineBundle;
 
 public:
 	PipelineModelsBase(const PipelineModelsBase&) = delete;
 	PipelineModelsBase& operator=(const PipelineModelsBase&) = delete;
 
 	PipelineModelsBase(PipelineModelsBase&& other) noexcept
-		: m_psoIndex{ other.m_psoIndex },
-		m_modelData{ std::move(other.m_modelData) }
+		: m_pipelineBundle{ std::move(other.m_pipelineBundle) }
 	{}
 	PipelineModelsBase& operator=(PipelineModelsBase&& other) noexcept
 	{
-		m_psoIndex  = other.m_psoIndex;
-		m_modelData = std::move(other.m_modelData);
+		m_pipelineBundle = std::move(other.m_pipelineBundle);
 
 		return *this;
 	}
@@ -100,9 +70,8 @@ public:
 
 private:
 	void DrawModel(
-		bool isInUse, const ModelData& modelData,
-		VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
+		const std::shared_ptr<Model>& model, VkCommandBuffer graphicsCmdBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) const noexcept;
 
 public:
@@ -161,9 +130,8 @@ private:
 	}
 
 	void DrawModel(
-		bool isInUse, const ModelData& modelData,
-		VkCommandBuffer graphicsCmdBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const std::vector<std::shared_ptr<Model>>& models
+		const std::shared_ptr<Model>& model, VkCommandBuffer graphicsCmdBuffer,
+		VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 	) const noexcept;
 
 private:
@@ -218,27 +186,19 @@ public:
 		std::uint32_t modelFlags;
 	};
 
-	struct IndexLink
-	{
-		std::uint32_t indexInBundle;
-		std::uint32_t localIndex;
-	};
-
 public:
 	PipelineModelsCSIndirect();
 
 	void CleanupData() noexcept { operator=(PipelineModelsCSIndirect{}); }
 
 	[[nodiscard]]
-	size_t GetAddableModelCount() const noexcept
-	{
-		return m_modelData.GetIndicesManager().GetFreeIndexCount();
-	}
-
+	size_t GetAddableModelCount() const noexcept;
 	[[nodiscard]]
-	std::vector<IndexLink> RemoveInactiveModels() noexcept;
+	size_t GetNewModelCount() const noexcept;
 
-	void UpdateNonPerFrameData(std::uint32_t modelBundleIndex) noexcept;
+	void UpdateNonPerFrameData(
+		std::uint32_t modelBundleIndex, const std::vector<std::shared_ptr<Model>>& models
+	) noexcept;
 
 	void AllocateBuffers(
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
@@ -258,7 +218,10 @@ public:
 	) noexcept;
 
 	[[nodiscard]]
-	size_t GetModelCount() const noexcept { return std::size(m_modelData); }
+	std::uint32_t GetModelCount() const noexcept
+	{
+		return static_cast<std::uint32_t>(std::size(m_pipelineBundle->GetModelIndicesInBundle()));
+	}
 
 	[[nodiscard]]
 	static consteval size_t GetPerModelStride() noexcept
@@ -297,11 +260,12 @@ class PipelineModelsVSIndirect
 public:
 	PipelineModelsVSIndirect();
 
+	void SetModelCount(std::uint32_t count) noexcept { m_modelCount = count; }
+
 	void AllocateBuffers(
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers,
-		std::uint32_t modelCount
+		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
 
 	void CleanupData() noexcept { operator=(PipelineModelsVSIndirect{}); }
@@ -310,20 +274,11 @@ public:
 		size_t frameIndex, const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout
 	) const noexcept;
 
-	void SetPSOIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
-
 	void RelinquishMemory(
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	) noexcept;
-
-	[[nodiscard]]
-	std::uint32_t GetModelCount() const noexcept { return m_modelCount; }
-	[[nodiscard]]
-	std::uint32_t GetModelOffset() const noexcept { return m_modelOffset; }
-	[[nodiscard]]
-	std::uint32_t GetPSOIndex() const noexcept { return m_psoIndex; }
 
 	[[nodiscard]]
 	static VkDeviceSize GetCounterBufferSize() noexcept { return s_counterBufferSize; }
@@ -340,7 +295,6 @@ private:
 	std::vector<SharedBufferData> m_modelIndicesSharedData;
 	std::uint32_t                 m_modelCount;
 	std::uint32_t                 m_modelOffset;
-	std::uint32_t                 m_psoIndex;
 
 	inline static VkDeviceSize s_counterBufferSize = static_cast<VkDeviceSize>(sizeof(std::uint32_t));
 
@@ -352,8 +306,7 @@ public:
 		: m_argumentOutputSharedData{ std::move(other.m_argumentOutputSharedData) },
 		m_counterSharedData{ std::move(other.m_counterSharedData) },
 		m_modelIndicesSharedData{ std::move(other.m_modelIndicesSharedData) },
-		m_modelCount{ other.m_modelCount }, m_modelOffset{ other.m_modelOffset },
-		m_psoIndex{ other.m_psoIndex }
+		m_modelCount{ other.m_modelCount }, m_modelOffset{ other.m_modelOffset }
 	{}
 	PipelineModelsVSIndirect& operator=(PipelineModelsVSIndirect&& other) noexcept
 	{
@@ -362,7 +315,6 @@ public:
 		m_modelIndicesSharedData   = std::move(other.m_modelIndicesSharedData);
 		m_modelCount               = other.m_modelCount;
 		m_modelOffset              = other.m_modelOffset;
-		m_psoIndex                 = other.m_psoIndex;
 
 		return *this;
 	}
@@ -372,19 +324,12 @@ template<typename Pipeline_t>
 class ModelBundleBase
 {
 public:
-	ModelBundleBase()
-		: m_pipelines{}, m_localModelIndexMap{}, m_modelBundle{}, m_modelBufferIndices{}
-	{}
+	ModelBundleBase() : m_pipelines{}, m_modelBundle{} {}
 
 	[[nodiscard]]
 	std::optional<size_t> GetPipelineLocalIndex(std::uint32_t pipelineIndex) const noexcept
 	{
 		return FindPipeline(pipelineIndex);
-	}
-
-	void SetModelIndices(std::vector<std::uint32_t> modelBufferIndices) noexcept
-	{
-		m_modelBufferIndices = std::move(modelBufferIndices);
 	}
 
 	void SetModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) noexcept
@@ -401,29 +346,11 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetModelCount() const noexcept
 	{
-		return static_cast<std::uint32_t>(std::size(m_modelBufferIndices));
+		return static_cast<std::uint32_t>(std::size(m_modelBundle->GetModels()));
 	}
 
 	[[nodiscard]]
-	const std::vector<std::uint32_t>& GetModelBufferIndices() const noexcept
-	{
-		return m_modelBufferIndices;
-	}
-
-	[[nodiscard]]
-	std::vector<std::uint32_t>&& TakeModelBufferIndices() noexcept
-	{
-		return std::move(m_modelBufferIndices);
-	}
-
-protected:
-	using LocalIndexMap_t = std::unordered_map<std::uint32_t, std::uint32_t>;
-
-	struct MoveModelCommonData
-	{
-		PipelineModelsBase::ModelData removedModelData;
-		std::uint32_t                 newLocalPipelineIndex;
-	};
+	const std::shared_ptr<ModelBundle>& GetModelBundle() const noexcept { return m_modelBundle; }
 
 protected:
 	[[nodiscard]]
@@ -446,19 +373,13 @@ protected:
 
 	void _cleanupData() noexcept { operator=(ModelBundleBase{}); }
 
-	[[nodiscard]]
-	size_t _addPipeline(std::uint32_t pipelineIndex)
+	size_t _addPipeline(std::shared_ptr<PipelineModelBundle> pipelineBundle)
 	{
-		const size_t pipelineLocalIndex = m_pipelines.Add(Pipeline_t{});
+		Pipeline_t pipeline{};
 
-		if (pipelineLocalIndex >= std::size(m_localModelIndexMap))
-			m_localModelIndexMap.emplace_back(LocalIndexMap_t{});
+		pipeline.SetPipelineModelBundle(std::move(pipelineBundle));
 
-		Pipeline_t& pipeline = m_pipelines[pipelineLocalIndex];
-
-		pipeline.SetPSOIndex(pipelineIndex);
-
-		return pipelineLocalIndex;
+		return m_pipelines.Add(std::move(pipeline));
 	}
 
 	void _removePipeline(size_t pipelineLocalIndex) noexcept
@@ -468,160 +389,9 @@ protected:
 		m_pipelines.RemoveElement(pipelineLocalIndex);
 	}
 
-	void _addModelToPipeline(std::uint32_t pipelineLocalIndex, std::uint32_t modelIndex)
-	{
-		Pipeline_t& pipeline            = m_pipelines[pipelineLocalIndex];
-
-		const std::uint32_t bufferIndex = m_modelBufferIndices[modelIndex];
-
-		const std::uint32_t modelPipelineIndex = pipeline.AddModel(modelIndex, bufferIndex);
-
-		LocalIndexMap_t& pipelineMap           = m_localModelIndexMap[pipelineLocalIndex];
-
-		pipelineMap.insert_or_assign(modelIndex, modelPipelineIndex);
-	}
-
-	void _addModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex)
-	{
-		std::optional<size_t> oPipelineLocalIndex = FindPipeline(pipelineIndex);
-		size_t pipelineLocalIndex                 = std::numeric_limits<size_t>::max();
-
-		if (oPipelineLocalIndex)
-			pipelineLocalIndex = oPipelineLocalIndex.value();
-		else
-			pipelineLocalIndex = _addPipeline(pipelineIndex);
-
-		_addModelToPipeline(static_cast<std::uint32_t>(pipelineLocalIndex), modelIndex);
-	}
-
-	void _addModels(std::uint32_t pipelineIndex, const std::vector<std::uint32_t>& modelIndices)
-	{
-		const size_t modelCount = std::size(modelIndices);
-
-		for (size_t index = 0u; index < modelCount; ++index)
-		{
-			const std::uint32_t modelIndex = modelIndices[index];
-
-			_addModel(pipelineIndex, modelIndex);
-		}
-	}
-
-	PipelineModelsBase::ModelData _removeModelFromPipeline(
-		std::uint32_t pipelineLocalIndex, std::uint32_t modelIndex
-	) noexcept {
-		PipelineModelsBase::ModelData modelData
-		{
-			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
-			.indexInBuffer = std::numeric_limits<std::uint32_t>::max()
-		};
-
-		Pipeline_t& pipeline         = m_pipelines[pipelineLocalIndex];
-		LocalIndexMap_t& pipelineMap = m_localModelIndexMap[pipelineLocalIndex];
-
-		auto result                  = pipelineMap.find(modelIndex);
-
-		if (result != std::end(pipelineMap))
-		{
-			const std::uint32_t modelLocalIndex = result->second;
-
-			modelData = pipeline.GetModelData(modelLocalIndex);
-
-			pipeline.RemoveModel(modelLocalIndex);
-
-			pipelineMap.erase(modelIndex);
-		}
-
-		return modelData;
-	}
-
-	PipelineModelsBase::ModelData _removeModel(
-		std::uint32_t pipelineIndex, std::uint32_t modelIndex
-	) noexcept {
-		std::optional<size_t> oPipelineLocalIndex = FindPipeline(pipelineIndex);
-
-		PipelineModelsBase::ModelData modelData
-		{
-			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
-			.indexInBuffer = std::numeric_limits<std::uint32_t>::max()
-		};
-
-		if (oPipelineLocalIndex)
-		{
-			const auto pipelineLocalIndex = static_cast<std::uint32_t>(oPipelineLocalIndex.value());
-
-			modelData = _removeModelFromPipeline(pipelineLocalIndex, modelIndex);
-		}
-
-		return modelData;
-	}
-
-	MoveModelCommonData _moveModelCommon(
-		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
-	) {
-		auto oldPipelineLocalIndex = std::numeric_limits<std::uint32_t>::max();
-		auto newPipelineLocalIndex = std::numeric_limits<std::uint32_t>::max();
-
-		// Find the pipelines
-		const size_t pipelineCount = std::size(m_pipelines);
-
-		for (size_t index = 0u; index < pipelineCount; ++index)
-		{
-			const Pipeline_t& pipeline = m_pipelines[index];
-
-			if (pipeline.GetPSOIndex() == oldPipelineIndex)
-				oldPipelineLocalIndex = static_cast<std::uint32_t>(index);
-
-			if (pipeline.GetPSOIndex() == newPipelineIndex)
-				newPipelineLocalIndex = static_cast<std::uint32_t>(index);
-
-			const bool bothFound = oldPipelineLocalIndex != std::numeric_limits<std::uint32_t>::max() &&
-				newPipelineLocalIndex != std::numeric_limits<std::uint32_t>::max();
-
-			if (bothFound)
-				break;
-		}
-
-		// Move the model
-		PipelineModelsBase::ModelData modelData
-		{
-			.indexInBundle = std::numeric_limits<std::uint32_t>::max(),
-			.indexInBuffer = std::numeric_limits<std::uint32_t>::max()
-		};
-
-		// If we can't find the old pipeline, then there will be nothing to move?
-		if (oldPipelineLocalIndex != std::numeric_limits<std::uint32_t>::max())
-			modelData = _removeModelFromPipeline(oldPipelineLocalIndex, modelIndex);
-
-		return MoveModelCommonData
-		{
-			.removedModelData      = modelData,
-			.newLocalPipelineIndex = newPipelineLocalIndex
-		};
-	}
-
-	void _moveModel(
-		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
-	) {
-		const MoveModelCommonData moveData = _moveModelCommon(
-			modelIndex, oldPipelineIndex, newPipelineIndex
-		);
-
-		std::uint32_t newPipelineLocalIndex            = moveData.newLocalPipelineIndex;
-		const PipelineModelsBase::ModelData& modelData = moveData.removedModelData;
-
-		// I feel like the new pipeline being not there already should be fine and we should add it.
-		if (newPipelineLocalIndex == std::numeric_limits<std::uint32_t>::max())
-			newPipelineLocalIndex = static_cast<std::uint32_t>(_addPipeline(newPipelineIndex));
-
-		if (modelData.indexInBundle != std::numeric_limits<std::uint32_t>::max())
-			_addModelToPipeline(newPipelineLocalIndex, modelData.indexInBundle);
-	}
-
 protected:
 	ReusableVector<Pipeline_t>   m_pipelines;
-	std::vector<LocalIndexMap_t> m_localModelIndexMap;
 	std::shared_ptr<ModelBundle> m_modelBundle;
-	std::vector<std::uint32_t>   m_modelBufferIndices;
 
 public:
 	ModelBundleBase(const ModelBundleBase&) = delete;
@@ -629,16 +399,12 @@ public:
 
 	ModelBundleBase(ModelBundleBase&& other) noexcept
 		: m_pipelines{ std::move(other.m_pipelines) },
-		m_localModelIndexMap{ std::move(other.m_localModelIndexMap) },
-		m_modelBundle{ std::move(other.m_modelBundle) },
-		m_modelBufferIndices{ std::move(other.m_modelBufferIndices) }
+		m_modelBundle{ std::move(other.m_modelBundle) }
 	{}
 	ModelBundleBase& operator=(ModelBundleBase&& other) noexcept
 	{
-		m_pipelines          = std::move(other.m_pipelines);
-		m_localModelIndexMap = std::move(other.m_localModelIndexMap);
-		m_modelBundle        = std::move(other.m_modelBundle);
-		m_modelBufferIndices = std::move(other.m_modelBufferIndices);
+		m_pipelines   = std::move(other.m_pipelines);
+		m_modelBundle = std::move(other.m_modelBundle);
 
 		return *this;
 	}
@@ -650,10 +416,17 @@ class ModelBundleCommon : public ModelBundleBase<Pipeline_t>
 public:
 	ModelBundleCommon() : ModelBundleBase<Pipeline_t>{} {}
 
-	[[nodiscard]]
-	std::uint32_t AddPipeline(std::uint32_t pipelineIndex)
+	// Assuming any new pipelines will added at the back.
+	void AddNewPipelinesFromBundle()
 	{
-		return static_cast<std::uint32_t>(this->_addPipeline(pipelineIndex));
+		const std::vector<std::shared_ptr<PipelineModelBundle>>& pipelines
+			= this->m_modelBundle->GetPipelineBundles();
+
+		const size_t pipelinesInBundle    = std::size(pipelines);
+		const size_t currentPipelineCount = std::size(this->m_pipelines);
+
+		for (size_t index = currentPipelineCount; index < pipelinesInBundle; ++index)
+			this->_addPipeline(pipelines[index]);
 	}
 
 	void RemovePipeline(size_t pipelineLocalIndex) noexcept
@@ -662,30 +435,6 @@ public:
 	}
 
 	void CleanupData() noexcept { this->_cleanupData(); }
-
-	// Model Index is the index in the ModelBundle and bufferIndex would be the
-	// index in the GPU visible buffer.
-	void AddModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex)
-	{
-		this->_addModel(pipelineIndex, modelIndex);
-	}
-
-	// The size of both of the vectors must be the same.
-	void AddModels(std::uint32_t pipelineIndex, const std::vector<std::uint32_t>& modelIndices)
-	{
-		this->_addModels(pipelineIndex, modelIndices);
-	}
-
-	void MoveModel(
-		std::uint32_t modelIndex, std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
-	) {
-		this->_moveModel(modelIndex, oldPipelineIndex, newPipelineIndex);
-	}
-
-	void RemoveModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex) noexcept
-	{
-		this->_removeModel(pipelineIndex, modelIndex);
-	}
 
 public:
 	ModelBundleCommon(const ModelBundleCommon&) = delete;
@@ -768,12 +517,17 @@ class ModelBundleVSIndirect : public ModelBundleBase<PipelineModelsCSIndirect>
 public:
 	ModelBundleVSIndirect() : ModelBundleBase{}, m_vsPipelines{} {}
 
-	[[nodiscard]]
-	std::uint32_t AddPipeline(std::uint32_t pipelineIndex);
+	// Assuming any new pipelines will added at the back.
+	void AddNewPipelinesFromBundle(
+		std::uint32_t modelBundleIndex, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
+		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
+		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
+		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
+		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
+	);
 
 	void RemovePipeline(
-		size_t pipelineLocalIndex,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
+		size_t pipelineLocalIndex, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
@@ -788,45 +542,19 @@ public:
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	) noexcept;
 
-	// Model Index is the index in the ModelBundle and bufferIndex would be the
-	// index in the GPU visible buffer.
-	void AddModel(
-		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
+	void ReconfigureModels(
+		std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
+		std::uint32_t increasedModelsPipelineIndex,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
-
-	// The size of both of the index vectors must be the same.
-	void AddModels(
-		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
-		const std::vector<std::uint32_t>& modelIndices,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
-
-	void MoveModel(
-		std::uint32_t modelIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
-
-	void RemoveModel(std::uint32_t pipelineIndex, std::uint32_t modelIndex) noexcept
-	{
-		_removeModel(pipelineIndex, modelIndex);
-	}
 
 	void UpdatePipeline(
-		size_t pipelineLocalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle, bool skipCulling
+		size_t pipelineLacalIndex, size_t frameIndex, const VkMeshBundleVS& meshBundle,
+		bool skipCulling
 	) const noexcept;
 
 	void DrawPipeline(
@@ -834,26 +562,16 @@ public:
 		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) const noexcept;
 
-private:
-	void _addModels(
-		std::uint32_t pipelineIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t const* modelIndicesInBundle, std::uint32_t const* bufferIndices,
-		size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
-	void _addModelsToPipeline(
+	void SetupPipelineBuffers(
 		std::uint32_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t const* modelIndicesInBundle, std::uint32_t const* bufferIndices,
-		size_t modelCount, std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
+		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
 		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
 		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
 
+private:
 	void ResizePreviousPipelines(
 		size_t addableStartIndex, size_t pipelineLocalIndex, std::uint32_t modelBundleIndex,
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
@@ -872,20 +590,11 @@ private:
 		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
 	);
 
-	void _moveModel(
-		std::uint32_t modelIndex, std::uint32_t modelBundleIndex,
-		std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex,
-		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
-		SharedBufferCPU& perPipelineSharedBuffer, SharedBufferCPU& perModelDataCSBuffer,
-		std::vector<SharedBufferGPUWriteOnly>& argumentOutputSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& counterSharedBuffers,
-		std::vector<SharedBufferGPUWriteOnly>& modelIndicesSharedBuffers
-	);
-
-	[[nodiscard]]
-	size_t GetLocalPipelineIndex(std::uint32_t pipelineIndex) noexcept;
 	[[nodiscard]]
 	size_t FindAddableStartIndex(size_t pipelineLocalIndex, size_t modelCount) const noexcept;
+
+	[[nodiscard]]
+	size_t GetLocalPipelineIndex(std::uint32_t pipelineIndex);
 
 private:
 	std::vector<PipelineModelsVSIndirect> m_vsPipelines;

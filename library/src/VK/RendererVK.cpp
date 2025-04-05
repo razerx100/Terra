@@ -61,12 +61,12 @@ std::uint32_t RendererVK::AddGraphicsPipeline(const ExternalGraphicsPipeline& gf
 	return m_terra.GetRenderEngine().AddGraphicsPipeline(gfxPipeline);
 }
 
-void RendererVK::ChangeModelPipelineInBundle(
-	std::uint32_t modelBundleIndex, std::uint32_t modelIndex,
-	std::uint32_t oldPipelineIndex, std::uint32_t newPipelineIndex
+void RendererVK::ReconfigureModelPipelinesInBundle(
+	std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
+	std::uint32_t increasedModelsPipelineIndex
 ) {
-	m_terra.GetRenderEngine().ChangeModelPipelineInBundle(
-		modelBundleIndex, modelIndex, oldPipelineIndex, newPipelineIndex
+	m_terra.GetRenderEngine().ReconfigureModelPipelinesInBundle(
+		modelBundleIndex, decreasedModelsPipelineIndex, increasedModelsPipelineIndex
 	);
 }
 

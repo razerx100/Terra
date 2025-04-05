@@ -22,7 +22,7 @@ void ModelManagerVSIndividual::DrawPipeline(
 	const ModelBundleVSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
-	const VkMeshBundleVS& meshBundle           = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
@@ -91,12 +91,12 @@ void ModelManagerVSIndirect::SetComputeConstantRange(PipelineLayout& layout) noe
 	layout.AddPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, pushConstantSize);
 }
 
-void ModelManagerVSIndirect::ChangeModelPipeline(
-	std::uint32_t bundleIndex, std::uint32_t modelIndexInBundle, std::uint32_t oldPipelineIndex,
-	std::uint32_t newPipelineIndex
+void ModelManagerVSIndirect::ReconfigureModels(
+	std::uint32_t bundleIndex, std::uint32_t decreasedModelsPipelineIndex,
+	std::uint32_t increasedModelsPipelineIndex
 ) {
-	m_modelBundles[bundleIndex].MoveModel(
-		modelIndexInBundle, bundleIndex, oldPipelineIndex, newPipelineIndex,
+	m_modelBundles[bundleIndex].ReconfigureModels(
+		bundleIndex, decreasedModelsPipelineIndex, increasedModelsPipelineIndex,
 		m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
 		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
 	);
@@ -117,20 +117,29 @@ void ModelManagerVSIndirect::UpdateAllocatedModelCount() noexcept
 	// ThreadBlockSize is the number of threads in a thread group. If the allocated model count
 	// is more than the BlockSize then dispatch more groups. Ex: Threads 64, Model 60 = Group 1
 	// Threads 64, Model 65 = Group 2.
-	m_dispatchXCount = static_cast<std::uint32_t>(std::ceil(m_allocatedModelCount / THREADBLOCKSIZE));
+	m_dispatchXCount = static_cast<std::uint32_t>(
+		std::ceil(m_allocatedModelCount / THREADBLOCKSIZE)
+	);
 }
 
 std::uint32_t ModelManagerVSIndirect::AddModelBundle(
-	std::shared_ptr<ModelBundle>&& modelBundle, std::vector<std::uint32_t>&& modelBufferIndices
+	std::shared_ptr<ModelBundle>&& modelBundle,
+	const std::vector<std::uint32_t>& modelIndicesInBuffer
 ) {
 	const size_t bundleIndex  = m_modelBundles.Add(ModelBundleVSIndirect{});
+
 	const auto bundleIndexU32 = static_cast<std::uint32_t>(bundleIndex);
 
 	ModelBundleVSIndirect& localModelBundle = m_modelBundles[bundleIndex];
 
-	localModelBundle.SetModelIndices(std::move(modelBufferIndices));
+	SetModelIndicesInBuffer(*modelBundle, modelIndicesInBuffer);
 
-	_addModelsFromBundle(localModelBundle, *modelBundle, bundleIndexU32);
+	localModelBundle.SetModelBundle(std::move(modelBundle));
+
+	localModelBundle.AddNewPipelinesFromBundle(
+		bundleIndexU32, m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
+		m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
+	);
 
 	UpdateCounterResetValues();
 
@@ -138,44 +147,17 @@ std::uint32_t ModelManagerVSIndirect::AddModelBundle(
 
 	UpdateAllocatedModelCount();
 
-	localModelBundle.SetModelBundle(std::move(modelBundle));
-
 	return bundleIndexU32;
 }
 
-void ModelManagerVSIndirect::_addModelsFromBundle(
-	ModelBundleVSIndirect& localModelBundle, const ModelBundle& modelBundle, std::uint32_t modelBundleIndex
-) {
-	const std::vector<std::shared_ptr<Model>>& models = modelBundle.GetModels();
-
-	const size_t modelCount = std::size(models);
-
-	std::unordered_map<std::uint32_t, std::vector<std::uint32_t>> pipelineModelIndicesMap{};
-
-	for (size_t index = 0u; index < modelCount; ++index)
-	{
-		const std::shared_ptr<Model>& model      = models[index];
-
-		std::vector<std::uint32_t>& modelIndices = pipelineModelIndicesMap[model->GetPipelineIndex()];
-
-		modelIndices.emplace_back(static_cast<std::uint32_t>(index));
-	}
-
-	for (const auto& pipelineModelIndices : pipelineModelIndicesMap)
-		localModelBundle.AddModels(
-			pipelineModelIndices.first, modelBundleIndex, pipelineModelIndices.second,
-			m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
-			m_argumentOutputBuffers, m_counterBuffers, m_modelIndicesBuffers
-		);
-}
-
-std::vector<std::uint32_t> ModelManagerVSIndirect::RemoveModelBundle(std::uint32_t bundleIndex) noexcept
-{
-	const size_t bundleIndexST              = bundleIndex;
+std::shared_ptr<ModelBundle> ModelManagerVSIndirect::RemoveModelBundle(
+	std::uint32_t bundleIndex
+) noexcept {
+	const size_t bundleIndexST = bundleIndex;
 
 	ModelBundleVSIndirect& localModelBundle = m_modelBundles[bundleIndexST];
 
-	std::vector<std::uint32_t> modelBufferIndices = localModelBundle.TakeModelBufferIndices();
+	std::shared_ptr<ModelBundle> modelBundle = localModelBundle.GetModelBundle();
 
 	localModelBundle.CleanupData(
 		m_argumentInputBuffers, m_perPipelineBuffer, m_perModelBuffer,
@@ -184,7 +166,7 @@ std::vector<std::uint32_t> ModelManagerVSIndirect::RemoveModelBundle(std::uint32
 
 	m_modelBundles.RemoveElement(bundleIndexST);
 
-	return modelBufferIndices;
+	return modelBundle;
 }
 
 void ModelManagerVSIndirect::UpdatePipelinePerFrame(
@@ -205,7 +187,9 @@ void ModelManagerVSIndirect::UpdatePipelinePerFrame(
 
 	const VkMeshBundleVS& meshBundle      = meshManager.GetBundle(meshBundleIndex);
 
-	vsBundle.UpdatePipeline(pipelineLocalIndex, static_cast<size_t>(frameIndex), meshBundle, skipCulling);
+	vsBundle.UpdatePipeline(
+		pipelineLocalIndex, static_cast<size_t>(frameIndex), meshBundle, skipCulling
+	);
 
 	memcpy(bufferOffsetPtr + bufferOffset, &meshBundleIndex, strideSize);
 }
@@ -230,7 +214,8 @@ void ModelManagerVSIndirect::SetDescriptorBuffersVS(
 		VkDescriptorBuffer& descriptorBuffer = descriptorBuffers[index];
 
 		descriptorBuffer.SetStorageBufferDescriptor(
-			m_modelIndicesBuffers[index].GetBuffer(), s_modelIndicesVSBindingSlot, vsSetLayoutIndex, 0u
+			m_modelIndicesBuffers[index].GetBuffer(), s_modelIndicesVSBindingSlot,
+			vsSetLayoutIndex, 0u
 		);
 	}
 }
@@ -309,7 +294,8 @@ void ModelManagerVSIndirect::SetDescriptorBuffersCS(
 }
 
 void ModelManagerVSIndirect::Dispatch(
-	const VKCommandBuffer& computeBuffer, const PipelineManager<ComputePipeline_t>& pipelineManager
+	const VKCommandBuffer& computeBuffer,
+	const PipelineManager<ComputePipeline_t>& pipelineManager
 ) const noexcept {
 	VkCommandBuffer cmdBuffer       = computeBuffer.Get();
 
@@ -344,9 +330,11 @@ void ModelManagerVSIndirect::DrawPipeline(
 
 	const ModelBundleVSIndirect& modelBundle = m_modelBundles[modelBundleIndex];
 
-	const VkMeshBundleVS& meshBundle         = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleVS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
-	modelBundle.DrawPipeline(pipelineLocalIndex, frameIndex, graphicsBuffer, pipelineLayout, meshBundle);
+	modelBundle.DrawPipeline(
+		pipelineLocalIndex, frameIndex, graphicsBuffer, pipelineLayout, meshBundle
+	);
 }
 
 void ModelManagerVSIndirect::ResetCounterBuffer(
@@ -395,8 +383,9 @@ void ModelManagerVSIndirect::UpdateCounterResetValues()
 void ModelManagerMS::SetGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
 	// Push constants needs to be serialised according to the shader stages
-	constexpr std::uint32_t modelConstantSize = PipelineModelsMSIndividual::GetConstantBufferSize();
-	constexpr std::uint32_t meshConstantSize  = VkMeshBundleMS::GetConstantBufferSize();
+	constexpr std::uint32_t modelConstantSize
+		= PipelineModelsMSIndividual::GetConstantBufferSize();
+	constexpr std::uint32_t meshConstantSize = VkMeshBundleMS::GetConstantBufferSize();
 
 	layout.AddPushConstantRange(
 		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
@@ -415,7 +404,7 @@ void ModelManagerMS::DrawPipeline(
 	const ModelBundleMSIndividual& modelBundle = m_modelBundles[modelBundleIndex];
 
 	// Mesh
-	const VkMeshBundleMS& meshBundle           = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
+	const VkMeshBundleMS& meshBundle = meshManager.GetBundle(modelBundle.GetMeshBundleIndex());
 
 	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);

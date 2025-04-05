@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include <memory>
+#include <limits>
+#include <ranges>
+#include <algorithm>
 
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
@@ -17,7 +20,7 @@ namespace Constants
 	constexpr std::uint32_t vsSetLayoutIndex   = 0u;
 	constexpr std::uint32_t csSetLayoutIndex   = 0u;
 	constexpr std::uint32_t fsSetLayoutIndex   = 1u;
-	constexpr std::uint32_t meshBundleID       = 0u;
+	constexpr std::uint32_t meshBundleIndex    = 0u;
 }
 
 class ModelManagerTest : public ::testing::Test
@@ -63,7 +66,7 @@ void ModelManagerTest::TearDownTestSuite()
 
 class ModelDummy : public Model
 {
-	std::uint32_t m_psoIndex = 0u;
+	std::uint32_t m_indexInBuffer = 0u;
 public:
 	[[nodiscard]]
 	DirectX::XMMATRIX GetModelMatrix() const noexcept override { return {}; }
@@ -84,30 +87,117 @@ public:
 	[[nodiscard]]
 	float GetModelScale() const noexcept override { return 1.f; }
 	[[nodiscard]]
-	std::uint32_t GetPipelineIndex() const noexcept override { return m_psoIndex; }
-	[[nodiscard]]
 	bool IsVisible() const noexcept override { return true; }
 
-	void SetPipelineIndex(std::uint32_t psoIndex) noexcept { m_psoIndex = psoIndex; }
+	void SetModelIndexInBuffer(std::uint32_t index) noexcept override
+	{
+		m_indexInBuffer = index;
+	}
+	[[nodiscard]]
+	std::uint32_t GetModelIndexInBuffer() const noexcept override { return m_indexInBuffer; }
+};
+
+class PipelineModelBundleDummy : public PipelineModelBundle
+{
+	std::uint32_t              m_psoIndex = 0u;
+	std::vector<std::uint32_t> m_modelIndices;
+public:
+	void SetPipelineIndex(std::uint32_t index) noexcept { m_psoIndex = index; }
+
+	void AddModelIndex(std::uint32_t index) noexcept
+	{
+		m_modelIndices.emplace_back(index);
+	}
+
+	void RemoveModelIndex(std::uint32_t indexInBundle) noexcept
+	{
+		std::erase(m_modelIndices, indexInBundle);
+	}
+
+	[[nodiscard]]
+	std::uint32_t GetPipelineIndex() const noexcept override { return m_psoIndex; }
+	[[nodiscard]]
+	const std::vector<std::uint32_t>& GetModelIndicesInBundle() const noexcept override
+	{
+		return m_modelIndices;
+	}
 };
 
 class ModelBundleDummy : public ModelBundle
 {
-	std::uint32_t                       m_meshBundleID = Constants::meshBundleID;
-	std::vector<std::shared_ptr<Model>> m_models;
+	using DummyPipelineContainer_t = std::vector<std::shared_ptr<PipelineModelBundleDummy>>;
+
+	std::uint32_t            m_meshBundleIndex = Constants::meshBundleIndex;
+	ModelContainer_t         m_models;
+	PipelineContainer_t      m_pipelines;
+	DummyPipelineContainer_t m_dummyPipelines;
 
 public:
-	void AddModel(std::shared_ptr<Model> model) noexcept
+	void AddModel(std::uint32_t pipelineIndex, std::shared_ptr<Model> model) noexcept
 	{
+		const auto modelIndex = static_cast<std::uint32_t>(std::size(m_models));
+
 		m_models.emplace_back(std::move(model));
+
+		m_dummyPipelines[pipelineIndex]->AddModelIndex(modelIndex);
+	}
+
+	std::uint32_t AddPipeline(std::shared_ptr<PipelineModelBundleDummy> pipeline) noexcept
+	{
+		const auto pipelineIndex = static_cast<std::uint32_t>(std::size(m_pipelines));
+
+		m_dummyPipelines.emplace_back(pipeline);
+		m_pipelines.emplace_back(std::move(pipeline));
+
+		return pipelineIndex;
+	}
+
+	void ChangeModelPipeline(
+		std::uint32_t modelIndexInBundle, std::uint32_t oldPipelineIndex,
+		std::uint32_t newPipelineIndex
+	) noexcept {
+		size_t oldPipelineIndexInBundle = std::numeric_limits<size_t>::max();
+		size_t newPipelineIndexInBundle = std::numeric_limits<size_t>::max();
+
+		const size_t pipelineCount = std::size(m_dummyPipelines);
+
+		for (size_t index = 0u; index < pipelineCount; ++index)
+		{
+			const size_t currentPipelineIndex = m_dummyPipelines[index]->GetPipelineIndex();
+
+			if (currentPipelineIndex == oldPipelineIndex)
+				oldPipelineIndexInBundle = index;
+
+			if (currentPipelineIndex == newPipelineIndex)
+				newPipelineIndexInBundle = index;
+
+			const bool bothFound = oldPipelineIndexInBundle != std::numeric_limits<size_t>::max()
+				&& newPipelineIndexInBundle != std::numeric_limits<size_t>::max();
+
+			if (bothFound)
+				break;
+		}
+
+		m_dummyPipelines[oldPipelineIndexInBundle]->RemoveModelIndex(modelIndexInBundle);
+		m_dummyPipelines[newPipelineIndexInBundle]->AddModelIndex(modelIndexInBundle);
 	}
 
 	[[nodiscard]]
-	std::uint32_t GetMeshBundleIndex() const noexcept override { return m_meshBundleID; }
+	std::uint32_t GetMeshBundleIndex() const noexcept override { return m_meshBundleIndex; }
 	[[nodiscard]]
-	const std::vector<std::shared_ptr<Model>>& GetModels() const noexcept override
+	const ModelContainer_t& GetModels() const noexcept override
 	{
 		return m_models;
+	}
+	[[nodiscard]]
+	ModelContainer_t& GetModels() noexcept override
+	{
+		return m_models;
+	}
+	[[nodiscard]]
+	const PipelineContainer_t& GetPipelineBundles() const noexcept override
+	{
+		return m_pipelines;
 	}
 };
 
@@ -117,7 +207,10 @@ class MeshBundleTemporaryDummy : public MeshBundleTemporary
 	std::vector<Vertex>         m_vertices       = { Vertex{} };
 	std::vector<std::uint32_t>  m_vertexIndices  = { 0u, 1u, 2u };
 	std::vector<std::uint32_t>  m_primIndices    = { 0u };
-	MeshBundleTemporaryDetails  m_bundleDetails{ .meshTemporaryDetailsVS = { MeshTemporaryDetailsVS{} } };
+	MeshBundleTemporaryDetails  m_bundleDetails
+	{
+		.meshTemporaryDetailsVS = { MeshTemporaryDetailsVS{} }
+	};
 
 public:
 	void GenerateTemporaryData(bool) override {}
@@ -272,6 +365,15 @@ TEST_F(ModelManagerTest, ModelBufferTest)
 	}
 }
 
+static void RemoveModelBundle(
+	ModelBuffers& modelBuffer, const ModelBundle& modelBundle
+) noexcept {
+	const auto& models = modelBundle.GetModels();
+
+	for (const auto& model : models)
+		modelBuffer.Remove(model->GetModelIndexInBuffer());
+}
+
 TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 {
 	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
@@ -283,7 +385,9 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	ThreadPool threadPool{ 2u };
 
-	StagingBufferManager stagingBufferManager{ logicalDevice, &memoryManager, &threadPool, &queueManager };
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager, &threadPool, &queueManager
+	};
 
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
@@ -323,51 +427,79 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
 
 		for (size_t index = 0u; index < 5u; ++index)
-			modelBundle->AddModel(std::make_shared<ModelDummy>());
+			modelBundle->AddModel(1u, std::make_shared<ModelDummy>());
+		for (size_t index = 0u; index < 5u; ++index)
+			modelBundle->AddModel(0u, std::make_shared<ModelDummy>());
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndividual.AddModelBundle(
+			std::move(modelBundle), modelIndices
+		);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	modelBuffers.Remove(vsIndividual.RemoveModelBundle(1u));
+	::RemoveModelBundle(modelBuffers, *vsIndividual.RemoveModelBundle(1u));
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
 
 		for (size_t index = 0u; index < 7u; ++index)
-			modelBundle->AddModel(std::make_shared<ModelDummy>());
+			modelBundle->AddModel(0u, std::make_shared<ModelDummy>());
+		for (size_t index = 0u; index < 5u; ++index)
+			modelBundle->AddModel(1u, std::make_shared<ModelDummy>());
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndividual.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 }
@@ -383,7 +515,9 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	ThreadPool threadPool{ 2u };
 
-	StagingBufferManager stagingBufferManager{ logicalDevice, &memoryManager,  &threadPool, &queueManager };
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager,  &threadPool, &queueManager
+	};
 
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
@@ -392,7 +526,9 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 		logicalDevice, &memoryManager, queueManager.GetAllIndices(), Constants::frameCount
 	};
 
-	MeshManagerVSIndirect vsIndirectMesh{ logicalDevice, &memoryManager, queueManager.GetAllIndices() };
+	MeshManagerVSIndirect vsIndirectMesh{
+		logicalDevice, &memoryManager, queueManager.GetAllIndices()
+	};
 
 	std::vector<VkDescriptorBuffer> descBuffersVS{};
 	std::vector<VkDescriptorBuffer> descBuffersCS{};
@@ -459,113 +595,148 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
 
 		for (size_t index = 0u; index < 5u; ++index)
-			modelBundle->AddModel(std::make_shared<ModelDummy>());
+			modelBundle->AddModel(1u, std::make_shared<ModelDummy>());
+		for (size_t index = 0u; index < 5u; ++index)
+			modelBundle->AddModel(0u, std::make_shared<ModelDummy>());
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	modelBuffers.Remove(vsIndirect.RemoveModelBundle(1u));
+	::RemoveModelBundle(modelBuffers, *vsIndirect.RemoveModelBundle(1u));
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
 
 		for (size_t index = 0u; index < 7u; ++index)
-			modelBundle->AddModel(std::make_shared<ModelDummy>());
+			modelBundle->AddModel(0u, std::make_shared<ModelDummy>());
+		for (size_t index = 0u; index < 5u; ++index)
+			modelBundle->AddModel(1u, std::make_shared<ModelDummy>());
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 3u) << "Index isn't 3.";
 	}
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 4u) << "Index isn't 4.";
 	}
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline2   = std::make_shared<PipelineModelBundleDummy>();
+
+		pipeline->SetPipelineIndex(1u);
+		pipeline1->SetPipelineIndex(2u);
+		pipeline2->SetPipelineIndex(3u);
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
+		modelBundle->AddPipeline(std::move(pipeline2));
 
 		for (size_t index = 0u; index < 7u; ++index)
-		{
-			auto model = std::make_shared<ModelDummy>();
+			modelBundle->AddModel(1u, std::move(std::make_shared<ModelDummy>()));
 
-			model->SetPipelineIndex(2u);
-
-			modelBundle->AddModel(std::move(model));
-		}
 		for (size_t index = 0u; index < 5u; ++index)
-		{
-			auto model = std::make_shared<ModelDummy>();
+			modelBundle->AddModel(0u, std::move(std::make_shared<ModelDummy>()));
 
-			model->SetPipelineIndex(1u);
-
-			modelBundle->AddModel(std::move(model));
-		}
 		for (size_t index = 0u; index < 3u; ++index)
-		{
-			auto model = std::make_shared<ModelDummy>();
-
-			model->SetPipelineIndex(3u);
-
-			modelBundle->AddModel(std::move(model));
-		}
+			modelBundle->AddModel(2u, std::move(std::make_shared<ModelDummy>()));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = vsIndirect.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = vsIndirect.AddModelBundle(modelBundle, modelIndices);
 		EXPECT_EQ(index, 5u) << "Index isn't 5.";
 
-		vsIndirect.ChangeModelPipeline(index, 7u, 1u, 3u);
-		vsIndirect.ChangeModelPipeline(index, 4u, 2u, 1u);
+		modelBundle->ChangeModelPipeline(7u, 1u, 3u);
+		vsIndirect.ReconfigureModels(index, 1u, 3u);
+
+		modelBundle->ChangeModelPipeline(5u, 2u, 1u);
+		modelBundle->ChangeModelPipeline(4u, 2u, 1u);
+		vsIndirect.ReconfigureModels(index, 2u, 1u);
 	}
 }
 
@@ -580,7 +751,9 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	ThreadPool threadPool{ 2u };
 
-	StagingBufferManager stagingBufferManager{ logicalDevice, &memoryManager, &threadPool, &queueManager };
+	StagingBufferManager stagingBufferManager{
+		logicalDevice, &memoryManager, &threadPool, &queueManager
+	};
 
 	VKRenderPass renderPass{ logicalDevice };
 	renderPass.Create(RenderPassBuilder{});
@@ -643,88 +816,112 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 0u) << "Index isn't 0.";
 	}
 	{
 		auto model       = std::make_shared<ModelDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
 
-		modelBundle->AddModel(std::move(model));
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddModel(0u, std::move(model));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
 
 		for (size_t index = 0u; index < 5u; ++index)
-			modelBundle->AddModel(std::make_shared<ModelDummy>());
+			modelBundle->AddModel(1u, std::make_shared<ModelDummy>());
+		for (size_t index = 0u; index < 5u; ++index)
+			modelBundle->AddModel(0u, std::make_shared<ModelDummy>());
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 2u) << "Index isn't 2.";
 	}
-	modelBuffers.Remove(managerMS.RemoveModelBundle(1u));
+	::RemoveModelBundle(modelBuffers, *managerMS.RemoveModelBundle(1u));
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
 
 		for (size_t index = 0u; index < 7u; ++index)
-			modelBundle->AddModel(std::make_shared<ModelDummy>());
+			modelBundle->AddModel(0u, std::make_shared<ModelDummy>());
+		for (size_t index = 0u; index < 5u; ++index)
+			modelBundle->AddModel(1u, std::make_shared<ModelDummy>());
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), modelIndices);
 		EXPECT_EQ(index, 1u) << "Index isn't 1.";
 	}
 	{
 		auto modelBundle = std::make_shared<ModelBundleDummy>();
+		auto pipeline    = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline1   = std::make_shared<PipelineModelBundleDummy>();
+		auto pipeline2   = std::make_shared<PipelineModelBundleDummy>();
+
+		pipeline->SetPipelineIndex(1u);
+		pipeline1->SetPipelineIndex(2u);
+		pipeline2->SetPipelineIndex(3u);
+
+		modelBundle->AddPipeline(std::move(pipeline));
+		modelBundle->AddPipeline(std::move(pipeline1));
+		modelBundle->AddPipeline(std::move(pipeline2));
 
 		for (size_t index = 0u; index < 7u; ++index)
-		{
-			auto model = std::make_shared<ModelDummy>();
+			modelBundle->AddModel(1u, std::move(std::make_shared<ModelDummy>()));
 
-			model->SetPipelineIndex(2u);
-
-			modelBundle->AddModel(std::move(model));
-		}
 		for (size_t index = 0u; index < 5u; ++index)
-		{
-			auto model = std::make_shared<ModelDummy>();
+			modelBundle->AddModel(0u, std::move(std::make_shared<ModelDummy>()));
 
-			model->SetPipelineIndex(1u);
-
-			modelBundle->AddModel(std::move(model));
-		}
 		for (size_t index = 0u; index < 3u; ++index)
-		{
-			auto model = std::make_shared<ModelDummy>();
-
-			model->SetPipelineIndex(3u);
-
-			modelBundle->AddModel(std::move(model));
-		}
+			modelBundle->AddModel(2u, std::move(std::make_shared<ModelDummy>()));
 
 		std::vector<std::shared_ptr<Model>> models = modelBundle->GetModels();
-		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(std::move(models));
+		std::vector<std::uint32_t> modelIndices    = modelBuffers.AddMultipleRU32(
+			std::move(models)
+		);
 
-		std::uint32_t index = managerMS.AddModelBundle(std::move(modelBundle), std::move(modelIndices));
+		std::uint32_t index = managerMS.AddModelBundle(modelBundle, modelIndices);
 		EXPECT_EQ(index, 3u) << "Index isn't 3.";
 
-		managerMS.ChangeModelPipeline(index, 7u, 1u, 3u);
+		modelBundle->ChangeModelPipeline(7u, 1u, 3u);
+		managerMS.ReconfigureModels(index, 1u, 3u);
 	}
 }
 

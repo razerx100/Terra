@@ -39,7 +39,9 @@ VkSemaphore RenderEngineVSIndividual::ExecutePipelineStages(
 ) {
 	waitSemaphore = GenericTransferStage(frameIndex, semaphoreCounter, waitSemaphore);
 
-	waitSemaphore = DrawingStage(frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore);
+	waitSemaphore = DrawingStage(
+		frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore
+	);
 
 	return waitSemaphore;
 }
@@ -47,7 +49,9 @@ VkSemaphore RenderEngineVSIndividual::ExecutePipelineStages(
 void RenderEngineVSIndividual::SetGraphicsDescriptorBufferLayout()
 {
 	// The layout shouldn't change throughout the runtime.
-	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+	SetCommonGraphicsDescriptorBufferLayout(
+		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+	);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 	{
@@ -72,20 +76,24 @@ void RenderEngineVSIndividual::SetGraphicsDescriptors()
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers->SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot,
+			s_vertexShaderSetLayoutIndex
 		);
 		m_modelBuffers->SetFragmentDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot,
+			s_fragmentShaderSetLayoutIndex
 		);
 	}
 }
 
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
-	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, *m_modelBuffers);
+	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(
+		*modelBundle, *m_modelBuffers
+	);
 
 	const std::uint32_t index = m_modelManager->AddModelBundle(
-		std::move(modelBundle), std::move(modelBufferIndices)
+		std::move(modelBundle), modelBufferIndices
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -97,11 +105,14 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(std::shared_ptr<ModelBund
 	return index;
 }
 
-std::uint32_t RenderEngineVSIndividual::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
-{
+std::uint32_t RenderEngineVSIndividual::AddMeshBundle(
+	std::unique_ptr<MeshBundleTemporary> meshBundle
+) {
 	m_copyNecessary = true;
 
-	return m_meshManager.AddMeshBundle(std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer);
+	return m_meshManager.AddMeshBundle(
+		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
+	);
 }
 
 VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
@@ -125,7 +136,9 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
-			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+			m_stagingManager.ReleaseOwnership(
+				transferCmdBufferScope, m_transferQueue.GetFamilyIndex()
+			);
 		}
 
 		const VKSemaphore& transferWaitSemaphore = m_transferWait[frameIndex];
@@ -185,7 +198,8 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 		const CommandBufferScope graphicsCmdBufferScope{ graphicsCmdBuffer };
 
 		m_stagingManager.AcquireOwnership(
-			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(),
+			m_transferQueue.GetFamilyIndex()
 		);
 
 		m_textureStorage.TransitionQueuedTextures(graphicsCmdBufferScope);
@@ -236,8 +250,9 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, oldSemaphoreCounterValue)
-			.CommandBuffer(graphicsCmdBuffer);
+			.WaitSemaphore(
+				waitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, oldSemaphoreCounterValue
+			).CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
 		signalFence.Reset();
@@ -355,7 +370,9 @@ void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 	// The layout shouldn't change throughout the runtime.
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	m_modelManager->SetDescriptorBufferLayoutVS(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
+	m_modelManager->SetDescriptorBufferLayoutVS(
+		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
+	);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 	{
@@ -372,8 +389,12 @@ void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 
 void RenderEngineVSIndirect::SetComputeDescriptorBufferLayout()
 {
-	m_modelManager->SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
-	m_meshManager.SetDescriptorBufferLayoutCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_modelManager->SetDescriptorBufferLayoutCS(
+		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
+	);
+	m_meshManager.SetDescriptorBufferLayoutCS(
+		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
+	);
 
 	m_cameraManager.SetDescriptorBufferLayoutCompute(
 		m_computeDescriptorBuffers, s_cameraComputeBindingSlot, s_computeShaderSetLayoutIndex
@@ -394,7 +415,9 @@ VkSemaphore RenderEngineVSIndirect::ExecutePipelineStages(
 
 	waitSemaphore = FrustumCullingStage(frameIndex, semaphoreCounter, waitSemaphore);
 
-	waitSemaphore = DrawingStage(frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore);
+	waitSemaphore = DrawingStage(
+		frameIndex, renderTarget, renderArea, semaphoreCounter, waitSemaphore
+	);
 
 	return waitSemaphore;
 }
@@ -413,17 +436,21 @@ void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers->SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot, s_vertexShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot,
+			s_vertexShaderSetLayoutIndex
 		);
 		m_modelBuffers->SetFragmentDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot, s_fragmentShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot,
+			s_fragmentShaderSetLayoutIndex
 		);
 	}
 }
 
 void RenderEngineVSIndirect::SetModelComputeDescriptors()
 {
-	m_modelManager->SetDescriptorBuffersCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_modelManager->SetDescriptorBuffersCS(
+		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
+	);
 
 	const size_t frameCount = std::size(m_computeDescriptorBuffers);
 
@@ -433,7 +460,8 @@ void RenderEngineVSIndirect::SetModelComputeDescriptors()
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
 		m_modelBuffers->SetDescriptorBuffer(
-			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot, s_computeShaderSetLayoutIndex
+			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot,
+			s_computeShaderSetLayoutIndex
 		);
 	}
 }
@@ -491,10 +519,12 @@ void RenderEngineVSIndirect::SetShaderPath(const std::wstring& shaderPath)
 
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
-	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(*modelBundle, *m_modelBuffers);
+	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(
+		*modelBundle, *m_modelBuffers
+	);
 
 	const std::uint32_t index = m_modelManager->AddModelBundle(
-		std::move(modelBundle), std::move(modelBufferIndices)
+		std::move(modelBundle), modelBufferIndices
 	);
 
 	// After new models have been added, the ModelBuffer might get recreated. So, it will have
@@ -507,13 +537,16 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(std::shared_ptr<ModelBundle
 	return index;
 }
 
-std::uint32_t RenderEngineVSIndirect::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
-{
+std::uint32_t RenderEngineVSIndirect::AddMeshBundle(
+	std::unique_ptr<MeshBundleTemporary> meshBundle
+) {
 	const std::uint32_t index = m_meshManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_meshManager.SetDescriptorBuffersCS(m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex);
+	m_meshManager.SetDescriptorBuffersCS(
+		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
+	);
 
 	m_copyNecessary = true;
 
@@ -541,7 +574,9 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
-			m_stagingManager.ReleaseOwnership(transferCmdBufferScope, m_transferQueue.GetFamilyIndex());
+			m_stagingManager.ReleaseOwnership(
+				transferCmdBufferScope, m_transferQueue.GetFamilyIndex()
+			);
 		}
 
 		const VKSemaphore& transferWaitSemaphore = m_transferWait[frameIndex];
@@ -577,10 +612,13 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 		const CommandBufferScope computeCmdBufferScope{ computeCmdBuffer };
 
 		m_stagingManager.AcquireOwnership(
-			computeCmdBufferScope, m_computeQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+			computeCmdBufferScope, m_computeQueue.GetFamilyIndex(),
+			m_transferQueue.GetFamilyIndex()
 		);
 
-		m_modelManager->ResetCounterBuffer(computeCmdBuffer, static_cast<VkDeviceSize>(frameIndex));
+		m_modelManager->ResetCounterBuffer(
+			computeCmdBuffer, static_cast<VkDeviceSize>(frameIndex)
+		);
 
 		VkDescriptorBuffer::BindDescriptorBuffer(
 			m_computeDescriptorBuffers[frameIndex], computeCmdBufferScope,
@@ -599,8 +637,9 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 		QueueSubmitBuilder<1u, 1u> computeSubmitBuilder{};
 		computeSubmitBuilder
 			.SignalSemaphore(computeWaitSemaphore, semaphoreCounter)
-			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oldSemaphoreCounterValue)
-			.CommandBuffer(computeCmdBuffer);
+			.WaitSemaphore(
+				waitSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, oldSemaphoreCounterValue
+			).CommandBuffer(computeCmdBuffer);
 
 		m_computeQueue.SubmitCommandBuffer(computeSubmitBuilder);
 	}
@@ -609,7 +648,8 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 }
 
 void RenderEngineVSIndirect::DrawRenderPassPipelines(
-	size_t frameIndex, const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
+	size_t frameIndex, const VKCommandBuffer& graphicsCmdBuffer,
+	const ExternalRenderPass_t& renderPass
 ) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
@@ -642,7 +682,8 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 		const CommandBufferScope graphicsCmdBufferScope{ graphicsCmdBuffer };
 
 		m_stagingManager.AcquireOwnership(
-			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(), m_transferQueue.GetFamilyIndex()
+			graphicsCmdBufferScope, m_graphicsQueue.GetFamilyIndex(),
+			m_transferQueue.GetFamilyIndex()
 		);
 
 		m_textureStorage.TransitionQueuedTextures(graphicsCmdBufferScope);
@@ -693,8 +734,9 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 		QueueSubmitBuilder<1u, 1u> graphicsSubmitBuilder{};
 		graphicsSubmitBuilder
 			.SignalSemaphore(graphicsWaitSemaphore)
-			.WaitSemaphore(waitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, oldSemaphoreCounterValue)
-			.CommandBuffer(graphicsCmdBuffer);
+			.WaitSemaphore(
+				waitSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, oldSemaphoreCounterValue
+			).CommandBuffer(graphicsCmdBuffer);
 
 		VKFence& signalFence = m_graphicsQueue.GetFence(frameIndex);
 		signalFence.Reset();
