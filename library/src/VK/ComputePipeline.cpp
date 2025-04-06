@@ -2,8 +2,8 @@
 #include <VkShader.hpp>
 
 void ComputePipeline::Create(
-	VkDevice device, VkPipelineLayout computeLayout, const ExternalComputePipeline& computeExtPipeline,
-	const std::wstring& shaderPath
+	VkDevice device, VkPipelineLayout computeLayout,
+	const ExternalComputePipeline& computeExtPipeline, const std::wstring& shaderPath
 ) {
 	m_computeExternalPipeline = computeExtPipeline;
 
@@ -21,18 +21,21 @@ void ComputePipeline::Recreate(
 }
 
 std::unique_ptr<VkPipelineObject> ComputePipeline::_createComputePipeline(
-	VkDevice device, VkPipelineLayout computeLayout, const ExternalComputePipeline& computeExtPipeline,
-	const std::wstring& shaderPath
+	VkDevice device, VkPipelineLayout computeLayout,
+	const ExternalComputePipeline& computeExtPipeline, const std::wstring& shaderPath
 ) {
 	auto cs            = std::make_unique<VkShader>(device);
 	const bool success = cs->Create(
-		shaderPath + computeExtPipeline.GetComputeShader().GetNameWithExtension(s_shaderBytecodeType)
+		shaderPath + computeExtPipeline.GetComputeShader().GetNameWithExtension(
+			s_shaderBytecodeType
+		)
 	);
 
 	auto pso = std::make_unique<VkPipelineObject>(device);
 
 	if (success)
-		pso->CreateComputePipeline(ComputePipelineBuilder{ computeLayout }.SetComputeStage(cs->Get()));
+		pso->CreateComputePipeline(ComputePipelineBuilder{ computeLayout }
+			.SetComputeStage(cs->Get()));
 
 	return pso;
 }

@@ -50,7 +50,7 @@ protected:
 	std::unique_ptr<VkPipelineObject> m_graphicsPipeline;
 	ExternalGraphicsPipeline          m_graphicsExternalPipeline;
 
-	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
+	static constexpr ShaderBinaryType s_shaderBytecodeType = ShaderBinaryType::SPIRV;
 
 public:
 	GraphicsPipelineBase(const GraphicsPipelineBase&) = delete;

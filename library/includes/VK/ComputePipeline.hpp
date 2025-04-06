@@ -36,15 +36,15 @@ public:
 private:
 	[[nodiscard]]
 	static std::unique_ptr<VkPipelineObject> _createComputePipeline(
-		VkDevice device, VkPipelineLayout computeLayout, const ExternalComputePipeline& computeExtPipeline,
-		const std::wstring& shaderPath
+		VkDevice device, VkPipelineLayout computeLayout,
+		const ExternalComputePipeline& computeExtPipeline, const std::wstring& shaderPath
 	);
 
 private:
 	std::unique_ptr<VkPipelineObject> m_computePipeline;
 	ExternalComputePipeline           m_computeExternalPipeline;
 
-	static constexpr ShaderType s_shaderBytecodeType = ShaderType::SPIRV;
+	static constexpr ShaderBinaryType s_shaderBytecodeType = ShaderBinaryType::SPIRV;
 
 public:
 	ComputePipeline(const ComputePipeline&) = delete;

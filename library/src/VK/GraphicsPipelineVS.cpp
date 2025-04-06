@@ -4,7 +4,7 @@
 // Vertex Shader
 static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 	VkDevice device, VkPipelineLayout graphicsLayout,
-	ShaderType binaryType, const std::wstring& shaderPath,
+	ShaderBinaryType binaryType, const std::wstring& shaderPath,
 	const ExternalGraphicsPipeline& graphicsExtPipeline
 ) {
 	auto vs              = std::make_unique<VkShader>(device);

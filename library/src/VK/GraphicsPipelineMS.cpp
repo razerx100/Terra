@@ -16,7 +16,7 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::_createGraphicsPipeline(
 
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::CreateGraphicsPipelineMS(
 	VkDevice device, VkPipelineLayout graphicsLayout,
-	ShaderType binaryType, const std::wstring& shaderPath,
+	ShaderBinaryType binaryType, const std::wstring& shaderPath,
 	const ExternalGraphicsPipeline& graphicsExtPipeline, const ShaderName& taskShader
 ) {
 	auto ms              = std::make_unique<VkShader>(device);
