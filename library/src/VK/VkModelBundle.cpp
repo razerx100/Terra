@@ -171,9 +171,8 @@ size_t PipelineModelsCSIndirect::GetNewModelCount() const noexcept
 	return allocatedModelCount < currentModelCount ?  currentModelCount - allocatedModelCount : 0u;
 }
 
-void PipelineModelsCSIndirect::UpdateNonPerFrameData(
-	std::uint32_t modelBundleIndex, const std::vector<std::shared_ptr<Model>>& models
-) noexcept {
+void PipelineModelsCSIndirect::UpdateNonPerFrameData(std::uint32_t modelBundleIndex) noexcept
+{
 	constexpr size_t argumentStrideSize = sizeof(VkDrawIndexedIndirectCommand);
 	constexpr size_t perModelStride     = sizeof(PerModelData);
 	constexpr size_t perPipelineStride  = sizeof(PerPipelineData);
@@ -220,13 +219,13 @@ void PipelineModelsCSIndirect::UpdateNonPerFrameData(
 		std::uint8_t* bufferStart = m_perModelSharedData.bufferData->CPUHandle();
 		auto offset               = static_cast<size_t>(m_perModelSharedData.offset);
 
-		for (std::uint32_t modelIndexInBundle : pipelineModelIndices)
+		for (size_t index = 0u; index < modelCount; ++index)
 		{
 			PerModelData perModelData
 			{
 				.pipelineIndex = pipelineIndex,
 				// The model index and flags will be updated every frame.
-				.modelIndex    = models[modelIndexInBundle]->GetModelIndexInBuffer(),
+				.modelIndex    = std::numeric_limits<std::uint32_t>::max(),
 				.modelFlags    = static_cast<std::uint32_t>(ModelFlag::Visibility)
 			};
 
@@ -701,7 +700,7 @@ void ModelBundleVSIndirect::RemovePipeline(
 
 size_t ModelBundleVSIndirect::GetLocalPipelineIndex(std::uint32_t pipelineIndex)
 {
-	auto pipelineLocalIndex  = std::numeric_limits<size_t>::max();
+	auto pipelineLocalIndex = std::numeric_limits<size_t>::max();
 
 	std::optional<size_t> oPipelineLocalIndex = FindPipeline(pipelineIndex);
 
@@ -750,7 +749,7 @@ void ModelBundleVSIndirect::ReconfigureModels(
 	// doesn't process the moved model and the Vertex shader doesn't draw it.
 	PipelineModelsCSIndirect& csPipeline = m_pipelines[decreasedPipelineLocalIndex];
 
-	csPipeline.UpdateNonPerFrameData(modelBundleIndex, m_modelBundle->GetModels());
+	csPipeline.UpdateNonPerFrameData(modelBundleIndex);
 
 	m_vsPipelines[decreasedPipelineLocalIndex].SetModelCount(csPipeline.GetModelCount());
 
@@ -824,7 +823,7 @@ void ModelBundleVSIndirect::ResizePreviousPipelines(
 			argumentInputSharedBuffers, perPipelineSharedBuffer, perModelDataCSBuffer
 		);
 
-		csPipeline.UpdateNonPerFrameData(modelBundleIndex, m_modelBundle->GetModels());
+		csPipeline.UpdateNonPerFrameData(modelBundleIndex);
 
 		vsPipeline.SetModelCount(csPipeline.GetModelCount());
 
@@ -860,7 +859,7 @@ void ModelBundleVSIndirect::RecreateFollowingPipelines(
 			argumentInputSharedBuffers, perPipelineSharedBuffer, perModelDataCSBuffer
 		);
 
-		csPipeline.UpdateNonPerFrameData(modelBundleIndex, m_modelBundle->GetModels());
+		csPipeline.UpdateNonPerFrameData(modelBundleIndex);
 
 		// VS
 		vsPipeline.RelinquishMemory(
@@ -894,7 +893,7 @@ void ModelBundleVSIndirect::SetupPipelineBuffers(
 			argumentInputSharedBuffers, perPipelineSharedBuffer, perModelDataCSBuffer
 		);
 
-		pipeline.UpdateNonPerFrameData(modelBundleIndex, m_modelBundle->GetModels());
+		pipeline.UpdateNonPerFrameData(modelBundleIndex);
 
 		PipelineModelsVSIndirect& vsPipeline = m_vsPipelines[pipelineLocalIndex];
 

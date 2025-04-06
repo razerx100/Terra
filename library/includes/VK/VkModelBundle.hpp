@@ -196,9 +196,7 @@ public:
 	[[nodiscard]]
 	size_t GetNewModelCount() const noexcept;
 
-	void UpdateNonPerFrameData(
-		std::uint32_t modelBundleIndex, const std::vector<std::shared_ptr<Model>>& models
-	) noexcept;
+	void UpdateNonPerFrameData(std::uint32_t modelBundleIndex) noexcept;
 
 	void AllocateBuffers(
 		std::vector<SharedBufferCPU>& argumentInputSharedBuffers,
@@ -492,7 +490,8 @@ public:
 
 private:
 	static void SetMeshBundleConstants(
-		VkCommandBuffer graphicsBuffer, VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
+		VkCommandBuffer graphicsBuffer, VkPipelineLayout pipelineLayout,
+		const VkMeshBundleMS& meshBundle
 	) noexcept;
 
 public:

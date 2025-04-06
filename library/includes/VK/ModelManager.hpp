@@ -90,7 +90,9 @@ public:
 
 		ModelBundleType& localModelBundle = this->m_modelBundles[bundleIndex];
 
-		this->SetModelIndicesInBuffer(*modelBundle, modelIndicesInBuffer);
+		ModelManager<ModelBundleType>::SetModelIndicesInBuffer(
+			*modelBundle, modelIndicesInBuffer
+		);
 
 		localModelBundle.SetModelBundle(std::move(modelBundle));
 
@@ -100,6 +102,7 @@ public:
 	}
 
 	// The model bundle is needed to cleanup the buffer indices.
+	[[nodiscard]]
 	std::shared_ptr<ModelBundle> RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 	{
 		const size_t bundleIndexST = bundleIndex;
@@ -197,6 +200,7 @@ public:
 	);
 
 	// The model bundle is needed to cleanup the buffer indices.
+	[[nodiscard]]
 	std::shared_ptr<ModelBundle> RemoveModelBundle(std::uint32_t bundleIndex) noexcept;
 
 	void SetDescriptorBufferLayoutVS(
