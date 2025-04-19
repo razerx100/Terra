@@ -29,26 +29,31 @@ class VkExtensionManager
 {
 public:
 	VkExtensionManager() = default;
-	virtual ~VkExtensionManager() = default;
 
-	void AddExtension(ExtensionType extension) noexcept
+	template<class Derived>
+	void AddExtension(this Derived& self, ExtensionType extension) noexcept
 	{
 		const auto extensionIndex = static_cast<size_t>(extension);
-		m_extensions.set(extensionIndex);
-		AddExtensionName(extensionIndex);
+
+		self.m_extensions.set(extensionIndex);
+
+		self.AddExtensionName(extensionIndex);
 	}
 
-	template<size_t Count>
-	void AddExtensions(const std::array<ExtensionType, Count>& extensions) noexcept
-	{
+	template<size_t Count, class Derived>
+	void AddExtensions(
+		this Derived& self, const std::array<ExtensionType, Count>& extensions
+	) noexcept {
 		for (const ExtensionType extension : extensions)
-			AddExtension(extension);
+			self.AddExtension(extension);
 	}
 
-	void AddExtensions(const std::vector<ExtensionType>& extensions) noexcept
-	{
+	template<class Derived>
+	void AddExtensions(
+		this Derived& self, const std::vector<ExtensionType>& extensions
+	) noexcept {
 		for (const ExtensionType extension : extensions)
-			AddExtension(extension);
+			self.AddExtension(extension);
 	}
 
 	[[nodiscard]]
@@ -77,9 +82,6 @@ public:
 	}
 
 protected:
-	virtual void AddExtensionName(size_t extensionIndex) noexcept = 0;
-
-protected:
 	std::bitset<static_cast<size_t>(ExtensionType::None)> m_extensions;
 	std::vector<const char*>                              m_extensionNames;
 
@@ -102,12 +104,15 @@ public:
 
 class VkDeviceExtensionManager : public VkExtensionManager<DeviceExtension>
 {
+	friend class VkExtensionManager<DeviceExtension>;
+
 public:
 	VkDeviceExtensionManager() = default;
+
 	void PopulateExtensionFunctions(VkDevice device) const noexcept;
 
 private:
-	void AddExtensionName(size_t extensionIndex) noexcept override;
+	void AddExtensionName(size_t extensionIndex) noexcept;
 
 private:
 	template<typename T>
@@ -139,12 +144,15 @@ public:
 
 class VkInstanceExtensionManager : public VkExtensionManager<InstanceExtension>
 {
+	friend class VkExtensionManager<InstanceExtension>;
+
 public:
 	VkInstanceExtensionManager() = default;
+
 	void PopulateExtensionFunctions(VkInstance instance) const noexcept;
 
 private:
-	void AddExtensionName(size_t extensionIndex) noexcept override;
+	void AddExtensionName(size_t extensionIndex) noexcept;
 
 private:
 	template<typename T>
