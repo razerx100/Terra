@@ -320,7 +320,7 @@ void PipelineModelsCSIndirect::Update(
 	constexpr auto modelFlagsOffset = offsetof(PerModelData, modelFlags);
 	constexpr auto modelIndexOffset = offsetof(PerModelData, modelIndex);
 
-	std::uint32_t modelFlags
+	std::uint32_t skipCullingFlag
 		= skipCulling ? static_cast<std::uint32_t>(ModelFlag::SkipCulling) : 0u;
 
 	for (std::uint32_t modelIndexInBundle : pipelineModelIndices)
@@ -337,6 +337,8 @@ void PipelineModelsCSIndirect::Update(
 		argumentOffset += argumentStride;
 
 		// Model Flags
+		std::uint32_t modelFlags = skipCullingFlag;
+
 		if (model->IsVisible())
 			modelFlags |= static_cast<std::uint32_t>(ModelFlag::Visibility);
 
