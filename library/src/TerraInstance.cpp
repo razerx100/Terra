@@ -7,7 +7,9 @@ std::unique_ptr<Renderer> CreateTerraInstance(
 	std::uint32_t width, std::uint32_t height, std::shared_ptr<ThreadPool> threadPool,
 	RenderEngineType engineType, std::uint32_t bufferCount
 ) {
-	return std::make_unique<RendererVK>(
-		appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool), engineType
+#ifdef TERRA_WIN32
+	return std::make_unique<RendererVK<SurfaceManagerWin32, DisplayManagerWin32>>(
+		appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool)
 	);
+#endif
 }

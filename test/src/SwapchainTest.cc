@@ -26,12 +26,12 @@ protected:
 	static void TearDownTestSuite();
 
 protected:
-	inline static std::unique_ptr<VkInstanceManager> s_instanceManager;
-	inline static std::unique_ptr<SurfaceManager>    s_surfaceManager;
+	inline static std::unique_ptr<VkInstanceManager>   s_instanceManager;
 #ifdef TERRA_WIN32
-	inline static std::unique_ptr<SimpleWindow>      s_window;
+	inline static std::unique_ptr<SurfaceManagerWin32> s_surfaceManager;
+	inline static std::unique_ptr<SimpleWindow>        s_window;
 #endif
-	inline static std::unique_ptr<VkDeviceManager>   s_deviceManager;
+	inline static std::unique_ptr<VkDeviceManager>     s_deviceManager;
 };
 
 void SwapchainTest::SetUpTestSuite()
@@ -52,7 +52,7 @@ void SwapchainTest::SetUpTestSuite()
 		VkInstanceExtensionManager& extensionManager = s_instanceManager->ExtensionManager();
 
 #ifdef TERRA_WIN32
-		SurfaceInstanceExtensionWin32{}.SetInstanceExtensions(extensionManager);
+		SurfaceInstanceExtensionWin32::SetInstanceExtensions(extensionManager);
 #endif
 	}
 

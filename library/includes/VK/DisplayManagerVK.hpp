@@ -1,17 +1,18 @@
 #ifndef DISPLAY_MANAGER_VK_HPP_
 #define DISPLAY_MANAGER_VK_HPP_
-#include <DisplayManager.hpp>
+#include <vulkan/vulkan.hpp>
+#include <array>
+#include <VkExtensionManager.hpp>
 
-class DisplayInstanceExtensionVk : public DisplayInstanceExtension
+namespace DisplayInstanceExtensionVk
 {
-public:
-	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept override;
+	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
 };
 
-class DisplayManagerVK final : public DisplayManager
+class DisplayManagerVK
 {
 public:
 	[[nodiscard]]
-	Resolution GetDisplayResolution(VkPhysicalDevice gpu, std::uint32_t displayIndex) const override;
+	VkExtent2D GetDisplayResolution(VkPhysicalDevice gpu, std::uint32_t displayIndex) const;
 };
 #endif

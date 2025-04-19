@@ -8,7 +8,7 @@ void DisplayInstanceExtensionVk::SetInstanceExtensions(
 }
 
 // Display Manager
-DisplayManager::Resolution DisplayManagerVK::GetDisplayResolution(
+VkExtent2D DisplayManagerVK::GetDisplayResolution(
 	VkPhysicalDevice gpu, std::uint32_t displayIndex
 ) const {
 	std::uint32_t displayCount = 0u;
@@ -21,5 +21,5 @@ DisplayManager::Resolution DisplayManagerVK::GetDisplayResolution(
 
 	auto [width, height] = displayProperties[static_cast<size_t>(displayIndex)].physicalResolution;
 
-	return { width, height };
+	return VkExtent2D{ .width = width, .height = height };
 }

@@ -5,8 +5,7 @@
 void SurfaceInstanceExtensionWin32::SetInstanceExtensions(
 	VkInstanceExtensionManager& extensionManager
 ) noexcept {
-	SurfaceInstanceExtension::SetInstanceExtensions(extensionManager);
-
+	extensionManager.AddExtension(InstanceExtension::VkKhrSurface);
 	extensionManager.AddExtension(InstanceExtension::VkKhrWin32Surface);
 }
 

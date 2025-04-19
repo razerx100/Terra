@@ -1,6 +1,8 @@
 #include <DisplayManagerWin32.hpp>
 #include <cassert>
 
+using Microsoft::WRL::ComPtr;
+
 void DisplayInstanceExtensionWin32::SetInstanceExtensions(
 	VkInstanceExtensionManager& extensionManager
 ) noexcept {
@@ -13,7 +15,7 @@ DisplayManagerWin32::DisplayManagerWin32()
 	CreateDXGIFactory2(0u, IID_PPV_ARGS(&m_pFactory));
 }
 
-DisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
+VkExtent2D DisplayManagerWin32::GetDisplayResolution(
 	VkPhysicalDevice gpu, std::uint32_t displayIndex
 ) const {
 	DXGI_ADAPTER_DESC gpuDesc{};
@@ -33,7 +35,8 @@ DisplayManager::Resolution DisplayManagerWin32::GetDisplayResolution(
 	DXGI_OUTPUT_DESC displayData{};
 	pDisplayOutput->GetDesc(&displayData);
 
-	return Resolution{
+	return VkExtent2D
+	{
 		.width  = static_cast<std::uint32_t>(displayData.DesktopCoordinates.right),
 		.height = static_cast<std::uint32_t>(displayData.DesktopCoordinates.bottom)
 	};
