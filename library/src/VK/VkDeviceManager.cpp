@@ -36,7 +36,7 @@ std::vector<VkPhysicalDevice> VkDeviceManager::GetAvailableDevices(VkInstance in
 }
 
 VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(
-	VkInstance instance, const SurfaceManager& surface
+	VkInstance instance, VkSurfaceKHR surface
 ) {
 	std::vector<VkPhysicalDevice> devices = GetAvailableDevices(instance);
 
@@ -46,7 +46,7 @@ VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(
 		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
 	else
 	{
-		m_queueFamilyManager->SetQueueFamilyInfo(suitableDevice, surface.Get());
+		m_queueFamilyManager->SetQueueFamilyInfo(suitableDevice, surface);
 		m_physicalDevice = suitableDevice;
 	}
 
@@ -57,7 +57,8 @@ VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(VkInstance instance
 {
 	std::vector<VkPhysicalDevice> devices = GetAvailableDevices(instance);
 
-	VkPhysicalDevice suitableDevice = SelectPhysicalDeviceAutomatic(devices, nullptr);
+	// This function is used to check feature support only.
+	VkPhysicalDevice suitableDevice = SelectPhysicalDeviceAutomatic(devices);
 
 	if (suitableDevice == VK_NULL_HANDLE)
 		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
@@ -71,8 +72,8 @@ VkDeviceManager& VkDeviceManager::SetPhysicalDeviceAutomatic(VkInstance instance
 }
 
 VkDeviceManager& VkDeviceManager::SetPhysicalDevice(
-	VkPhysicalDevice device, const SurfaceManager& surface
-){
+	VkPhysicalDevice device, VkSurfaceKHR surface
+) {
 	if (!CheckExtensionAndFeatures(device) || !CheckSurfaceSupport(device, surface))
 		throw Exception("Feature Error", "No GPU with all of the feature-support found.");
 
@@ -184,15 +185,68 @@ bool VkDeviceManager::CheckExtensionAndFeatures(VkPhysicalDevice device) const n
 }
 
 bool VkDeviceManager::CheckSurfaceSupport(
-	VkPhysicalDevice device, const SurfaceManager& surface
-) const noexcept {
-	VkSurfaceKHR vkSurface = surface.Get();
-
-	return VkQueueFamilyMananger::DoesPhysicalDeviceSupportQueues(device, vkSurface)
-		&& surface.CanDeviceSupportSurface(device);
+	VkPhysicalDevice device, VkSurfaceKHR surface
+) noexcept {
+	return VkQueueFamilyMananger::DoesPhysicalDeviceSupportQueues(device, surface)
+		&& SurfaceManager::CanDeviceSupportSurface(surface, device);
 }
 
 bool VkDeviceManager::DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept
 {
 	return m_featureManager.CheckFeatureSupport(device);
+}
+
+VkPhysicalDevice VkDeviceManager::SelectPhysicalDeviceAutomatic(
+	const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface
+) {
+	auto GetSuitableDevice = [this]
+		(const std::vector<VkPhysicalDevice>&devices, VkSurfaceKHR surface,
+			VkPhysicalDeviceType deviceType) -> VkPhysicalDevice
+	{
+		for (VkPhysicalDevice device : devices)
+			if (CheckDeviceType(device, deviceType))
+				if (CheckExtensionAndFeatures(device))
+					if (CheckSurfaceSupport(device, surface))
+						return device;
+
+		return VK_NULL_HANDLE;
+	};
+
+	VkPhysicalDevice suitableDevice = GetSuitableDevice(
+		devices, surface, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	);
+
+	if (suitableDevice == VK_NULL_HANDLE)
+		suitableDevice = GetSuitableDevice(
+			devices, surface, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+		);
+
+	return suitableDevice;
+}
+
+VkPhysicalDevice VkDeviceManager::SelectPhysicalDeviceAutomatic(
+	const std::vector<VkPhysicalDevice>& devices
+) {
+	auto GetSuitableDevice = [this]
+		(const std::vector<VkPhysicalDevice>&devices, VkPhysicalDeviceType deviceType)
+			-> VkPhysicalDevice
+	{
+		for (VkPhysicalDevice device : devices)
+			if (CheckDeviceType(device, deviceType))
+				if (CheckExtensionAndFeatures(device))
+					return device;
+
+		return VK_NULL_HANDLE;
+	};
+
+	VkPhysicalDevice suitableDevice = GetSuitableDevice(
+		devices, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	);
+
+	if (suitableDevice == VK_NULL_HANDLE)
+		suitableDevice = GetSuitableDevice(
+			devices, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+		);
+
+	return suitableDevice;
 }

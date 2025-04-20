@@ -512,7 +512,7 @@ void RenderEngineVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noex
 
 void RenderEngineVSIndirect::SetShaderPath(const std::wstring& shaderPath)
 {
-	RenderEngineCommon::SetShaderPath(shaderPath);
+	_setShaderPath(shaderPath);
 
 	m_computePipelineManager.SetShaderPath(shaderPath);
 }

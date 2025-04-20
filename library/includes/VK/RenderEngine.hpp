@@ -19,16 +19,9 @@
 #include <VkExternalRenderPass.hpp>
 #include <VkExternalResourceManager.hpp>
 
-// This needs to be a separate class, since the actual Engine will need the device to be created
-// first. And these extensions must be added before the device is created. Each implemention may
-// have different requirements. But you can't override a static function. And a virtual function
-// can only be called after the object has been created.
-class RenderEngineDeviceExtension
+namespace RenderEngineDeviceExtension
 {
-public:
-	virtual ~RenderEngineDeviceExtension() = default;
-
-	virtual void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept;
+	void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept;
 };
 
 class RenderEngine
@@ -43,32 +36,80 @@ class RenderEngine
 
 public:
 	RenderEngine(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
 	);
-	virtual ~RenderEngine() = default;
 
-	virtual void FinaliseInitialisation() = 0;
-
-	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
+	[[nodiscard]]
 	size_t AddTextureAsCombined(STexture&& texture);
 
 	void UnbindCombinedTexture(size_t textureIndex, std::uint32_t bindingIndex);
-	void UnbindCombinedTexture(size_t textureIndex, std::uint32_t bindingIndex, size_t samplerIndex);
+
+	void UnbindCombinedTexture(
+		size_t textureIndex, std::uint32_t bindingIndex, size_t samplerIndex
+	);
+
+	template<class Derived>
 	[[nodiscard]]
-	std::uint32_t BindCombinedTexture(size_t textureIndex);
+	std::uint32_t BindCombinedTexture(this Derived& self, size_t textureIndex)
+	{
+		return self.BindCombinedTexture(
+			textureIndex, self.m_textureStorage.GetDefaultSamplerIndex()
+		);
+	}
+
+	template<class Derived>
 	[[nodiscard]]
-	std::uint32_t BindCombinedTexture(size_t textureIndex, size_t samplerIndex);
+	std::uint32_t BindCombinedTexture(
+		this Derived& self, size_t textureIndex, size_t samplerIndex
+	) {
+		VkTextureView const* textureView = self.m_textureStorage.GetPtr(textureIndex);
+		VKSampler const* sampler         = self.m_textureStorage.GetSamplerPtr(samplerIndex);
+
+		// The current caching system only works for read only single textures which are bound to
+		// multiple descriptor buffers. Because we only cache one of them.
+		std::optional<std::uint32_t> localCacheIndex
+			= self.m_textureStorage.GetAndRemoveCombinedLocalDescIndex(
+				static_cast<std::uint32_t>(textureIndex),
+				static_cast<std::uint32_t>(samplerIndex)
+			);
+
+		return self.BindCombinedTextureCommon(textureView, sampler, localCacheIndex);
+	}
 
 	void UnbindExternalTexture(std::uint32_t bindingIndex);
 
 	void RebindExternalTexture(size_t textureIndex, std::uint32_t bindingIndex);
-	void RebindExternalTexture(size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex);
+	void RebindExternalTexture(
+		size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex
+	);
 
+	template<class Derived>
 	[[nodiscard]]
-	std::uint32_t BindExternalTexture(size_t textureIndex);
+	std::uint32_t BindExternalTexture(this Derived& self, size_t textureIndex)
+	{
+		return self.BindExternalTexture(
+			textureIndex, self.m_textureStorage.GetDefaultSamplerIndex()
+		);
+	}
+
+	template<class Derived>
 	[[nodiscard]]
-	std::uint32_t BindExternalTexture(size_t textureIndex, size_t samplerIndex);
+	std::uint32_t BindExternalTexture(
+		this Derived& self, size_t textureIndex, size_t samplerIndex
+	) {
+		VkExternalResourceFactory* resourceFactory
+			= self.m_externalResourceManager->GetVkResourceFactory();
+
+		VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
+
+		VKSampler const* sampler = self.m_textureStorage.GetSamplerPtr(samplerIndex);
+
+		// Can't cache as the underlying resource might change or we might have a separate texture
+		// on each descriptor buffer.
+		return self.BindCombinedTextureCommon(textureView, sampler, {});
+	}
 
 	void RemoveTexture(size_t textureIndex);
 
@@ -80,46 +121,75 @@ public:
 	void SetCamera(std::uint32_t index) noexcept { m_cameraManager.SetCamera(index); }
 	void RemoveCamera(std::uint32_t index) noexcept { m_cameraManager.RemoveCamera(index); }
 
-	virtual void SetShaderPath(const std::wstring& shaderPath) = 0;
-
-	[[nodiscard]]
-	virtual std::uint32_t AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline) = 0;
-
-	virtual void ReconfigureModelPipelinesInBundle(
-		std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
-		std::uint32_t increasedModelsPipelineIndex
-	) = 0;
-
-	virtual void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept = 0;
-
-	[[nodiscard]]
-	// Returned semaphore will be signalled when the rendering is finished.
-	virtual VkSemaphore Render(
-		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
-		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
-	) = 0;
-	virtual void Resize(
-		std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged
-	) = 0;
-
-	[[nodiscard]]
-	// Should wait for the device to be idle before calling this.
-	virtual std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) = 0;
-
-	virtual void RemoveModelBundle(std::uint32_t bundleIndex) noexcept = 0;
-
-	[[nodiscard]]
-	// Should wait for the device to be idle before calling this.
-	virtual std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) = 0;
-
-	virtual void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept = 0;
-
 private:
+	template<class Derived>
 	[[nodiscard]]
 	std::uint32_t BindCombinedTextureCommon(
-		VkTextureView const* textureView, VKSampler const* sampler,
+		this Derived& self, VkTextureView const* textureView, VKSampler const* sampler,
 		std::optional<std::uint32_t> oLocalCacheIndex
-	);
+	) {
+		static constexpr VkDescriptorType DescType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		static constexpr TextureDescType TexDescType = TextureDescType::CombinedTexture;
+
+		std::optional<size_t> oFreeGlobalDescIndex
+			= self.m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
+
+		// If there is no free global index, increase the limit. Right now it should be possible to
+		// have 65535 bound textures at once. There could be more textures.
+		if (!oFreeGlobalDescIndex)
+		{
+			self.m_textureManager.IncreaseMaximumBindingCount<TexDescType>();
+
+			for (VkDescriptorBuffer& descriptorBuffer : self.m_graphicsDescriptorBuffers)
+			{
+				const std::vector<VkDescriptorSetLayoutBinding> oldSetLayoutBindings
+					= descriptorBuffer.GetLayout(s_fragmentShaderSetLayoutIndex).GetBindings();
+
+				self.m_textureManager.SetDescriptorBufferLayout(
+					descriptorBuffer, s_combinedTextureBindingSlot, s_sampledTextureBindingSlot,
+					s_samplerBindingSlot, s_fragmentShaderSetLayoutIndex
+				);
+
+				descriptorBuffer.RecreateSetLayout(
+					s_fragmentShaderSetLayoutIndex, oldSetLayoutBindings
+				);
+			}
+
+			oFreeGlobalDescIndex = self.m_textureManager.GetFreeGlobalDescriptorIndex<DescType>();
+
+			self.ResetGraphicsPipeline();
+		}
+
+		const auto freeGlobalDescIndex = static_cast<std::uint32_t>(oFreeGlobalDescIndex.value());
+
+		self.m_textureManager.SetBindingAvailability<DescType>(freeGlobalDescIndex, false);
+
+		if (oLocalCacheIndex)
+		{
+			const std::uint32_t localCacheIndex = oLocalCacheIndex.value();
+
+			void const* localDescriptor = self.m_textureManager.GetLocalDescriptor<DescType>(
+				localCacheIndex
+			);
+
+			self.m_textureManager.SetLocalDescriptorAvailability<DescType>(localCacheIndex, true);
+
+			for (VkDescriptorBuffer& descriptorBuffer : self.m_graphicsDescriptorBuffers)
+				descriptorBuffer.SetCombinedImageDescriptor(
+					localDescriptor, s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex,
+					freeGlobalDescIndex
+				);
+		}
+		else
+			for (VkDescriptorBuffer& descriptorBuffer : self.m_graphicsDescriptorBuffers)
+				descriptorBuffer.SetCombinedImageDescriptor(
+					*textureView, *sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+					s_combinedTextureBindingSlot, s_fragmentShaderSetLayoutIndex,
+					freeGlobalDescIndex
+				);
+
+		return freeGlobalDescIndex;
+	}
 
 public:
 	// External stuff
@@ -132,47 +202,19 @@ public:
 	void UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails);
 
 	void UploadExternalBufferGPUOnlyData(
-		std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
-		size_t dstBufferOffset
+		std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData,
+		size_t srcDataSizeInBytes, size_t dstBufferOffset
 	);
 	void QueueExternalBufferGPUCopy(
 		std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
 		size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes
 	);
 
-	[[nodiscard]]
-	virtual std::uint32_t AddExternalRenderPass() = 0;
-	[[nodiscard]]
-	virtual ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept = 0;
-	[[nodiscard]]
-	virtual std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(
-		size_t index
-	) const noexcept = 0;
-
-	virtual void SetSwapchainExternalRenderPass() = 0;
-
-	[[nodiscard]]
-	virtual ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept = 0;
-	[[nodiscard]]
-	virtual std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept = 0;
-
-	virtual void RemoveExternalRenderPass(size_t index) noexcept = 0;
-	virtual void RemoveSwapchainExternalRenderPass() noexcept = 0;
-
-	[[nodiscard]]
-	virtual size_t GetActiveRenderPassCount() const noexcept = 0;
-
 protected:
-	[[nodiscard]]
-	virtual std::uint32_t GetCameraBindingSlot() const noexcept = 0;
-	virtual void ResetGraphicsPipeline() = 0;
-
 	[[nodiscard]]
 	static std::vector<std::uint32_t> AddModelsToBuffer(
 		const ModelBundle& modelBundle, ModelBuffers& modelBuffers
 	) noexcept;
-
-	void SetCommonGraphicsDescriptorBufferLayout(VkShaderStageFlags cameraShaderStage) noexcept;
 
 protected:
 	// These descriptors are bound to the Fragment shader. So, they should be the same across
@@ -194,6 +236,8 @@ protected:
 
 protected:
 	std::shared_ptr<ThreadPool>                m_threadPool;
+	// The pointer to this is shared in different places. So, if I make it a automatic
+	// member, the kept pointers would be invalid after a move.
 	std::unique_ptr<MemoryManager>             m_memoryManager;
 	VkGraphicsQueue                            m_graphicsQueue;
 	std::vector<VKSemaphore>                   m_graphicsWait;
@@ -263,6 +307,8 @@ template<
 >
 class RenderEngineCommon : public RenderEngine
 {
+	friend class RenderEngine;
+
 protected:
 	using ExternalRenderPass_t   = VkExternalRenderPassCommon<ModelManager_t>;
 	using ExternalRenderPassSP_t = std::shared_ptr<ExternalRenderPass_t>;
@@ -287,13 +333,8 @@ public:
 			);
 	}
 
-	void SetShaderPath(const std::wstring& shaderPath) override
-	{
-		m_graphicsPipelineManager.SetShaderPath(shaderPath);
-	}
-
 	[[nodiscard]]
-	std::uint32_t AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline) override
+	std::uint32_t AddGraphicsPipeline(const ExternalGraphicsPipeline& gfxPipeline)
 	{
 		return m_graphicsPipelineManager.AddOrGetGraphicsPipeline(gfxPipeline);
 	}
@@ -301,23 +342,23 @@ public:
 	void ReconfigureModelPipelinesInBundle(
 		std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
 		std::uint32_t increasedModelsPipelineIndex
-	) override {
+	) {
 		m_modelManager->ReconfigureModels(
 			modelBundleIndex, decreasedModelsPipelineIndex, increasedModelsPipelineIndex
 		);
 	}
 
-	void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept override
+	void RemoveGraphicsPipeline(std::uint32_t pipelineIndex) noexcept
 	{
 		m_graphicsPipelineManager.SetOverwritable(pipelineIndex);
 	}
 
-	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept override
+	void RemoveMeshBundle(std::uint32_t bundleIndex) noexcept
 	{
 		m_meshManager.RemoveMeshBundle(bundleIndex);
 	}
 
-	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept override
+	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 	{
 		std::shared_ptr<ModelBundle> modelBundle = m_modelManager->RemoveModelBundle(bundleIndex);
 
@@ -327,7 +368,7 @@ public:
 			m_modelBuffers->Remove(model->GetModelIndexInBuffer());
 	}
 
-	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged) override
+	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged)
 	{
 		if (hasSwapchainFormatChanged)
 			m_graphicsPipelineManager.RecreateAllGraphicsPipelines();
@@ -336,16 +377,10 @@ public:
 	}
 
 	[[nodiscard]]
-	std::uint32_t GetCameraBindingSlot() const noexcept override
-	{
-		return Derived::s_cameraBindingSlot;
-	}
-
-	[[nodiscard]]
 	VkSemaphore Render(
 		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
 		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
-	) final {
+	) {
 		// Wait for the previous Graphics command buffer to finish.
 		m_graphicsQueue.WaitForSubmission(frameIndex);
 		// It should be okay to clear the data now that the frame has finished
@@ -366,7 +401,7 @@ public:
 	}
 
 	[[nodiscard]]
-	std::uint32_t AddExternalRenderPass() override
+	std::uint32_t AddExternalRenderPass()
 	{
 		return static_cast<std::uint32_t>(
 			m_renderPasses.Add(
@@ -378,24 +413,24 @@ public:
 	}
 
 	[[nodiscard]]
-	ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept override
+	ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept
 	{
 		return m_renderPasses[index].get();
 	}
 
 	[[nodiscard]]
-	std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(size_t index) const noexcept override
+	std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(size_t index) const noexcept
 	{
 		return m_renderPasses[index];
 	}
 
-	void RemoveExternalRenderPass(size_t index) noexcept override
+	void RemoveExternalRenderPass(size_t index) noexcept
 	{
 		m_renderPasses[index].reset();
 		m_renderPasses.RemoveElement(index);
 	}
 
-	void SetSwapchainExternalRenderPass() override
+	void SetSwapchainExternalRenderPass()
 	{
 		m_swapchainRenderPass = std::make_shared<ExternalRenderPass_t>(
 			m_modelManager.get(), m_externalResourceManager->GetVkResourceFactory()
@@ -403,24 +438,24 @@ public:
 	}
 
 	[[nodiscard]]
-	ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept override
+	ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept
 	{
 		return m_swapchainRenderPass.get();
 	}
 
 	[[nodiscard]]
-	std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept override
+	std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept
 	{
 		return m_swapchainRenderPass;
 	}
 
-	void RemoveSwapchainExternalRenderPass() noexcept override
+	void RemoveSwapchainExternalRenderPass() noexcept
 	{
 		m_swapchainRenderPass.reset();
 	}
 
 	[[nodiscard]]
-	size_t GetActiveRenderPassCount() const noexcept override
+	size_t GetActiveRenderPassCount() const noexcept
 	{
 		size_t activeRenderPassCount = m_renderPasses.GetIndicesManager().GetActiveIndexCount();
 
@@ -448,11 +483,25 @@ protected:
 		m_graphicsPipelineManager.SetPipelineLayout(m_graphicsPipelineLayout.Get());
 	}
 
-	void ResetGraphicsPipeline() override
+	void ResetGraphicsPipeline()
 	{
 		CreateGraphicsPipelineLayout();
 
 		m_graphicsPipelineManager.RecreateAllGraphicsPipelines();
+	}
+
+	void _setShaderPath(const std::wstring& shaderPath)
+	{
+		m_graphicsPipelineManager.SetShaderPath(shaderPath);
+	}
+
+	void SetCommonGraphicsDescriptorBufferLayout(
+		VkShaderStageFlags cameraShaderStage
+	) noexcept {
+		m_cameraManager.SetDescriptorBufferLayoutGraphics(
+			m_graphicsDescriptorBuffers, Derived::s_cameraBindingSlot,
+			s_vertexShaderSetLayoutIndex, cameraShaderStage
+		);
 	}
 
 protected:

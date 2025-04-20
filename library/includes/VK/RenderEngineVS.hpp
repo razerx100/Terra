@@ -3,7 +3,7 @@
 #include <RenderEngine.hpp>
 #include <ModelManager.hpp>
 
-class RenderEngineVSIndividualDeviceExtension : public RenderEngineDeviceExtension {};
+namespace RenderEngineVSIndividualDeviceExtension = RenderEngineDeviceExtension;
 
 class RenderEngineVSIndividual : public
 	RenderEngineCommon
@@ -24,18 +24,24 @@ class RenderEngineVSIndividual : public
 
 public:
 	RenderEngineVSIndividual(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
 	);
 
-	void FinaliseInitialisation() override;
+	void FinaliseInitialisation();
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) override;
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle);
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle);
+
+	void SetShaderPath(const std::wstring& shaderPath)
+	{
+		_setShaderPath(shaderPath);
+	}
 
 private:
 	[[nodiscard]]
@@ -82,7 +88,7 @@ public:
 	}
 };
 
-class RenderEngineVSIndirectDeviceExtension : public RenderEngineDeviceExtension {};
+namespace RenderEngineVSIndirectDeviceExtension = RenderEngineDeviceExtension;
 
 class RenderEngineVSIndirect : public
 	RenderEngineCommon
@@ -105,20 +111,21 @@ class RenderEngineVSIndirect : public
 
 public:
 	RenderEngineVSIndirect(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
 	);
 
-	void FinaliseInitialisation() override;
+	void FinaliseInitialisation();
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) override;
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle);
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle);
 
-	void SetShaderPath(const std::wstring& shaderPath) override;
+	void SetShaderPath(const std::wstring& shaderPath);
 
 private:
 	[[nodiscard]]

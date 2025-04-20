@@ -74,7 +74,7 @@ void SwapchainTest::SetUpTestSuite()
 	}
 
 	s_deviceManager->SetDeviceFeatures(coreVersion)
-		.SetPhysicalDeviceAutomatic(vkInstance, *s_surfaceManager)
+		.SetPhysicalDeviceAutomatic(vkInstance, s_surfaceManager->Get())
 		.CreateLogicalDevice();
 }
 

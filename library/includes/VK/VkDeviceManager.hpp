@@ -14,10 +14,13 @@ public:
 	~VkDeviceManager() noexcept;
 
 	VkDeviceManager& SetDeviceFeatures(CoreVersion coreVersion);
-	VkDeviceManager& SetPhysicalDevice(VkPhysicalDevice device, const SurfaceManager& surface);
+
+	VkDeviceManager& SetPhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface);
 	VkDeviceManager& SetPhysicalDevice(VkPhysicalDevice device);
-	VkDeviceManager& SetPhysicalDeviceAutomatic(VkInstance instance, const SurfaceManager& surface);
+
+	VkDeviceManager& SetPhysicalDeviceAutomatic(VkInstance instance, VkSurfaceKHR surface);
 	VkDeviceManager& SetPhysicalDeviceAutomatic(VkInstance instance);
+
 	void CreateLogicalDevice();
 
 	[[nodiscard]]
@@ -61,52 +64,28 @@ private:
 	bool DoesDeviceSupportFeatures(VkPhysicalDevice device) const noexcept;
 	[[nodiscard]]
 	bool CheckExtensionAndFeatures(VkPhysicalDevice device) const noexcept;
+
 	[[nodiscard]]
-	bool CheckSurfaceSupport(VkPhysicalDevice device, const SurfaceManager& surface) const noexcept;
+	static bool CheckSurfaceSupport(VkPhysicalDevice device, VkSurfaceKHR surface) noexcept;
 
 	void SelfDestruct() noexcept;
 
 private:
 	VkPhysicalDevice                       m_physicalDevice;
 	VkDevice                               m_logicalDevice;
+	// The pointer to this is shared in different places. So, if I make it a automatic
+	// member, the kept pointers would be invalid after a move.
 	std::unique_ptr<VkQueueFamilyMananger> m_queueFamilyManager;
 	VkDeviceExtensionManager               m_extensionManager;
 	VkFeatureManager                       m_featureManager;
 
 private:
-	template<typename T>
+	[[nodiscard]]
 	VkPhysicalDevice SelectPhysicalDeviceAutomatic(
-		const std::vector<VkPhysicalDevice>& devices, const T& surface
-	) {
-		auto GetSuitableDevice = [this]<typename T>
-			(const std::vector<VkPhysicalDevice>&devices, const T & surface,
-				VkPhysicalDeviceType deviceType) -> VkPhysicalDevice
-		{
-			for (VkPhysicalDevice device : devices)
-				if (CheckDeviceType(device, deviceType))
-					if (CheckExtensionAndFeatures(device))
-						if constexpr (std::is_same_v<T, SurfaceManager>)
-						{
-							if (CheckSurfaceSupport(device, surface))
-								return device;
-						}
-						else
-							return device;
-
-			return VK_NULL_HANDLE;
-		};
-
-		VkPhysicalDevice suitableDevice = GetSuitableDevice(
-			devices, surface, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-		);
-
-		if (suitableDevice == VK_NULL_HANDLE)
-			suitableDevice = GetSuitableDevice(
-				devices, surface, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
-			);
-
-		return suitableDevice;
-	}
+		const std::vector<VkPhysicalDevice>& devices, VkSurfaceKHR surface
+	);
+	[[nodiscard]]
+	VkPhysicalDevice SelectPhysicalDeviceAutomatic(const std::vector<VkPhysicalDevice>& devices);
 
 public:
 	VkDeviceManager(const VkDeviceManager&) = delete;

@@ -8,7 +8,7 @@
 #include <Renderer.hpp>
 #include <Terra.hpp>
 
-template<class SurfaceManager_t, class DisplayManager_t>
+template<class SurfaceManager_t, class DisplayManager_t, class RenderEngine_t>
 class RendererVK final : public Renderer
 {
 public:
@@ -249,7 +249,7 @@ public:
 	}
 
 private:
-	Terra<SurfaceManager_t, DisplayManager_t> m_terra;
+	Terra<SurfaceManager_t, DisplayManager_t, RenderEngine_t> m_terra;
 
 public:
 	RendererVK(const RendererVK&) = delete;

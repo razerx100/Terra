@@ -28,7 +28,7 @@ template<typename ExtensionType>
 class VkExtensionManager
 {
 public:
-	VkExtensionManager() = default;
+	VkExtensionManager() : m_extensions{ 0u }, m_extensionNames{} {}
 
 	template<class Derived>
 	void AddExtension(this Derived& self, ExtensionType extension) noexcept

@@ -8,8 +8,31 @@ std::unique_ptr<Renderer> CreateTerraInstance(
 	RenderEngineType engineType, std::uint32_t bufferCount
 ) {
 #ifdef TERRA_WIN32
-	return std::make_unique<RendererVK<SurfaceManagerWin32, DisplayManagerWin32>>(
-		appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool)
-	);
+	if (engineType == RenderEngineType::MeshDraw)
+	{
+		using Renderer_t = RendererVK<SurfaceManagerWin32, DisplayManagerWin32, RenderEngineMS>;
+
+		return std::make_unique<Renderer_t>(
+			appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool)
+		);
+	}
+	else if (engineType == RenderEngineType::IndirectDraw)
+	{
+		using Renderer_t
+			= RendererVK<SurfaceManagerWin32, DisplayManagerWin32, RenderEngineVSIndirect>;
+
+		return std::make_unique<Renderer_t>(
+			appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool)
+		);
+	}
+	else
+	{
+		using Renderer_t
+			= RendererVK<SurfaceManagerWin32, DisplayManagerWin32, RenderEngineVSIndividual>;
+
+		return std::make_unique<Renderer_t>(
+			appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool)
+		);
+	}
 #endif
 }

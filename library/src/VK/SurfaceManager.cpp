@@ -1,5 +1,11 @@
 #include <SurfaceManager.hpp>
 
+void SurfaceInstanceExtension::SetInstanceExtensions(
+	VkInstanceExtensionManager& extensionManager
+) noexcept {
+	extensionManager.AddExtension(InstanceExtension::VkKhrSurface);
+}
+
 // Surface Manager
 SurfaceManager::~SurfaceManager() noexcept
 {
@@ -54,21 +60,23 @@ VkSurfaceFormatKHR SurfaceManager::GetSurfaceFormat(VkPhysicalDevice device) con
 	return std::empty(surfaceFormats) ? VkSurfaceFormatKHR{} : surfaceFormats.front();
 }
 
-VkSurfaceCapabilitiesKHR SurfaceManager::GetSurfaceCapabilities(VkPhysicalDevice device) const noexcept
-{
+VkSurfaceCapabilitiesKHR SurfaceManager::GetSurfaceCapabilities(
+	VkPhysicalDevice device
+) const noexcept {
 	VkSurfaceCapabilitiesKHR surfaceCapabilities{};
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &surfaceCapabilities);
 
 	return surfaceCapabilities;
 }
 
-bool SurfaceManager::CanDeviceSupportSurface(VkPhysicalDevice device) const noexcept
-{
+bool SurfaceManager::CanDeviceSupportSurface(
+	VkSurfaceKHR surface, VkPhysicalDevice device
+) noexcept {
 	std::uint32_t presentModeCount = 0u;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
 	std::uint32_t formatCount = 0u;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
 	return presentModeCount && formatCount;
 }

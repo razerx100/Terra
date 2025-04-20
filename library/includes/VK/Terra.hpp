@@ -17,7 +17,7 @@
 #include <RenderEngineVS.hpp>
 #include <RenderEngineMS.hpp>
 
-template<class SurfaceManager_t, class DisplayManager_t>
+template<class SurfaceManager_t, class DisplayManager_t, class RenderEngine_t>
 class Terra
 {
 public:
@@ -25,21 +25,19 @@ public:
 		std::string_view appName,
 		void* windowHandle, void* moduleHandle, std::uint32_t width, std::uint32_t height,
 		std::uint32_t bufferCount, std::shared_ptr<ThreadPool> threadPool
-	) : m_instanceManager{ std::move(appName) }, m_surfaceManager{},
-		m_deviceManager{}, m_displayManager{}, m_swapchain { nullptr },
-		m_renderEngine{ nullptr },
+	) : m_instanceManager{ CreateInstance(std::move(appName)) },
+		m_surfaceManager{
+			CreateSurface(m_instanceManager.GetVKInstance(), windowHandle, moduleHandle)
+		},
+		m_deviceManager{
+			CreateDevice(m_instanceManager.GetVKInstance(), m_surfaceManager.Get())
+		},
+		m_displayManager{}, m_swapchain { nullptr },
+		m_renderEngine{ m_deviceManager, std::move(threadPool), bufferCount },
 		// The width and height are zero initialised, as they will be set with the call to Resize.
 		m_windowWidth{ 0u }, m_windowHeight{ 0u }
 	{
-		CreateInstance();
-
-		CreateSurface(windowHandle, moduleHandle);
-
-		//CreateDevice(engineType);
-
 		CreateSwapchain(bufferCount);
-
-		//CreateRenderEngine(engineType, std::move(threadPool), bufferCount);
 
 		// Need to create the swapchain and frame buffers and stuffs.
 		Resize(width, height);
@@ -47,7 +45,7 @@ public:
 
 	void FinaliseInitialisation()
 	{
-		m_renderEngine->FinaliseInitialisation();
+		m_renderEngine.FinaliseInitialisation();
 	}
 
 	void Resize(std::uint32_t width, std::uint32_t height)
@@ -67,7 +65,7 @@ public:
 			// Using the new extent, as it might be slightly different than the values we got.
 			// For example, the title area of a window can't be drawn upon.
 			// So, the actual rendering area would be a bit smaller.
-			m_renderEngine->Resize(
+			m_renderEngine.Resize(
 				newExtent.width, newExtent.height, m_swapchain->HasSwapchainFormatChanged()
 			);
 
@@ -89,7 +87,7 @@ public:
 		const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();
 		const size_t nextImageIndex           = nextImageIndexU32;
 
-		VkSemaphore renderFinishedSemaphore = m_renderEngine->Render(
+		VkSemaphore renderFinishedSemaphore = m_renderEngine.Render(
 			nextImageIndex, m_swapchain->GetColourAttachment(nextImageIndex),
 			m_swapchain->GetCurrentSwapchainExtent(), semaphoreCounter, nextImageSemaphore
 		);
@@ -104,7 +102,7 @@ public:
 	[[nodiscard]]
 	auto&& GetRenderEngine(this auto&& self) noexcept
 	{
-		return std::forward_like<decltype(self)>(*self.m_renderEngine);
+		return std::forward_like<decltype(self)>(self.m_renderEngine);
 	}
 
 	[[nodiscard]]
@@ -126,14 +124,17 @@ public:
 	}
 
 private:
-	void CreateInstance()
+	[[nodiscard]]
+	static VkInstanceManager CreateInstance(std::string_view appName)
 	{
+		VkInstanceManager instanceManager{ std::move(appName) };
+
 #ifndef NDEBUG
-		m_instanceManager.DebugLayers().AddDebugCallback(DebugCallbackType::FileOut);
+		instanceManager.DebugLayers().AddDebugCallback(DebugCallbackType::FileOut);
 #endif
 
 		{
-			VkInstanceExtensionManager& extensionManager = m_instanceManager.ExtensionManager();
+			VkInstanceExtensionManager& extensionManager = instanceManager.ExtensionManager();
 
 #ifdef TERRA_WIN32
 			SurfaceInstanceExtensionWin32::SetInstanceExtensions(extensionManager);
@@ -142,32 +143,45 @@ private:
 #endif
 		}
 
-		m_instanceManager.CreateInstance(s_coreVersion);
+		instanceManager.CreateInstance(s_coreVersion);
+
+		return instanceManager;
 	}
 
-	void CreateSurface(void* windowHandle, void* moduleHandle)
-	{
-		m_surfaceManager.Create(m_instanceManager.GetVKInstance(), windowHandle, moduleHandle);
+	[[nodiscard]]
+	static SurfaceManager_t CreateSurface(
+		VkInstance vkInstance, void* windowHandle, void* moduleHandle
+	) {
+		SurfaceManager_t surfaceManager{};
+
+		surfaceManager.Create(vkInstance, windowHandle, moduleHandle);
+
+		return surfaceManager;
 	}
 
-	void CreateDevice(RenderEngineType engineType)
+	[[nodiscard]]
+	static VkDeviceManager CreateDevice(VkInstance vkInstance, VkSurfaceKHR vkSurface)
 	{
+		VkDeviceManager deviceManager{};
+
 		{
-			VkDeviceExtensionManager& extensionManager = m_deviceManager.ExtensionManager();
+			VkDeviceExtensionManager& extensionManager = deviceManager.ExtensionManager();
 
 			extensionManager.AddExtensions(SwapchainManager::GetRequiredExtensions());
 
-			if (engineType == RenderEngineType::IndividualDraw)
-				RenderEngineVSIndividualDeviceExtension{}.SetDeviceExtensions(extensionManager);
-			else if (engineType == RenderEngineType::IndirectDraw)
-				RenderEngineVSIndirectDeviceExtension{}.SetDeviceExtensions(extensionManager);
-			else if (engineType == RenderEngineType::MeshDraw)
-				RenderEngineMSDeviceExtension{}.SetDeviceExtensions(extensionManager);
+			if constexpr (std::is_same_v<RenderEngine_t, RenderEngineMS>)
+				RenderEngineMSDeviceExtension::SetDeviceExtensions(extensionManager);
+			else if constexpr (std::is_same_v<RenderEngine_t, RenderEngineVSIndirect>)
+				RenderEngineVSIndirectDeviceExtension::SetDeviceExtensions(extensionManager);
+			else
+				RenderEngineVSIndividualDeviceExtension::SetDeviceExtensions(extensionManager);
 		}
 
-		m_deviceManager.SetDeviceFeatures(s_coreVersion)
-			.SetPhysicalDeviceAutomatic(m_instanceManager.GetVKInstance(), m_surfaceManager)
+		deviceManager.SetDeviceFeatures(s_coreVersion)
+			.SetPhysicalDeviceAutomatic(vkInstance, vkSurface)
 			.CreateLogicalDevice();
+
+		return deviceManager;
 	}
 
 	void CreateSwapchain(std::uint32_t frameCount)
@@ -180,33 +194,13 @@ private:
 		);
 	}
 
-	void CreateRenderEngine(
-		RenderEngineType engineType, std::shared_ptr<ThreadPool>&& threadPool,
-		std::uint32_t frameCount
-	) {
-		if (engineType == RenderEngineType::IndividualDraw)
-			m_renderEngine = std::make_unique<RenderEngineVSIndividual>(
-				m_deviceManager, std::move(threadPool), frameCount
-			);
-		else if (engineType == RenderEngineType::IndirectDraw)
-			m_renderEngine = std::make_unique<RenderEngineVSIndirect>(
-				m_deviceManager, std::move(threadPool), frameCount
-			);
-		else if (engineType == RenderEngineType::MeshDraw)
-			m_renderEngine = std::make_unique<RenderEngineMS>(
-				m_deviceManager, std::move(threadPool), frameCount
-			);
-	}
-
 private:
 	VkInstanceManager                 m_instanceManager;
 	SurfaceManager_t                  m_surfaceManager;
 	VkDeviceManager                   m_deviceManager;
 	DisplayManager_t                  m_displayManager;
-	// Swapchain is a unique_ptr because its ctor requires a valid device.
-	// Which is created later.
 	std::unique_ptr<SwapchainManager> m_swapchain;
-	std::unique_ptr<RenderEngine>     m_renderEngine;
+	RenderEngine_t                    m_renderEngine;
 	std::uint32_t                     m_windowWidth;
 	std::uint32_t                     m_windowHeight;
 
@@ -219,7 +213,7 @@ public:
 	{
 		WaitForGPUToFinish();
 
-		return m_renderEngine->AddTextureAsCombined(std::move(texture));
+		return m_renderEngine.AddTextureAsCombined(std::move(texture));
 	}
 
 	[[nodiscard]]
@@ -227,14 +221,14 @@ public:
 	{
 		WaitForGPUToFinish();
 
-		return m_renderEngine->BindCombinedTexture(textureIndex);
+		return m_renderEngine.BindCombinedTexture(textureIndex);
 	}
 
 	void RemoveTexture(size_t textureIndex)
 	{
 		WaitForGPUToFinish();
 
-		m_renderEngine->RemoveTexture(textureIndex);
+		m_renderEngine.RemoveTexture(textureIndex);
 	}
 
 	[[nodiscard]]
@@ -242,7 +236,7 @@ public:
 	{
 		WaitForGPUToFinish();
 
-		return m_renderEngine->AddModelBundle(std::move(modelBundle));
+		return m_renderEngine.AddModelBundle(std::move(modelBundle));
 	}
 
 	[[nodiscard]]
@@ -250,7 +244,7 @@ public:
 	{
 		WaitForGPUToFinish();
 
-		return m_renderEngine->AddMeshBundle(std::move(meshBundle));
+		return m_renderEngine.AddMeshBundle(std::move(meshBundle));
 	}
 
 public:

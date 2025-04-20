@@ -41,7 +41,7 @@ TEST_F(RenderEngineTest, RenderEngineVSIndividualTest)
 
 	{
 		VkDeviceExtensionManager& extensionManager = deviceManager.ExtensionManager();
-		RenderEngineVSIndividualDeviceExtension{}.SetDeviceExtensions(extensionManager);
+		RenderEngineVSIndividualDeviceExtension::SetDeviceExtensions(extensionManager);
 	}
 
 	{
@@ -63,7 +63,7 @@ TEST_F(RenderEngineTest, RenderEngineVSIndirectTest)
 
 	{
 		VkDeviceExtensionManager& extensionManager = deviceManager.ExtensionManager();
-		RenderEngineVSIndirectDeviceExtension{}.SetDeviceExtensions(extensionManager);
+		RenderEngineVSIndirectDeviceExtension::SetDeviceExtensions(extensionManager);
 	}
 
 	{
@@ -85,7 +85,7 @@ TEST_F(RenderEngineTest, RenderEngineMSTest)
 
 	{
 		VkDeviceExtensionManager& extensionManager = deviceManager.ExtensionManager();
-		RenderEngineMSDeviceExtension{}.SetDeviceExtensions(extensionManager);
+		RenderEngineMSDeviceExtension::SetDeviceExtensions(extensionManager);
 	}
 
 	{

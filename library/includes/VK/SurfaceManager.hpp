@@ -5,6 +5,11 @@
 #include <utility>
 #include <VkExtensionManager.hpp>
 
+namespace SurfaceInstanceExtension
+{
+	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
+};
+
 class SurfaceManager
 {
 public:
@@ -17,8 +22,9 @@ public:
 	VkSurfaceFormatKHR GetSurfaceFormat(VkPhysicalDevice device) const noexcept;
 	[[nodiscard]]
 	VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(VkPhysicalDevice device) const noexcept;
+
 	[[nodiscard]]
-	bool CanDeviceSupportSurface(VkPhysicalDevice device) const noexcept;
+	static bool CanDeviceSupportSurface(VkSurfaceKHR surface, VkPhysicalDevice device) noexcept;
 
 	[[nodiscard]]
 	VkSurfaceKHR Get() const noexcept { return m_surface; }

@@ -3,10 +3,9 @@
 #include <RenderEngine.hpp>
 #include <ModelManager.hpp>
 
-class RenderEngineMSDeviceExtension : public RenderEngineDeviceExtension
+namespace RenderEngineMSDeviceExtension
 {
-public:
-	void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept override;
+	void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept;
 };
 
 class RenderEngineMS : public
@@ -28,18 +27,24 @@ class RenderEngineMS : public
 
 public:
 	RenderEngineMS(
-		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
+		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
+		size_t frameCount
 	);
 
-	void FinaliseInitialisation() override;
+	void FinaliseInitialisation();
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle) override;
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle);
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle) override;
+	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle);
+
+	void SetShaderPath(const std::wstring& shaderPath)
+	{
+		_setShaderPath(shaderPath);
+	}
 
 private:
 	[[nodiscard]]
