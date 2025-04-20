@@ -7,10 +7,6 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
 	m_modelManager = std::make_unique<ModelManagerVSIndividual>();
-	m_modelBuffers = std::make_unique<ModelBuffers>(
-		deviceManager.GetLogicalDevice(), m_memoryManager.get(),
-		static_cast<std::uint32_t>(frameCount), std::vector<std::uint32_t>{}
-	);
 
 	SetGraphicsDescriptorBufferLayout();
 
@@ -75,11 +71,11 @@ void RenderEngineVSIndividual::SetGraphicsDescriptors()
 		VkDescriptorBuffer& descriptorBuffer = m_graphicsDescriptorBuffers[index];
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers->SetDescriptorBuffer(
+		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot,
 			s_vertexShaderSetLayoutIndex
 		);
-		m_modelBuffers->SetFragmentDescriptorBuffer(
+		m_modelBuffers.SetFragmentDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot,
 			s_fragmentShaderSetLayoutIndex
 		);
@@ -89,7 +85,7 @@ void RenderEngineVSIndividual::SetGraphicsDescriptors()
 std::uint32_t RenderEngineVSIndividual::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
 	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(
-		*modelBundle, *m_modelBuffers
+		*modelBundle, m_modelBuffers
 	);
 
 	const std::uint32_t index = m_modelManager->AddModelBundle(
@@ -280,11 +276,6 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 		deviceManager.GetQueueFamilyManager().GetAllIndices(),
 		static_cast<std::uint32_t>(frameCount)
 	);
-	m_modelBuffers = std::make_unique<ModelBuffers>(
-		deviceManager.GetLogicalDevice(), m_memoryManager.get(),
-		static_cast<std::uint32_t>(frameCount),
-		deviceManager.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices()
-	);
 
 	// Graphics Descriptors.
 	// The layout shouldn't change throughout the runtime.
@@ -435,11 +426,11 @@ void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 		VkDescriptorBuffer& descriptorBuffer = m_graphicsDescriptorBuffers[index];
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers->SetDescriptorBuffer(
+		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersGraphicsBindingSlot,
 			s_vertexShaderSetLayoutIndex
 		);
-		m_modelBuffers->SetFragmentDescriptorBuffer(
+		m_modelBuffers.SetFragmentDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersFragmentBindingSlot,
 			s_fragmentShaderSetLayoutIndex
 		);
@@ -459,7 +450,7 @@ void RenderEngineVSIndirect::SetModelComputeDescriptors()
 		VkDescriptorBuffer& descriptorBuffer = m_computeDescriptorBuffers[index];
 		const auto frameIndex                = static_cast<VkDeviceSize>(index);
 
-		m_modelBuffers->SetDescriptorBuffer(
+		m_modelBuffers.SetDescriptorBuffer(
 			descriptorBuffer, frameIndex, s_modelBuffersComputeBindingSlot,
 			s_computeShaderSetLayoutIndex
 		);
@@ -492,7 +483,7 @@ void RenderEngineVSIndirect::UpdateRenderPassPipelines(
 
 void RenderEngineVSIndirect::_updatePerFrame(VkDeviceSize frameIndex) const noexcept
 {
-	m_modelBuffers->Update(frameIndex);
+	m_modelBuffers.Update(frameIndex);
 
 	// Normal passes
 	const size_t renderPassCount = std::size(m_renderPasses);
@@ -520,7 +511,7 @@ void RenderEngineVSIndirect::SetShaderPath(const std::wstring& shaderPath)
 std::uint32_t RenderEngineVSIndirect::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
 	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(
-		*modelBundle, *m_modelBuffers
+		*modelBundle, m_modelBuffers
 	);
 
 	const std::uint32_t index = m_modelManager->AddModelBundle(

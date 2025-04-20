@@ -32,13 +32,11 @@ public:
 		m_deviceManager{
 			CreateDevice(m_instanceManager.GetVKInstance(), m_surfaceManager.Get())
 		},
-		m_displayManager{}, m_swapchain { nullptr },
+		m_displayManager{}, m_swapchain{ CreateSwapchain(m_deviceManager, bufferCount) },
 		m_renderEngine{ m_deviceManager, std::move(threadPool), bufferCount },
 		// The width and height are zero initialised, as they will be set with the call to Resize.
 		m_windowWidth{ 0u }, m_windowHeight{ 0u }
 	{
-		CreateSwapchain(bufferCount);
-
 		// Need to create the swapchain and frame buffers and stuffs.
 		Resize(width, height);
 	}
@@ -56,17 +54,17 @@ public:
 			WaitForGPUToFinish();
 
 			// Must recreate the swapchain first.
-			m_swapchain->CreateSwapchain(
+			m_swapchain.CreateSwapchain(
 				m_deviceManager.GetPhysicalDevice(), m_surfaceManager, width, height
 			);
 
-			const VkExtent2D newExtent = m_swapchain->GetCurrentSwapchainExtent();
+			const VkExtent2D newExtent = m_swapchain.GetCurrentSwapchainExtent();
 
 			// Using the new extent, as it might be slightly different than the values we got.
 			// For example, the title area of a window can't be drawn upon.
 			// So, the actual rendering area would be a bit smaller.
 			m_renderEngine.Resize(
-				newExtent.width, newExtent.height, m_swapchain->HasSwapchainFormatChanged()
+				newExtent.width, newExtent.height, m_swapchain.HasSwapchainFormatChanged()
 			);
 
 			m_windowWidth  = width;
@@ -81,18 +79,18 @@ public:
 		VkDevice device = m_deviceManager.GetLogicalDevice();
 
 		// This semaphore will be signaled when the image becomes available.
-		m_swapchain->QueryNextImageIndex(device);
+		m_swapchain.QueryNextImageIndex(device);
 
-		const VKSemaphore& nextImageSemaphore = m_swapchain->GetNextImageSemaphore();
-		const std::uint32_t nextImageIndexU32 = m_swapchain->GetNextImageIndex();
+		const VKSemaphore& nextImageSemaphore = m_swapchain.GetNextImageSemaphore();
+		const std::uint32_t nextImageIndexU32 = m_swapchain.GetNextImageIndex();
 		const size_t nextImageIndex           = nextImageIndexU32;
 
 		VkSemaphore renderFinishedSemaphore = m_renderEngine.Render(
-			nextImageIndex, m_swapchain->GetColourAttachment(nextImageIndex),
-			m_swapchain->GetCurrentSwapchainExtent(), semaphoreCounter, nextImageSemaphore
+			nextImageIndex, m_swapchain.GetColourAttachment(nextImageIndex),
+			m_swapchain.GetCurrentSwapchainExtent(), semaphoreCounter, nextImageSemaphore
 		);
 
-		m_swapchain->Present(nextImageIndexU32, renderFinishedSemaphore);
+		m_swapchain.Present(nextImageIndexU32, renderFinishedSemaphore);
 	}
 	void WaitForGPUToFinish()
 	{
@@ -108,7 +106,7 @@ public:
 	[[nodiscard]]
 	ExternalFormat GetSwapchainFormat() const noexcept
 	{
-		return GetExternalFormat(m_swapchain->GetSwapchainFormat());
+		return GetExternalFormat(m_swapchain.GetSwapchainFormat());
 	}
 
 	[[nodiscard]]
@@ -120,7 +118,7 @@ public:
 	[[nodiscard]]
 	VkExtent2D GetCurrentRenderArea() const noexcept
 	{
-		return m_swapchain->GetCurrentSwapchainExtent();
+		return m_swapchain.GetCurrentSwapchainExtent();
 	}
 
 private:
@@ -184,25 +182,27 @@ private:
 		return deviceManager;
 	}
 
-	void CreateSwapchain(std::uint32_t frameCount)
-	{
-		VkDevice device = m_deviceManager.GetLogicalDevice();
+	[[nodiscard]]
+	static SwapchainManager CreateSwapchain(
+		const VkDeviceManager& deviceManager, std::uint32_t frameCount
+	) {
+		VkDevice device = deviceManager.GetLogicalDevice();
 
-		m_swapchain = std::make_unique<SwapchainManager>(
-			device, m_deviceManager.GetQueueFamilyManager().GetQueue(QueueType::GraphicsQueue),
+		return SwapchainManager{
+			device, deviceManager.GetQueueFamilyManager().GetQueue(QueueType::GraphicsQueue),
 			frameCount
-		);
+		};
 	}
 
 private:
-	VkInstanceManager                 m_instanceManager;
-	SurfaceManager_t                  m_surfaceManager;
-	VkDeviceManager                   m_deviceManager;
-	DisplayManager_t                  m_displayManager;
-	std::unique_ptr<SwapchainManager> m_swapchain;
-	RenderEngine_t                    m_renderEngine;
-	std::uint32_t                     m_windowWidth;
-	std::uint32_t                     m_windowHeight;
+	VkInstanceManager m_instanceManager;
+	SurfaceManager_t  m_surfaceManager;
+	VkDeviceManager   m_deviceManager;
+	DisplayManager_t  m_displayManager;
+	SwapchainManager  m_swapchain;
+	RenderEngine_t    m_renderEngine;
+	std::uint32_t     m_windowWidth;
+	std::uint32_t     m_windowHeight;
 
 	static constexpr CoreVersion s_coreVersion = CoreVersion::V1_3;
 

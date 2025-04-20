@@ -65,7 +65,14 @@ private:
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
-		m_modelBuffers->Update(frameIndex);
+		m_modelBuffers.Update(frameIndex);
+	}
+
+	[[nodiscard]]
+	static std::vector<std::uint32_t> GetModelBuffersQueueFamilies(
+		[[maybe_unused]] const VkDeviceManager& deviceManager
+	) noexcept {
+		return {};
 	}
 
 private:
@@ -157,6 +164,14 @@ private:
 	void CreateComputePipelineLayout();
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept;
+
+	[[nodiscard]]
+	static std::vector<std::uint32_t> GetModelBuffersQueueFamilies(
+		const VkDeviceManager& deviceManager
+	) noexcept {
+		return deviceManager
+			.GetQueueFamilyManager().GetComputeAndGraphicsIndices().ResolveQueueIndices();
+	}
 
 private:
 	void DrawRenderPassPipelines(

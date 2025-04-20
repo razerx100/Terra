@@ -68,7 +68,14 @@ private:
 
 	void _updatePerFrame(VkDeviceSize frameIndex) const noexcept
 	{
-		m_modelBuffers->Update(frameIndex);
+		m_modelBuffers.Update(frameIndex);
+	}
+
+	[[nodiscard]]
+	static std::vector<std::uint32_t> GetModelBuffersQueueFamilies(
+		[[maybe_unused]] const VkDeviceManager& deviceManager
+	) noexcept {
+		return {};
 	}
 
 private:

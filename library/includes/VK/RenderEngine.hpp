@@ -318,7 +318,10 @@ public:
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
 		size_t frameCount
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
-		m_modelManager{}, m_modelBuffers{},
+		m_modelManager{},
+		m_modelBuffers{
+			CreateModelBuffers(deviceManager, m_memoryManager.get(), frameCount)
+		},
 		m_meshManager{
 			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
@@ -365,7 +368,7 @@ public:
 		const auto& models = modelBundle->GetModels();
 
 		for (const std::shared_ptr<Model>& model : models)
-			m_modelBuffers->Remove(model->GetModelIndexInBuffer());
+			m_modelBuffers.Remove(model->GetModelIndexInBuffer());
 	}
 
 	void Resize(std::uint32_t width, std::uint32_t height, bool hasSwapchainFormatChanged)
@@ -504,9 +507,21 @@ protected:
 		);
 	}
 
+private:
+	[[nodiscard]]
+	static ModelBuffers CreateModelBuffers(
+		const VkDeviceManager& deviceManager, MemoryManager* memoryManager, size_t frameCount
+	) {
+		return ModelBuffers{
+			deviceManager.GetLogicalDevice(), memoryManager,
+			static_cast<std::uint32_t>(frameCount),
+			Derived::GetModelBuffersQueueFamilies(deviceManager)
+		};
+	}
+
 protected:
 	std::unique_ptr<ModelManager_t>        m_modelManager;
-	std::unique_ptr<ModelBuffers>          m_modelBuffers;
+	ModelBuffers                           m_modelBuffers;
 	MeshManager_t                          m_meshManager;
 	PipelineManager<GraphicsPipeline_t>    m_graphicsPipelineManager;
 	ReusableVector<ExternalRenderPassSP_t> m_renderPasses;
