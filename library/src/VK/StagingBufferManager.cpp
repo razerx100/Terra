@@ -6,7 +6,7 @@
 StagingBufferManager& StagingBufferManager::AddTextureView(
 	std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-	TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
+	Callisto::TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex/* = 0u */
 ) {
 	const VkDeviceSize bufferSize = dst->GetTexture().GetBufferSize();
 
@@ -46,7 +46,7 @@ StagingBufferManager& StagingBufferManager::AddTextureView(
 StagingBufferManager& StagingBufferManager::AddBuffer(
 	std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-	TemporaryDataBufferGPU& tempDataBuffer
+	Callisto::TemporaryDataBufferGPU& tempDataBuffer
 ) {
 	assert(
 		!CheckForDuplicateBufferOwnershipTransfer(dst, dstQueueType)

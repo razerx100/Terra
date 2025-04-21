@@ -20,7 +20,7 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		TemporaryDataBufferGPU& tempBuffer
+		Callisto::TemporaryDataBufferGPU& tempBuffer
 	) {
 		VkMeshBundle vkMeshBundle{};
 
@@ -83,7 +83,7 @@ public:
 private:
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
+		VkMeshBundleVS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 
@@ -115,7 +115,9 @@ class MeshManagerVSIndirect : public MeshManager<MeshManagerVSIndirect, VkMeshBu
 {
 	friend class MeshManager<MeshManagerVSIndirect, VkMeshBundleVS>;
 public:
-	MeshManagerVSIndirect(VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3);
+	MeshManagerVSIndirect(
+		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3
+	);
 
 	void CopyOldBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept;
 
@@ -130,7 +132,7 @@ public:
 private:
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		VkMeshBundleVS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
+		VkMeshBundleVS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 
@@ -187,7 +189,7 @@ public:
 private:
 	void ConfigureMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
-		VkMeshBundleMS& vkMeshBundle, TemporaryDataBufferGPU& tempBuffer
+		VkMeshBundleMS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
 

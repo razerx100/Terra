@@ -3,7 +3,8 @@
 
 // Texture storage
 size_t TextureStorage::AddTexture(
-	STexture&& texture, StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
+	STexture&& texture, StagingBufferManager& stagingBufferManager,
+	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	const size_t index = m_textures.Add(
 		VkTextureView{ m_device, m_memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT }
@@ -161,7 +162,8 @@ void TextureManager::SetDescriptorBufferLayout(
 	if (combinedDescCount)
 		descriptorBuffer.AddBinding(
 			combinedTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+			combinedDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 
 	const auto sampledDescCount = static_cast<std::uint32_t>(
@@ -171,7 +173,8 @@ void TextureManager::SetDescriptorBufferLayout(
 	if (sampledDescCount)
 		descriptorBuffer.AddBinding(
 			sampledTexturesBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+			sampledDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 
 	const auto samplerDescCount = static_cast<std::uint32_t>(
@@ -181,6 +184,7 @@ void TextureManager::SetDescriptorBufferLayout(
 	if (samplerDescCount)
 		descriptorBuffer.AddBinding(
 			samplersBindingSlot, setLayoutIndex, VK_DESCRIPTOR_TYPE_SAMPLER,
-			samplerDescCount, VK_SHADER_STAGE_FRAGMENT_BIT, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
+			samplerDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
 }

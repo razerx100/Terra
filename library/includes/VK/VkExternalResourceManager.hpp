@@ -28,7 +28,7 @@ public:
 	) const;
 
 	void UploadExternalBufferGPUOnlyData(
-		StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempGPUBuffer,
+		StagingBufferManager& stagingBufferManager, Callisto::TemporaryDataBufferGPU& tempGPUBuffer,
 		std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
 		size_t dstBufferOffset
 	) const;
@@ -36,7 +36,7 @@ public:
 	void QueueExternalBufferGPUCopy(
 		std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
 		size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes,
-		TemporaryDataBufferGPU& tempGPUBuffer
+		Callisto::TemporaryDataBufferGPU& tempGPUBuffer
 	);
 
 	void CopyQueuedBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept;

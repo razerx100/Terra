@@ -109,7 +109,7 @@ void VkExternalResourceManager::UpdateDescriptor(
 }
 
 void VkExternalResourceManager::UploadExternalBufferGPUOnlyData(
-	StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempGPUBuffer,
+	StagingBufferManager& stagingBufferManager, Callisto::TemporaryDataBufferGPU& tempGPUBuffer,
 	std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
 	size_t dstBufferOffset
 ) const {
@@ -125,7 +125,7 @@ void VkExternalResourceManager::UploadExternalBufferGPUOnlyData(
 void VkExternalResourceManager::QueueExternalBufferGPUCopy(
 	std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
 	size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes,
-	TemporaryDataBufferGPU& tempGPUBuffer
+	Callisto::TemporaryDataBufferGPU& tempGPUBuffer
 ) {
 	auto GetSrcSize = [&resourceFactory = m_resourceFactory]
 		(std::uint32_t srcIndex, size_t srcSize) -> VkDeviceSize

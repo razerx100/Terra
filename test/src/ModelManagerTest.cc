@@ -398,7 +398,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 		logicalDevice, &memoryManager, queueManager.GetAllIndices()
 	};
 
-	TemporaryDataBufferGPU tempDataBuffer{};
+	Callisto::TemporaryDataBufferGPU tempDataBuffer{};
 
 	ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
@@ -563,7 +563,7 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 
 	computePipelineLayout.Create(descBuffersCS.front().GetValidLayouts());
 
-	TemporaryDataBufferGPU tempDataBuffer{};
+	Callisto::TemporaryDataBufferGPU tempDataBuffer{};
 
 	ModelBuffers modelBuffers{
 		logicalDevice, &memoryManager, Constants::frameCount,
@@ -780,7 +780,7 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 
 	graphicsPipelineLayout.Create(descBuffers.front().GetValidLayouts());
 
-	TemporaryDataBufferGPU tempDataBuffer{};
+	Callisto::TemporaryDataBufferGPU tempDataBuffer{};
 
 	ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 

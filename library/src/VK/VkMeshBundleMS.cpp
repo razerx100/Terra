@@ -13,7 +13,7 @@ void VkMeshBundleMS::_setMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer
+	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
 
@@ -21,7 +21,7 @@ void VkMeshBundleMS::_setMeshBundle(
 		(
 			const std::vector<T>& elements, StagingBufferManager& stagingBufferMan,
 			SharedBufferGPU& sharedBuffer, SharedBufferData& sharedData,
-			std::uint32_t& detailOffset, TemporaryDataBufferGPU& tempBuffer
+			std::uint32_t& detailOffset, Callisto::TemporaryDataBufferGPU& tempBuffer
 		)
 	{
 		constexpr auto stride = static_cast<VkDeviceSize>(sizeof(T));
@@ -30,7 +30,7 @@ void VkMeshBundleMS::_setMeshBundle(
 		sharedData   = sharedBuffer.AllocateAndGetSharedData(bufferSize, tempBuffer);
 		detailOffset = static_cast<std::uint32_t>(sharedData.offset / stride);
 
-		std::shared_ptr<std::uint8_t[]> tempDataBuffer = CopyVectorToSharedPtr(elements);
+		std::shared_ptr<std::uint8_t[]> tempDataBuffer = Callisto::CopyVectorToSharedPtr(elements);
 
 		stagingBufferMan.AddBuffer(
 			std::move(tempDataBuffer), bufferSize, sharedData.bufferData, sharedData.offset,
@@ -66,7 +66,7 @@ void VkMeshBundleMS::SetMeshBundle(
 	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer
+	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	// Init the temp data.
 	meshBundle->GenerateTemporaryData(true);
@@ -83,7 +83,7 @@ void VkMeshBundleMS::SetMeshBundle(
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 	SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
-	TemporaryDataBufferGPU& tempBuffer
+	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	constexpr auto perMeshStride = sizeof(AxisAlignedBoundingBox);
 
@@ -152,7 +152,7 @@ void VkMeshBundleMS::SetMeshBundle(
 void VkMeshBundleMS::ConfigureVertices(
 	const std::vector<Vertex>& vertices, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& verticesSharedBuffer, SharedBufferData& verticesSharedData,
-	std::uint32_t& verticesDetailOffset, TemporaryDataBufferGPU& tempBuffer
+	std::uint32_t& verticesDetailOffset, Callisto::TemporaryDataBufferGPU& tempBuffer
 ) noexcept {
 	constexpr auto vertexStride = static_cast<VkDeviceSize>(sizeof(GLSLVertex));
 	const size_t vertexCount    = std::size(vertices);

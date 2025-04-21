@@ -58,7 +58,7 @@ TEST_F(VkSharedBufferTest, SharedBufferTest)
 
 	SharedBufferGPU sharedBuffer{ logicalDevice, &memoryManager, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, {} };
 
-	TemporaryDataBufferGPU tempDataBuffer{};
+	Callisto::TemporaryDataBufferGPU tempDataBuffer{};
 
 	{
 		auto allocInfo      = sharedBuffer.AllocateAndGetSharedData(12u, tempDataBuffer);

@@ -25,18 +25,17 @@ public:
 	StagingBufferManager& AddTextureView(
 		std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-		TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
+		Callisto::TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	);
 	StagingBufferManager& AddBuffer(
-		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
-		QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
-		TemporaryDataBufferGPU& tempDataBuffer
+		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst,
+		VkDeviceSize offset, QueueType dstQueueType, VkAccessFlagBits2 dstAccess,
+		VkPipelineStageFlags2 dstStage, Callisto::TemporaryDataBufferGPU& tempDataBuffer
 	);
 	// If a resource has shared ownership, there is no need for ownership transfer.
 	StagingBufferManager& AddTextureView(
-		std::shared_ptr<void> cpuData,
-		VkTextureView const* dst, const VkOffset3D& offset,
-		TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
+		std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
+		Callisto::TemporaryDataBufferGPU& tempDataBuffer, std::uint32_t mipLevelIndex = 0u
 	) {
 		return AddTextureView(
 			std::move(cpuData), dst, offset, QueueType::None, VK_ACCESS_2_NONE,
@@ -44,8 +43,8 @@ public:
 		);
 	}
 	StagingBufferManager& AddBuffer(
-		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst, VkDeviceSize offset,
-		TemporaryDataBufferGPU& tempDataBuffer
+		std::shared_ptr<void> cpuData, VkDeviceSize bufferSize, Buffer const* dst,
+		VkDeviceSize offset, Callisto::TemporaryDataBufferGPU& tempDataBuffer
 	) {
 		return AddBuffer(
 			std::move(cpuData), bufferSize, dst, offset, QueueType::None, VK_ACCESS_2_NONE,
@@ -78,7 +77,9 @@ private:
 		VkTextureView const* textureView, QueueType type
 	) const noexcept;
 	[[nodiscard]]
-	bool CheckForDuplicateBufferOwnershipTransfer(Buffer const* buffer, QueueType type) const noexcept;
+	bool CheckForDuplicateBufferOwnershipTransfer(
+		Buffer const* buffer, QueueType type
+	) const noexcept;
 
 private:
 	struct BufferInfo
@@ -113,7 +114,7 @@ private:
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToBuffer;
 	std::vector<TextureInfo>             m_textureInfo;
 	std::vector<std::shared_ptr<Buffer>> m_tempBufferToTexture;
-	TemporaryDataBufferCPU               m_cpuTempBuffer;
+	Callisto::TemporaryDataBufferCPU     m_cpuTempBuffer;
 
 public:
 	StagingBufferManager(const StagingBufferManager&) = delete;

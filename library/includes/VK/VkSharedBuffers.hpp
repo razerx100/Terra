@@ -106,7 +106,9 @@ public:
 
 	[[nodiscard]]
 	// The offset from the start of the buffer will be returned.
-	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer);
+	SharedBufferData AllocateAndGetSharedData(
+		VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer
+	);
 
 	void RelinquishMemory(const SharedBufferData& sharedData) noexcept
 	{
@@ -114,9 +116,9 @@ public:
 	}
 
 private:
-	void CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer);
+	void CreateBuffer(VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer);
 	[[nodiscard]]
-	VkDeviceSize ExtendBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer);
+	VkDeviceSize ExtendBuffer(VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer);
 
 private:
 	std::shared_ptr<Buffer> m_oldBuffer;

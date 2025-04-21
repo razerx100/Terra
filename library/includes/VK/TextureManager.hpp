@@ -32,7 +32,8 @@ public:
 
 	[[nodiscard]]
 	size_t AddTexture(
-		STexture&& texture, StagingBufferManager& stagingBufferManager, TemporaryDataBufferGPU& tempBuffer
+		STexture&& texture, StagingBufferManager& stagingBufferManager,
+		Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	[[nodiscard]]
 	size_t AddSampler(const VkSamplerCreateInfoBuilder& builder);

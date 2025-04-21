@@ -4,7 +4,7 @@
 #include <VkSharedBuffers.hpp>
 
 // Shared Buffer GPU
-void SharedBufferGPU::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
+void SharedBufferGPU::CreateBuffer(VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer)
 {
 	// Moving it into the old buffer, as we will want to copy it back to the new bigger buffer.
 
@@ -35,7 +35,7 @@ void SharedBufferGPU::CreateBuffer(VkDeviceSize size, TemporaryDataBufferGPU& te
 	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
 }
 
-VkDeviceSize SharedBufferGPU::ExtendBuffer(VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer)
+VkDeviceSize SharedBufferGPU::ExtendBuffer(VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer)
 {
 	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
 	const VkDeviceSize oldSize = m_buffer.BufferSize();
@@ -62,7 +62,7 @@ void SharedBufferGPU::CopyOldBuffer(const VKCommandBuffer& copyBuffer) noexcept
 }
 
 SharedBufferData SharedBufferGPU::AllocateAndGetSharedData(
-	VkDeviceSize size, TemporaryDataBufferGPU& tempBuffer
+	VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	auto availableAllocIndex = m_allocator.GetAvailableAllocInfo(size);
 

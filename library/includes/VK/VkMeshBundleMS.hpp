@@ -45,14 +45,14 @@ public:
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
-		TemporaryDataBufferGPU& tempBuffer
+		Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void SetMeshBundle(
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
-		TemporaryDataBufferGPU& tempBuffer
+		Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 
 	[[nodiscard]]
@@ -99,13 +99,13 @@ private:
 		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
-		TemporaryDataBufferGPU& tempBuffer
+		Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 
 	static void ConfigureVertices(
 		const std::vector<Vertex>& vertices, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& verticesSharedBuffer, SharedBufferData& verticesSharedData,
-		std::uint32_t& verticesDetailOffset, TemporaryDataBufferGPU& tempBuffer
+		std::uint32_t& verticesDetailOffset, Callisto::TemporaryDataBufferGPU& tempBuffer
 	) noexcept;
 
 private:
