@@ -122,15 +122,15 @@ private:
 	};
 
 private:
-	VkDevice                          m_device;
-	MemoryManager*                    m_memoryManager;
+	VkDevice                               m_device;
+	MemoryManager*                         m_memoryManager;
 	// The TextureView objects need to have the same address until their data is copied.
 	// For the transitionQueue member and also the StagingBufferManager.
-	ReusableDeque<VkTextureView>      m_textures;
-	ReusableDeque<VKSampler>          m_samplers;
-	std::queue<VkTextureView const*>  m_transitionQueue;
+	Callisto::ReusableDeque<VkTextureView> m_textures;
+	Callisto::ReusableDeque<VKSampler>     m_samplers;
+	std::queue<VkTextureView const*>       m_transitionQueue;
 
-	std::vector<CombinedCacheDetails> m_combinedCacheDetails;
+	std::vector<CombinedCacheDetails>      m_combinedCacheDetails;
 
 	static constexpr VkFormat s_textureFormat = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -197,15 +197,15 @@ public:
 	) const noexcept;
 
 private:
-	IndicesManager     m_availableIndicesCombinedTextures;
-	IndicesManager     m_availableIndicesSampledTextures;
-	IndicesManager     m_availableIndicesSamplers;
+	Callisto::IndicesManager m_availableIndicesCombinedTextures;
+	Callisto::IndicesManager m_availableIndicesSampledTextures;
+	Callisto::IndicesManager m_availableIndicesSamplers;
 
 	// It will be used for caching descriptors.
-	VkDescriptorBuffer m_localDescBuffer;
-	IndicesManager     m_combinedTextureCaches;
-	IndicesManager     m_sampledTextureCaches;
-	IndicesManager     m_samplerCaches;
+	VkDescriptorBuffer       m_localDescBuffer;
+	Callisto::IndicesManager m_combinedTextureCaches;
+	Callisto::IndicesManager m_sampledTextureCaches;
+	Callisto::IndicesManager m_samplerCaches;
 
 private:
 	template<VkDescriptorType type>
@@ -272,7 +272,7 @@ public:
 	template<VkDescriptorType type>
 	void SetLocalDescriptorAvailability(std::uint32_t localDescIndex, bool availability) noexcept
 	{
-		IndicesManager& localCaches = GetCaches<type>();
+		Callisto::IndicesManager& localCaches = GetCaches<type>();
 
 		localCaches.ToggleAvailability(localDescIndex, availability);
 	}
@@ -283,9 +283,9 @@ public:
 		constexpr TextureDescType descType = GetTextureDescType<type>();
 		const auto localBindingSlot        = static_cast<std::uint32_t>(descType);
 
-		IndicesManager& localCaches        = GetCaches<type>();
+		Callisto::IndicesManager& localCaches = GetCaches<type>();
 
-		std::optional<size_t> oFreeIndex   = localCaches.GetFirstAvailableIndex();
+		std::optional<size_t> oFreeIndex = localCaches.GetFirstAvailableIndex();
 
 		if (!oFreeIndex)
 		{
@@ -346,7 +346,7 @@ public:
 	[[nodiscard]]
 	std::optional<size_t> GetFreeGlobalDescriptorIndex() const noexcept
 	{
-		const IndicesManager& availableBindings = GetAvailableBindings<type>();
+		const Callisto::IndicesManager& availableBindings = GetAvailableBindings<type>();
 
 		return availableBindings.GetFirstAvailableIndex();
 	}
@@ -354,7 +354,7 @@ public:
 	template<VkDescriptorType type>
 	void SetBindingAvailability(std::uint32_t descriptorIndex, bool availability) noexcept
 	{
-		IndicesManager& availableBindings = GetAvailableBindings<type>();
+		Callisto::IndicesManager& availableBindings = GetAvailableBindings<type>();
 
 		if (std::size(availableBindings) > descriptorIndex)
 			availableBindings.ToggleAvailability(static_cast<size_t>(descriptorIndex), availability);

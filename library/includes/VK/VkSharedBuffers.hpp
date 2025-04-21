@@ -27,9 +27,11 @@ protected:
 		m_buffer{ std::move(buffer) },
 		// When a new bigger buffer is created to fit new data, a copy will be required. The old
 		// one will be copied to the new bigger one. So, they will require both TRANSFER_DST and SRC
-		// bits. Cus the same buffer would be the dst when it is created anew and then later be the src
-		// when a bigger one is created.
-		m_usageFlags{ usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
+		// bits. Cus the same buffer would be the dst when it is created anew and then later be the
+		// src when a bigger one is created.
+		m_usageFlags{
+			usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+		},
 		m_queueFamilyIndices{ queueIndices }, m_allocator{}
 	{}
 
@@ -58,12 +60,12 @@ public:
 	}
 
 protected:
-	VkDevice                   m_device;
-	MemoryManager*             m_memoryManager;
-	Buffer                     m_buffer;
-	VkBufferUsageFlags         m_usageFlags;
-	std::vector<std::uint32_t> m_queueFamilyIndices;
-	SharedBufferAllocator      m_allocator;
+	VkDevice                        m_device;
+	MemoryManager*                  m_memoryManager;
+	Buffer                          m_buffer;
+	VkBufferUsageFlags              m_usageFlags;
+	std::vector<std::uint32_t>      m_queueFamilyIndices;
+	Callisto::SharedBufferAllocator m_allocator;
 
 public:
 	SharedBufferBase(const SharedBufferBase&) = delete;
@@ -95,7 +97,8 @@ public:
 		VkDevice device, MemoryManager* memoryManager, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueIndices
 	) : SharedBufferBase{
-			device, memoryManager, usageFlags, queueIndices, GetGPUResource<Buffer>(device, memoryManager)
+			device, memoryManager, usageFlags, queueIndices,
+			GetGPUResource<Buffer>(device, memoryManager)
 		}, m_oldBuffer{}
 	{}
 
@@ -143,7 +146,8 @@ public:
 		VkDevice device, MemoryManager* memoryManager, VkBufferUsageFlags usageFlags,
 		const std::vector<std::uint32_t>& queueIndices
 	) : SharedBufferBase{
-			device, memoryManager, usageFlags, queueIndices, Buffer{ device, memoryManager, MemoryType }
+			device, memoryManager, usageFlags, queueIndices,
+			Buffer{ device, memoryManager, MemoryType }
 		}
 	{}
 
@@ -152,7 +156,8 @@ public:
 	SharedBufferData AllocateAndGetSharedData(VkDeviceSize size, bool copyOldBuffer = false)
 	{
 		auto availableAllocIndex = m_allocator.GetAvailableAllocInfo(size);
-		SharedBufferAllocator::AllocInfo allocInfo{ .offset = 0u, .size = 0u };
+
+		Callisto::SharedBufferAllocator::AllocInfo allocInfo{ .offset = 0u, .size = 0u };
 
 		if (!availableAllocIndex)
 		{
@@ -178,7 +183,8 @@ private:
 	[[nodiscard]]
 	VkDeviceSize ExtendBuffer(VkDeviceSize size, bool copyOldBuffer)
 	{
-		// I probably don't need to worry about aligning here, since it's all inside a single buffer?
+		// I probably don't need to worry about aligning here, since it's all inside a single
+		// buffer?
 		const VkDeviceSize oldSize = m_buffer.BufferSize();
 		const VkDeviceSize offset  = oldSize;
 		const VkDeviceSize newSize = oldSize + size;

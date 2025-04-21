@@ -14,7 +14,8 @@ class VkExternalResourceFactory : public ExternalResourceFactory
 
 public:
 	VkExternalResourceFactory(VkDevice device, MemoryManager* memoryManager)
-		: m_device{ device }, m_memoryManager{ memoryManager }, m_externalBuffers{}, m_externalTextures{}
+		: m_device{ device }, m_memoryManager{ memoryManager }, m_externalBuffers{},
+		m_externalTextures{}
 	{}
 
 	[[nodiscard]]
@@ -72,10 +73,10 @@ public:
 	}
 
 private:
-	VkDevice                          m_device;
-	MemoryManager*                    m_memoryManager;
-	ReusableVector<ExternalBuffer_t>  m_externalBuffers;
-	ReusableVector<ExternalTexture_t> m_externalTextures;
+	VkDevice                                    m_device;
+	MemoryManager*                              m_memoryManager;
+	Callisto::ReusableVector<ExternalBuffer_t>  m_externalBuffers;
+	Callisto::ReusableVector<ExternalTexture_t> m_externalTextures;
 
 public:
 	VkExternalResourceFactory(const VkExternalResourceFactory&) = delete;

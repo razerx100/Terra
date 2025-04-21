@@ -43,9 +43,9 @@ private:
 	std::optional<VkDeviceSize> Allocate(const VkMemoryRequirements& memoryReq) noexcept;
 
 private:
-	DeviceMemory  m_memory;
-	Buddy         m_allocator;
-	std::uint16_t m_id;
+	DeviceMemory    m_memory;
+	Callisto::Buddy m_allocator;
+	std::uint16_t   m_id;
 
 public:
 	VkAllocator(const VkAllocator&) = delete;

@@ -64,8 +64,9 @@ public:
 	// Returns the indices of the elements in the ElementBuffer.
 	std::vector<std::uint32_t> AddMultipleRU32(std::vector<T>&& elements)
 	{
-		const size_t oldCount          = m_elements.GetCount();
-		const size_t extraElementCount = static_cast<Derived*>(this)->GetExtraElementAllocationCount();
+		const size_t oldCount = m_elements.GetCount();
+		const size_t extraElementCount
+			= static_cast<Derived*>(this)->GetExtraElementAllocationCount();
 
 		const size_t elementCount = std::size(elements);
 
@@ -94,8 +95,8 @@ protected:
 	size_t GetCount() const noexcept { return m_elements.GetCount(); }
 
 protected:
-	Buffer            m_buffers;
-	ReusableVector<T> m_elements;
+	Buffer                      m_buffers;
+	Callisto::ReusableVector<T> m_elements;
 
 public:
 	ReusableVkBuffer(const ReusableVkBuffer&) = delete;
@@ -143,7 +144,9 @@ private:
 		const VkDeviceSize currentSize = m_buffer.BufferSize();
 		constexpr size_t strideSize    = GetStride();
 
-		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(index * strideSize + strideSize);
+		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(
+			index * strideSize + strideSize
+		);
 
 		if (currentSize < minimumSpaceRequirement)
 			CreateBuffer(index + 1u + GetExtraElementAllocationCount());
@@ -220,8 +223,9 @@ private:
 	}
 
 public:
-	MultiInstanceCPUBuffer(VkDevice device, MemoryManager* memoryManager, std::uint32_t instanceCount)
-		: m_device{ device }, m_memoryManager{ memoryManager },
+	MultiInstanceCPUBuffer(
+		VkDevice device, MemoryManager* memoryManager, std::uint32_t instanceCount
+	) : m_device{ device }, m_memoryManager{ memoryManager },
 		m_buffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 		m_instanceSize{ 0u }, m_instanceCount{ instanceCount }
 	{}
@@ -242,7 +246,9 @@ public:
 		const VkDeviceSize currentSize = m_buffer.BufferSize();
 		constexpr size_t strideSize    = GetStride();
 
-		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(index * strideSize + strideSize);
+		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(
+			index * strideSize + strideSize
+		);
 
 		if (currentSize < minimumSpaceRequirement)
 			CreateBuffer(index + 1u + GetExtraElementAllocationCount());

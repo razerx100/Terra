@@ -126,10 +126,10 @@ private:
 	}
 
 private:
-	VkDevice                 m_device;
-	VkPipelineLayout         m_pipelineLayout;
-	std::wstring             m_shaderPath;
-	ReusableVector<Pipeline> m_pipelines;
+	VkDevice                           m_device;
+	VkPipelineLayout                   m_pipelineLayout;
+	std::wstring                       m_shaderPath;
+	Callisto::ReusableVector<Pipeline> m_pipelines;
 
 public:
 	PipelineManager(const PipelineManager&) = delete;

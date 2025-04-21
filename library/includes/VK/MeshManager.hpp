@@ -50,8 +50,8 @@ public:
 	const VkMeshBundle& GetBundle(size_t index) const noexcept { return m_meshBundles.at(index); }
 
 protected:
-	ReusableVector<VkMeshBundle> m_meshBundles;
-	bool                         m_oldBufferCopyNecessary;
+	Callisto::ReusableVector<VkMeshBundle> m_meshBundles;
+	bool                                   m_oldBufferCopyNecessary;
 
 public:
 	MeshManager(const MeshManager&) = delete;
@@ -74,7 +74,9 @@ class MeshManagerVSIndividual : public MeshManager<MeshManagerVSIndividual, VkMe
 {
 	friend class MeshManager<MeshManagerVSIndividual, VkMeshBundleVS>;
 public:
-	MeshManagerVSIndividual(VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3);
+	MeshManagerVSIndividual(
+		VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3
+	);
 
 	void CopyOldBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept;
 

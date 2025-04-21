@@ -240,8 +240,10 @@ MemoryManager::MemoryAllocation MemoryManager::Allocate(
 		// If the newAllocationSize isn't an exponent of 2, the largest block in the
 		// buddy allocator might not be able to house it. So, we have to query the required
 		// size.
-		VkDeviceSize minimumRequiredSize = Buddy::GetMinimumRequiredNewAllocationSizeFor(bufferSize);
-		newAllocationSize                = std::max(newAllocationSize, minimumRequiredSize);
+		VkDeviceSize minimumRequiredSize
+			= Callisto::Buddy::GetMinimumRequiredNewAllocationSizeFor(bufferSize);
+
+		newAllocationSize = std::max(newAllocationSize, minimumRequiredSize);
 
 		std::optional<MemoryType> memType = GetMemoryType(newAllocationSize, memoryType);
 

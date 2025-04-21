@@ -40,7 +40,8 @@ void VkExternalResourceManager::SetGraphicsDescriptorLayout(
 
 	for (const GfxExtension_t& extension : m_gfxExtensions)
 	{
-		const std::vector<ExternalBufferBindingDetails>& bindingDetails = extension->GetBindingDetails();
+		const std::vector<ExternalBufferBindingDetails>& bindingDetails
+			= extension->GetBindingDetails();
 
 		for (const ExternalBufferBindingDetails& details : bindingDetails)
 		{

@@ -86,7 +86,7 @@ private:
 
 private:
 	std::unique_ptr<VkExternalResourceFactory> m_resourceFactory;
-	ReusableVector<GfxExtension_t>             m_gfxExtensions;
+	Callisto::ReusableVector<GfxExtension_t>   m_gfxExtensions;
 	std::vector<GPUCopyDetails>                m_copyQueueDetails;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
