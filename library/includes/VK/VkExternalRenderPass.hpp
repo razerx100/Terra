@@ -10,6 +10,8 @@
 #include <VkRenderPassManager.hpp>
 #include <VkExternalResourceFactory.hpp>
 
+namespace Terra
+{
 class VkExternalRenderPass : public ExternalRenderPass
 {
 	struct AttachmentDetails
@@ -201,4 +203,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

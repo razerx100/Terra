@@ -1,6 +1,8 @@
 #include <VkShader.hpp>
 #include <TerraException.hpp>
 
+namespace Terra
+{
 VkShader::~VkShader() noexcept
 {
 	SelfDestruct();
@@ -51,4 +53,5 @@ std::vector<char> VkShader::LoadBinary(std::ifstream& shader)
 	shader.read(std::data(byteCode), static_cast<std::streamsize>(shaderSize));
 
 	return byteCode;
+}
 }

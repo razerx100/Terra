@@ -1,6 +1,8 @@
 #include <VkMeshBundleVS.hpp>
 #include <VectorToSharedPtr.hpp>
 
+namespace Terra
+{
 VkMeshBundleVS::VkMeshBundleVS()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u }, m_indexBufferSharedData{ nullptr, 0u, 0u },
 	m_perMeshSharedData{ nullptr, 0u, 0u }, m_perMeshBundleSharedData{ nullptr, 0u, 0u },
@@ -145,4 +147,5 @@ void VkMeshBundleVS::Bind(const VKCommandBuffer& graphicsCmdBuffer) const noexce
 		cmdBuffer, m_indexBufferSharedData.bufferData->Get(), m_indexBufferSharedData.offset,
 		VK_INDEX_TYPE_UINT32
 	);
+}
 }

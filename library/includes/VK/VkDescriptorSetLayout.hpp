@@ -4,6 +4,8 @@
 #include <vector>
 #include <utility>
 
+namespace Terra
+{
 class DescriptorSetLayout
 {
 public:
@@ -64,4 +66,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

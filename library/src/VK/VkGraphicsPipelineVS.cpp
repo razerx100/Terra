@@ -1,6 +1,8 @@
 #include <VkGraphicsPipelineVS.hpp>
 #include <VkShader.hpp>
 
+namespace Terra
+{
 // Vertex Shader
 static std::unique_ptr<VkPipelineObject> CreateGraphicsPipelineVS(
 	VkDevice device, VkPipelineLayout graphicsLayout,
@@ -59,4 +61,5 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineVSIndividualDraw::_createGraph
 	return CreateGraphicsPipelineVS(
 		device, graphicsLayout, s_shaderBytecodeType, shaderPath, graphicsExtPipeline
 	);
+}
 }

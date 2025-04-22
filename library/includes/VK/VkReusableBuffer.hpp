@@ -6,6 +6,8 @@
 #include <utility>
 #include <concepts>
 
+namespace Terra
+{
 template<class Derived, class T>
 class ReusableVkBuffer
 {
@@ -281,4 +283,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

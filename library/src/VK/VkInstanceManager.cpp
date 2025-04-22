@@ -5,13 +5,15 @@
 #include <TerraException.hpp>
 #include <format>
 
+namespace Terra
+{
 VkInstanceManager::VkInstanceManager(std::string_view appName)
 	: m_vkInstance{ VK_NULL_HANDLE }, m_appName{ std::move(appName) },
 	m_coreVersion{ CoreVersion::V1_0 }, m_extensionManager{}, m_debugLayer{} {}
 
 VkInstanceManager::~VkInstanceManager() noexcept
 {
-#ifdef _DEBUG
+#ifndef NDEBUG
 	m_debugLayer.DestroyDebugCallbacks();
 #endif
 	SelfDestruct();
@@ -71,7 +73,7 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 		.pApplicationInfo = &appInfo
 	};
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 	if (auto notSupportedLayer = m_debugLayer.CheckLayerSupport(); notSupportedLayer)
 		throw Exception("Vulkan DebugLayer Error",
 			std::format("The debug layer {} isn't supported.", *notSupportedLayer)
@@ -107,7 +109,7 @@ void VkInstanceManager::CreateInstance(CoreVersion version)
 
 	m_extensionManager.PopulateExtensionFunctions(m_vkInstance);
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 	m_debugLayer.CreateDebugCallbacks(m_vkInstance);
 #endif
 }
@@ -126,4 +128,5 @@ std::uint32_t VkInstanceManager::GetCoreVersion(CoreVersion version) noexcept
 		coreVersion = VK_API_VERSION_1_3;
 
 	return coreVersion;
+}
 }

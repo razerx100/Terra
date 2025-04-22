@@ -5,6 +5,8 @@
 #include <vector>
 #include <array>
 
+namespace Terra
+{
 enum class DeviceExtension
 {
 	VkExtMeshShader,
@@ -383,5 +385,6 @@ namespace VkInstanceExtension
 		inline static PFN_vkSetDebugUtilsObjectTagEXT s_vkSetDebugUtilsObjectTagEXT         = nullptr;
 		inline static PFN_vkSubmitDebugUtilsMessageEXT s_vkSubmitDebugUtilsMessageEXT       = nullptr;
 	};
+}
 }
 #endif

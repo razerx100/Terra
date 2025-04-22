@@ -1,6 +1,8 @@
 #include <VkSwapchainManager.hpp>
 #include <array>
 
+namespace Terra
+{
 // VkSwapchain
 VkSwapchain::VkSwapchain(VkDevice device, std::uint32_t bufferCount)
 	: m_device{ device }, m_swapchain{ VK_NULL_HANDLE }, m_swapImageViewFormat{ VK_FORMAT_UNDEFINED },
@@ -153,4 +155,5 @@ void SwapchainManager::QueryNextImageIndex(VkDevice device)
 		device, m_swapchain.Get(), UINT64_MAX, m_imageSemaphore.Get(), VK_NULL_HANDLE,
 		&m_nextImageIndex
 	);
+}
 }

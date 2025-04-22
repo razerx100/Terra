@@ -11,6 +11,8 @@
 #include <VkComputePipeline.hpp>
 #include <ReusableVector.hpp>
 
+namespace Terra
+{
 template<typename Pipeline>
 class PipelineManager
 {
@@ -152,4 +154,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

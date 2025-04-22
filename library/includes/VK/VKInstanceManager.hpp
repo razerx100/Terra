@@ -7,6 +7,8 @@
 #include <VkFeatureManager.hpp>
 #include <VkDebugLayerManager.hpp>
 
+namespace Terra
+{
 class VkInstanceManager
 {
 public:
@@ -67,4 +69,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

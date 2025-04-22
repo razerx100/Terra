@@ -3,6 +3,8 @@
 #include <VectorToSharedPtr.hpp>
 #include <VkResourceBarriers2.hpp>
 
+namespace Terra
+{
 // Model Manager VS Individual
 void ModelManagerVSIndividual::SetGraphicsConstantRange(PipelineLayout& layout) noexcept
 {
@@ -408,4 +410,5 @@ void ModelManagerMS::DrawPipeline(
 
 	// Model
 	modelBundle.DrawPipeline(pipelineLocalIndex, graphicsBuffer, pipelineLayout, meshBundle);
+}
 }

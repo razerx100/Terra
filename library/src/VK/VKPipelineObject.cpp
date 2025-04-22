@@ -1,5 +1,7 @@
 #include <VKPipelineObject.hpp>
 
+namespace Terra
+{
 VkPipelineObject::~VkPipelineObject() noexcept
 {
 	SelfDestruct();
@@ -155,11 +157,13 @@ void GraphicsPipelineBuilder::UpdatePointers(bool inputAssembler) noexcept
 	m_pipelineCreateInfo.pStages = std::data(m_shaderStagesInfo);
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(VkDynamicState dynamicState) noexcept
-{
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicState(
+	VkDynamicState dynamicState
+) noexcept {
 	m_dynamicStates.emplace_back(dynamicState);
 
 	m_dynamicStateInfo.dynamicStateCount = static_cast<std::uint32_t>(std::size(m_dynamicStates));
 
 	return *this;
+}
 }

@@ -8,6 +8,8 @@
 #include <ThreadPool.hpp>
 #include <TemporaryDataBuffer.hpp>
 
+namespace Terra
+{
 class StagingBufferManager
 {
 public:
@@ -146,4 +148,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

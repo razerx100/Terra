@@ -19,6 +19,8 @@
 #include <VkExternalRenderPass.hpp>
 #include <VkExternalResourceManager.hpp>
 
+namespace Terra
+{
 namespace RenderEngineDeviceExtension
 {
 	void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept;
@@ -553,4 +555,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

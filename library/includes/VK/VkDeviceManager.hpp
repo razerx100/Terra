@@ -7,6 +7,8 @@
 #include <VkFeatureManager.hpp>
 #include <VkSurfaceManager.hpp>
 
+namespace Terra
+{
 class VkDeviceManager
 {
 public:
@@ -111,4 +113,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

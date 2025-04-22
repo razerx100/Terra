@@ -1,6 +1,8 @@
 #include <VkTextureManager.hpp>
 #include <VkResourceBarriers2.hpp>
 
+namespace Terra
+{
 // Texture storage
 size_t TextureStorage::AddTexture(
 	STexture&& texture, StagingBufferManager& stagingBufferManager,
@@ -187,4 +189,5 @@ void TextureManager::SetDescriptorBufferLayout(
 			samplerDescCount, VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT
 		);
+}
 }

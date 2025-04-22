@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+namespace Terra
+{
 template<class T>
 class VkStructChain
 {
@@ -77,4 +79,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

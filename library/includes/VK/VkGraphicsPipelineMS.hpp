@@ -2,6 +2,8 @@
 #define VK_GRAPHICS_PIPELINE_MS_HPP_
 #include <VkGraphicsPipelineBase.hpp>
 
+namespace Terra
+{
 class GraphicsPipelineMS : public GraphicsPipelineBase<GraphicsPipelineMS>
 {
 	friend class GraphicsPipelineBase<GraphicsPipelineMS>;
@@ -37,4 +39,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

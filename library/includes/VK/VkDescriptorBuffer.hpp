@@ -9,6 +9,8 @@
 #include <array>
 #include <vector>
 
+namespace Terra
+{
 class VkDescriptorBuffer
 {
 public:
@@ -657,4 +659,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

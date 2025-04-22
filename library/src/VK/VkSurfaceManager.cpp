@@ -1,5 +1,7 @@
 #include <VkSurfaceManager.hpp>
 
+namespace Terra
+{
 void SurfaceInstanceExtension::SetInstanceExtensions(
 	VkInstanceExtensionManager& extensionManager
 ) noexcept {
@@ -79,4 +81,5 @@ bool SurfaceManager::CanDeviceSupportSurface(
 	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
 	return presentModeCount && formatCount;
+}
 }

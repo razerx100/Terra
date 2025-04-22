@@ -1,6 +1,8 @@
 #include <VkSyncObjects.hpp>
 #include <limits>
 
+namespace Terra
+{
 // VK Semaphore
 VKSemaphore::~VKSemaphore() noexcept
 {
@@ -94,4 +96,5 @@ void VKFence::Wait() const
 void VKFence::Reset() const
 {
 	vkResetFences(m_device, 1u, &m_syncObj);
+}
 }

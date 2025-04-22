@@ -3,6 +3,8 @@
 #include <Model.hpp>
 #include <VkSharedBuffers.hpp>
 
+namespace Terra
+{
 class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>
 {
 	friend class ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>;
@@ -103,4 +105,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

@@ -9,6 +9,8 @@
 #include <utility>
 #include <cassert>
 
+namespace Terra
+{
 class BufferToBufferCopyBuilder
 {
 public:
@@ -668,4 +670,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

@@ -3,6 +3,8 @@
 #include <VkRenderEngine.hpp>
 #include <VkModelManager.hpp>
 
+namespace Terra
+{
 namespace RenderEngineVSIndividualDeviceExtension = RenderEngineDeviceExtension;
 
 class RenderEngineVSIndividual : public
@@ -222,4 +224,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

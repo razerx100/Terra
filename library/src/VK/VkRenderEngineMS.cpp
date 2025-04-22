@@ -1,5 +1,7 @@
 #include <VkRenderEngineMS.hpp>
 
+namespace Terra
+{
 void RenderEngineMSDeviceExtension::SetDeviceExtensions(
 	VkDeviceExtensionManager& extensionManager
 ) noexcept {
@@ -271,4 +273,5 @@ VkSemaphore RenderEngineMS::DrawingStage(
 	}
 
 	return graphicsWaitSemaphore.Get();
+}
 }

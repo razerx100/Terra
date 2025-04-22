@@ -1,6 +1,8 @@
 #include <VkDisplayManagerWin32.hpp>
 #include <cassert>
 
+namespace Terra
+{
 using Microsoft::WRL::ComPtr;
 
 void DisplayInstanceExtensionWin32::SetInstanceExtensions(
@@ -83,4 +85,5 @@ void DisplayManagerWin32::GetLUIDFromVKDevice(VkPhysicalDevice gpu, LUID& lUid) 
 	assert(gpuIDS.deviceLUIDValid == VK_TRUE && "Couldn't retrieve LUID.");
 
 	lUid = *reinterpret_cast<LUID*>(gpuIDS.deviceLUID);
+}
 }

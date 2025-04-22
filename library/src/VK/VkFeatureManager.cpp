@@ -1,5 +1,7 @@
 #include <VkFeatureManager.hpp>
 
+namespace Terra
+{
 template<class T>
 static constexpr size_t EnumToNumber(T value)
 {
@@ -264,7 +266,9 @@ bool VkFeatureManager::CheckFeatureSupportRecursive(
 		}
 		}
 
-		return result && CheckFeatureSupportRecursive(pNextStruct->pNext, chainMembers, ++memberIndex);
+		return result && CheckFeatureSupportRecursive(
+			pNextStruct->pNext, chainMembers, ++memberIndex
+		);
 	}
 
 	return result;
@@ -274,4 +278,5 @@ void VkFeatureManager::ClearFeatureChecks() noexcept
 {
 	m_feature1Members    = MembersType{};
 	m_chainStructMembers = std::vector<MembersType>{};
+}
 }

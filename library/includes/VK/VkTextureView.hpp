@@ -3,6 +3,8 @@
 #include <VkResources.hpp>
 #include <utility>
 
+namespace Terra
+{
 // This is a wrapper around the Vulkan handle for VkImageView.
 class VKImageView
 {
@@ -281,4 +283,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

@@ -1,5 +1,7 @@
 #include <VkModelBundle.hpp>
 
+namespace Terra
+{
 // Pipeline Models Base
 VkDrawIndexedIndirectCommand PipelineModelsBase::GetDrawIndexedIndirectCommand(
 	const MeshTemporaryDetailsVS& meshDetailsVS
@@ -957,4 +959,5 @@ void ModelBundleVSIndirect::DrawPipeline(
 	const PipelineModelsVSIndirect& pipeline = m_vsPipelines[pipelineLocalIndex];
 
 	pipeline.Draw(frameIndex, graphicsBuffer, pipelineLayout);
+}
 }

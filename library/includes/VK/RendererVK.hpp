@@ -8,6 +8,8 @@
 #include <Renderer.hpp>
 #include <Terra.hpp>
 
+namespace Terra
+{
 template<class SurfaceManager_t, class DisplayManager_t, class RenderEngine_t>
 class RendererVK final : public Renderer
 {
@@ -265,4 +267,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

@@ -4,6 +4,8 @@
 #include <array>
 #include <VkExtensionManager.hpp>
 
+namespace Terra
+{
 namespace DisplayInstanceExtensionVk
 {
 	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
@@ -15,4 +17,5 @@ public:
 	[[nodiscard]]
 	VkExtent2D GetDisplayResolution(VkPhysicalDevice gpu, std::uint32_t displayIndex) const;
 };
+}
 #endif

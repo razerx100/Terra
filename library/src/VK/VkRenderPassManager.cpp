@@ -1,5 +1,7 @@
 #include <VkRenderPassManager.hpp>
 
+namespace Terra
+{
 void VkRenderPassManager::AddColourAttachment(
 	const VKImageView& colourView, const VkClearColorValue& clearValue, VkAttachmentLoadOp loadOp,
 	VkAttachmentStoreOp storeOP
@@ -166,4 +168,5 @@ std::uint32_t VkRenderPassManager::AddStartImageBarrier(
 	}
 
 	return barrierIndex;
+}
 }

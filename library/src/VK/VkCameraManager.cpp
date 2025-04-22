@@ -2,6 +2,8 @@
 
 #include <VkCameraManager.hpp>
 
+namespace Terra
+{
 CameraManager::CameraManager(VkDevice device, MemoryManager* memoryManager)
 	: m_activeCameraIndex{ 0u }, m_cameraBufferInstanceSize{ 0u },
 	m_cameraBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
@@ -115,4 +117,5 @@ void CameraManager::SetDescriptorBufferCompute(
 			m_cameraBuffer, cameraBindingSlot, setLayoutIndex, 0u,
 			index * m_cameraBufferInstanceSize, m_cameraBufferInstanceSize
 		);
+}
 }

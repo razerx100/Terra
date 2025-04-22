@@ -7,6 +7,8 @@
 #include <wrl/client.h>
 #include <dxgi1_6.h>
 
+namespace Terra
+{
 namespace DisplayInstanceExtensionWin32
 {
 	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
@@ -31,4 +33,5 @@ private:
 private:
 	Microsoft::WRL::ComPtr<IDXGIFactory1> m_pFactory;
 };
+}
 #endif

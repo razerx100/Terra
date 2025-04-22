@@ -3,6 +3,8 @@
 #include <ranges>
 #include <concepts>
 
+namespace Terra
+{
 DeviceMemory::DeviceMemory(
 	VkDevice device, VkDeviceSize size, std::uint32_t typeIndex, VkMemoryPropertyFlagBits type
 ) : m_device{ device }, m_memory{ VK_NULL_HANDLE }, m_size{ 0u }, m_mappedCPUMemory{ nullptr },
@@ -42,4 +44,5 @@ void DeviceMemory::Allocate(VkDeviceSize size)
 		vkMapMemory(
 			m_device, m_memory, 0u, VK_WHOLE_SIZE, 0u, reinterpret_cast<void**>(&m_mappedCPUMemory)
 		);
+}
 }

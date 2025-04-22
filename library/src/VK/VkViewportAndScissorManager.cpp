@@ -1,5 +1,7 @@
 #include <VkViewportAndScissorManager.hpp>
 
+namespace Terra
+{
 ViewportAndScissorManager::ViewportAndScissorManager()
 	: m_viewport {
 		.x        = 0.f,
@@ -34,4 +36,5 @@ void ViewportAndScissorManager::BindViewportAndScissor(
 
 	vkCmdSetViewport(cmdBuffer, 0u, 1u, &m_viewport);
 	vkCmdSetScissor(cmdBuffer, 0u, 1u, &m_scissor);
+}
 }

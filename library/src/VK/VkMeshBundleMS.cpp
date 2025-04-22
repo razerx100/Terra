@@ -1,6 +1,8 @@
 #include <VkMeshBundleMS.hpp>
 #include <VectorToSharedPtr.hpp>
 
+namespace Terra
+{
 VkMeshBundleMS::VkMeshBundleMS()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
 	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
@@ -203,4 +205,5 @@ void VkMeshBundleMS::ConfigureVertices(
 		std::move(verticesTempDataBuffer), vertexBufferSize, verticesSharedData.bufferData,
 		verticesSharedData.offset, tempBuffer
 	);
+}
 }

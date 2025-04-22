@@ -1,6 +1,8 @@
 #include <VkGraphicsPipelineBase.hpp>
 #include <VkExternalFormatMap.hpp>
 
+namespace Terra
+{
 void ConfigurePipelineBuilder(
 	GraphicsPipelineBuilder& builder, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) noexcept {
@@ -32,4 +34,5 @@ void ConfigurePipelineBuilder(
 			GetVkFormat(graphicsExtPipeline.GetRenderTargetFormat(index)),
 			GetVkBlendState(graphicsExtPipeline.GetBlendState(index))
 		);
+}
 }

@@ -9,6 +9,8 @@
 
 #include <MeshBundle.hpp>
 
+namespace Terra
+{
 class VkMeshBundleVS
 {
 	struct PerMeshBundleData
@@ -87,4 +89,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

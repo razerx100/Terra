@@ -1,5 +1,7 @@
 #include <VkFramebuffer.hpp>
 
+namespace Terra
+{
 // Framebuffer
 VKFramebuffer::~VKFramebuffer() noexcept
 {
@@ -30,4 +32,5 @@ void VKFramebuffer::Create(
 		SelfDestruct();
 
 	vkCreateFramebuffer(m_device, &frameBufferInfo, nullptr, &m_framebuffer);
+}
 }

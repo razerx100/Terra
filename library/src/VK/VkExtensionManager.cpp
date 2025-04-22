@@ -2,6 +2,8 @@
 #include <TerraException.hpp>
 #include <array>
 
+namespace Terra
+{
 // Device extension names.
 static std::array deviceExtensionNameMap
 {
@@ -145,4 +147,5 @@ void VkDeviceExtensionManager::PopulateVkExtDescriptorBuffer(VkDevice device) no
 		device, "vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT",
 		VkExtDescriptorBuffer::s_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT
 	);
+}
 }

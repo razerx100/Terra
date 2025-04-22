@@ -2,6 +2,8 @@
 #include <CleanWin.hpp>
 #include <vulkan/vulkan_win32.h>
 
+namespace Terra
+{
 void SurfaceInstanceExtensionWin32::SetInstanceExtensions(
 	VkInstanceExtensionManager& extensionManager
 ) noexcept {
@@ -22,4 +24,5 @@ void SurfaceManagerWin32::Create(VkInstance instance, void* windowHandle, void* 
 	};
 
 	vkCreateWin32SurfaceKHR(m_instance, &createInfo, nullptr, &m_surface);
+}
 }

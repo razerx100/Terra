@@ -8,6 +8,8 @@
 #include <optional>
 #include <bitset>
 
+namespace Terra
+{
 enum class ValidationLayer
 {
 	VkLayerKhronosValidation
@@ -106,4 +108,5 @@ public:
 		void* pUserData
 	);
 };
+}
 #endif

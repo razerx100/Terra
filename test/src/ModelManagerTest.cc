@@ -12,6 +12,8 @@
 #include <VkDescriptorBuffer.hpp>
 #include <VKRenderPass.hpp>
 
+using namespace Terra;
+
 namespace Constants
 {
 	constexpr const char* appName              = "TerraTest";

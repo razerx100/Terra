@@ -5,6 +5,8 @@
 #include <array>
 #include <format>
 
+namespace Terra
+{
 static constexpr std::array validationLayersNames
 {
 	"VK_LAYER_KHRONOS_validation"
@@ -195,4 +197,5 @@ std::optional<std::string_view> DebugLayerManager::CheckLayerSupport() const noe
 	}
 
 	return {};
+}
 }

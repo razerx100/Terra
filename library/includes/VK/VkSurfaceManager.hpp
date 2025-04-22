@@ -5,6 +5,8 @@
 #include <utility>
 #include <VkExtensionManager.hpp>
 
+namespace Terra
+{
 namespace SurfaceInstanceExtension
 {
 	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
@@ -54,4 +56,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

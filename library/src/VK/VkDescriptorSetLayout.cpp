@@ -1,5 +1,7 @@
 #include <VkDescriptorSetLayout.hpp>
 
+namespace Terra
+{
 // Descriptor Set Layout
 DescriptorSetLayout::~DescriptorSetLayout() noexcept
 {
@@ -76,4 +78,5 @@ void DescriptorSetLayout::UpdateBinding(
 	}
 	else
 		AddBinding(bindingIndex, type, descriptorCount, shaderFlags, bindingFlags);
+}
 }

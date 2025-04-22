@@ -6,6 +6,8 @@
 #include <cassert>
 #include <VkTextureView.hpp>
 
+namespace Terra
+{
 template<typename VkBarrierType>
 class BaseBarrierBuilder
 {
@@ -59,12 +61,12 @@ public:
 	}
 
 	BufferBarrierBuilder& Buffer(
-		const ::Buffer& buffer, VkDeviceSize bufferSize, VkDeviceSize offset = 0u
+		const Terra::Buffer& buffer, VkDeviceSize bufferSize, VkDeviceSize offset = 0u
 	) noexcept {
 		return Buffer(buffer.Get(), bufferSize, offset);
 	}
 
-	BufferBarrierBuilder& Buffer(const ::Buffer& buffer) noexcept
+	BufferBarrierBuilder& Buffer(const Terra::Buffer& buffer) noexcept
 	{
 		return Buffer(buffer.Get(), buffer.BufferSize(), 0u);
 	}
@@ -438,4 +440,5 @@ private:
 	size_t                                          m_currentIndex;
 	std::array<VkImageMemoryBarrier2, barrierCount> m_barriers;
 };
+}
 #endif

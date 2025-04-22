@@ -2,6 +2,8 @@
 #define VK_SURFACE_MANAGER_WIN32_HPP_
 #include <VkSurfaceManager.hpp>
 
+namespace Terra
+{
 namespace SurfaceInstanceExtensionWin32
 {
 	void SetInstanceExtensions(VkInstanceExtensionManager& extensionManager) noexcept;
@@ -28,4 +30,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

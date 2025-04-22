@@ -1,5 +1,7 @@
 #include <VkPipelineLayout.hpp>
 
+namespace Terra
+{
 PipelineLayout::~PipelineLayout() noexcept
 {
 	SelfDestruct();
@@ -61,4 +63,5 @@ void PipelineLayout::Create(const DescriptorSetLayout& setLayout)
 {
 	VkDescriptorSetLayout vkSetLayout[] = { setLayout.Get() };
 	Create(vkSetLayout, 1u);
+}
 }

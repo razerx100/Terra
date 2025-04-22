@@ -4,6 +4,8 @@
 #include <vector>
 #include <VkDescriptorSetLayout.hpp>
 
+namespace Terra
+{
 class PipelineLayout
 {
 public:
@@ -53,4 +55,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

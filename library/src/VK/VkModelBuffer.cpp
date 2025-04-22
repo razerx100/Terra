@@ -1,5 +1,7 @@
 #include <VkModelBuffer.hpp>
 
+namespace Terra
+{
 // Model Buffers
 void ModelBuffers::CreateBuffer(size_t modelCount)
 {
@@ -105,7 +107,10 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 					.specularTexIndex  = model->GetSpecularIndex()
 				};
 
-				memcpy(fragmentBufferOffset + fragmentModelOffset, &modelFragmentData, fragmentStrideSize);
+				memcpy(
+					fragmentBufferOffset + fragmentModelOffset, &modelFragmentData,
+					fragmentStrideSize
+				);
 			}
 		}
 		// The offsets need to be always increased to keep them consistent.
@@ -124,4 +129,5 @@ void ModelBuffers::Remove(const std::vector<size_t>& indices) noexcept
 {
 	for (size_t index : indices)
 		Remove(index);
+}
 }

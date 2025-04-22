@@ -6,6 +6,8 @@
 #include <utility>
 #include <fstream>
 
+namespace Terra
+{
 class VkShader
 {
 public:
@@ -49,4 +51,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

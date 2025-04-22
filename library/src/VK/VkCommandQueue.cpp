@@ -1,6 +1,8 @@
 #include <VkCommandQueue.hpp>
 #include <VkResourceBarriers2.hpp>
 
+namespace Terra
+{
 // Command Buffer
 VKCommandBuffer::VKCommandBuffer() : m_commandBuffer{ VK_NULL_HANDLE } {}
 VKCommandBuffer::VKCommandBuffer(VkDevice device, VkCommandPool commandPool) : VKCommandBuffer{}
@@ -257,4 +259,5 @@ void VkGraphicsQueue::WaitForQueueToFinish()
 {
 	for (auto& fence : m_fences)
 		fence.Wait();
+}
 }

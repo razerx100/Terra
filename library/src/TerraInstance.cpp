@@ -7,10 +7,13 @@ std::unique_ptr<Renderer> CreateTerraInstance(
 	std::uint32_t width, std::uint32_t height, std::shared_ptr<ThreadPool> threadPool,
 	RenderEngineType engineType, std::uint32_t bufferCount
 ) {
+	using namespace Terra;
+
 #ifdef TERRA_WIN32
 	if (engineType == RenderEngineType::MeshDraw)
 	{
-		using Renderer_t = RendererVK<SurfaceManagerWin32, DisplayManagerWin32, RenderEngineMS>;
+		using Renderer_t
+			= RendererVK<SurfaceManagerWin32, DisplayManagerWin32, RenderEngineMS>;
 
 		return std::make_unique<Renderer_t>(
 			appName, windowHandle, moduleHandle, width, height, bufferCount, std::move(threadPool)

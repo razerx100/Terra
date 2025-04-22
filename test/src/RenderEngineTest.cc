@@ -6,6 +6,8 @@
 #include <VkRenderEngineVS.hpp>
 #include <VkRenderEngineMS.hpp>
 
+using namespace Terra;
+
 namespace Constants
 {
 	constexpr const char* appName      = "TerraTest";

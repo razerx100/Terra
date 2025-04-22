@@ -1,6 +1,8 @@
 #include <variant>
 #include <VkRenderEngineVS.hpp>
 
+namespace Terra
+{
 // VS Individual
 RenderEngineVSIndividual::RenderEngineVSIndividual(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
@@ -736,4 +738,5 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 	}
 
 	return graphicsWaitSemaphore.Get();
+}
 }

@@ -1,5 +1,7 @@
 #include <VkMeshManager.hpp>
 
+namespace Terra
+{
 // Mesh Manager VS Individual
 MeshManagerVSIndividual::MeshManagerVSIndividual(
 	VkDevice device, MemoryManager* memoryManager, QueueIndices3 queueIndices3
@@ -241,4 +243,5 @@ void MeshManagerMS::CopyOldBuffers(const VKCommandBuffer& transferBuffer) noexce
 
 		m_oldBufferCopyNecessary = false;
 	}
+}
 }

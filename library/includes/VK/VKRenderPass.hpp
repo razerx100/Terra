@@ -5,6 +5,8 @@
 #include <span>
 #include <utility>
 
+namespace Terra
+{
 class RenderPassBuilder
 {
 public:
@@ -144,4 +146,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

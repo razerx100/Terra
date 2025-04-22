@@ -1,5 +1,7 @@
 #include <VkExternalResourceFactory.hpp>
 
+namespace Terra
+{
 size_t VkExternalResourceFactory::CreateExternalBuffer(ExternalBufferType type)
 {
 	VkMemoryPropertyFlagBits memoryType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -27,4 +29,5 @@ size_t VkExternalResourceFactory::CreateExternalTexture()
 	return m_externalTextures.Add(
 		std::make_shared<VkExternalTexture>(m_device, m_memoryManager)
 	);
+}
 }

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <limits>
 
+namespace Terra
+{
 // Queue Indices
 std::vector<std::uint32_t> QueueIndices3::ResolveQueueIndices(
 	std::uint32_t index0, std::uint32_t index1, std::uint32_t index2
@@ -366,4 +368,5 @@ bool VkQueueFamilyMananger::CheckPresentSupport(
 	);
 
 	return presentSupport;
+}
 }

@@ -1,6 +1,8 @@
 #include <VkExternalResourceManager.hpp>
 #include <limits>
 
+namespace Terra
+{
 VkExternalResourceManager::VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager)
 	: m_resourceFactory{ std::make_unique<VkExternalResourceFactory>(device, memoryManager) },
 	m_gfxExtensions{}, m_copyQueueDetails{}
@@ -169,4 +171,5 @@ void VkExternalResourceManager::CopyQueuedBuffers(const VKCommandBuffer& transfe
 
 		m_copyQueueDetails.clear();
 	}
+}
 }

@@ -8,10 +8,9 @@
 #include <VkCommandQueue.hpp>
 #include <VkStagingBufferManager.hpp>
 
-template<
-	class Derived,
-	class VkMeshBundle
->
+namespace Terra
+{
+template<class Derived, class VkMeshBundle>
 class MeshManager
 {
 public:
@@ -226,4 +225,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

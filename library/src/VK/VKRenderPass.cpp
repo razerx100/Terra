@@ -2,6 +2,8 @@
 #include <ranges>
 #include <algorithm>
 
+namespace Terra
+{
 // RenderPass builder
 RenderPassBuilder& RenderPassBuilder::AddColourAttachment(VkFormat format) noexcept
 {
@@ -132,4 +134,5 @@ void VKRenderPass::BeginPass(
 void VKRenderPass::EndPass(VkCommandBuffer graphicsCmdBuffer)
 {
 	vkCmdEndRenderPass(graphicsCmdBuffer);
+}
 }

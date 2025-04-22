@@ -5,6 +5,8 @@
 #include <VkDeviceManager.hpp>
 #include <VkSharedBuffers.hpp>
 
+using namespace Terra;
+
 namespace Constants
 {
 	constexpr const char* appName  = "TerraTest";

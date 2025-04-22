@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.hpp>
 #include <utility>
 
+namespace Terra
+{
 template<typename ObjType>
 class VkSyncObj
 {
@@ -94,4 +96,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

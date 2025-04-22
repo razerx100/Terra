@@ -7,6 +7,8 @@
 #include <VkTextureView.hpp>
 #include <VkPipelineLayout.hpp>
 
+using namespace Terra;
+
 namespace Constants
 {
 	constexpr const char* appName    = "TerraTest";

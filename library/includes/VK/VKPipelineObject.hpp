@@ -5,6 +5,8 @@
 #include <utility>
 #include <VkVertexLayout.hpp>
 
+namespace Terra
+{
 class PipelineBuilderBase
 {
 protected:
@@ -419,4 +421,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

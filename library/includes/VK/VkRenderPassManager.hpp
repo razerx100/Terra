@@ -5,6 +5,8 @@
 #include <VkResourceBarriers2.hpp>
 #include <VkCommandQueue.hpp>
 
+namespace Terra
+{
 // This class shouldn't be created and destroyed on every frame.
 class RenderingInfoBuilder
 {
@@ -192,14 +194,16 @@ public:
 	// These functions can be used every frame.
 	void SetDepthAttachment(
 		std::uint32_t barrierIndex, const VKImageView& depthView,
-		const VkClearDepthStencilValue& clearValue, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+		const VkClearDepthStencilValue& clearValue, VkAttachmentLoadOp loadOp,
+		VkAttachmentStoreOp storeOP
 	) noexcept;
 	void SetDepthClearColour(const VkClearDepthStencilValue& clearColour) noexcept;
 	void SetDepthView(std::uint32_t barrierIndex, const VKImageView& depthView) noexcept;
 
 	void SetStencilAttachment(
 		std::uint32_t barrierIndex, const VKImageView& stencilView,
-		const VkClearDepthStencilValue& clearValue, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOP
+		const VkClearDepthStencilValue& clearValue, VkAttachmentLoadOp loadOp,\
+		VkAttachmentStoreOp storeOP
 	) noexcept;
 	void SetStencilClearColour(const VkClearDepthStencilValue& clearColour) noexcept;
 	void SetStencilView(std::uint32_t barrierIndex, const VKImageView& stencilView) noexcept;
@@ -207,7 +211,9 @@ public:
 	void SetColourView(
 		size_t colourAttachmentIndex, std::uint32_t barrierIndex, const VKImageView& colourView
 	) noexcept;
-	void SetColourClearValue(size_t colourAttachmentIndex, const VkClearColorValue& clearValue) noexcept;
+	void SetColourClearValue(
+		size_t colourAttachmentIndex, const VkClearColorValue& clearValue
+	) noexcept;
 
 	void StartPass(const VKCommandBuffer& graphicsCmdBuffer, VkExtent2D renderArea) const noexcept;
 	void EndPass(const VKCommandBuffer& graphicsCmdBuffer) const noexcept;
@@ -237,4 +243,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

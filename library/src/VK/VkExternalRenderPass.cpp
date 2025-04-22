@@ -1,6 +1,8 @@
 #include <array>
 #include <VkExternalRenderPass.hpp>
 
+namespace Terra
+{
 struct TransitionData
 {
 	VkAccessFlagBits        access;
@@ -351,4 +353,5 @@ void VkExternalRenderPass::EndPassForSwapchain(
 	m_renderPassManager.EndPassForSwapchain(
 		graphicsCmdBuffer, srcTextureView.GetView(), swapchainBackBuffer, srcColourExtent
 	);
+}
 }

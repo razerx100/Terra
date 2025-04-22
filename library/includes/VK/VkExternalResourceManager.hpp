@@ -8,6 +8,8 @@
 #include <ReusableVector.hpp>
 #include <VkCommandQueue.hpp>
 
+namespace Terra
+{
 class VkExternalResourceManager : public ExternalResourceManager
 {
 	using GfxExtension_t = std::shared_ptr<GraphicsTechniqueExtension>;
@@ -109,4 +111,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

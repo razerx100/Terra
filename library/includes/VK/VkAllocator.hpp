@@ -7,6 +7,8 @@
 #include <array>
 #include <VkExtensionManager.hpp>
 
+namespace Terra
+{
 class VkAllocator
 {
 public:
@@ -89,7 +91,9 @@ public:
 	[[nodiscard]]
 	MemoryAllocation AllocateImage(VkImage image, VkMemoryPropertyFlagBits memoryType);
 
-	void Deallocate(const MemoryAllocation& allocation, VkMemoryPropertyFlagBits memoryType) noexcept;
+	void Deallocate(
+		const MemoryAllocation& allocation, VkMemoryPropertyFlagBits memoryType
+	) noexcept;
 
 private:
 	struct MemoryType
@@ -164,4 +168,5 @@ public:
 		return s_requiredExtensions;
 	}
 };
+}
 #endif

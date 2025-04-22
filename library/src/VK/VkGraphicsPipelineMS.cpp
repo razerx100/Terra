@@ -1,6 +1,8 @@
 #include <VkGraphicsPipelineMS.hpp>
 #include <VkShader.hpp>
 
+namespace Terra
+{
 std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::_createGraphicsPipeline(
 	VkDevice device, VkPipelineLayout graphicsLayout,
 	const std::wstring& shaderPath, const ExternalGraphicsPipeline& graphicsExtPipeline
@@ -48,4 +50,5 @@ std::unique_ptr<VkPipelineObject> GraphicsPipelineMS::CreateGraphicsPipelineMS(
 	}
 
 	return pso;
+}
 }

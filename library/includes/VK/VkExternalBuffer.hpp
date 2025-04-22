@@ -5,6 +5,8 @@
 #include <VkTextureView.hpp>
 #include <VkResourceBarriers2.hpp>
 
+namespace Terra
+{
 class VkExternalBuffer : public ExternalBuffer
 {
 public:
@@ -112,4 +114,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

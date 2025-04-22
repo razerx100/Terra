@@ -4,6 +4,8 @@
 #include <VKRenderPass.hpp>
 #include <utility>
 
+namespace Terra
+{
 class VKFramebuffer
 {
 public:
@@ -43,4 +45,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

@@ -8,6 +8,8 @@
 #include <VkPipelineLayout.hpp>
 #include <ExternalPipeline.hpp>
 
+namespace Terra
+{
 template<typename Derived>
 class GraphicsPipelineBase
 {
@@ -72,4 +74,5 @@ public:
 void ConfigurePipelineBuilder(
 	GraphicsPipelineBuilder& builder, const ExternalGraphicsPipeline& graphicsExtPipeline
 ) noexcept;
+}
 #endif

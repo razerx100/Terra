@@ -8,6 +8,8 @@
 #include <VkPipelineLayout.hpp>
 #include <ExternalPipeline.hpp>
 
+namespace Terra
+{
 class ComputePipeline
 {
 public:
@@ -62,4 +64,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

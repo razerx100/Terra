@@ -6,6 +6,8 @@
 #include <vector>
 #include <type_traits>
 
+namespace Terra
+{
 enum QueueType
 {
 	TransferQueue = 1,
@@ -200,4 +202,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

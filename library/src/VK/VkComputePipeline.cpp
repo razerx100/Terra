@@ -1,6 +1,8 @@
 #include <VkComputePipeline.hpp>
 #include <VkShader.hpp>
 
+namespace Terra
+{
 void ComputePipeline::Create(
 	VkDevice device, VkPipelineLayout computeLayout,
 	const ExternalComputePipeline& computeExtPipeline, const std::wstring& shaderPath
@@ -45,4 +47,5 @@ void ComputePipeline::Bind(const VKCommandBuffer& computeBuffer) const noexcept
 	VkCommandBuffer cmdBuffer = computeBuffer.Get();
 
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipeline->Get());
+}
 }

@@ -1,6 +1,8 @@
 #include <VkExternalBuffer.hpp>
 #include <VkExternalFormatMap.hpp>
 
+namespace Terra
+{
 // External Buffer
 VkExternalBuffer::VkExternalBuffer(
 	VkDevice device, MemoryManager* memoryManager, VkMemoryPropertyFlagBits memoryType,
@@ -87,4 +89,5 @@ ImageBarrierBuilder VkExternalTexture::TransitionState(
 	m_currentPipelineStage = newStage;
 
 	return builder;
+}
 }

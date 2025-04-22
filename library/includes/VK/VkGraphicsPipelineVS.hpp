@@ -2,6 +2,8 @@
 #define VK_GRAPHICS_PIPELINE_VS_HPP_
 #include <VkGraphicsPipelineBase.hpp>
 
+namespace Terra
+{
 class GraphicsPipelineVSIndirectDraw : public GraphicsPipelineBase<GraphicsPipelineVSIndirectDraw>
 {
 	friend class GraphicsPipelineBase<GraphicsPipelineVSIndirectDraw>;
@@ -60,4 +62,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

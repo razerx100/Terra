@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cassert>
 
+namespace Terra
+{
 StagingBufferManager& StagingBufferManager::AddTextureView(
 	std::shared_ptr<void> cpuData, VkTextureView const* dst, const VkOffset3D& offset,
 	QueueType dstQueueType, VkAccessFlagBits2 dstAccess, VkPipelineStageFlags2 dstStage,
@@ -388,4 +390,5 @@ bool StagingBufferManager::CheckForDuplicateBufferOwnershipTransfer(
 	);
 
 	return result != std::end(m_bufferInfo);
+}
 }

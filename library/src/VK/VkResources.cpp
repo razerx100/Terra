@@ -2,6 +2,8 @@
 #include <TerraException.hpp>
 #include <unordered_map>
 
+namespace Terra
+{
 // Resource
 Resource::Resource()
 	: m_memoryManager{ nullptr },
@@ -238,4 +240,5 @@ VkDeviceSize Texture::GetBufferSize() const noexcept
 	// Not bothering with adding the size of every single colour format. If an format size isn't
 	// defined here, then 0 will be returned.
 	return 0u;
+}
 }

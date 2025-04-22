@@ -6,6 +6,8 @@
 #include <vector>
 #include <cstring>
 
+namespace Terra
+{
 enum class CoreVersion
 {
 	V1_0,
@@ -117,4 +119,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

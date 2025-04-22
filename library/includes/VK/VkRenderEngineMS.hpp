@@ -3,6 +3,8 @@
 #include <VkRenderEngine.hpp>
 #include <VkModelManager.hpp>
 
+namespace Terra
+{
 namespace RenderEngineMSDeviceExtension
 {
 	void SetDeviceExtensions(VkDeviceExtensionManager& extensionManager) noexcept;
@@ -97,4 +99,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

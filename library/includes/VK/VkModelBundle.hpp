@@ -15,6 +15,8 @@
 #include <VkGraphicsPipelineMS.hpp>
 #include <ReusableVector.hpp>
 
+namespace Terra
+{
 class PipelineModelsBase
 {
 public:
@@ -614,4 +616,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

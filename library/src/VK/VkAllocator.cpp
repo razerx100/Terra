@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <TerraException.hpp>
 
+namespace Terra
+{
 [[nodiscard]]
 static VkMemoryRequirements GetMemoryRequirements(VkDevice device, VkBuffer buffer) noexcept
 {
@@ -357,4 +359,5 @@ std::uint16_t MemoryManager::GetID(bool cpu) noexcept
 	availableIndices.pop();
 
 	return ID;
+}
 }

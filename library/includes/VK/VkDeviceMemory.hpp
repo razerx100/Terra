@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.hpp>
 #include <utility>
 
+namespace Terra
+{
 class DeviceMemory
 {
 public:
@@ -60,4 +62,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

@@ -11,6 +11,8 @@
 #include <VKRenderPass.hpp>
 #include <VkSwapchainManager.hpp>
 
+using namespace Terra;
+
 namespace Constants
 {
 	constexpr std::uint32_t width       = 1920;

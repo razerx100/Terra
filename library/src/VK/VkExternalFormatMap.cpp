@@ -1,6 +1,8 @@
 #include <array>
 #include <VkExternalFormatMap.hpp>
 
+namespace Terra
+{
 static constexpr std::array s_externalFormatMap
 {
 	VK_FORMAT_UNDEFINED,
@@ -83,4 +85,5 @@ VkPipelineColorBlendAttachmentState GetVkBlendState(const ExternalBlendState& bl
 		.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
 						| VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 	};
+}
 }

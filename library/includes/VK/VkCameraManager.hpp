@@ -9,6 +9,8 @@
 #include <Camera.hpp>
 #include <DirectXMath.h>
 
+namespace Terra
+{
 class CameraManager
 {
 public:
@@ -81,4 +83,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

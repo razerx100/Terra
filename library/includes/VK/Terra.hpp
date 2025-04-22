@@ -17,6 +17,8 @@
 #include <VkRenderEngineVS.hpp>
 #include <VkRenderEngineMS.hpp>
 
+namespace Terra
+{
 template<class SurfaceManager_t, class DisplayManager_t, class RenderEngine_t>
 class Terra
 {
@@ -275,4 +277,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

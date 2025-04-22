@@ -3,6 +3,8 @@
 
 #include <VkSharedBuffers.hpp>
 
+namespace Terra
+{
 // Shared Buffer GPU
 void SharedBufferGPU::CreateBuffer(VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer)
 {
@@ -35,8 +37,9 @@ void SharedBufferGPU::CreateBuffer(VkDeviceSize size, Callisto::TemporaryDataBuf
 	m_buffer.Create(size, m_usageFlags, m_queueFamilyIndices);
 }
 
-VkDeviceSize SharedBufferGPU::ExtendBuffer(VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer)
-{
+VkDeviceSize SharedBufferGPU::ExtendBuffer(
+	VkDeviceSize size, Callisto::TemporaryDataBufferGPU& tempBuffer
+) {
 	// I probably don't need to worry about aligning here, since it's all inside a single buffer?
 	const VkDeviceSize oldSize = m_buffer.BufferSize();
 	const VkDeviceSize offset  = oldSize;
@@ -81,4 +84,5 @@ SharedBufferData SharedBufferGPU::AllocateAndGetSharedData(
 		.offset     = m_allocator.AllocateMemory(allocInfo, size),
 		.size       = size
 	};
+}
 }

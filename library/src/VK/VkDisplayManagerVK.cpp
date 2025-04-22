@@ -1,6 +1,8 @@
 #include <VkDisplayManagerVK.hpp>
 #include <cassert>
 
+namespace Terra
+{
 void DisplayInstanceExtensionVk::SetInstanceExtensions(
 	VkInstanceExtensionManager& extensionManager
 ) noexcept {
@@ -22,4 +24,5 @@ VkExtent2D DisplayManagerVK::GetDisplayResolution(
 	auto [width, height] = displayProperties[static_cast<size_t>(displayIndex)].physicalResolution;
 
 	return VkExtent2D{ .width = width, .height = height };
+}
 }

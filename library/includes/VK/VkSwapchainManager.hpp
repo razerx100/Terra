@@ -10,6 +10,8 @@
 #include <VkSyncObjects.hpp>
 #include <VkDeviceManager.hpp>
 
+namespace Terra
+{
 class VkSwapchain
 {
 public:
@@ -150,4 +152,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

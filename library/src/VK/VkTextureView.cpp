@@ -1,5 +1,7 @@
 #include <VkTextureView.hpp>
 
+namespace Terra
+{
 float VkSamplerCreateInfoBuilder::s_maxAnisotropy = 1.f;
 
 VkSamplerCreateInfoBuilder::VkSamplerCreateInfoBuilder()
@@ -159,4 +161,5 @@ void VkTextureView::Destroy() noexcept
 {
 	m_imageView.Destroy();
 	m_texture.Destroy();
+}
 }

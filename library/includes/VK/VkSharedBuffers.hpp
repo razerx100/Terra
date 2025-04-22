@@ -10,6 +10,8 @@
 
 #include <MeshBundle.hpp>
 
+namespace Terra
+{
 struct SharedBufferData
 {
 	Buffer const* bufferData;
@@ -227,4 +229,5 @@ public:
 
 typedef SharedBufferWriteOnly<VK_MEMORY_PROPERTY_HOST_COHERENT_BIT> SharedBufferCPU;
 typedef SharedBufferWriteOnly<VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT>  SharedBufferGPUWriteOnly;
+}
 #endif

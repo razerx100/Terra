@@ -1,5 +1,7 @@
 #include <VkDescriptorBuffer.hpp>
 
+namespace Terra
+{
 // Vk Descriptor Buffer
 VkPhysicalDeviceDescriptorBufferPropertiesEXT VkDescriptorBuffer::s_descriptorInfo{
 	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT
@@ -271,4 +273,5 @@ void VkDescriptorBuffer::BindDescriptorBuffer(
 		commandBuffer, bindPoint, layout, firstSet, setCount,
 		std::data(bufferIndices), std::data(setLayoutOffsets)
 	);
+}
 }

@@ -7,6 +7,8 @@
 #include <VkExternalBuffer.hpp>
 #include <ReusableVector.hpp>
 
+namespace Terra
+{
 class VkExternalResourceFactory : public ExternalResourceFactory
 {
 	using ExternalBuffer_t  = std::shared_ptr<VkExternalBuffer>;
@@ -98,4 +100,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

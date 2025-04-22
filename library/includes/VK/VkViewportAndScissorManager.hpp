@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <VkCommandQueue.hpp>
 
+namespace Terra
+{
 class ViewportAndScissorManager
 {
 public:
@@ -44,4 +46,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

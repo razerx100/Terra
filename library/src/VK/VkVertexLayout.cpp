@@ -1,5 +1,7 @@
 #include <VkVertexLayout.hpp>
 
+namespace Terra
+{
 VertexLayout& VertexLayout::AddInput(VkFormat format, std::uint32_t sizeInBytes) noexcept
 {
 	m_attrDescs.emplace_back(m_position, m_binding, format, m_vertexOffset);
@@ -27,4 +29,5 @@ void VertexLayout::UpdatePointers() noexcept
 {
 	m_createInfo.pVertexBindingDescriptions   = &m_bindingDesc;
 	m_createInfo.pVertexAttributeDescriptions = std::data(m_attrDescs);
+}
 }

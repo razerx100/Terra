@@ -8,6 +8,8 @@
 
 #include <MeshBundle.hpp>
 
+namespace Terra
+{
 class VkMeshBundleMS
 {
 public:
@@ -147,4 +149,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

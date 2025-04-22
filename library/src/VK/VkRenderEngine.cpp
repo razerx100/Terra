@@ -1,5 +1,7 @@
 #include <VkRenderEngine.hpp>
 
+namespace Terra
+{
 void RenderEngineDeviceExtension::SetDeviceExtensions(
 	VkDeviceExtensionManager& extensionManager
 ) noexcept {
@@ -190,4 +192,5 @@ void RenderEngine::QueueExternalBufferGPUCopy(
 	);
 
 	m_copyNecessary = true;
+}
 }

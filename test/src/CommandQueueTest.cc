@@ -7,6 +7,8 @@
 #include <VkSyncObjects.hpp>
 #include <VkTextureView.hpp>
 
+using namespace Terra;
+
 namespace Constants
 {
 	constexpr const char* appName       = "TerraTest";

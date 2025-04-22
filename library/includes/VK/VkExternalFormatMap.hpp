@@ -4,6 +4,8 @@
 #include <ExternalFormat.hpp>
 #include <ExternalPipeline.hpp>
 
+namespace Terra
+{
 [[nodiscard]]
 VkFormat GetVkFormat(ExternalFormat format) noexcept;
 [[nodiscard]]
@@ -15,4 +17,5 @@ VkBlendFactor GetVkBlendFactor(ExternalBlendFactor factor) noexcept;
 VkBlendOp GetVkBlendOP(ExternalBlendOP op) noexcept;
 [[nodiscard]]
 VkPipelineColorBlendAttachmentState GetVkBlendState(const ExternalBlendState& blendState) noexcept;
+}
 #endif

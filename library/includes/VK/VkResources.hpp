@@ -6,6 +6,8 @@
 #include <utility>
 #include <VkAllocator.hpp>
 
+namespace Terra
+{
 class Resource
 {
 public:
@@ -227,5 +229,6 @@ template<class T>
 T GetGPUResource(VkDevice device, MemoryManager* memoryManager)
 {
 	return T{ device, memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT };
+}
 }
 #endif

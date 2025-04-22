@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
+namespace Terra
+{
 class VertexLayout
 {
 public:
@@ -82,4 +84,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif

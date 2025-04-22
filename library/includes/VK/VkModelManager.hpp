@@ -22,6 +22,8 @@
 #include <VkModelBundle.hpp>
 #include <Shader.hpp>
 
+namespace Terra
+{
 template<class ModelBundleType>
 class ModelManager
 {
@@ -347,4 +349,5 @@ public:
 		return *this;
 	}
 };
+}
 #endif
