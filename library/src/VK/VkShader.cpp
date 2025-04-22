@@ -1,5 +1,5 @@
 #include <VkShader.hpp>
-#include <Exception.hpp>
+#include <TerraException.hpp>
 
 VkShader::~VkShader() noexcept
 {

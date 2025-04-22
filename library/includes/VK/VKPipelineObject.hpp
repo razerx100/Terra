@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <utility>
-#include <VertexLayout.hpp>
+#include <VkVertexLayout.hpp>
 
 class PipelineBuilderBase
 {

@@ -1,5 +1,5 @@
 #include <VkExtensionManager.hpp>
-#include <Exception.hpp>
+#include <TerraException.hpp>
 #include <array>
 
 // Device extension names.

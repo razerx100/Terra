@@ -1,5 +1,5 @@
-#ifndef RENDERER_VK_HPP_
-#define RENDERER_VK_HPP_
+#ifndef VK_RENDERER_VK_HPP_
+#define VK_RENDERER_VK_HPP_
 #include <vulkan/vulkan.hpp>
 #include <string>
 #include <array>

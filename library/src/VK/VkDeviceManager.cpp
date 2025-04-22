@@ -1,7 +1,7 @@
 #include <VkDeviceManager.hpp>
 #include <ranges>
 #include <algorithm>
-#include <Exception.hpp>
+#include <TerraException.hpp>
 #include <VkFeatureManager.hpp>
 
 VkDeviceManager::VkDeviceManager()

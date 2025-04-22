@@ -4,7 +4,7 @@
 #include <ExternalResourceManager.hpp>
 #include <VkExternalResourceFactory.hpp>
 #include <VkDescriptorBuffer.hpp>
-#include <StagingBufferManager.hpp>
+#include <VkStagingBufferManager.hpp>
 #include <ReusableVector.hpp>
 #include <VkCommandQueue.hpp>
 

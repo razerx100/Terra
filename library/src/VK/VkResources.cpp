@@ -1,5 +1,5 @@
 #include <VkResources.hpp>
-#include <Exception.hpp>
+#include <TerraException.hpp>
 #include <unordered_map>
 
 // Resource

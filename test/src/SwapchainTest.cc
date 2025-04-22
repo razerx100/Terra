@@ -3,13 +3,13 @@
 
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
-#include <SurfaceManager.hpp>
+#include <VkSurfaceManager.hpp>
 #ifdef TERRA_WIN32
-#include <SurfaceManagerWin32.hpp>
+#include <VkSurfaceManagerWin32.hpp>
 #include <SimpleWindow.hpp>
 #endif
 #include <VKRenderPass.hpp>
-#include <SwapchainManager.hpp>
+#include <VkSwapchainManager.hpp>
 
 namespace Constants
 {

@@ -1,7 +1,7 @@
 #ifndef VK_ALLOCATOR_HPP_
 #define VK_ALLOCATOR_HPP_
 #include <Buddy.hpp>
-#include <DeviceMemory.hpp>
+#include <VkDeviceMemory.hpp>
 #include <optional>
 #include <queue>
 #include <array>

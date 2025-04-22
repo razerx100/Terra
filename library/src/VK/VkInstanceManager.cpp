@@ -2,7 +2,7 @@
 #include <ranges>
 #include <algorithm>
 #include <VkInstanceManager.hpp>
-#include <Exception.hpp>
+#include <TerraException.hpp>
 #include <format>
 
 VkInstanceManager::VkInstanceManager(std::string_view appName)

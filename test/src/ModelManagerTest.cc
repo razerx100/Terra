@@ -6,9 +6,9 @@
 
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
-#include <ModelManager.hpp>
+#include <VkModelManager.hpp>
 #include <VkModelBuffer.hpp>
-#include <StagingBufferManager.hpp>
+#include <VkStagingBufferManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <VKRenderPass.hpp>
 

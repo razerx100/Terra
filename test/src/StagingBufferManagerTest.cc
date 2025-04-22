@@ -5,7 +5,7 @@
 #include <VkDeviceManager.hpp>
 #include <VkResources.hpp>
 #include <VkTextureView.hpp>
-#include <StagingBufferManager.hpp>
+#include <VkStagingBufferManager.hpp>
 
 namespace Constants
 {

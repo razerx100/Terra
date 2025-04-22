@@ -5,7 +5,7 @@
 #include <VkQueueFamilyManager.hpp>
 #include <VkExtensionManager.hpp>
 #include <VkFeatureManager.hpp>
-#include <SurfaceManager.hpp>
+#include <VkSurfaceManager.hpp>
 
 class VkDeviceManager
 {

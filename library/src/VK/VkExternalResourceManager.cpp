@@ -6,8 +6,9 @@ VkExternalResourceManager::VkExternalResourceManager(VkDevice device, MemoryMana
 	m_gfxExtensions{}, m_copyQueueDetails{}
 {}
 
-void VkExternalResourceManager::OnGfxExtensionDeletion(const GraphicsTechniqueExtension& gfxExtension)
-{
+void VkExternalResourceManager::OnGfxExtensionDeletion(
+	const GraphicsTechniqueExtension& gfxExtension
+) {
 	const std::vector<std::uint32_t>& externalIndices = gfxExtension.GetExternalBufferIndices();
 
 	for (std::uint32_t externalIndex : externalIndices)

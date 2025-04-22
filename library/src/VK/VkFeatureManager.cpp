@@ -6,7 +6,8 @@ static constexpr size_t EnumToNumber(T value)
 	return static_cast<size_t>(value);
 }
 
-VkFeatureManager::VkFeatureManager() : m_deviceFeatures2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 }
+VkFeatureManager::VkFeatureManager()
+	: m_deviceFeatures2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 }
 {
 	SetBaseCoreFeatures();
 }

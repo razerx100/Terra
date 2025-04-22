@@ -2,7 +2,7 @@
 #include <concepts>
 #include <cmath>
 #include <algorithm>
-#include <Exception.hpp>
+#include <TerraException.hpp>
 
 [[nodiscard]]
 static VkMemoryRequirements GetMemoryRequirements(VkDevice device, VkBuffer buffer) noexcept

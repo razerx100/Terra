@@ -20,8 +20,9 @@ public:
 	~VKImageView() noexcept;
 
 	void CreateView(
-		VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags, VkImageViewType imageType,
-		std::uint32_t mipBaseLevel = 0u, std::uint32_t mipLevelCount = 1u
+		VkImage image, VkFormat imageFormat, VkImageAspectFlags aspectFlags,
+		VkImageViewType imageType, std::uint32_t mipBaseLevel = 0u,
+		std::uint32_t mipLevelCount = 1u
 	);
 
 	void Destroy() noexcept;

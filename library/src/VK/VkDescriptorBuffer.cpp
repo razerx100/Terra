@@ -53,7 +53,9 @@ void VkDescriptorBuffer::_createBuffer(
 		{
 			setLayout.Create();
 
-			DescBuffer::vkGetDescriptorSetLayoutSizeEXT(m_device, setLayout.Get(), &currentLayoutSize);
+			DescBuffer::vkGetDescriptorSetLayoutSizeEXT(
+				m_device, setLayout.Get(), &currentLayoutSize
+			);
 
 			m_validOffsets[validLayoutCount] = layoutSizeInBytes;
 

@@ -2,20 +2,20 @@
 #define TERRA_HPP_
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
-#include <SwapchainManager.hpp>
+#include <VkSwapchainManager.hpp>
 #include <RendererTypes.hpp>
-#include <RenderEngine.hpp>
+#include <VkRenderEngine.hpp>
 #include <VkExternalFormatMap.hpp>
 
 #ifdef TERRA_WIN32
-#include <DisplayManagerWin32.hpp>
-#include <SurfaceManagerWin32.hpp>
+#include <VkDisplayManagerWin32.hpp>
+#include <VkSurfaceManagerWin32.hpp>
 #else
-#include <DisplayManagerVK.hpp>
+#include <VkDisplayManagerVK.hpp>
 #endif
 
-#include <RenderEngineVS.hpp>
-#include <RenderEngineMS.hpp>
+#include <VkRenderEngineVS.hpp>
+#include <VkRenderEngineMS.hpp>
 
 template<class SurfaceManager_t, class DisplayManager_t, class RenderEngine_t>
 class Terra

@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <VkResources.hpp>
-#include <StagingBufferManager.hpp>
+#include <VkStagingBufferManager.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkSharedBuffers.hpp>
 

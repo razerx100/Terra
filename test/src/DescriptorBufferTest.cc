@@ -5,7 +5,7 @@
 #include <VkDeviceManager.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <VkTextureView.hpp>
-#include <PipelineLayout.hpp>
+#include <VkPipelineLayout.hpp>
 
 namespace Constants
 {

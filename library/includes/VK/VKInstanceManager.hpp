@@ -5,7 +5,7 @@
 #include <optional>
 #include <utility>
 #include <VkFeatureManager.hpp>
-#include <DebugLayerManager.hpp>
+#include <VkDebugLayerManager.hpp>
 
 class VkInstanceManager
 {

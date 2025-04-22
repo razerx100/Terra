@@ -1,11 +1,11 @@
 #ifndef VK_DESCRIPTOR_BUFFER_HPP_
 #define VK_DESCRIPTOR_BUFFER_HPP_
 #include <VkResources.hpp>
-#include <DescriptorSetLayout.hpp>
+#include <VkDescriptorSetLayout.hpp>
 #include <VkTextureView.hpp>
 #include <VkExtensionManager.hpp>
 #include <VkCommandQueue.hpp>
-#include <PipelineLayout.hpp>
+#include <VkPipelineLayout.hpp>
 #include <array>
 #include <vector>
 
