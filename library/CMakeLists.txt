@@ -26,8 +26,6 @@ else()
     target_include_directories(TerraLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/exports/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/VK/)
 endif()
 
-target_compile_definitions(TerraLib PRIVATE BUILD_TERRA)
-
 if(MSVC)
     target_compile_definitions(TerraLib PRIVATE TERRA_WIN32)
     target_link_libraries(TerraLib PRIVATE

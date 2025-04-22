@@ -6,9 +6,7 @@ if(MSVC)
     file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
 endif()
 
-add_executable(TerraTest
-    ${SRC} ${SRCOPT}
-)
+add_executable(TerraTest ${SRC} ${SRCOPT})
 
 if(MSVC)
     target_include_directories(TerraTest PRIVATE ${TERRA_PRIVATE_INCLUDES} Win32/)
