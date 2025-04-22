@@ -6,15 +6,7 @@ if(MSVC)
     file(GLOB_RECURSE SRCOPT Win32/*.hpp Win32/*.cpp)
 endif()
 
-if(ADD_TEST_TERRA)
-    set(LIBRARY_TYPE STATIC)
-else()
-    set(LIBRARY_TYPE SHARED)
-endif()
-
-add_library(TerraLib ${LIBRARY_TYPE}
-    ${SRC} ${SRCOPT}
-)
+add_library(TerraLib STATIC ${SRC} ${SRCOPT})
 
 find_package(Vulkan REQUIRED)
 
@@ -22,17 +14,17 @@ target_link_libraries(TerraLib PRIVATE
     Vulkan::Vulkan
 )
 
-if(MSVC)
-    set(TERRA_PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/includes/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/VK/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/Exceptions/ ${CMAKE_CURRENT_SOURCE_DIR}/templates/ ${CMAKE_CURRENT_SOURCE_DIR}/Win32/includes/)
-else()
-    set(TERRA_PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/includes/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/VK/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/Exceptions/ ${CMAKE_CURRENT_SOURCE_DIR}/templates/)
-endif()
+set(TERRA_PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/templates/)
 
 set(TERRA_PRIVATE_INCLUDES ${TERRA_PRIVATE_INCLUDES} PARENT_SCOPE)
 
 target_include_directories(TerraLib PRIVATE ${TERRA_PRIVATE_INCLUDES})
 
-target_include_directories(TerraLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/exports/)
+if(MSVC)
+    target_include_directories(TerraLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/exports/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/VK/ ${CMAKE_CURRENT_SOURCE_DIR}/Win32/includes/)
+else()
+    target_include_directories(TerraLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/exports/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/ ${CMAKE_CURRENT_SOURCE_DIR}/includes/VK/)
+endif()
 
 target_compile_definitions(TerraLib PRIVATE BUILD_TERRA)
 
