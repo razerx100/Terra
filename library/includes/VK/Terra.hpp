@@ -3,7 +3,6 @@
 #include <VKInstanceManager.hpp>
 #include <VkDeviceManager.hpp>
 #include <VkSwapchainManager.hpp>
-#include <RendererCommonTypes.hpp>
 #include <VkRenderEngine.hpp>
 #include <VkExternalFormatMap.hpp>
 
