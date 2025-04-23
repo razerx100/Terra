@@ -5,7 +5,7 @@
 #include <array>
 #include <ThreadPool.hpp>
 
-#include <RendererTypes.hpp>
+#include <RendererCommonTypes.hpp>
 #include <Terra.hpp>
 
 namespace Terra
@@ -35,11 +35,11 @@ public:
 	}
 
 	[[nodiscard]]
-	SolExtent GetCurrentRenderingExtent() const noexcept
+	Renderer::Extent GetCurrentRenderingExtent() const noexcept
 	{
 		const VkExtent2D currentRenderArea = m_terra.GetCurrentRenderArea();
 
-		return SolExtent
+		return Renderer::Extent
 		{
 			.width  = currentRenderArea.width,
 			.height = currentRenderArea.height
@@ -47,11 +47,11 @@ public:
 	}
 
 	[[nodiscard]]
-	SolExtent GetFirstDisplayCoordinates() const
+	Renderer::Extent GetFirstDisplayCoordinates() const
 	{
 		const VkExtent2D resolution = m_terra.GetFirstDisplayCoordinates();
 
-		return SolExtent{ .width = resolution.width, .height = resolution.height };
+		return Renderer::Extent{ .width = resolution.width, .height = resolution.height };
 	}
 
 	void SetShaderPath(const wchar_t* path)
