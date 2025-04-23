@@ -2,7 +2,7 @@
 #define RENDERER_COMMON_TYPES_HPP_
 #include <utility>
 
-namespace Renderer
+namespace RendererType
 {
 struct Extent
 {

@@ -35,11 +35,11 @@ public:
 	}
 
 	[[nodiscard]]
-	Renderer::Extent GetCurrentRenderingExtent() const noexcept
+	RendererType::Extent GetCurrentRenderingExtent() const noexcept
 	{
 		const VkExtent2D currentRenderArea = m_terra.GetCurrentRenderArea();
 
-		return Renderer::Extent
+		return RendererType::Extent
 		{
 			.width  = currentRenderArea.width,
 			.height = currentRenderArea.height
@@ -47,11 +47,11 @@ public:
 	}
 
 	[[nodiscard]]
-	Renderer::Extent GetFirstDisplayCoordinates() const
+	RendererType::Extent GetFirstDisplayCoordinates() const
 	{
 		const VkExtent2D resolution = m_terra.GetFirstDisplayCoordinates();
 
-		return Renderer::Extent{ .width = resolution.width, .height = resolution.height };
+		return RendererType::Extent{ .width = resolution.width, .height = resolution.height };
 	}
 
 	void SetShaderPath(const wchar_t* path)
