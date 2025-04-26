@@ -27,7 +27,7 @@ else()
 endif()
 
 if(MSVC)
-    target_compile_definitions(TerraLib PRIVATE TERRA_WIN32)
+    target_compile_definitions(TerraLib PUBLIC TERRA_WIN32)
     target_link_libraries(TerraLib PRIVATE
         dxgi.lib
     )
