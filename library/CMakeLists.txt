@@ -10,7 +10,7 @@ add_library(TerraLib STATIC ${SRC} ${SRCOPT})
 
 find_package(Vulkan REQUIRED)
 
-target_link_libraries(TerraLib PRIVATE
+target_link_libraries(TerraLib PUBLIC
     Vulkan::Vulkan
 )
 
