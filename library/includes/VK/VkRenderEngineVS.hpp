@@ -38,7 +38,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle);
+	std::uint32_t AddMeshBundle(MeshBundleTemporaryData&& meshBundle);
 
 	void SetShaderPath(const std::wstring& shaderPath)
 	{
@@ -132,7 +132,7 @@ public:
 
 	[[nodiscard]]
 	// Should wait for the device to be idle before calling this.
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle);
+	std::uint32_t AddMeshBundle(MeshBundleTemporaryData&& meshBundle);
 
 	void SetShaderPath(const std::wstring& shaderPath);
 

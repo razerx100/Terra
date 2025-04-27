@@ -12,6 +12,8 @@ namespace Terra
 {
 class VkMeshBundleMS
 {
+	using MeshBundleDetails_t = std::vector<MeshTemporaryDetailsMS>;
+
 public:
 	// In GLSL, vec3 are actually vec4. So, whether it is a vec3 or vec4, it would
 	// take as much space as a vec4. And it is necessary here because this data
@@ -44,13 +46,13 @@ public:
 	VkMeshBundleMS();
 
 	void SetMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void SetMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
@@ -87,7 +89,7 @@ public:
 	[[nodiscard]]
 	const MeshTemporaryDetailsMS& GetMeshDetails(size_t index) const noexcept
 	{
-		return m_bundleDetails.meshTemporaryDetailsMS[index];
+		return m_bundleDetails[index];
 	}
 
 	[[nodiscard]]
@@ -98,7 +100,7 @@ public:
 
 private:
 	void _setMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 		SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 		Callisto::TemporaryDataBufferGPU& tempBuffer
@@ -111,14 +113,14 @@ private:
 	) noexcept;
 
 private:
-	SharedBufferData           m_vertexBufferSharedData;
-	SharedBufferData           m_vertexIndicesBufferSharedData;
-	SharedBufferData           m_primIndicesBufferSharedData;
-	SharedBufferData           m_perMeshletBufferSharedData;
-	SharedBufferData           m_perMeshSharedData;
-	SharedBufferData           m_perMeshBundleSharedData;
-	MeshBundleDetailsMS        m_meshBundleDetails;
-	MeshBundleTemporaryDetails m_bundleDetails;
+	SharedBufferData    m_vertexBufferSharedData;
+	SharedBufferData    m_vertexIndicesBufferSharedData;
+	SharedBufferData    m_primIndicesBufferSharedData;
+	SharedBufferData    m_perMeshletBufferSharedData;
+	SharedBufferData    m_perMeshSharedData;
+	SharedBufferData    m_perMeshBundleSharedData;
+	MeshBundleDetailsMS m_meshBundleDetails;
+	MeshBundleDetails_t m_bundleDetails;
 
 public:
 	VkMeshBundleMS(const VkMeshBundleMS&) = delete;

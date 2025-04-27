@@ -129,7 +129,7 @@ public:
 	}
 
 	[[nodiscard]]
-	std::uint32_t AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
+	std::uint32_t AddMeshBundle(MeshBundleTemporaryData&& meshBundle)
 	{
 		return m_terra.AddMeshBundle(std::move(meshBundle));
 	}

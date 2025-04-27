@@ -18,7 +18,7 @@ public:
 
 	[[nodiscard]]
 	std::uint32_t AddMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		Callisto::TemporaryDataBufferGPU& tempBuffer
 	) {
 		VkMeshBundle vkMeshBundle{};
@@ -81,7 +81,7 @@ public:
 
 private:
 	void ConfigureMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		VkMeshBundleVS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
@@ -130,7 +130,7 @@ public:
 
 private:
 	void ConfigureMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		VkMeshBundleVS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;
@@ -187,7 +187,7 @@ public:
 
 private:
 	void ConfigureMeshBundle(
-		std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+		MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 		VkMeshBundleMS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 	);
 	void ConfigureRemoveMesh(size_t bundleIndex) noexcept;

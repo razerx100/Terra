@@ -5,19 +5,20 @@ namespace Terra
 {
 VkMeshBundleMS::VkMeshBundleMS()
 	: m_vertexBufferSharedData{ nullptr, 0u, 0u },
-	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u }, m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
+	m_vertexIndicesBufferSharedData{ nullptr, 0u, 0u },
+	m_primIndicesBufferSharedData{ nullptr, 0u, 0u },
 	m_perMeshletBufferSharedData{ nullptr, 0u, 0u }, m_perMeshSharedData{ nullptr, 0u, 0u },
 	m_perMeshBundleSharedData{ nullptr, 0u, 0u }, m_meshBundleDetails{ 0u, 0u, 0u, 0u },
 	m_bundleDetails{}
 {}
 
 void VkMeshBundleMS::_setMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
-	const std::vector<Vertex>& vertices  = meshBundle->GetVertices();
+	const std::vector<Vertex>& vertices = meshBundle.vertices;
 
 	auto ConfigureBuffer = []<typename T>
 		(
@@ -40,9 +41,9 @@ void VkMeshBundleMS::_setMeshBundle(
 		);
 	};
 
-	const std::vector<std::uint32_t>& vertexIndices   = meshBundle->GetVertexIndices();
-	const std::vector<std::uint32_t>& primIndices     = meshBundle->GetPrimIndices();
-	const std::vector<MeshletDetails>& meshletDetails = meshBundle->GetMeshletDetails();
+	const std::vector<std::uint32_t>& vertexIndices   = meshBundle.indices;
+	const std::vector<std::uint32_t>& primIndices     = meshBundle.primIndices;
+	const std::vector<MeshletDetails>& meshletDetails = meshBundle.meshletDetails;
 
 	ConfigureVertices(
 		vertices, stagingBufferMan, vertexSharedBuffer, m_vertexBufferSharedData,
@@ -61,18 +62,15 @@ void VkMeshBundleMS::_setMeshBundle(
 		m_meshBundleDetails.meshletOffset, tempBuffer
 	);
 
-	m_bundleDetails = std::move(meshBundle->GetTemporaryBundleDetails());
+	m_bundleDetails = std::move(meshBundle.bundleDetails.meshTemporaryDetailsMS);
 }
 
 void VkMeshBundleMS::SetMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
-	// Init the temp data.
-	meshBundle->GenerateTemporaryData(true);
-
 	_setMeshBundle(
 		std::move(meshBundle),
 		stagingBufferMan, vertexSharedBuffer, vertexIndicesSharedBuffer, primIndicesSharedBuffer,
@@ -81,7 +79,7 @@ void VkMeshBundleMS::SetMeshBundle(
 }
 
 void VkMeshBundleMS::SetMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 	SharedBufferGPU& vertexSharedBuffer, SharedBufferGPU& vertexIndicesSharedBuffer,
 	SharedBufferGPU& primIndicesSharedBuffer, SharedBufferGPU& perMeshletSharedBuffer,
 	SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
@@ -89,18 +87,15 @@ void VkMeshBundleMS::SetMeshBundle(
 ) {
 	constexpr auto perMeshStride = sizeof(AxisAlignedBoundingBox);
 
-	// Init the temp data.
-	meshBundle->GenerateTemporaryData(true);
-
-	// Need this or else the overload which returns the R value ref will be called.
-	const MeshBundleTemporary& meshBundleR = *meshBundle;
 	const std::vector<MeshTemporaryDetailsMS>& meshDetailsMS
-		= meshBundleR.GetTemporaryBundleDetails().meshTemporaryDetailsMS;
+		= meshBundle.bundleDetails.meshTemporaryDetailsMS;
 
 	const size_t meshCount       = std::size(meshDetailsMS);
 	const auto perMeshBufferSize = static_cast<VkDeviceSize>(perMeshStride * meshCount);
 
-	m_perMeshSharedData    = perMeshSharedBuffer.AllocateAndGetSharedData(perMeshBufferSize, tempBuffer);
+	m_perMeshSharedData = perMeshSharedBuffer.AllocateAndGetSharedData(
+		perMeshBufferSize, tempBuffer
+	);
 
 	auto perMeshBufferData = std::make_shared<std::uint8_t[]>(perMeshBufferSize);
 
@@ -160,7 +155,9 @@ void VkMeshBundleMS::ConfigureVertices(
 	const size_t vertexCount    = std::size(vertices);
 	const auto vertexBufferSize = static_cast<VkDeviceSize>(vertexStride * vertexCount);
 
-	verticesSharedData   = verticesSharedBuffer.AllocateAndGetSharedData(vertexBufferSize, tempBuffer);
+	verticesSharedData = verticesSharedBuffer.AllocateAndGetSharedData(
+		vertexBufferSize, tempBuffer
+	);
 	verticesDetailOffset = static_cast<std::uint32_t>(verticesSharedData.offset / vertexStride);
 
 	auto verticesTempDataBuffer = std::make_shared<std::uint8_t[]>(vertexBufferSize);

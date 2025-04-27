@@ -23,6 +23,19 @@ namespace Constants
 	constexpr std::uint32_t csSetLayoutIndex   = 0u;
 	constexpr std::uint32_t fsSetLayoutIndex   = 1u;
 	constexpr std::uint32_t meshBundleIndex    = 0u;
+
+	static const MeshBundleTemporaryData meshBundleData
+	{
+		.vertices       = { Vertex{} },
+		.indices        = { 0u, 1u, 2u },
+		.primIndices    = { 0u },
+		.meshletDetails = { MeshletDetails{}, MeshletDetails{} },
+		.bundleDetails = MeshBundleTemporaryDetails
+		{
+			.meshTemporaryDetailsVS = { MeshTemporaryDetailsVS{} },
+			.meshTemporaryDetailsMS = { MeshTemporaryDetailsMS{} }
+		}
+	};
 }
 
 class ModelManagerTest : public ::testing::Test
@@ -154,55 +167,6 @@ public:
 	std::shared_ptr<ModelBundle> GetModelBundle() const noexcept
 	{
 		return m_modelBundle;
-	}
-};
-
-class MeshBundleTemporaryDummy : public MeshBundleTemporary
-{
-	std::vector<MeshletDetails> m_meshletDetails = { MeshletDetails{}, MeshletDetails{} };
-	std::vector<Vertex>         m_vertices       = { Vertex{} };
-	std::vector<std::uint32_t>  m_vertexIndices  = { 0u, 1u, 2u };
-	std::vector<std::uint32_t>  m_primIndices    = { 0u };
-	MeshBundleTemporaryDetails  m_bundleDetails
-	{
-		.meshTemporaryDetailsVS = { MeshTemporaryDetailsVS{} }
-	};
-
-public:
-	void GenerateTemporaryData(bool) override {}
-
-	// Vertex and Mesh
-	[[nodiscard]]
-	const std::vector<Vertex>& GetVertices() const noexcept override
-	{
-		return m_vertices;
-	}
-	[[nodiscard]]
-	const std::vector<std::uint32_t>& GetVertexIndices() const noexcept override
-	{
-		return m_vertexIndices;
-	}
-	[[nodiscard]]
-	const MeshBundleTemporaryDetails& GetTemporaryBundleDetails() const noexcept override
-	{
-		return m_bundleDetails;
-	}
-	[[nodiscard]]
-	MeshBundleTemporaryDetails&& GetTemporaryBundleDetails() noexcept override
-	{
-		return std::move(m_bundleDetails);
-	}
-
-	// Mesh only
-	[[nodiscard]]
-	const std::vector<std::uint32_t>& GetPrimIndices() const noexcept override
-	{
-		return m_primIndices;
-	}
-	[[nodiscard]]
-	const std::vector<MeshletDetails>& GetMeshletDetails() const noexcept override
-	{
-		return m_meshletDetails;
 	}
 };
 
@@ -359,14 +323,16 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 	{
-		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshVS = Constants::meshBundleData;
+
 		std::uint32_t index = vsIndividualMesh.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshVS = Constants::meshBundleData;
+
 		std::uint32_t index = vsIndividualMesh.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -374,7 +340,8 @@ TEST_F(ModelManagerTest, ModelManagerVSIndividualTest)
 	}
 	vsIndividualMesh.RemoveMeshBundle(0u);
 	{
-		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshVS = Constants::meshBundleData;
+
 		std::uint32_t index = vsIndividualMesh.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -533,14 +500,16 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	};
 
 	{
-		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshVS = Constants::meshBundleData;
+
 		std::uint32_t index = vsIndirectMesh.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshVS = Constants::meshBundleData;
+
 		std::uint32_t index = vsIndirectMesh.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -548,7 +517,8 @@ TEST_F(ModelManagerTest, ModelManagerVSIndirectTest)
 	}
 	vsIndirectMesh.RemoveMeshBundle(0u);
 	{
-		auto meshVS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshVS = Constants::meshBundleData;
+
 		std::uint32_t index = vsIndirectMesh.AddMeshBundle(
 			std::move(meshVS), stagingBufferManager, tempDataBuffer
 		);
@@ -761,14 +731,16 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	ModelBuffers modelBuffers{ logicalDevice, &memoryManager, Constants::frameCount, {} };
 
 	{
-		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshMS = Constants::meshBundleData;
+
 		std::uint32_t index = managerMSMesh.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshMS = Constants::meshBundleData;
+
 		std::uint32_t index = managerMSMesh.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
@@ -776,14 +748,16 @@ TEST_F(ModelManagerTest, ModelManagerMS)
 	}
 	managerMSMesh.RemoveMeshBundle(0u);
 	{
-		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshMS = Constants::meshBundleData;
+
 		std::uint32_t index = managerMSMesh.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);
 		EXPECT_EQ(index, 0u) << "Index isn't 0u";
 	}
 	{
-		auto meshMS = std::make_unique<MeshBundleTemporaryDummy>();
+		MeshBundleTemporaryData meshMS = Constants::meshBundleData;
+
 		std::uint32_t index = managerMSMesh.AddMeshBundle(
 			std::move(meshMS), stagingBufferManager, tempDataBuffer
 		);

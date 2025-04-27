@@ -113,7 +113,7 @@ std::uint32_t RenderEngineMS::AddModelBundle(std::shared_ptr<ModelBundle>&& mode
 	return index;
 }
 
-std::uint32_t RenderEngineMS::AddMeshBundle(std::unique_ptr<MeshBundleTemporary> meshBundle)
+std::uint32_t RenderEngineMS::AddMeshBundle(MeshBundleTemporaryData&& meshBundle)
 {
 	const std::uint32_t index = m_meshManager.AddMeshBundle(
 		std::move(meshBundle), m_stagingManager, m_temporaryDataBuffer

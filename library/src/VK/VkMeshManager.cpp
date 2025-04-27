@@ -27,7 +27,7 @@ void MeshManagerVSIndividual::CopyOldBuffers(const VKCommandBuffer& transferCmdB
 }
 
 void MeshManagerVSIndividual::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 	VkMeshBundleVS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	vkMeshBundle.SetMeshBundle(
@@ -81,7 +81,7 @@ void MeshManagerVSIndirect::CopyOldBuffers(const VKCommandBuffer& transferBuffer
 }
 
 void MeshManagerVSIndirect::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 	VkMeshBundleVS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	vkMeshBundle.SetMeshBundle(
@@ -160,7 +160,7 @@ MeshManagerMS::MeshManagerMS(
 {}
 
 void MeshManagerMS::ConfigureMeshBundle(
-	std::unique_ptr<MeshBundleTemporary> meshBundle, StagingBufferManager& stagingBufferMan,
+	MeshBundleTemporaryData&& meshBundle, StagingBufferManager& stagingBufferMan,
 	VkMeshBundleMS& vkMeshBundle, Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
 	vkMeshBundle.SetMeshBundle(
