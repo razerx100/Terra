@@ -85,7 +85,7 @@ void VkMeshBundleMS::SetMeshBundle(
 	SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
 	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
-	constexpr auto perMeshStride = sizeof(AxisAlignedBoundingBox);
+	constexpr size_t perMeshStride = sizeof(AxisAlignedBoundingBox);
 
 	const std::vector<MeshTemporaryDetailsMS>& meshDetailsMS
 		= meshBundle.bundleDetails.meshTemporaryDetailsMS;
@@ -114,7 +114,7 @@ void VkMeshBundleMS::SetMeshBundle(
 	// Mesh Bundle Data
 	constexpr size_t perMeshBundleDataSize = sizeof(PerMeshBundleData);
 
-	auto perBundleData        = std::make_shared<std::uint8_t[]>(perMeshBundleDataSize);
+	auto perBundleData = std::make_shared<std::uint8_t[]>(perMeshBundleDataSize);
 
 	m_perMeshBundleSharedData = perMeshBundleSharedBuffer.AllocateAndGetSharedData(
 		perMeshBundleDataSize, tempBuffer

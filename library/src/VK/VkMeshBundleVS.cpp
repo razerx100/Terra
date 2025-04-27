@@ -17,14 +17,18 @@ void VkMeshBundleVS::_setMeshBundle(
 	// Vertex Buffer
 	{
 		const std::vector<Vertex>& vertices = meshBundle.vertices;
-		const auto vertexBufferSize
-			= static_cast<VkDeviceSize>(sizeof(Vertex) * std::size(vertices));
+
+		const auto vertexBufferSize = static_cast<VkDeviceSize>(
+			sizeof(Vertex) * std::size(vertices)
+		);
 
 		m_vertexBufferSharedData = vertexSharedBuffer.AllocateAndGetSharedData(
 			vertexBufferSize, tempBuffer
 		);
 
-		std::shared_ptr<std::uint8_t[]> vertexBufferData = Callisto::CopyVectorToSharedPtr(vertices);
+		std::shared_ptr<std::uint8_t[]> vertexBufferData = Callisto::CopyVectorToSharedPtr(
+			vertices
+		);
 
 		stagingBufferMan.AddBuffer(
 			std::move(vertexBufferData), vertexBufferSize,
@@ -36,9 +40,14 @@ void VkMeshBundleVS::_setMeshBundle(
 	// Index Buffer
 	{
 		const std::vector<std::uint32_t>& indices = meshBundle.indices;
-		const auto indexBufferSize                = sizeof(std::uint32_t) * std::size(indices);
 
-		m_indexBufferSharedData = indexSharedBuffer.AllocateAndGetSharedData(indexBufferSize, tempBuffer);
+		const auto indexBufferSize = static_cast<VkDeviceSize>(
+			sizeof(std::uint32_t) * std::size(indices)
+		);
+
+		m_indexBufferSharedData = indexSharedBuffer.AllocateAndGetSharedData(
+			indexBufferSize, tempBuffer
+		);
 
 		std::shared_ptr<std::uint8_t[]> indexBufferData = Callisto::CopyVectorToSharedPtr(indices);
 
@@ -68,7 +77,7 @@ void VkMeshBundleVS::SetMeshBundle(
 	SharedBufferGPU& perMeshSharedBuffer, SharedBufferGPU& perMeshBundleSharedBuffer,
 	Callisto::TemporaryDataBufferGPU& tempBuffer
 ) {
-	constexpr auto perMeshStride = sizeof(AxisAlignedBoundingBox);
+	constexpr size_t perMeshStride = sizeof(AxisAlignedBoundingBox);
 
 	const std::vector<MeshTemporaryDetailsVS>& meshDetailsVS
 		= meshBundle.bundleDetails.meshTemporaryDetailsVS;
@@ -76,11 +85,11 @@ void VkMeshBundleVS::SetMeshBundle(
 	const size_t meshCount       = std::size(meshDetailsVS);
 	const auto perMeshBufferSize = static_cast<VkDeviceSize>(perMeshStride * meshCount);
 
-	m_perMeshSharedData          = perMeshSharedBuffer.AllocateAndGetSharedData(
+	m_perMeshSharedData = perMeshSharedBuffer.AllocateAndGetSharedData(
 		perMeshBufferSize, tempBuffer
 	);
 
-	auto perMeshBufferData       = std::make_shared<std::uint8_t[]>(perMeshBufferSize);
+	auto perMeshBufferData = std::make_shared<std::uint8_t[]>(perMeshBufferSize);
 
 	{
 		size_t perMeshOffset             = 0u;
@@ -97,7 +106,7 @@ void VkMeshBundleVS::SetMeshBundle(
 	// Mesh Bundle Data
 	constexpr size_t perMeshBundleDataSize = sizeof(PerMeshBundleData);
 
-	auto perBundleData        = std::make_shared<std::uint8_t[]>(perMeshBundleDataSize);
+	auto perBundleData  = std::make_shared<std::uint8_t[]>(perMeshBundleDataSize);
 
 	m_perMeshBundleSharedData = perMeshBundleSharedBuffer.AllocateAndGetSharedData(
 		perMeshBundleDataSize, tempBuffer
