@@ -1,7 +1,7 @@
 #ifndef VK_EXTERNAL_RESOURCE_MANAGER_HPP_
 #define VK_EXTERNAL_RESOURCE_MANAGER_HPP_
 #include <vector>
-#include <ExternalResourceManager.hpp>
+#include <GraphicsTechniqueExtension.hpp>
 #include <VkExternalResourceFactory.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <VkStagingBufferManager.hpp>
@@ -10,7 +10,7 @@
 
 namespace Terra
 {
-class VkExternalResourceManager : public ExternalResourceManager
+class VkExternalResourceManager
 {
 	using GfxExtension_t = std::shared_ptr<GraphicsTechniqueExtension>;
 
@@ -20,9 +20,9 @@ public:
 	[[nodiscard]]
 	std::uint32_t AddGraphicsTechniqueExtension(
 		std::shared_ptr<GraphicsTechniqueExtension> extension
-	) override;
+	);
 
-	void RemoveGraphicsTechniqueExtension(std::uint32_t index) noexcept override;
+	void RemoveGraphicsTechniqueExtension(std::uint32_t index) noexcept;
 
 	void UpdateDescriptor(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers,
@@ -48,23 +48,7 @@ public:
 	void SetGraphicsDescriptorLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
 	[[nodiscard]]
-	ExternalResourceFactory* GetResourceFactory() noexcept override
-	{
-		return GetVkResourceFactory();
-	}
-	[[nodiscard]]
-	ExternalResourceFactory const* GetResourceFactory() const noexcept override
-	{
-		return GetVkResourceFactory();
-	}
-
-	[[nodiscard]]
-	VkExternalResourceFactory* GetVkResourceFactory() noexcept
-	{
-		return m_resourceFactory.get();
-	}
-	[[nodiscard]]
-	VkExternalResourceFactory const* GetVkResourceFactory() const noexcept
+	VkExternalResourceFactory* GetResourceFactory() const noexcept
 	{
 		return m_resourceFactory.get();
 	}

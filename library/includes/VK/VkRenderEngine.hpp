@@ -196,7 +196,7 @@ private:
 public:
 	// External stuff
 	[[nodiscard]]
-	ExternalResourceManager* GetExternalResourceManager() const noexcept
+	VkExternalResourceManager* GetExternalResourceManager() const noexcept
 	{
 		return m_externalResourceManager.get();
 	}

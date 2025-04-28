@@ -162,7 +162,7 @@ public:
 public:
 	// External stuff
 	[[nodiscard]]
-	ExternalResourceManager* GetExternalResourceManager() noexcept
+	VkExternalResourceManager* GetExternalResourceManager() const noexcept
 	{
 		return m_terra.GetRenderEngine().GetExternalResourceManager();
 	}

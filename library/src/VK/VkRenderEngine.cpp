@@ -130,7 +130,7 @@ void RenderEngine::RebindExternalTexture(size_t textureIndex, std::uint32_t bind
 void RenderEngine::RebindExternalTexture(
 	size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex
 ) {
-	VkExternalResourceFactory* resourceFactory = m_externalResourceManager->GetVkResourceFactory();
+	VkExternalResourceFactory* resourceFactory = m_externalResourceManager->GetResourceFactory();
 
 	VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
 
