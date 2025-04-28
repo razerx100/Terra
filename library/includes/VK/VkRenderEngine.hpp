@@ -104,7 +104,7 @@ public:
 		VkExternalResourceFactory& resourceFactory
 			= self.m_externalResourceManager.GetResourceFactory();
 
-		VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
+		VkTextureView const* textureView = &resourceFactory.GetVkTextureView(textureIndex);
 
 		VKSampler const* sampler = self.m_textureStorage.GetSamplerPtr(samplerIndex);
 
@@ -440,7 +440,7 @@ public:
 	{
 		m_swapchainRenderPass = std::make_shared<ExternalRenderPass_t>(
 			// This must be changed urgently
-			m_modelManager.get(), m_externalResourceManager.GetResourceFactory()
+			m_modelManager.get(), &m_externalResourceManager.GetResourceFactory()
 		);
 	}
 

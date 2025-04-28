@@ -6,11 +6,19 @@
 #include <VkRenderEngineVS.hpp>
 #include <VkRenderEngineMS.hpp>
 
+#ifdef TERRA_WIN32
+#include <SimpleWindow.hpp>
+#endif
+
+#include <RendererVK.hpp>
+
 using namespace Terra;
 
 namespace Constants
 {
 	constexpr const char* appName      = "TerraTest";
+	constexpr std::uint32_t width      = 1920;
+	constexpr std::uint32_t height     = 1080u;
 	constexpr std::uint32_t frameCount = 2u;
 	constexpr CoreVersion coreVersion  = CoreVersion::V1_3;
 }
@@ -101,4 +109,17 @@ TEST_F(RenderEngineTest, RenderEngineMSTest)
 	auto threadPool = std::make_shared<ThreadPool>(2u);
 
 	RenderEngineMS renderEngine{ deviceManager, threadPool, Constants::frameCount };
+}
+
+TEST(RendererVKTest, RendererTest)
+{
+#ifdef TERRA_WIN32
+	SimpleWindow window{ Constants::width, Constants::height, Constants::appName };
+
+	RendererVK<SurfaceManagerWin32, DisplayManagerWin32, RenderEngineMS> renderer{
+		Constants::appName, window.GetWindowHandle(), window.GetModuleInstance(),
+		Constants::width, Constants::height, Constants::frameCount,
+		std::make_shared<ThreadPool>(8u)
+	};
+#endif
 }
