@@ -196,9 +196,9 @@ private:
 public:
 	// External stuff
 	[[nodiscard]]
-	VkExternalResourceManager* GetExternalResourceManager() const noexcept
+	auto&& GetExternalResourceManager(this auto&& self) noexcept
 	{
-		return m_externalResourceManager.get();
+		return std::forward_like<decltype(self)>(self.m_externalResourceManager);
 	}
 
 	void UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails);
@@ -237,24 +237,24 @@ protected:
 	static constexpr std::uint32_t s_samplerBindingSlot         = 3u;
 
 protected:
-	std::shared_ptr<ThreadPool>                m_threadPool;
+	std::shared_ptr<ThreadPool>      m_threadPool;
 	// The pointer to this is shared in different places. So, if I make it a automatic
 	// member, the kept pointers would be invalid after a move.
-	std::unique_ptr<MemoryManager>             m_memoryManager;
-	VkGraphicsQueue                            m_graphicsQueue;
-	std::vector<VKSemaphore>                   m_graphicsWait;
-	VkCommandQueue                             m_transferQueue;
-	std::vector<VKSemaphore>                   m_transferWait;
-	StagingBufferManager                       m_stagingManager;
-	std::unique_ptr<VkExternalResourceManager> m_externalResourceManager;
-	std::vector<VkDescriptorBuffer>            m_graphicsDescriptorBuffers;
-	PipelineLayout                             m_graphicsPipelineLayout;
-	TextureStorage                             m_textureStorage;
-	TextureManager                             m_textureManager;
-	CameraManager                              m_cameraManager;
-	ViewportAndScissorManager                  m_viewportAndScissors;
-	Callisto::TemporaryDataBufferGPU           m_temporaryDataBuffer;
-	bool                                       m_copyNecessary;
+	std::unique_ptr<MemoryManager>   m_memoryManager;
+	VkGraphicsQueue                  m_graphicsQueue;
+	std::vector<VKSemaphore>         m_graphicsWait;
+	VkCommandQueue                   m_transferQueue;
+	std::vector<VKSemaphore>         m_transferWait;
+	StagingBufferManager             m_stagingManager;
+	VkExternalResourceManager        m_externalResourceManager;
+	std::vector<VkDescriptorBuffer>  m_graphicsDescriptorBuffers;
+	PipelineLayout                   m_graphicsPipelineLayout;
+	TextureStorage                   m_textureStorage;
+	TextureManager                   m_textureManager;
+	CameraManager                    m_cameraManager;
+	ViewportAndScissorManager        m_viewportAndScissors;
+	Callisto::TemporaryDataBufferGPU m_temporaryDataBuffer;
+	bool                             m_copyNecessary;
 
 public:
 	RenderEngine(const RenderEngine&) = delete;

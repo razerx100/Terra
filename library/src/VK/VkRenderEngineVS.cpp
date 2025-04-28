@@ -17,7 +17,7 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 
 void RenderEngineVSIndividual::FinaliseInitialisation()
 {
-	m_externalResourceManager->SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
 
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 		descriptorBuffer.CreateBuffer();
@@ -129,7 +129,7 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_externalResourceManager->CopyQueuedBuffers(transferCmdBufferScope);
+			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 
@@ -318,7 +318,7 @@ void RenderEngineVSIndirect::CreateComputePipelineLayout()
 
 void RenderEngineVSIndirect::FinaliseInitialisation()
 {
-	m_externalResourceManager->SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
+	m_externalResourceManager.SetGraphicsDescriptorLayout(m_graphicsDescriptorBuffers);
 
 	// Graphics
 	for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
@@ -561,7 +561,7 @@ VkSemaphore RenderEngineVSIndirect::GenericTransferStage(
 
 			// Need to copy the old buffers first to avoid empty data being copied over
 			// the queued data.
-			m_externalResourceManager->CopyQueuedBuffers(transferCmdBufferScope);
+			m_externalResourceManager.CopyQueuedBuffers(transferCmdBufferScope);
 			m_meshManager.CopyOldBuffers(transferCmdBufferScope);
 			m_stagingManager.CopyAndClearQueuedBuffers(transferCmdBufferScope);
 

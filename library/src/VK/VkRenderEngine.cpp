@@ -36,9 +36,7 @@ RenderEngine::RenderEngine(
 		queueFamilyManager->GetIndex(QueueType::TransferQueue)
 	}, m_transferWait{},
 	m_stagingManager{ logicalDevice, m_memoryManager.get(), m_threadPool.get(), queueFamilyManager},
-	m_externalResourceManager{
-		std::make_unique<VkExternalResourceManager>(logicalDevice, m_memoryManager.get())
-	},
+	m_externalResourceManager{ logicalDevice, m_memoryManager.get() },
 	m_graphicsDescriptorBuffers{},
 	m_graphicsPipelineLayout{ logicalDevice },
 	m_textureStorage{ logicalDevice, m_memoryManager.get() },
@@ -130,9 +128,10 @@ void RenderEngine::RebindExternalTexture(size_t textureIndex, std::uint32_t bind
 void RenderEngine::RebindExternalTexture(
 	size_t textureIndex, size_t samplerIndex, std::uint32_t bindingIndex
 ) {
-	VkExternalResourceFactory* resourceFactory = m_externalResourceManager->GetResourceFactory();
+	const VkExternalResourceFactory& resourceFactory
+		= m_externalResourceManager.GetResourceFactory();
 
-	VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
+	VkTextureView const* textureView = &resourceFactory.GetVkTextureView(textureIndex);
 
 	VKSampler const* sampler         = m_textureStorage.GetSamplerPtr(samplerIndex);
 
@@ -169,14 +168,14 @@ std::vector<std::uint32_t> RenderEngine::AddModelsToBuffer(
 
 void RenderEngine::UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails)
 {
-	m_externalResourceManager->UpdateDescriptor(m_graphicsDescriptorBuffers, bindingDetails);
+	m_externalResourceManager.UpdateDescriptor(m_graphicsDescriptorBuffers, bindingDetails);
 }
 
 void RenderEngine::UploadExternalBufferGPUOnlyData(
 	std::uint32_t externalBufferIndex, std::shared_ptr<void> cpuData, size_t srcDataSizeInBytes,
 	size_t dstBufferOffset
 ) {
-	m_externalResourceManager->UploadExternalBufferGPUOnlyData(
+	m_externalResourceManager.UploadExternalBufferGPUOnlyData(
 		m_stagingManager, m_temporaryDataBuffer,
 		externalBufferIndex, std::move(cpuData), srcDataSizeInBytes, dstBufferOffset
 	);
@@ -186,7 +185,7 @@ void RenderEngine::QueueExternalBufferGPUCopy(
 	std::uint32_t externalBufferSrcIndex, std::uint32_t externalBufferDstIndex,
 	size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes
 ) {
-	m_externalResourceManager->QueueExternalBufferGPUCopy(
+	m_externalResourceManager.QueueExternalBufferGPUCopy(
 		externalBufferSrcIndex, externalBufferDstIndex, dstBufferOffset, srcBufferOffset,
 		srcDataSizeInBytes, m_temporaryDataBuffer
 	);

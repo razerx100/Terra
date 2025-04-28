@@ -48,9 +48,9 @@ public:
 	void SetGraphicsDescriptorLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
 	[[nodiscard]]
-	VkExternalResourceFactory* GetResourceFactory() const noexcept
+	auto&& GetResourceFactory(this auto&& self) noexcept
 	{
-		return m_resourceFactory.get();
+		return std::forward_like<decltype(self)>(self.m_resourceFactory);
 	}
 
 private:
@@ -71,9 +71,9 @@ private:
 	) const;
 
 private:
-	std::unique_ptr<VkExternalResourceFactory> m_resourceFactory;
-	Callisto::ReusableVector<GfxExtension_t>   m_gfxExtensions;
-	std::vector<GPUCopyDetails>                m_copyQueueDetails;
+	VkExternalResourceFactory                m_resourceFactory;
+	Callisto::ReusableVector<GfxExtension_t> m_gfxExtensions;
+	std::vector<GPUCopyDetails>              m_copyQueueDetails;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
 

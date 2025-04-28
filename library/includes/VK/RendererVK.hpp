@@ -162,9 +162,11 @@ public:
 public:
 	// External stuff
 	[[nodiscard]]
-	VkExternalResourceManager* GetExternalResourceManager() const noexcept
+	auto&& GetExternalResourceManager(this auto&& self) noexcept
 	{
-		return m_terra.GetRenderEngine().GetExternalResourceManager();
+		return std::forward_like<decltype(self)>(
+			self.m_terra.GetRenderEngine().GetExternalResourceManager()
+		);
 	}
 
 	void UpdateExternalBufferDescriptor(
