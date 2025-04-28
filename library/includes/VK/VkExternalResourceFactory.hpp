@@ -35,7 +35,7 @@ public:
 		return m_externalTextures[index].get();
 	}
 	[[nodiscard]]
-	VkExternalTexture* GetVkExternalTexture(size_t index) noexcept
+	VkExternalTexture* GetVkExternalTexture(size_t index) const noexcept
 	{
 		return m_externalTextures[index].get();
 	}
