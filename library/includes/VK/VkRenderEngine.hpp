@@ -101,8 +101,8 @@ public:
 	std::uint32_t BindExternalTexture(
 		this Derived& self, size_t textureIndex, size_t samplerIndex
 	) {
-		VkExternalResourceFactory* resourceFactory
-			= self.m_externalResourceManager->GetVkResourceFactory();
+		VkExternalResourceFactory& resourceFactory
+			= self.m_externalResourceManager.GetResourceFactory();
 
 		VkTextureView const* textureView = &resourceFactory->GetVkTextureView(textureIndex);
 
@@ -411,7 +411,8 @@ public:
 		return static_cast<std::uint32_t>(
 			m_renderPasses.Add(
 				std::make_shared<ExternalRenderPass_t>(
-					m_modelManager.get(), m_externalResourceManager->GetVkResourceFactory()
+					// This must be changed urgently
+					m_modelManager.get(), &m_externalResourceManager.GetResourceFactory()
 				)
 			)
 		);
@@ -438,7 +439,8 @@ public:
 	void SetSwapchainExternalRenderPass()
 	{
 		m_swapchainRenderPass = std::make_shared<ExternalRenderPass_t>(
-			m_modelManager.get(), m_externalResourceManager->GetVkResourceFactory()
+			// This must be changed urgently
+			m_modelManager.get(), m_externalResourceManager.GetResourceFactory()
 		);
 	}
 
@@ -477,7 +479,7 @@ protected:
 
 		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
 
-		m_externalResourceManager->UpdateExtensionData(static_cast<size_t>(frameIndex));
+		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
 	}
 
 	void CreateGraphicsPipelineLayout()
