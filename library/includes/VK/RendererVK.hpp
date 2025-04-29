@@ -194,6 +194,14 @@ public:
 		);
 	}
 
+	void AddLocalPipelinesInExternalRenderPass(
+		std::uint32_t modelBundleIndex, size_t renderPassIndex
+	) {
+		m_terra.GetRenderEngine().AddLocalPipelinesInExternalRenderPass(
+			modelBundleIndex, renderPassIndex
+		);
+	}
+
 	[[nodiscard]]
 	std::uint32_t AddExternalRenderPass()
 	{
@@ -201,13 +209,7 @@ public:
 	}
 
 	[[nodiscard]]
-	ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept
-	{
-		return m_terra.GetRenderEngine().GetExternalRenderPassRP(index);
-	}
-
-	[[nodiscard]]
-	std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(
+	std::shared_ptr<VkExternalRenderPass> GetExternalRenderPassSP(
 		size_t index
 	) const noexcept {
 		return m_terra.GetRenderEngine().GetExternalRenderPassSP(index);
@@ -219,13 +221,7 @@ public:
 	}
 
 	[[nodiscard]]
-	ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept
-	{
-		return m_terra.GetRenderEngine().GetSwapchainExternalRenderPassRP();
-	}
-
-	[[nodiscard]]
-	std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept
+	std::shared_ptr<VkExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept
 	{
 		return m_terra.GetRenderEngine().GetSwapchainExternalRenderPassSP();
 	}

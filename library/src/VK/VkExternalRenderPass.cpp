@@ -21,9 +21,8 @@ static constexpr std::array s_externalTextureTransitionMap
 };
 
 // VK External Render Pass
-VkExternalRenderPass::VkExternalRenderPass(VkExternalResourceFactory* resourceFactory)
-	: m_resourceFactory{ resourceFactory }, m_renderPassManager{}, m_pipelineDetails{},
-	m_colourAttachmentDetails{},
+VkExternalRenderPass::VkExternalRenderPass()
+	: m_renderPassManager{}, m_pipelineDetails{}, m_colourAttachmentDetails{},
 	m_depthAttachmentDetails
 	{
 		.textureIndex = std::numeric_limits<std::uint32_t>::max(),
@@ -103,11 +102,11 @@ VkAttachmentLoadOp VkExternalRenderPass::GetVkLoadOp(ExternalAttachmentLoadOp lo
 	return vkLoadOp;
 }
 
-void VkExternalRenderPass::ResetAttachmentReferences()
+void VkExternalRenderPass::ResetAttachmentReferences(VkExternalResourceFactory& resourceFactory)
 {
 	if (m_depthAttachmentDetails.textureIndex != std::numeric_limits<std::uint32_t>::max())
 	{
-		VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(
+		VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
 			m_depthAttachmentDetails.textureIndex
 		);
 
@@ -123,7 +122,7 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 
 	if (m_stencilAttachmentDetails.textureIndex != std::numeric_limits<std::uint32_t>::max())
 	{
-		VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(
+		VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
 			m_stencilAttachmentDetails.textureIndex
 		);
 
@@ -143,12 +142,13 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 	{
 		const AttachmentDetails& colourAttachmentDetails = m_colourAttachmentDetails[index];
 
-		VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(
+		VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
 			colourAttachmentDetails.textureIndex
 		);
 
 		m_renderPassManager.SetColourView(
-			index, colourAttachmentDetails.barrierIndex, externalTexture->GetTextureView().GetView()
+			index, colourAttachmentDetails.barrierIndex,
+			externalTexture->GetTextureView().GetView()
 		);
 
 		if (m_firstUseFlags[index])
@@ -159,12 +159,15 @@ void VkExternalRenderPass::ResetAttachmentReferences()
 }
 
 std::uint32_t VkExternalRenderPass::AddStartBarrier(
-	std::uint32_t externalTextureIndex, ExternalTextureTransition transitionState
+	std::uint32_t externalTextureIndex, ExternalTextureTransition transitionState,
+	VkExternalResourceFactory& resourceFactory
 ) noexcept {
 	const TransitionData transitionData
 		= s_externalTextureTransitionMap[static_cast<size_t>(transitionState)];
 
-	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+	VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
+		externalTextureIndex
+	);
 
 	return m_renderPassManager.AddStartImageBarrier(
 		externalTexture->TransitionState(
@@ -174,15 +177,21 @@ std::uint32_t VkExternalRenderPass::AddStartBarrier(
 }
 
 void VkExternalRenderPass::UpdateStartBarrierResource(
-	std::uint32_t barrierIndex, std::uint32_t externalTextureIndex
+	std::uint32_t barrierIndex, std::uint32_t externalTextureIndex,
+	VkExternalResourceFactory& resourceFactory
 ) noexcept {
-	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+	VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
+		externalTextureIndex
+	);
 
-	m_renderPassManager.SetBarrierImageView(barrierIndex, externalTexture->GetTextureView().GetView());
+	m_renderPassManager.SetBarrierImageView(
+		barrierIndex, externalTexture->GetTextureView().GetView()
+	);
 }
 
 void VkExternalRenderPass::SetDepthTesting(
-	std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp, ExternalAttachmentStoreOp storeOp
+	std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp,
+	ExternalAttachmentStoreOp storeOp, VkExternalResourceFactory& resourceFactory
 ) {
 	VkAccessFlagBits newAccessFlag = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 
@@ -192,7 +201,9 @@ void VkExternalRenderPass::SetDepthTesting(
 	if (loadOp == ExternalAttachmentLoadOp::Clear || storeOp == ExternalAttachmentStoreOp::Store)
 		newAccessFlag = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+	VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
+		externalTextureIndex
+	);
 
 	m_depthAttachmentDetails.textureIndex = externalTextureIndex;
 
@@ -216,7 +227,8 @@ void VkExternalRenderPass::SetDepthTesting(
 	VkClearDepthStencilValue clearValue{ .depth = 1.f };
 
 	m_renderPassManager.SetDepthAttachment(
-		depthBarrierIndex, externalTexture->GetTextureView().GetView(), clearValue, vkLoadOp, vkStoreOp
+		depthBarrierIndex, externalTexture->GetTextureView().GetView(), clearValue, vkLoadOp,
+		vkStoreOp
 	);
 }
 
@@ -226,7 +238,8 @@ void VkExternalRenderPass::SetDepthClearColour(float clearColour)
 }
 
 void VkExternalRenderPass::SetStencilTesting(
-	std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp, ExternalAttachmentStoreOp storeOp
+	std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp,
+	ExternalAttachmentStoreOp storeOp, VkExternalResourceFactory& resourceFactory
 ) {
 	VkAccessFlagBits newAccessFlag = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 
@@ -236,7 +249,9 @@ void VkExternalRenderPass::SetStencilTesting(
 	if (loadOp == ExternalAttachmentLoadOp::Clear || storeOp == ExternalAttachmentStoreOp::Store)
 		newAccessFlag = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+	VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
+		externalTextureIndex
+	);
 
 	m_stencilAttachmentDetails.textureIndex = externalTextureIndex;
 
@@ -260,7 +275,8 @@ void VkExternalRenderPass::SetStencilTesting(
 	VkClearDepthStencilValue clearValue{ .stencil = 0u };
 
 	m_renderPassManager.SetStencilAttachment(
-		stencilBarrierIndex, externalTexture->GetTextureView().GetView(), clearValue, vkLoadOp, vkStoreOp
+		stencilBarrierIndex, externalTexture->GetTextureView().GetView(), clearValue, vkLoadOp,
+		vkStoreOp
 	);
 }
 
@@ -270,7 +286,8 @@ void VkExternalRenderPass::SetStencilClearColour(std::uint32_t clearColour)
 }
 
 std::uint32_t VkExternalRenderPass::AddRenderTarget(
-	std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp, ExternalAttachmentStoreOp storeOp
+	std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp,
+	ExternalAttachmentStoreOp storeOp, VkExternalResourceFactory& resourceFactory
 ) {
 	VkAccessFlagBits newAccessFlag = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 
@@ -280,7 +297,9 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 	if (loadOp == ExternalAttachmentLoadOp::Clear || storeOp == ExternalAttachmentStoreOp::Store)
 		newAccessFlag = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-	VkExternalTexture* externalTexture = m_resourceFactory->GetVkExternalTexture(externalTextureIndex);
+	VkExternalTexture* externalTexture = resourceFactory.GetVkExternalTexture(
+		externalTextureIndex
+	);
 
 	const size_t renderTargetIndex     = std::size(m_colourAttachmentDetails);
 
@@ -302,7 +321,9 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 	const auto u32RenderTargetIndex = static_cast<std::uint32_t>(renderTargetIndex);
 
 	m_colourAttachmentDetails.emplace_back(
-		AttachmentDetails{ .textureIndex = externalTextureIndex, .barrierIndex = colourBarrierIndex }
+		AttachmentDetails{
+			.textureIndex = externalTextureIndex, .barrierIndex = colourBarrierIndex
+		}
 	);
 
 	const VkClearColorValue clearValue{ .float32{ 0.f, 0.f, 0.f, 0.f }};
@@ -342,9 +363,10 @@ void VkExternalRenderPass::EndPass(const VKCommandBuffer& graphicsCmdBuffer) con
 }
 
 void VkExternalRenderPass::EndPassForSwapchain(
-	const VKCommandBuffer& graphicsCmdBuffer, const VKImageView& swapchainBackBuffer
+	const VKCommandBuffer& graphicsCmdBuffer, const VKImageView& swapchainBackBuffer,
+	VkExternalResourceFactory& resourceFactory
 ) const noexcept {
-	const VkTextureView& srcTextureView = m_resourceFactory->GetVkTextureView(
+	const VkTextureView& srcTextureView = resourceFactory.GetVkTextureView(
 		m_swapchainCopySource
 	);
 

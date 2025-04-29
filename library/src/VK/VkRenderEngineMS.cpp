@@ -14,8 +14,6 @@ RenderEngineMS::RenderEngineMS(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
-	m_modelManager = std::make_unique<ModelManagerMS>();
-
 	SetGraphicsDescriptorBufferLayout();
 
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
@@ -100,7 +98,7 @@ std::uint32_t RenderEngineMS::AddModelBundle(std::shared_ptr<ModelBundle>&& mode
 		*modelBundle, m_modelBuffers
 	);
 
-	const std::uint32_t index = m_modelManager->AddModelBundle(
+	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), modelBufferIndices
 	);
 
@@ -177,7 +175,7 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 }
 
 void RenderEngineMS::DrawRenderPassPipelines(
-	const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
+	const VKCommandBuffer& graphicsCmdBuffer, const VkExternalRenderPass& renderPass
 ) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
@@ -192,7 +190,7 @@ void RenderEngineMS::DrawRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager->DrawPipeline(
+			m_modelManager.DrawPipeline(
 				bundleIndices[index], pipelineLocalIndices[index],
 				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
 			);
@@ -231,7 +229,7 @@ VkSemaphore RenderEngineMS::DrawingStage(
 			if (!m_renderPasses.IsInUse(index))
 				continue;
 
-			const ExternalRenderPass_t& renderPass = *m_renderPasses[index];
+			const VkExternalRenderPass& renderPass = *m_renderPasses[index];
 
 			renderPass.StartPass(graphicsCmdBufferScope, renderArea);
 
@@ -243,13 +241,16 @@ VkSemaphore RenderEngineMS::DrawingStage(
 		// The one for the swapchain
 		if (m_swapchainRenderPass)
 		{
-			const ExternalRenderPass_t& renderPass = *m_swapchainRenderPass;
+			const VkExternalRenderPass& renderPass = *m_swapchainRenderPass;
 
 			renderPass.StartPass(graphicsCmdBufferScope, renderArea);
 
 			DrawRenderPassPipelines(graphicsCmdBufferScope, renderPass);
 
-			renderPass.EndPassForSwapchain(graphicsCmdBufferScope, renderTarget);
+			renderPass.EndPassForSwapchain(
+				graphicsCmdBufferScope, renderTarget,
+				m_externalResourceManager.GetResourceFactory()
+			);
 		}
 	}
 

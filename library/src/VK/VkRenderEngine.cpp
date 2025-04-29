@@ -42,7 +42,8 @@ RenderEngine::RenderEngine(
 	m_textureStorage{ logicalDevice, m_memoryManager.get() },
 	m_textureManager{ logicalDevice, m_memoryManager.get() },
 	m_cameraManager{ logicalDevice, m_memoryManager.get() },
-	m_viewportAndScissors{}, m_temporaryDataBuffer{}, m_copyNecessary{ false }
+	m_viewportAndScissors{}, m_temporaryDataBuffer{}, m_renderPasses{}, m_swapchainRenderPass{},
+	m_copyNecessary{ false }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
 

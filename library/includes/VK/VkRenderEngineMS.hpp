@@ -80,9 +80,18 @@ private:
 		return {};
 	}
 
+	[[nodiscard]]
+	static ModelManagerMS CreateModelManager(
+		[[maybe_unused]] const VkDeviceManager& deviceManager,
+		[[maybe_unused]] MemoryManager* memoryManager,
+		[[maybe_unused]] size_t frameCount
+	) {
+		return ModelManagerMS{};
+	}
+
 private:
 	void DrawRenderPassPipelines(
-		const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
+		const VKCommandBuffer& graphicsCmdBuffer, const VkExternalRenderPass& renderPass
 	) const noexcept;
 
 public:

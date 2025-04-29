@@ -36,6 +36,10 @@ class RenderEngine
 		size_t frameCount
 	);
 
+protected:
+	using ExternalRenderPassSP_t        = std::shared_ptr<VkExternalRenderPass>;
+	using ExternalRenderPassContainer_t = Callisto::ReusableVector<ExternalRenderPassSP_t>;
+
 public:
 	RenderEngine(
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
@@ -212,6 +216,65 @@ public:
 		size_t dstBufferOffset, size_t srcBufferOffset, size_t srcDataSizeInBytes
 	);
 
+	[[nodiscard]]
+	std::uint32_t AddExternalRenderPass()
+	{
+		return static_cast<std::uint32_t>(
+			m_renderPasses.Add(std::make_shared<VkExternalRenderPass>())
+		);
+	}
+
+	[[nodiscard]]
+	VkExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept
+	{
+		return m_renderPasses[index].get();
+	}
+
+	[[nodiscard]]
+	std::shared_ptr<VkExternalRenderPass> GetExternalRenderPassSP(size_t index) const noexcept
+	{
+		return m_renderPasses[index];
+	}
+
+	void RemoveExternalRenderPass(size_t index) noexcept
+	{
+		m_renderPasses[index].reset();
+		m_renderPasses.RemoveElement(index);
+	}
+
+	void SetSwapchainExternalRenderPass()
+	{
+		m_swapchainRenderPass = std::make_shared<VkExternalRenderPass>();
+	}
+
+	[[nodiscard]]
+	VkExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept
+	{
+		return m_swapchainRenderPass.get();
+	}
+
+	[[nodiscard]]
+	std::shared_ptr<VkExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept
+	{
+		return m_swapchainRenderPass;
+	}
+
+	void RemoveSwapchainExternalRenderPass() noexcept
+	{
+		m_swapchainRenderPass.reset();
+	}
+
+	[[nodiscard]]
+	size_t GetActiveRenderPassCount() const noexcept
+	{
+		size_t activeRenderPassCount = m_renderPasses.GetIndicesManager().GetActiveIndexCount();
+
+		if (m_swapchainRenderPass)
+			++activeRenderPassCount;
+
+		return activeRenderPassCount;
+	}
+
 protected:
 	[[nodiscard]]
 	static std::vector<std::uint32_t> AddModelsToBuffer(
@@ -254,6 +317,8 @@ protected:
 	CameraManager                    m_cameraManager;
 	ViewportAndScissorManager        m_viewportAndScissors;
 	Callisto::TemporaryDataBufferGPU m_temporaryDataBuffer;
+	ExternalRenderPassContainer_t    m_renderPasses;
+	ExternalRenderPassSP_t           m_swapchainRenderPass;
 	bool                             m_copyNecessary;
 
 public:
@@ -276,6 +341,8 @@ public:
 		m_cameraManager{ std::move(other.m_cameraManager) },
 		m_viewportAndScissors{ other.m_viewportAndScissors },
 		m_temporaryDataBuffer{ std::move(other.m_temporaryDataBuffer) },
+		m_renderPasses{ std::move(other.m_renderPasses) },
+		m_swapchainRenderPass{ std::move(other.m_swapchainRenderPass) },
 		m_copyNecessary{ other.m_copyNecessary }
 	{}
 	RenderEngine& operator=(RenderEngine&& other) noexcept
@@ -295,6 +362,8 @@ public:
 		m_cameraManager             = std::move(other.m_cameraManager);
 		m_viewportAndScissors       = other.m_viewportAndScissors;
 		m_temporaryDataBuffer       = std::move(other.m_temporaryDataBuffer);
+		m_renderPasses              = std::move(other.m_renderPasses);
+		m_swapchainRenderPass       = std::move(other.m_swapchainRenderPass);
 		m_copyNecessary             = other.m_copyNecessary;
 
 		return *this;
@@ -311,16 +380,14 @@ class RenderEngineCommon : public RenderEngine
 {
 	friend class RenderEngine;
 
-protected:
-	using ExternalRenderPass_t   = VkExternalRenderPassCommon<ModelManager_t>;
-	using ExternalRenderPassSP_t = std::shared_ptr<ExternalRenderPass_t>;
-
 public:
 	RenderEngineCommon(
 		const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool,
 		size_t frameCount
 	) : RenderEngine{ deviceManager, std::move(threadPool), frameCount },
-		m_modelManager{},
+		m_modelManager{
+			Derived::CreateModelManager(deviceManager, m_memoryManager.get(), frameCount)
+		},
 		m_modelBuffers{
 			CreateModelBuffers(deviceManager, m_memoryManager.get(), frameCount)
 		},
@@ -328,8 +395,7 @@ public:
 			deviceManager.GetLogicalDevice(), m_memoryManager.get(),
 			deviceManager.GetQueueFamilyManager().GetAllIndices()
 		},
-		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() },
-		m_renderPasses{}, m_swapchainRenderPass{}
+		m_graphicsPipelineManager{ deviceManager.GetLogicalDevice() }
 	{
 		for (VkDescriptorBuffer& descriptorBuffer : m_graphicsDescriptorBuffers)
 			m_textureManager.SetDescriptorBufferLayout(
@@ -348,7 +414,7 @@ public:
 		std::uint32_t modelBundleIndex, std::uint32_t decreasedModelsPipelineIndex,
 		std::uint32_t increasedModelsPipelineIndex
 	) {
-		m_modelManager->ReconfigureModels(
+		m_modelManager.ReconfigureModels(
 			modelBundleIndex, decreasedModelsPipelineIndex, increasedModelsPipelineIndex
 		);
 	}
@@ -365,7 +431,7 @@ public:
 
 	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 	{
-		std::shared_ptr<ModelBundle> modelBundle = m_modelManager->RemoveModelBundle(bundleIndex);
+		std::shared_ptr<ModelBundle> modelBundle = m_modelManager.RemoveModelBundle(bundleIndex);
 
 		const auto& models = modelBundle->GetModels();
 
@@ -405,71 +471,12 @@ public:
 		return waitSemaphore;
 	}
 
-	[[nodiscard]]
-	std::uint32_t AddExternalRenderPass()
-	{
-		return static_cast<std::uint32_t>(
-			m_renderPasses.Add(
-				std::make_shared<ExternalRenderPass_t>(
-					// This must be changed urgently
-					m_modelManager.get(), &m_externalResourceManager.GetResourceFactory()
-				)
-			)
+	void AddLocalPipelinesInExternalRenderPass(
+		std::uint32_t modelBundleIndex, size_t renderPassIndex
+	) {
+		m_renderPasses[renderPassIndex]->AddLocalPipelinesOfModelBundle(
+			modelBundleIndex, m_modelManager
 		);
-	}
-
-	[[nodiscard]]
-	ExternalRenderPass* GetExternalRenderPassRP(size_t index) const noexcept
-	{
-		return m_renderPasses[index].get();
-	}
-
-	[[nodiscard]]
-	std::shared_ptr<ExternalRenderPass> GetExternalRenderPassSP(size_t index) const noexcept
-	{
-		return m_renderPasses[index];
-	}
-
-	void RemoveExternalRenderPass(size_t index) noexcept
-	{
-		m_renderPasses[index].reset();
-		m_renderPasses.RemoveElement(index);
-	}
-
-	void SetSwapchainExternalRenderPass()
-	{
-		m_swapchainRenderPass = std::make_shared<ExternalRenderPass_t>(
-			// This must be changed urgently
-			m_modelManager.get(), &m_externalResourceManager.GetResourceFactory()
-		);
-	}
-
-	[[nodiscard]]
-	ExternalRenderPass* GetSwapchainExternalRenderPassRP() const noexcept
-	{
-		return m_swapchainRenderPass.get();
-	}
-
-	[[nodiscard]]
-	std::shared_ptr<ExternalRenderPass> GetSwapchainExternalRenderPassSP() const noexcept
-	{
-		return m_swapchainRenderPass;
-	}
-
-	void RemoveSwapchainExternalRenderPass() noexcept
-	{
-		m_swapchainRenderPass.reset();
-	}
-
-	[[nodiscard]]
-	size_t GetActiveRenderPassCount() const noexcept
-	{
-		size_t activeRenderPassCount = m_renderPasses.GetIndicesManager().GetActiveIndexCount();
-
-		if (m_swapchainRenderPass)
-			++activeRenderPassCount;
-
-		return activeRenderPassCount;
 	}
 
 protected:
@@ -524,12 +531,10 @@ private:
 	}
 
 protected:
-	std::unique_ptr<ModelManager_t>                  m_modelManager;
-	ModelBuffers                                     m_modelBuffers;
-	MeshManager_t                                    m_meshManager;
-	PipelineManager<GraphicsPipeline_t>              m_graphicsPipelineManager;
-	Callisto::ReusableVector<ExternalRenderPassSP_t> m_renderPasses;
-	ExternalRenderPassSP_t                           m_swapchainRenderPass;
+	ModelManager_t                      m_modelManager;
+	ModelBuffers                        m_modelBuffers;
+	MeshManager_t                       m_meshManager;
+	PipelineManager<GraphicsPipeline_t> m_graphicsPipelineManager;
 
 public:
 	RenderEngineCommon(const RenderEngineCommon&) = delete;
@@ -540,9 +545,7 @@ public:
 		m_modelManager{ std::move(other.m_modelManager) },
 		m_modelBuffers{ std::move(other.m_modelBuffers) },
 		m_meshManager{ std::move(other.m_meshManager) },
-		m_graphicsPipelineManager{ std::move(other.m_graphicsPipelineManager) },
-		m_renderPasses{ std::move(other.m_renderPasses) },
-		m_swapchainRenderPass{ std::move(other.m_swapchainRenderPass) }
+		m_graphicsPipelineManager{ std::move(other.m_graphicsPipelineManager) }
 	{}
 	RenderEngineCommon& operator=(RenderEngineCommon&& other) noexcept
 	{
@@ -551,8 +554,6 @@ public:
 		m_modelBuffers            = std::move(other.m_modelBuffers);
 		m_meshManager             = std::move(other.m_meshManager);
 		m_graphicsPipelineManager = std::move(other.m_graphicsPipelineManager);
-		m_renderPasses            = std::move(other.m_renderPasses);
-		m_swapchainRenderPass     = std::move(other.m_swapchainRenderPass);
 
 		return *this;
 	}

@@ -8,8 +8,6 @@ RenderEngineVSIndividual::RenderEngineVSIndividual(
 	const VkDeviceManager& deviceManager, std::shared_ptr<ThreadPool> threadPool, size_t frameCount
 ) : RenderEngineCommon{ deviceManager, std::move(threadPool), frameCount }
 {
-	m_modelManager = std::make_unique<ModelManagerVSIndividual>();
-
 	SetGraphicsDescriptorBufferLayout();
 
 	m_cameraManager.CreateBuffer({}, static_cast<std::uint32_t>(frameCount));
@@ -90,7 +88,7 @@ std::uint32_t RenderEngineVSIndividual::AddModelBundle(std::shared_ptr<ModelBund
 		*modelBundle, m_modelBuffers
 	);
 
-	const std::uint32_t index = m_modelManager->AddModelBundle(
+	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), modelBufferIndices
 	);
 
@@ -162,7 +160,7 @@ VkSemaphore RenderEngineVSIndividual::GenericTransferStage(
 }
 
 void RenderEngineVSIndividual::DrawRenderPassPipelines(
-	const VKCommandBuffer& graphicsCmdBuffer, const ExternalRenderPass_t& renderPass
+	const VKCommandBuffer& graphicsCmdBuffer, const VkExternalRenderPass& renderPass
 ) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
@@ -177,7 +175,7 @@ void RenderEngineVSIndividual::DrawRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager->DrawPipeline(
+			m_modelManager.DrawPipeline(
 				bundleIndices[index], pipelineLocalIndices[index],
 				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
 			);
@@ -216,7 +214,7 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 			if (!m_renderPasses.IsInUse(index))
 				continue;
 
-			const ExternalRenderPass_t& renderPass = *m_renderPasses[index];
+			const VkExternalRenderPass& renderPass = *m_renderPasses[index];
 
 			renderPass.StartPass(graphicsCmdBufferScope, renderArea);
 
@@ -228,13 +226,16 @@ VkSemaphore RenderEngineVSIndividual::DrawingStage(
 		// The one for the swapchain
 		if (m_swapchainRenderPass)
 		{
-			const ExternalRenderPass_t& renderPass = *m_swapchainRenderPass;
+			const VkExternalRenderPass& renderPass = *m_swapchainRenderPass;
 
 			renderPass.StartPass(graphicsCmdBufferScope, renderArea);
 
 			DrawRenderPassPipelines(graphicsCmdBufferScope, renderPass);
 
-			renderPass.EndPassForSwapchain(graphicsCmdBufferScope, renderTarget);
+			renderPass.EndPassForSwapchain(
+				graphicsCmdBufferScope, renderTarget,
+				m_externalResourceManager.GetResourceFactory()
+			);
 		}
 	}
 
@@ -272,12 +273,6 @@ RenderEngineVSIndirect::RenderEngineVSIndirect(
 	m_computePipelineManager{ deviceManager.GetLogicalDevice() },
 	m_computePipelineLayout{ deviceManager.GetLogicalDevice() }
 {
-	m_modelManager = std::make_unique<ModelManagerVSIndirect>(
-		deviceManager.GetLogicalDevice(), m_memoryManager.get(),
-		deviceManager.GetQueueFamilyManager().GetAllIndices(),
-		static_cast<std::uint32_t>(frameCount)
-	);
-
 	// Graphics Descriptors.
 	// The layout shouldn't change throughout the runtime.
 	SetGraphicsDescriptorBufferLayout();
@@ -354,7 +349,7 @@ void RenderEngineVSIndirect::FinaliseInitialisation()
 		ShaderName{ L"VertexShaderCSIndirect" }
 	);
 
-	m_modelManager->SetCSPSOIndex(frustumCSOIndex);
+	m_modelManager.SetCSPSOIndex(frustumCSOIndex);
 }
 
 void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
@@ -362,7 +357,7 @@ void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 	// The layout shouldn't change throughout the runtime.
 	SetCommonGraphicsDescriptorBufferLayout(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	m_modelManager->SetDescriptorBufferLayoutVS(
+	m_modelManager.SetDescriptorBufferLayoutVS(
 		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
 	);
 
@@ -381,7 +376,7 @@ void RenderEngineVSIndirect::SetGraphicsDescriptorBufferLayout()
 
 void RenderEngineVSIndirect::SetComputeDescriptorBufferLayout()
 {
-	m_modelManager->SetDescriptorBufferLayoutCS(
+	m_modelManager.SetDescriptorBufferLayoutCS(
 		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
 	);
 	m_meshManager.SetDescriptorBufferLayoutCS(
@@ -416,7 +411,7 @@ VkSemaphore RenderEngineVSIndirect::ExecutePipelineStages(
 
 void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 {
-	m_modelManager->SetDescriptorBuffersVS(
+	m_modelManager.SetDescriptorBuffersVS(
 		m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex
 	);
 
@@ -440,7 +435,7 @@ void RenderEngineVSIndirect::SetModelGraphicsDescriptors()
 
 void RenderEngineVSIndirect::SetModelComputeDescriptors()
 {
-	m_modelManager->SetDescriptorBuffersCS(
+	m_modelManager.SetDescriptorBuffersCS(
 		m_computeDescriptorBuffers, s_computeShaderSetLayoutIndex
 	);
 
@@ -459,7 +454,7 @@ void RenderEngineVSIndirect::SetModelComputeDescriptors()
 }
 
 void RenderEngineVSIndirect::UpdateRenderPassPipelines(
-	size_t frameIndex, const ExternalRenderPass_t& renderPass
+	size_t frameIndex, const VkExternalRenderPass& renderPass
 ) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
@@ -475,7 +470,7 @@ void RenderEngineVSIndirect::UpdateRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager->UpdatePipelinePerFrame(
+			m_modelManager.UpdatePipelinePerFrame(
 				frameIndex, bundleIndices[index], pipelineLocalIndices[index], m_meshManager,
 				!vkPipeline.GetExternalPipeline().IsGPUCullingEnabled()
 			);
@@ -515,7 +510,7 @@ std::uint32_t RenderEngineVSIndirect::AddModelBundle(std::shared_ptr<ModelBundle
 		*modelBundle, m_modelBuffers
 	);
 
-	const std::uint32_t index = m_modelManager->AddModelBundle(
+	const std::uint32_t index = m_modelManager.AddModelBundle(
 		std::move(modelBundle), modelBufferIndices
 	);
 
@@ -607,7 +602,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 			m_transferQueue.GetFamilyIndex()
 		);
 
-		m_modelManager->ResetCounterBuffer(
+		m_modelManager.ResetCounterBuffer(
 			computeCmdBuffer, static_cast<VkDeviceSize>(frameIndex)
 		);
 
@@ -616,7 +611,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 			VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout
 		);
 
-		m_modelManager->Dispatch(computeCmdBufferScope, m_computePipelineManager);
+		m_modelManager.Dispatch(computeCmdBufferScope, m_computePipelineManager);
 	}
 
 	const VKSemaphore& computeWaitSemaphore = m_computeWait[frameIndex];
@@ -640,7 +635,7 @@ VkSemaphore RenderEngineVSIndirect::FrustumCullingStage(
 
 void RenderEngineVSIndirect::DrawRenderPassPipelines(
 	size_t frameIndex, const VKCommandBuffer& graphicsCmdBuffer,
-	const ExternalRenderPass_t& renderPass
+	const VkExternalRenderPass& renderPass
 ) const noexcept {
 	const std::vector<VkExternalRenderPass::PipelineDetails>& pipelineDetails
 		= renderPass.GetPipelineDetails();
@@ -655,7 +650,7 @@ void RenderEngineVSIndirect::DrawRenderPassPipelines(
 		const size_t bundleCount = std::size(bundleIndices);
 
 		for (size_t index = 0u; index < bundleCount; ++index)
-			m_modelManager->DrawPipeline(
+			m_modelManager.DrawPipeline(
 				frameIndex, bundleIndices[index], pipelineLocalIndices[index],
 				graphicsCmdBuffer, m_meshManager, m_graphicsPipelineLayout.Get()
 			);
@@ -694,7 +689,7 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 			if (!m_renderPasses.IsInUse(index))
 				continue;
 
-			const ExternalRenderPass_t& renderPass = *m_renderPasses[index];
+			const VkExternalRenderPass& renderPass = *m_renderPasses[index];
 
 			renderPass.StartPass(graphicsCmdBufferScope, renderArea);
 
@@ -706,13 +701,16 @@ VkSemaphore RenderEngineVSIndirect::DrawingStage(
 		// The one for the swapchain
 		if (m_swapchainRenderPass)
 		{
-			const ExternalRenderPass_t& renderPass = *m_swapchainRenderPass;
+			const VkExternalRenderPass& renderPass = *m_swapchainRenderPass;
 
 			renderPass.StartPass(graphicsCmdBufferScope, renderArea);
 
 			DrawRenderPassPipelines(frameIndex, graphicsCmdBufferScope, renderPass);
 
-			renderPass.EndPassForSwapchain(graphicsCmdBufferScope, renderTarget);
+			renderPass.EndPassForSwapchain(
+				graphicsCmdBufferScope, renderTarget,
+				m_externalResourceManager.GetResourceFactory()
+			);
 		}
 	}
 

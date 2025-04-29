@@ -1,0 +1,59 @@
+#include <gtest/gtest.h>
+#include <memory>
+#include <limits>
+#include <ranges>
+#include <algorithm>
+
+#include <VKInstanceManager.hpp>
+#include <VkDeviceManager.hpp>
+
+#include <VkExternalRenderPass.hpp>
+
+using namespace Terra;
+
+namespace Constants
+{
+	constexpr const char* appName      = "TerraTest";
+	constexpr std::uint32_t frameCount = 2u;
+}
+
+class ExternalResourceTest : public ::testing::Test
+{
+protected:
+	static void SetUpTestSuite();
+	static void TearDownTestSuite();
+
+protected:
+	inline static std::unique_ptr<VkInstanceManager> s_instanceManager;
+	inline static std::unique_ptr<VkDeviceManager>   s_deviceManager;
+};
+
+void ExternalResourceTest::SetUpTestSuite()
+{
+	const CoreVersion coreVersion = CoreVersion::V1_3;
+
+	s_instanceManager = std::make_unique<VkInstanceManager>(Constants::appName);
+	s_instanceManager->DebugLayers().AddDebugCallback(DebugCallbackType::StandardError);
+	s_instanceManager->CreateInstance(coreVersion);
+
+	VkInstance vkInstance = s_instanceManager->GetVKInstance();
+
+	s_deviceManager = std::make_unique<VkDeviceManager>();
+
+	s_deviceManager->SetDeviceFeatures(coreVersion)
+		.SetPhysicalDeviceAutomatic(vkInstance)
+		.CreateLogicalDevice();
+}
+
+void ExternalResourceTest::TearDownTestSuite()
+{
+	s_deviceManager.reset();
+	s_instanceManager.reset();
+}
+
+TEST_F(ExternalResourceTest, VkExternalRenderPassTest)
+{
+	auto vkRenderPass = std::make_shared<VkExternalRenderPass>();
+
+	ExternalRenderPass<VkExternalRenderPass> renderPass{ vkRenderPass };
+}
