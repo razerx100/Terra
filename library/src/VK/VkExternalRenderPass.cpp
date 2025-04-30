@@ -232,8 +232,9 @@ void VkExternalRenderPass::SetDepthTesting(
 	);
 }
 
-void VkExternalRenderPass::SetDepthClearColour(float clearColour)
-{
+void VkExternalRenderPass::SetDepthClearColour(
+	float clearColour, [[maybe_unused]] VkExternalResourceFactory& resourceFactory
+) {
 	m_renderPassManager.SetDepthClearColour(VkClearDepthStencilValue{ .depth = clearColour });
 }
 
@@ -280,8 +281,9 @@ void VkExternalRenderPass::SetStencilTesting(
 	);
 }
 
-void VkExternalRenderPass::SetStencilClearColour(std::uint32_t clearColour)
-{
+void VkExternalRenderPass::SetStencilClearColour(
+	std::uint32_t clearColour, [[maybe_unused]] VkExternalResourceFactory& resourceFactory
+) {
 	m_renderPassManager.SetStencilClearColour(VkClearDepthStencilValue{ .stencil = clearColour });
 }
 
@@ -336,7 +338,8 @@ std::uint32_t VkExternalRenderPass::AddRenderTarget(
 }
 
 void VkExternalRenderPass::SetRenderTargetClearColour(
-	std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour
+	std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour,
+	[[maybe_unused]] VkExternalResourceFactory& resourceFactory
 ) {
 	const VkClearColorValue clearValue
 	{
@@ -346,8 +349,9 @@ void VkExternalRenderPass::SetRenderTargetClearColour(
 	m_renderPassManager.SetColourClearValue(renderTargetIndex, clearValue);
 }
 
-void VkExternalRenderPass::SetSwapchainCopySource(std::uint32_t renderTargetIndex) noexcept
-{
+void VkExternalRenderPass::SetSwapchainCopySource(
+	std::uint32_t renderTargetIndex, [[maybe_unused]] VkExternalResourceFactory& resourceFactory
+) noexcept {
 	m_swapchainCopySource = m_colourAttachmentDetails[renderTargetIndex].textureIndex;
 }
 

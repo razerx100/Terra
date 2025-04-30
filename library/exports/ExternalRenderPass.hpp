@@ -92,9 +92,10 @@ public:
 	// Only necessary if the LoadOP is clear.
 	// In Dx12, the resource needs to be recreated after setting the colour. So, the resource
 	// will be recreated.
-	void SetDepthClearColour(float clearColour)
+	template<class ResourceFactory_t>
+	void SetDepthClearColour(float clearColour, ResourceFactory_t& resourceFactory)
 	{
-		m_renderPass->SetDepthClearColour(clearColour);
+		m_renderPass->SetDepthClearColour(clearColour, resourceFactory);
 	}
 
 	// Since Dx12 doesn't support separate depth and stencil, if depth testing is already enabled
@@ -111,9 +112,10 @@ public:
 	// Only necessary if the LoadOP is clear.
 	// In Dx12, the resource needs to be recreated after setting the colour. So, the resource
 	// will be recreated.
-	void SetStencilClearColour(std::uint32_t clearColour)
+	template<class ResourceFactory_t>
+	void SetStencilClearColour(std::uint32_t clearColour, ResourceFactory_t& resourceFactory)
 	{
-		m_renderPass->SetStencilClearColour(clearColour);
+		m_renderPass->SetStencilClearColour(clearColour, resourceFactory);
 	}
 
 	template<class ResourceFactory_t>
@@ -128,15 +130,19 @@ public:
 	// Only necessary if the LoadOP is clear.
 	// In Dx12, the resource needs to be recreated after setting the colour. So, the resource
 	// will be recreated.
+	template<class ResourceFactory_t>
 	void SetRenderTargetClearColour(
-		std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour
+		std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour,
+		ResourceFactory_t& resourceFactory
 	) {
-		m_renderPass->SetRenderTargetClearColour(renderTargetIndex, clearColour);
+		m_renderPass->SetRenderTargetClearColour(renderTargetIndex, clearColour, resourceFactory);
 	}
 
-	void SetSwapchainCopySource(std::uint32_t renderTargetIndex) noexcept
-	{
-		m_renderPass->SetSwapchainCopySource(renderTargetIndex);
+	template<class ResourceFactory_t>
+	void SetSwapchainCopySource(
+		std::uint32_t renderTargetIndex, ResourceFactory_t& resourceFactory
+	) noexcept {
+		m_renderPass->SetSwapchainCopySource(renderTargetIndex, resourceFactory);
 	}
 
 private:

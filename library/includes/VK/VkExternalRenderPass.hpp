@@ -92,14 +92,16 @@ public:
 		ExternalAttachmentStoreOp storeOp, VkExternalResourceFactory& resourceFactory
 	);
 	// Only necessary if the LoadOP is clear.
-	void SetDepthClearColour(float clearColour);
+	void SetDepthClearColour(float clearColour, VkExternalResourceFactory& resourceFactory);
 
 	void SetStencilTesting(
 		std::uint32_t externalTextureIndex, ExternalAttachmentLoadOp loadOp,
 		ExternalAttachmentStoreOp storeOp, VkExternalResourceFactory& resourceFactory
 	);
 	// Only necessary if the LoadOP is clear.
-	void SetStencilClearColour(std::uint32_t clearColour);
+	void SetStencilClearColour(
+		std::uint32_t clearColour, VkExternalResourceFactory& resourceFactory
+	);
 
 	std::uint32_t AddRenderTarget(
 		std::uint32_t externalTextureIndex,	ExternalAttachmentLoadOp loadOp,
@@ -107,10 +109,13 @@ public:
 	);
 	// Only necessary if the LoadOP is clear.
 	void SetRenderTargetClearColour(
-		std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour
+		std::uint32_t renderTargetIndex, const DirectX::XMFLOAT4& clearColour,
+		VkExternalResourceFactory& resourceFactory
 	);
 
-	void SetSwapchainCopySource(std::uint32_t renderTargetIndex) noexcept;
+	void SetSwapchainCopySource(
+		std::uint32_t renderTargetIndex, VkExternalResourceFactory& resourceFactory
+	) noexcept;
 
 	void StartPass(const VKCommandBuffer& graphicsCmdBuffer, VkExtent2D renderArea) const noexcept;
 
