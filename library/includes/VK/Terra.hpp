@@ -72,15 +72,31 @@ public:
 			m_windowHeight = height;
 		}
 	}
-	void Render()
-	{
-		// Semaphores will be initialised as 0. So, the starting value should be 1.
-		static std::uint64_t semaphoreCounter = 1u;
 
+	void WaitForCurrentBackBuffer()
+	{
 		VkDevice device = m_deviceManager.GetLogicalDevice();
 
 		// This semaphore will be signaled when the image becomes available.
 		m_swapchain.QueryNextImageIndex(device);
+
+		const size_t nextImageIndex = m_swapchain.GetNextImageIndex();
+
+		m_renderEngine.WaitForCurrentBackBuffer(nextImageIndex);
+	}
+
+	void Update() const noexcept
+	{
+		const size_t nextImageIndex = m_swapchain.GetNextImageIndex();
+
+		m_renderEngine.Update(nextImageIndex);
+	}
+
+	// WaitForCurrentBackBuffer must be called before Render each frame.
+	void Render()
+	{
+		// Semaphores will be initialised as 0. So, the starting value should be 1.
+		static std::uint64_t semaphoreCounter = 1u;
 
 		const VKSemaphore& nextImageSemaphore = m_swapchain.GetNextImageSemaphore();
 		const std::uint32_t nextImageIndexU32 = m_swapchain.GetNextImageIndex();

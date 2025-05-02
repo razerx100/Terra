@@ -447,21 +447,32 @@ public:
 		m_viewportAndScissors.Resize(width, height);
 	}
 
-	[[nodiscard]]
-	VkSemaphore Render(
-		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
-		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
-	) {
+	void WaitForCurrentBackBuffer(size_t frameIndex)
+	{
 		// Wait for the previous Graphics command buffer to finish.
 		m_graphicsQueue.WaitForSubmission(frameIndex);
 		// It should be okay to clear the data now that the frame has finished
 		// its submission.
 		m_temporaryDataBuffer.Clear(frameIndex);
+	}
 
+	void Update(size_t frameIndex) const noexcept
+	{
+		const auto vkFrameIndex = static_cast<VkDeviceSize>(frameIndex);
 		// This should be fine. But putting this as a reminder, that
 		// the presentation engine might still be running and using some resources.
-		Update(static_cast<VkDeviceSize>(frameIndex));
+		m_cameraManager.Update(vkFrameIndex);
 
+		static_cast<Derived const*>(this)->_updatePerFrame(vkFrameIndex);
+
+		m_externalResourceManager.UpdateExtensionData(frameIndex);
+	}
+
+	[[nodiscard]]
+	VkSemaphore Render(
+		size_t frameIndex, const VKImageView& renderTarget, VkExtent2D renderArea,
+		std::uint64_t& semaphoreCounter, const VKSemaphore& imageWaitSemaphore
+	) {
 		VkSemaphore waitSemaphore = imageWaitSemaphore.Get();
 
 		waitSemaphore = static_cast<Derived*>(this)->ExecutePipelineStages(
@@ -486,16 +497,8 @@ public:
 			);
 	}
 
+
 protected:
-	void Update(VkDeviceSize frameIndex) const noexcept
-	{
-		m_cameraManager.Update(frameIndex);
-
-		static_cast<Derived const*>(this)->_updatePerFrame(frameIndex);
-
-		m_externalResourceManager.UpdateExtensionData(static_cast<size_t>(frameIndex));
-	}
-
 	void CreateGraphicsPipelineLayout()
 	{
 		if (!std::empty(m_graphicsDescriptorBuffers))
