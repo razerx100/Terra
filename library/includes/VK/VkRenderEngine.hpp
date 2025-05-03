@@ -464,8 +464,6 @@ public:
 		m_cameraManager.Update(vkFrameIndex);
 
 		static_cast<Derived const*>(this)->_updatePerFrame(vkFrameIndex);
-
-		m_externalResourceManager.UpdateExtensionData(frameIndex);
 	}
 
 	[[nodiscard]]

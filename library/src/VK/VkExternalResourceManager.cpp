@@ -17,22 +17,22 @@ void VkExternalResourceManager::OnGfxExtensionDeletion(
 }
 
 std::uint32_t VkExternalResourceManager::AddGraphicsTechniqueExtension(
-	std::shared_ptr<GraphicsTechniqueExtension> extension
+	GraphicsTechniqueExtension&& extension
 ) {
 	return static_cast<std::uint32_t>(m_gfxExtensions.Add(std::move(extension)));
 }
 
-void VkExternalResourceManager::RemoveGraphicsTechniqueExtension(std::uint32_t index) noexcept
-{
-	OnGfxExtensionDeletion(*m_gfxExtensions[index]);
-
-	m_gfxExtensions.RemoveElement(index);
+void VkExternalResourceManager::UpdateGraphicsTechniqueExtension(
+	size_t index, GraphicsTechniqueExtension&& extension
+) {
+	m_gfxExtensions[index] = std::move(extension);
 }
 
-void VkExternalResourceManager::UpdateExtensionData(size_t frameIndex) const noexcept
+void VkExternalResourceManager::RemoveGraphicsTechniqueExtension(std::uint32_t index) noexcept
 {
-	for (const GfxExtension_t& extension : m_gfxExtensions)
-		extension->UpdateCPUData(frameIndex);
+	OnGfxExtensionDeletion(m_gfxExtensions[index]);
+
+	m_gfxExtensions.RemoveElement(index);
 }
 
 void VkExternalResourceManager::SetGraphicsDescriptorLayout(
@@ -40,10 +40,10 @@ void VkExternalResourceManager::SetGraphicsDescriptorLayout(
 ) {
 	const size_t descriptorBufferCount = std::size(descriptorBuffers);
 
-	for (const GfxExtension_t& extension : m_gfxExtensions)
+	for (const GraphicsTechniqueExtension& extension : m_gfxExtensions)
 	{
 		const std::vector<ExternalBufferBindingDetails>& bindingDetails
-			= extension->GetBindingDetails();
+			= extension.GetBindingDetails();
 
 		for (const ExternalBufferBindingDetails& details : bindingDetails)
 		{
@@ -154,8 +154,9 @@ void VkExternalResourceManager::QueueExternalBufferGPUCopy(
 	tempGPUBuffer.Add(m_resourceFactory.GetExternalBufferSP(externalBufferSrcIndex));
 }
 
-void VkExternalResourceManager::CopyQueuedBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept
-{
+void VkExternalResourceManager::CopyQueuedBuffers(
+	const VKCommandBuffer& transferCmdBuffer
+) noexcept {
 	if (!std::empty(m_copyQueueDetails))
 	{
 		for (const GPUCopyDetails& copyDetails : m_copyQueueDetails)

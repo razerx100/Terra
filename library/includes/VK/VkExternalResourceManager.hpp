@@ -12,15 +12,15 @@ namespace Terra
 {
 class VkExternalResourceManager
 {
-	using GfxExtension_t = std::shared_ptr<GraphicsTechniqueExtension>;
+	using GfxExtensionContainer_t = Callisto::ReusableVector<GraphicsTechniqueExtension>;
 
 public:
 	VkExternalResourceManager(VkDevice device, MemoryManager* memoryManager);
 
 	[[nodiscard]]
-	std::uint32_t AddGraphicsTechniqueExtension(
-		std::shared_ptr<GraphicsTechniqueExtension> extension
-	);
+	std::uint32_t AddGraphicsTechniqueExtension(GraphicsTechniqueExtension&& extension);
+
+	void UpdateGraphicsTechniqueExtension(size_t index, GraphicsTechniqueExtension&& extension);
 
 	void RemoveGraphicsTechniqueExtension(std::uint32_t index) noexcept;
 
@@ -42,8 +42,6 @@ public:
 	);
 
 	void CopyQueuedBuffers(const VKCommandBuffer& transferCmdBuffer) noexcept;
-
-	void UpdateExtensionData(size_t frameIndex) const noexcept;
 
 	void SetGraphicsDescriptorLayout(std::vector<VkDescriptorBuffer>& descriptorBuffers);
 
@@ -71,9 +69,9 @@ private:
 	) const;
 
 private:
-	VkExternalResourceFactory                m_resourceFactory;
-	Callisto::ReusableVector<GfxExtension_t> m_gfxExtensions;
-	std::vector<GPUCopyDetails>              m_copyQueueDetails;
+	VkExternalResourceFactory   m_resourceFactory;
+	GfxExtensionContainer_t     m_gfxExtensions;
+	std::vector<GPUCopyDetails> m_copyQueueDetails;
 
 	static constexpr std::uint32_t s_externalBufferSetLayoutIndex = 2u;
 
