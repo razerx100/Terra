@@ -161,8 +161,15 @@ public:
 		return m_terra.WaitForCurrentBackBuffer();
 	}
 
-	void Update() const noexcept { m_terra.Update(); }
-	void Render() { m_terra.Render(); }
+	void Update(size_t nextImageIndex) const noexcept
+	{
+		m_terra.Update(nextImageIndex);
+	}
+
+	void Render(size_t nextImageIndex)
+	{
+		m_terra.Render(nextImageIndex);
+	}
 
 	void WaitForGPUToFinish() { m_terra.WaitForGPUToFinish(); }
 

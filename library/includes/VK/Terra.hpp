@@ -88,22 +88,20 @@ public:
 		return nextImageIndex;
 	}
 
-	void Update() const noexcept
+	void Update(size_t nextImageIndex) const noexcept
 	{
-		const size_t nextImageIndex = m_swapchain.GetNextImageIndex();
-
 		m_renderEngine.Update(nextImageIndex);
 	}
 
 	// WaitForCurrentBackBuffer must be called before Render each frame.
-	void Render()
+	void Render(size_t nextImageIndex)
 	{
 		// Semaphores will be initialised as 0. So, the starting value should be 1.
 		static std::uint64_t semaphoreCounter = 1u;
 
 		const VKSemaphore& nextImageSemaphore = m_swapchain.GetNextImageSemaphore();
-		const std::uint32_t nextImageIndexU32 = m_swapchain.GetNextImageIndex();
-		const size_t nextImageIndex           = nextImageIndexU32;
+
+		const auto nextImageIndexU32          = static_cast<std::uint32_t>(nextImageIndex);
 
 		VkSemaphore renderFinishedSemaphore = m_renderEngine.Render(
 			nextImageIndex, m_swapchain.GetColourAttachment(nextImageIndex),
