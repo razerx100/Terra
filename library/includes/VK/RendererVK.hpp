@@ -155,7 +155,12 @@ public:
 		m_terra.GetRenderEngine().RemoveCamera(index);
 	}
 
-	void WaitForCurrentBackBuffer() { m_terra.WaitForCurrentBackBuffer(); }
+	[[nodiscard]]
+	size_t WaitForCurrentBackBuffer()
+	{
+		return m_terra.WaitForCurrentBackBuffer();
+	}
+
 	void Update() const noexcept { m_terra.Update(); }
 	void Render() { m_terra.Render(); }
 

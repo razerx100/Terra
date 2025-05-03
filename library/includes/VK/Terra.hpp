@@ -73,7 +73,8 @@ public:
 		}
 	}
 
-	void WaitForCurrentBackBuffer()
+	[[nodiscard]]
+	size_t WaitForCurrentBackBuffer()
 	{
 		VkDevice device = m_deviceManager.GetLogicalDevice();
 
@@ -83,6 +84,8 @@ public:
 		const size_t nextImageIndex = m_swapchain.GetNextImageIndex();
 
 		m_renderEngine.WaitForCurrentBackBuffer(nextImageIndex);
+
+		return nextImageIndex;
 	}
 
 	void Update() const noexcept
