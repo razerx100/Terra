@@ -150,14 +150,14 @@ public:
 		m_terra.GetRenderEngine().UpdateCamera(frameIndex, cameraData);
 	}
 
-	void Update(size_t nextImageIndex) const noexcept
+	void Update(size_t frameIndex) const noexcept
 	{
-		m_terra.Update(nextImageIndex);
+		m_terra.GetRenderEngine().Update(frameIndex);
 	}
 
-	void Render(size_t nextImageIndex)
+	void Render(size_t frameIndex)
 	{
-		m_terra.Render(nextImageIndex);
+		m_terra.Render(frameIndex);
 	}
 
 	void WaitForGPUToFinish() { m_terra.WaitForGPUToFinish(); }
