@@ -450,7 +450,7 @@ public:
 
 	void UpdateCamera(size_t frameIndex, const Camera& cameraData) const noexcept
 	{
-		m_cameraManager.Update(static_cast<VkDeviceSize>(frameIndex));
+		m_cameraManager.Update(static_cast<VkDeviceSize>(frameIndex), cameraData);
 	}
 
 	void Update(size_t frameIndex) const noexcept
