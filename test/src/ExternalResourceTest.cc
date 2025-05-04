@@ -8,6 +8,7 @@
 #include <VkDeviceManager.hpp>
 
 #include <VkExternalRenderPass.hpp>
+#include <VkExternalBuffer.hpp>
 
 using namespace Terra;
 
@@ -56,4 +57,31 @@ TEST_F(ExternalResourceTest, VkExternalRenderPassTest)
 	auto vkRenderPass = std::make_shared<VkExternalRenderPass>();
 
 	ExternalRenderPass<VkExternalRenderPass> renderPass{ vkRenderPass };
+}
+
+TEST_F(ExternalResourceTest, VkExternalBufferTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	auto vkBuffer = std::make_shared<VkExternalBuffer>(
+		logicalDevice, &memoryManager, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+	);
+
+	ExternalBuffer<VkExternalBuffer> buffer{ vkBuffer };
+}
+
+TEST_F(ExternalResourceTest, VkExternalTextureTest)
+{
+	VkDevice logicalDevice          = s_deviceManager->GetLogicalDevice();
+	VkPhysicalDevice physicalDevice = s_deviceManager->GetPhysicalDevice();
+
+	MemoryManager memoryManager{ physicalDevice, logicalDevice, 20_MB, 200_KB };
+
+	auto vkTexture = std::make_shared<VkExternalTexture>(logicalDevice, &memoryManager);
+
+	ExternalTexture<VkExternalTexture> texture{ vkTexture };
 }

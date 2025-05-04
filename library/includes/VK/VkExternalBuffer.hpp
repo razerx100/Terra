@@ -7,7 +7,7 @@
 
 namespace Terra
 {
-class VkExternalBuffer : public ExternalBuffer
+class VkExternalBuffer
 {
 public:
 	VkExternalBuffer(
@@ -15,15 +15,15 @@ public:
 		VkBufferUsageFlags usageFlags
 	);
 
-	void Create(size_t bufferSize) override;
+	void Create(size_t bufferSize);
 
-	void Destroy() noexcept override { m_buffer.Destroy(); }
-
-	[[nodiscard]]
-	size_t BufferSize() const noexcept override { return m_buffer.BufferSize(); }
+	void Destroy() noexcept { m_buffer.Destroy(); }
 
 	[[nodiscard]]
-	std::uint8_t* CPUHandle() const override { return m_buffer.CPUHandle(); }
+	size_t BufferSize() const noexcept { return m_buffer.BufferSize(); }
+
+	[[nodiscard]]
+	std::uint8_t* CPUHandle() const { return m_buffer.CPUHandle(); }
 
 	[[nodiscard]]
 	const Buffer& GetBuffer() const noexcept { return m_buffer; }
@@ -48,24 +48,24 @@ public:
 	}
 };
 
-class VkExternalTexture : public ExternalTexture
+class VkExternalTexture
 {
 public:
 	VkExternalTexture(VkDevice device, MemoryManager* memoryManager);
 
 	void Create(
-		std::uint32_t width, std::uint32_t height, ExternalFormat format, ExternalTexture2DType type,
-		const ExternalTextureCreationFlags& creationFlags = {}
-	) override;
+		std::uint32_t width, std::uint32_t height, ExternalFormat format,
+		ExternalTexture2DType type, const ExternalTextureCreationFlags& creationFlags = {}
+	);
 
-	void Destroy() noexcept override;
+	void Destroy() noexcept;
 
 	[[nodiscard]]
-	Extent GetExtent() const noexcept override
+	RendererType::Extent GetExtent() const noexcept
 	{
 		const VkExtent3D vkExtent = m_textureView.GetTexture().GetExtent();
 
-		return Extent{ .width = vkExtent.width, .height = vkExtent.height };
+		return RendererType::Extent{ .width = vkExtent.width, .height = vkExtent.height };
 	}
 
 	void SetCurrentPipelineStage(VkPipelineStageFlagBits newStage) noexcept
@@ -74,7 +74,10 @@ public:
 	}
 
 	[[nodiscard]]
-	VkPipelineStageFlagBits GetCurrentPipelineStage() const noexcept { return m_currentPipelineStage; }
+	VkPipelineStageFlagBits GetCurrentPipelineStage() const noexcept
+	{
+		return m_currentPipelineStage;
+	}
 
 	// This actually won't change the state. Need to use the barrier builder and then execute it
 	// on a CommandQueue. Need to get the barrier builder through this function, so we can remember
