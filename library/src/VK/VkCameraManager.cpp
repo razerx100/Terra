@@ -6,25 +6,8 @@ namespace Terra
 {
 CameraManager::CameraManager(VkDevice device, MemoryManager* memoryManager)
 	: m_activeCameraIndex{ 0u }, m_cameraBufferInstanceSize{ 0u },
-	m_cameraBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_cameras{}
+	m_cameraBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT }
 {}
-
-std::uint32_t CameraManager::AddCamera(std::shared_ptr<Camera> camera) noexcept
-{
-	const auto index = static_cast<std::uint32_t>(std::size(m_cameras));
-
-	m_cameras.emplace_back(std::move(camera));
-
-	m_activeCameraIndex = index;
-
-	return index;
-}
-
-void CameraManager::RemoveCamera(std::uint32_t index) noexcept
-{
-	m_cameras.erase(std::begin(m_cameras) + index);
-}
 
 void CameraManager::CreateBuffer(
 	const std::vector<std::uint32_t>& queueIndices, std::uint32_t frameCount
@@ -36,44 +19,37 @@ void CameraManager::CreateBuffer(
 	m_cameraBuffer.Create(cameraBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, queueIndices);
 }
 
-void CameraManager::Update(VkDeviceSize index) const noexcept
+void CameraManager::Update(VkDeviceSize index, const Camera& cameraData) const noexcept
 {
 	std::uint8_t* bufferAddress = m_cameraBuffer.CPUHandle() + m_cameraBufferInstanceSize * index;
 
 	constexpr size_t matrixSize = sizeof(DirectX::XMMATRIX);
 
-	// Although I am not a big fan of useless checks. This would potentially allow us
-	// to run the renderer without having any cameras.
-	if (m_activeCameraIndex < std::size(m_cameras)) [[likely]]
-	{
-		const std::shared_ptr<Camera>& activeCamera = m_cameras[m_activeCameraIndex];
+	const DirectX::XMMATRIX view = cameraData.GetViewMatrix();
 
-		const DirectX::XMMATRIX view = activeCamera->GetViewMatrix();
+	memcpy(bufferAddress, &view, matrixSize);
 
-		memcpy(bufferAddress, &view, matrixSize);
+	// Projection matrix's address
+	bufferAddress += matrixSize;
 
-		// Projection matrix's address
-		bufferAddress += matrixSize;
+	cameraData.GetProjectionMatrix(bufferAddress);
 
-		activeCamera->GetProjectionMatrix(bufferAddress);
+	// Frustum's address
+	bufferAddress += matrixSize;
 
-		// Frustum's address
-		bufferAddress += matrixSize;
+	// In the clip space.
+	const Frustum viewFrustum        = cameraData.GetViewFrustum(view);
 
-		// In the clip space.
-		const Frustum viewFrustum        = activeCamera->GetViewFrustum(view);
+	constexpr size_t frustumDataSize = sizeof(Frustum);
 
-		constexpr size_t frustumDataSize = sizeof(Frustum);
+	memcpy(bufferAddress, &viewFrustum, frustumDataSize);
 
-		memcpy(bufferAddress, &viewFrustum, frustumDataSize);
+	// View position's address
+	bufferAddress += frustumDataSize;
 
-		// View position's address
-		bufferAddress += frustumDataSize;
+	const DirectX::XMFLOAT3 viewPosition = cameraData.GetCameraPosition();
 
-		const DirectX::XMFLOAT3 viewPosition = activeCamera->GetCameraPosition();
-
-		memcpy(bufferAddress, &viewPosition, sizeof(DirectX::XMFLOAT3));
-	}
+	memcpy(bufferAddress, &viewPosition, sizeof(DirectX::XMFLOAT3));
 }
 
 void CameraManager::SetDescriptorBufferLayoutGraphics(

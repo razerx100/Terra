@@ -119,14 +119,6 @@ public:
 
 	void RemoveTexture(size_t textureIndex);
 
-	[[nodiscard]]
-	std::uint32_t AddCamera(std::shared_ptr<Camera> camera) noexcept
-	{
-		return m_cameraManager.AddCamera(std::move(camera));
-	}
-	void SetCamera(std::uint32_t index) noexcept { m_cameraManager.SetCamera(index); }
-	void RemoveCamera(std::uint32_t index) noexcept { m_cameraManager.RemoveCamera(index); }
-
 private:
 	template<class Derived>
 	[[nodiscard]]
@@ -456,14 +448,16 @@ public:
 		m_temporaryDataBuffer.Clear(frameIndex);
 	}
 
+	void UpdateCamera(size_t frameIndex, const Camera& cameraData) const noexcept
+	{
+		m_cameraManager.Update(static_cast<VkDeviceSize>(frameIndex));
+	}
+
 	void Update(size_t frameIndex) const noexcept
 	{
-		const auto vkFrameIndex = static_cast<VkDeviceSize>(frameIndex);
 		// This should be fine. But putting this as a reminder, that
 		// the presentation engine might still be running and using some resources.
-		m_cameraManager.Update(vkFrameIndex);
-
-		static_cast<Derived const*>(this)->_updatePerFrame(vkFrameIndex);
+		static_cast<Derived const*>(this)->_updatePerFrame(static_cast<VkDeviceSize>(frameIndex));
 	}
 
 	[[nodiscard]]

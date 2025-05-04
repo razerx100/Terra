@@ -140,25 +140,14 @@ public:
 	}
 
 	[[nodiscard]]
-	std::uint32_t AddCamera(std::shared_ptr<Camera>&& camera) noexcept
-	{
-		return m_terra.GetRenderEngine().AddCamera(std::move(camera));
-	}
-
-	void SetCamera(std::uint32_t index) noexcept
-	{
-		m_terra.GetRenderEngine().SetCamera(index);
-	}
-
-	void RemoveCamera(std::uint32_t index) noexcept
-	{
-		m_terra.GetRenderEngine().RemoveCamera(index);
-	}
-
-	[[nodiscard]]
 	size_t WaitForCurrentBackBuffer()
 	{
 		return m_terra.WaitForCurrentBackBuffer();
+	}
+
+	void UpdateCamera(size_t frameIndex, const Camera& cameraData) const noexcept
+	{
+		m_terra.GetRenderEngine().UpdateCamera(frameIndex, cameraData);
 	}
 
 	void Update(size_t nextImageIndex) const noexcept

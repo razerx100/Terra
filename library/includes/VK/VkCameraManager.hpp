@@ -16,18 +16,11 @@ class CameraManager
 public:
 	CameraManager(VkDevice device, MemoryManager* memoryManager);
 
-	[[nodiscard]]
-	std::uint32_t AddCamera(std::shared_ptr<Camera> camera) noexcept;
-
-	void SetCamera(std::uint32_t index) noexcept { m_activeCameraIndex = index; }
-
-	void RemoveCamera(std::uint32_t index) noexcept;
-
 	void CreateBuffer(
 		const std::vector<std::uint32_t>& queueIndices, std::uint32_t frameCount
 	);
 
-	void Update(VkDeviceSize index) const noexcept;
+	void Update(VkDeviceSize index, const Camera& cameraData) const noexcept;
 
 	void SetDescriptorBufferLayoutGraphics(
 		std::vector<VkDescriptorBuffer>& descriptorBuffers, std::uint32_t cameraBindingSlot,
@@ -58,10 +51,9 @@ private:
 	};
 
 private:
-	size_t                               m_activeCameraIndex;
-	VkDeviceSize                         m_cameraBufferInstanceSize;
-	Buffer                               m_cameraBuffer;
-	std::vector<std::shared_ptr<Camera>> m_cameras;
+	size_t       m_activeCameraIndex;
+	VkDeviceSize m_cameraBufferInstanceSize;
+	Buffer       m_cameraBuffer;
 
 public:
 	CameraManager(const CameraManager&) = delete;
@@ -70,15 +62,13 @@ public:
 	CameraManager(CameraManager&& other) noexcept
 		: m_activeCameraIndex{ other.m_activeCameraIndex },
 		m_cameraBufferInstanceSize{ other.m_cameraBufferInstanceSize },
-		m_cameraBuffer{ std::move(other.m_cameraBuffer) },
-		m_cameras{ std::move(other.m_cameras) }
+		m_cameraBuffer{ std::move(other.m_cameraBuffer) }
 	{}
 	CameraManager& operator=(CameraManager&& other) noexcept
 	{
 		m_activeCameraIndex        = other.m_activeCameraIndex;
 		m_cameraBufferInstanceSize = other.m_cameraBufferInstanceSize;
 		m_cameraBuffer             = std::move(other.m_cameraBuffer);
-		m_cameras                  = std::move(other.m_cameras);
 
 		return *this;
 	}
