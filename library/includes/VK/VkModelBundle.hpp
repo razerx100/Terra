@@ -42,11 +42,11 @@ public:
 	PipelineModelsBase& operator=(const PipelineModelsBase&) = delete;
 
 	PipelineModelsBase(PipelineModelsBase&& other) noexcept
-		: m_localPipelineIndex{ std::move(other.m_localPipelineIndex) }
+		: m_localPipelineIndex{ other.m_localPipelineIndex }
 	{}
 	PipelineModelsBase& operator=(PipelineModelsBase&& other) noexcept
 	{
-		m_localPipelineIndex = std::move(other.m_localPipelineIndex);
+		m_localPipelineIndex = other.m_localPipelineIndex;
 
 		return *this;
 	}
@@ -61,7 +61,7 @@ public:
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const std::vector<PipelineModelBundle>& pipelineBundles,
+		const VkMeshBundleVS& meshBundle, const PipelineModelBundle& pipelineBundle,
 		const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
@@ -116,7 +116,7 @@ public:
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const std::vector<PipelineModelBundle>& pipelineBundles,
+		const VkMeshBundleMS& meshBundle, const PipelineModelBundle& pipelineBundle,
 		const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
@@ -218,7 +218,7 @@ public:
 
 	void Update(
 		size_t frameIndex, const VkMeshBundleVS& meshBundle, bool skipCulling,
-		const std::vector<PipelineModelBundle>& pipelineBundles,
+		const PipelineModelBundle& pipelineBundle,
 		const std::vector<std::shared_ptr<Model>>& models
 	) const noexcept;
 
@@ -434,10 +434,7 @@ public:
 	// Assuming any new pipelines will added at the back.
 	void AddNewPipelinesFromBundle()
 	{
-		const std::vector<PipelineModelBundle>& pipelines
-			= this->m_modelBundle->GetPipelineBundles();
-
-		const size_t pipelinesInBundle    = std::size(pipelines);
+		const size_t pipelinesInBundle    = this->m_modelBundle->GetPipelineCount();
 		const size_t currentPipelineCount = std::size(this->m_pipelines);
 
 		for (size_t index = currentPipelineCount; index < pipelinesInBundle; ++index)
