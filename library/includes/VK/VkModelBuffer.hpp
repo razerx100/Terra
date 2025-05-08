@@ -1,23 +1,33 @@
 #ifndef VK_MODEL_BUFFER_HPP_
 #define VK_MODEL_BUFFER_HPP_
-#include <Model.hpp>
-#include <VkSharedBuffers.hpp>
+#include <memory>
+#include <ModelContainer.hpp>
+#include <VkResources.hpp>
+#include <VkDescriptorBuffer.hpp>
 
 namespace Terra
 {
-class ModelBuffers : public ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>
+class ModelBuffers
 {
-	friend class ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>;
+	using ModelContainer_t = std::shared_ptr<ModelContainer>;
 
 public:
 	ModelBuffers(
 		VkDevice device, MemoryManager* memoryManager, std::uint32_t frameCount,
 		const std::vector<std::uint32_t>& modelBufferQueueIndices
-	) : ReusableVkBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
+	) : m_modelContainer{},
+		m_vertexModelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 		m_fragmentModelBuffers{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
 		m_modelBuffersInstanceSize{ 0u }, m_modelBuffersFragmentInstanceSize{ 0u },
 		m_bufferInstanceCount{ frameCount }, m_modelBuffersQueueIndices{ modelBufferQueueIndices }
 	{}
+
+	void SetModelContainer(std::shared_ptr<ModelContainer> modelContainer) noexcept
+	{
+		m_modelContainer = std::move(modelContainer);
+	}
+
+	void ExtendModelBuffers();
 
 	void SetDescriptorBuffer(
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot,
@@ -27,11 +37,6 @@ public:
 		VkDescriptorBuffer& descriptorBuffer, VkDeviceSize frameIndex, std::uint32_t bindingSlot,
 		size_t setLayoutIndex
 	) const;
-
-	using ReusableVkBuffer<ModelBuffers, std::shared_ptr<Model>>::Remove;
-
-	void Remove(const std::vector<std::uint32_t>& indices) noexcept;
-	void Remove(const std::vector<size_t>& indices) noexcept;
 
 	void Update(VkDeviceSize bufferIndex) const noexcept;
 
@@ -75,6 +80,8 @@ private:
 	void CreateBuffer(size_t modelCount);
 
 private:
+	ModelContainer_t           m_modelContainer;
+	Buffer                     m_vertexModelBuffers;
 	Buffer                     m_fragmentModelBuffers;
 	VkDeviceSize               m_modelBuffersInstanceSize;
 	VkDeviceSize               m_modelBuffersFragmentInstanceSize;
@@ -86,7 +93,8 @@ public:
 	ModelBuffers& operator=(const ModelBuffers&) = delete;
 
 	ModelBuffers(ModelBuffers&& other) noexcept
-		: ReusableVkBuffer{ std::move(other) },
+		: m_modelContainer{ std::move(other.m_modelContainer) },
+		m_vertexModelBuffers{ std::move(other.m_vertexModelBuffers) },
 		m_fragmentModelBuffers{ std::move(other.m_fragmentModelBuffers) },
 		m_modelBuffersInstanceSize{ other.m_modelBuffersInstanceSize },
 		m_modelBuffersFragmentInstanceSize{ other.m_modelBuffersFragmentInstanceSize },
@@ -95,7 +103,8 @@ public:
 	{}
 	ModelBuffers& operator=(ModelBuffers&& other) noexcept
 	{
-		ReusableVkBuffer::operator=(std::move(other));
+		m_modelContainer                   = std::move(other.m_modelContainer);
+		m_vertexModelBuffers               = std::move(other.m_vertexModelBuffers);
 		m_fragmentModelBuffers             = std::move(other.m_fragmentModelBuffers);
 		m_modelBuffersInstanceSize         = other.m_modelBuffersInstanceSize;
 		m_modelBuffersFragmentInstanceSize = other.m_modelBuffersFragmentInstanceSize;

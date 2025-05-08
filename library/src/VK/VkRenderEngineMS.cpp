@@ -94,19 +94,16 @@ void RenderEngineMS::SetModelGraphicsDescriptors()
 
 std::uint32_t RenderEngineMS::AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 {
-	std::vector<std::uint32_t> modelBufferIndices = AddModelsToBuffer(
-		*modelBundle, m_modelBuffers
-	);
+	m_modelBuffers.ExtendModelBuffers();
 
-	const std::uint32_t index = m_modelManager.AddModelBundle(
-		std::move(modelBundle), modelBufferIndices
-	);
+	const std::uint32_t index = m_modelManager.AddModelBundle(std::move(modelBundle));
 
 	// After a new model has been added, the ModelBuffer might get recreated. So, it will have
 	// a new object. So, we should set that new object as the descriptor.
 	SetModelGraphicsDescriptors();
 
-	m_copyNecessary = true;
+	// For now at least, there is no GPU upload necessary after adding a new Mesh Shader
+	// Model Bundle.
 
 	return index;
 }
@@ -119,7 +116,7 @@ std::uint32_t RenderEngineMS::AddMeshBundle(MeshBundleTemporaryData&& meshBundle
 
 	m_meshManager.SetDescriptorBuffers(m_graphicsDescriptorBuffers, s_vertexShaderSetLayoutIndex);
 
-	m_copyNecessary = true;
+	m_gpuCopyNecessary = true;
 
 	return index;
 }
@@ -133,7 +130,7 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 	VkSemaphore signalledSemaphore = waitSemaphore;
 
 	// Only execute this stage if copying is necessary.
-	if (m_copyNecessary)
+	if (m_gpuCopyNecessary)
 	{
 		const VKCommandBuffer& transferCmdBuffer = m_transferQueue.GetCommandBuffer(frameIndex);
 
@@ -167,7 +164,7 @@ VkSemaphore RenderEngineMS::GenericTransferStage(
 
 		// Since this is the first stage for now. The receiving semaphore won't be a timeline one.
 		// So, no need to increase it.
-		m_copyNecessary    = false;
+		m_gpuCopyNecessary = false;
 		signalledSemaphore = transferWaitSemaphore.Get();
 	}
 

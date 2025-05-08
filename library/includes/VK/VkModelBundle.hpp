@@ -5,7 +5,6 @@
 #include <memory>
 #include <ranges>
 #include <algorithm>
-#include <Model.hpp>
 #include <VkPipelineLayout.hpp>
 #include <VkCommandQueue.hpp>
 #include <VkMeshBundleMS.hpp>
@@ -14,6 +13,7 @@
 #include <VkGraphicsPipelineVS.hpp>
 #include <VkGraphicsPipelineMS.hpp>
 #include <ReusableVector.hpp>
+#include <ModelBundle.hpp>
 
 namespace Terra
 {
@@ -61,8 +61,9 @@ public:
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleVS& meshBundle, const PipelineModelBundle& pipelineBundle,
-		const std::vector<std::shared_ptr<Model>>& models
+		const VkMeshBundleVS& meshBundle, const Callisto::ReusableVector<Model>& models,
+		const std::vector<std::uint32_t>& modelIndicesInContainer,
+		const PipelineModelBundle& pipelineBundle
 	) const noexcept;
 
 	[[nodiscard]]
@@ -73,7 +74,7 @@ public:
 
 private:
 	void DrawModel(
-		const std::shared_ptr<Model>& model, VkCommandBuffer graphicsCmdBuffer,
+		const Model& model, std::uint32_t modelIndexInBuffer, VkCommandBuffer graphicsCmdBuffer,
 		VkPipelineLayout pipelineLayout, const VkMeshBundleVS& meshBundle
 	) const noexcept;
 
@@ -116,8 +117,9 @@ public:
 
 	void Draw(
 		const VKCommandBuffer& graphicsBuffer, VkPipelineLayout pipelineLayout,
-		const VkMeshBundleMS& meshBundle, const PipelineModelBundle& pipelineBundle,
-		const std::vector<std::shared_ptr<Model>>& models
+		const VkMeshBundleMS& meshBundle, const Callisto::ReusableVector<Model>& models,
+		const std::vector<std::uint32_t>& modelIndicesInContainer,
+		const PipelineModelBundle& pipelineBundle
 	) const noexcept;
 
 	[[nodiscard]]
@@ -134,7 +136,7 @@ private:
 	}
 
 	void DrawModel(
-		const std::shared_ptr<Model>& model, VkCommandBuffer graphicsCmdBuffer,
+		const Model& model, std::uint32_t modelIndexInBuffer, VkCommandBuffer graphicsCmdBuffer,
 		VkPipelineLayout pipelineLayout, const VkMeshBundleMS& meshBundle
 	) const noexcept;
 
@@ -218,8 +220,9 @@ public:
 
 	void Update(
 		size_t frameIndex, const VkMeshBundleVS& meshBundle, bool skipCulling,
-		const PipelineModelBundle& pipelineBundle,
-		const std::vector<std::shared_ptr<Model>>& models
+		const Callisto::ReusableVector<Model>& models,
+		const std::vector<std::uint32_t>& modelIndicesInContainer,
+		const PipelineModelBundle& pipelineBundle
 	) const noexcept;
 
 	void RelinquishMemory(

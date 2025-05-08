@@ -43,7 +43,7 @@ RenderEngine::RenderEngine(
 	m_textureManager{ logicalDevice, m_memoryManager.get() },
 	m_cameraManager{ logicalDevice, m_memoryManager.get() },
 	m_viewportAndScissors{}, m_temporaryDataBuffer{}, m_renderPasses{}, m_swapchainRenderPass{},
-	m_copyNecessary{ false }
+	m_gpuCopyNecessary{ false }
 {
 	VkDescriptorBuffer::SetDescriptorBufferInfo(physicalDevice);
 
@@ -73,7 +73,7 @@ size_t RenderEngine::AddTextureAsCombined(STexture&& texture)
 		std::move(texture), m_stagingManager, m_temporaryDataBuffer
 	);
 
-	m_copyNecessary = true;
+	m_gpuCopyNecessary = true;
 
 	return textureIndex;
 }
@@ -159,14 +159,6 @@ void RenderEngine::RemoveTexture(size_t textureIndex)
 	m_textureStorage.RemoveTexture(textureIndex);
 }
 
-std::vector<std::uint32_t> RenderEngine::AddModelsToBuffer(
-	const ModelBundle& modelBundle, ModelBuffers& modelBuffers
-) noexcept {
-	std::vector<std::shared_ptr<Model>> models = modelBundle.GetModels();
-
-	return modelBuffers.AddMultipleRU32(std::move(models));
-}
-
 void RenderEngine::UpdateExternalBufferDescriptor(const ExternalBufferBindingDetails& bindingDetails)
 {
 	m_externalResourceManager.UpdateDescriptor(m_graphicsDescriptorBuffers, bindingDetails);
@@ -191,6 +183,6 @@ void RenderEngine::QueueExternalBufferGPUCopy(
 		srcDataSizeInBytes, m_temporaryDataBuffer
 	);
 
-	m_copyNecessary = true;
+	m_gpuCopyNecessary = true;
 }
 }

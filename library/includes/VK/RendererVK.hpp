@@ -117,15 +117,20 @@ public:
 		m_terra.RemoveTexture(textureIndex);
 	}
 
+	void SetModelContainer(std::shared_ptr<ModelContainer> modelContainer) noexcept
+	{
+		m_terra.GetRenderEngine().SetModelContainer(std::move(modelContainer));
+	}
+
 	[[nodiscard]]
 	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
 	{
 		return m_terra.AddModelBundle(std::move(modelBundle));
 	}
 
-	void RemoveModelBundle(std::uint32_t bundleIndex) noexcept
+	std::shared_ptr<ModelBundle> RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 	{
-		m_terra.GetRenderEngine().RemoveModelBundle(bundleIndex);
+		return m_terra.GetRenderEngine().RemoveModelBundle(bundleIndex);
 	}
 
 	[[nodiscard]]
