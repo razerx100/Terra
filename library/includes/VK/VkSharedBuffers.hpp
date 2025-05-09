@@ -2,7 +2,6 @@
 #define VK_SHARED_BUFFERS_HPP_
 #include <VkResources.hpp>
 #include <VkDescriptorBuffer.hpp>
-#include <VkReusableBuffer.hpp>
 #include <VkCommandQueue.hpp>
 #include <queue>
 #include <TemporaryDataBuffer.hpp>
