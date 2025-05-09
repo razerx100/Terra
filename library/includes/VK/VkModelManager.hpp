@@ -10,7 +10,7 @@
 #include <memory>
 #include <ranges>
 #include <algorithm>
-#include <VkReusableBuffer.hpp>
+#include <VkMultiInstanceBuffer.hpp>
 #include <VkGraphicsPipelineVS.hpp>
 #include <VkGraphicsPipelineMS.hpp>
 #include <VkComputePipeline.hpp>

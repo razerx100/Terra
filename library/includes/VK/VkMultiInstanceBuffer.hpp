@@ -1,5 +1,5 @@
-#ifndef VK_REUSABLE_BUFFER_HPP_
-#define VK_REUSABLE_BUFFER_HPP_
+#ifndef VK_MULTI_INSTANCE_BUFFER_HPP_
+#define VK_MULTI_INSTANCE_BUFFER_HPP_
 #include <VkResources.hpp>
 #include <VkDescriptorBuffer.hpp>
 #include <utility>
@@ -50,6 +50,8 @@ public:
 		const VkDeviceSize currentSize = m_buffer.BufferSize();
 		constexpr size_t strideSize    = GetStride();
 
+		// The index of the first element will be 0, so need to add the space for an
+		// extra element.
 		const auto minimumSpaceRequirement = static_cast<VkDeviceSize>(
 			index * strideSize + strideSize
 		);
