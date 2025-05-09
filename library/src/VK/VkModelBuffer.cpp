@@ -21,7 +21,10 @@ void ModelBuffers::CreateBuffer(size_t modelCount)
 		const VkDeviceSize modelBufferTotalSize
 			= m_modelBuffersInstanceSize * m_bufferInstanceCount;
 
-		m_vertexModelBuffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
+		// The vertex buffer can be accessed by different types of command queues.
+		m_vertexModelBuffers.Create(
+			modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, m_modelBuffersQueueIndices
+		);
 	}
 
 	// Fragment Data
@@ -33,6 +36,7 @@ void ModelBuffers::CreateBuffer(size_t modelCount)
 		const VkDeviceSize modelBufferTotalSize
 			= m_modelBuffersFragmentInstanceSize * m_bufferInstanceCount;
 
+		// The fragment buffer should only be accessed by the graphics command queue.
 		m_fragmentModelBuffers.Create(modelBufferTotalSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {});
 	}
 }
