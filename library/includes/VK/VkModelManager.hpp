@@ -230,18 +230,18 @@ private:
 	}
 
 private:
-	std::vector<SharedBufferCPU>               m_argumentInputBuffers;
-	std::vector<SharedBufferGPUWriteOnly>      m_argumentOutputBuffers;
-	std::vector<SharedBufferGPUWriteOnly>      m_modelIndicesBuffers;
-	SharedBufferCPU                            m_perPipelineBuffer;
-	std::vector<SharedBufferGPUWriteOnly>      m_counterBuffers;
-	Buffer                                     m_counterResetBuffer;
-	MultiInstanceCPUBuffer<PerModelBundleData> m_perModelBundleBuffer;
-	SharedBufferCPU                            m_perModelBuffer;
-	QueueIndices3                              m_queueIndices3;
-	std::uint32_t                              m_dispatchXCount;
-	std::uint32_t                              m_allocatedModelCount;
-	std::uint32_t                              m_csPSOIndex;
+	std::vector<SharedBufferCPU>          m_argumentInputBuffers;
+	std::vector<SharedBufferGPUWriteOnly> m_argumentOutputBuffers;
+	std::vector<SharedBufferGPUWriteOnly> m_modelIndicesBuffers;
+	SharedBufferCPU                       m_perPipelineBuffer;
+	std::vector<SharedBufferGPUWriteOnly> m_counterBuffers;
+	Buffer                                m_counterResetBuffer;
+	MultiInstanceCPUBuffer                m_perModelBundleBuffer;
+	SharedBufferCPU                       m_perModelBuffer;
+	QueueIndices3                         m_queueIndices3;
+	std::uint32_t                         m_dispatchXCount;
+	std::uint32_t                         m_allocatedModelCount;
+	std::uint32_t                         m_csPSOIndex;
 
 	// Vertex Shader ones
 	// To read the model indices of the not culled models.

@@ -41,7 +41,9 @@ ModelManagerVSIndirect::ModelManagerVSIndirect(
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
 	}, m_counterBuffers{},
 	m_counterResetBuffer{ device, memoryManager, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT },
-	m_perModelBundleBuffer{ device, memoryManager, frameCount },
+	m_perModelBundleBuffer{
+		device, memoryManager, frameCount, static_cast<std::uint32_t>(sizeof(PerModelBundleData))
+	},
 	m_perModelBuffer{
 		device, memoryManager, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		queueIndices3.ResolveQueueIndices<QueueIndicesTC>()
@@ -141,7 +143,7 @@ std::uint32_t ModelManagerVSIndirect::AddModelBundle(std::shared_ptr<ModelBundle
 
 	UpdateCounterResetValues();
 
-	m_perModelBundleBuffer.ExtendBufferIfNecessaryFor(bundleIndex);
+	m_perModelBundleBuffer.AllocateForIndex(bundleIndex);
 
 	UpdateAllocatedModelCount();
 
