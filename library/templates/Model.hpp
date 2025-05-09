@@ -168,9 +168,9 @@ public:
 	void SetModelOffset(const DirectX::XMFLOAT3& offset) noexcept { m_modelOffset = offset; }
 
 	[[nodiscard]]
-	DirectX::XMMATRIX GetModelMatrix() const noexcept { return m_modelMatrix; }
+	const DirectX::XMMATRIX& GetModelMatrix() const noexcept { return m_modelMatrix; }
 	[[nodiscard]]
-	DirectX::XMFLOAT3 GetModelOffset() const noexcept { return m_modelOffset; }
+	const DirectX::XMFLOAT3& GetModelOffset() const noexcept { return m_modelOffset; }
 	[[nodiscard]]
 	float GetModelScale() const noexcept { return m_modelScale; }
 
@@ -255,11 +255,11 @@ public:
 	[[nodiscard]]
 	std::uint32_t GetDiffuseIndex() const noexcept { return m_diffuseIndex; }
 	[[nodiscard]]
-	UVInfo GetDiffuseUVInfo() const noexcept { return m_diffuseUVInfo; }
+	const UVInfo& GetDiffuseUVInfo() const noexcept { return m_diffuseUVInfo; }
 	[[nodiscard]]
 	std::uint32_t GetSpecularIndex() const noexcept { return m_specularIndex; }
 	[[nodiscard]]
-	UVInfo GetSpecularUVInfo() const noexcept { return m_specularUVInfo; }
+	const UVInfo& GetSpecularUVInfo() const noexcept { return m_specularUVInfo; }
 
 private:
 	std::uint32_t m_materialIndex;
@@ -291,12 +291,12 @@ public:
 	void SetVisibility(bool value) noexcept { m_visible = value; }
 
 	[[nodiscard]]
-	DirectX::XMMATRIX GetModelMatrix() const noexcept
+	const DirectX::XMMATRIX& GetModelMatrix() const noexcept
 	{
 		return m_transform.GetModelMatrix();
 	}
 	[[nodiscard]]
-	DirectX::XMFLOAT3 GetModelOffset() const noexcept
+	const DirectX::XMFLOAT3& GetModelOffset() const noexcept
 	{
 		return m_transform.GetModelOffset();
 	}
@@ -318,14 +318,14 @@ public:
 		return m_material.GetDiffuseIndex();
 	}
 	[[nodiscard]]
-	UVInfo GetDiffuseUVInfo() const noexcept { return m_material.GetDiffuseUVInfo(); }
+	const UVInfo& GetDiffuseUVInfo() const noexcept { return m_material.GetDiffuseUVInfo(); }
 	[[nodiscard]]
 	std::uint32_t GetSpecularIndex() const noexcept
 	{
 		return m_material.GetSpecularIndex();
 	}
 	[[nodiscard]]
-	UVInfo GetSpecularUVInfo() const noexcept { return m_material.GetSpecularUVInfo(); }
+	const UVInfo& GetSpecularUVInfo() const noexcept { return m_material.GetSpecularUVInfo(); }
 
 	[[nodiscard]]
 	auto&& GetTransform(this auto&& self) noexcept
