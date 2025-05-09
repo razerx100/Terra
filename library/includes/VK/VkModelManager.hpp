@@ -71,9 +71,8 @@ public:
 	) {}
 
 	[[nodiscard]]
-	std::uint32_t AddModelBundle(
-		std::shared_ptr<ModelBundle>&& modelBundle
-	) {
+	std::uint32_t AddModelBundle(std::shared_ptr<ModelBundle>&& modelBundle)
+	{
 		const size_t bundleIndex          = this->m_modelBundles.Add(ModelBundleType{});
 
 		ModelBundleType& localModelBundle = this->m_modelBundles[bundleIndex];

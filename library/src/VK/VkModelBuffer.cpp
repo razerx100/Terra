@@ -93,7 +93,7 @@ void ModelBuffers::Update(VkDeviceSize bufferIndex) const noexcept
 		{
 			using namespace DirectX;
 
-			const XMMATRIX modelMat = model.GetModelMatrix();
+			const XMMATRIX& modelMat = model.GetModelMatrix();
 
 			const ModelVertexData modelVertexData
 			{

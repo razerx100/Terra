@@ -128,6 +128,7 @@ public:
 		return m_terra.AddModelBundle(std::move(modelBundle));
 	}
 
+	[[nodiscard]]
 	std::shared_ptr<ModelBundle> RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 	{
 		return m_terra.GetRenderEngine().RemoveModelBundle(bundleIndex);

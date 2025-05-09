@@ -420,6 +420,7 @@ public:
 		m_meshManager.RemoveMeshBundle(bundleIndex);
 	}
 
+	[[nodiscard]]
 	std::shared_ptr<ModelBundle> RemoveModelBundle(std::uint32_t bundleIndex) noexcept
 	{
 		return m_modelManager.RemoveModelBundle(bundleIndex);
