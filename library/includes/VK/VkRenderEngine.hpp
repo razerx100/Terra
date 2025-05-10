@@ -392,7 +392,7 @@ public:
 
 	void SetModelContainer(std::shared_ptr<ModelContainer> modelContainer) noexcept
 	{
-		m_modelBuffers->SetModelContainer(std::move(modelContainer));
+		m_modelBuffers.SetModelContainer(std::move(modelContainer));
 	}
 
 	[[nodiscard]]
